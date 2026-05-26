@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "lint": "node --check server.js"
+    "lint": "node --check server.js && node --check import-words.js && node --check words.js",
+    "import-words": "node import-words.js"
   },
   "keywords": [],
   "author": "",

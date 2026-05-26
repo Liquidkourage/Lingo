@@ -10,6 +10,8 @@ This folder contains the Railway/Postgres pivot for Lingo.
 - `public/index.html` - player guessing page
 - `public/host.html` - host dashboard
 - `db/schema.sql` - Postgres schema, auto-applied on startup
+- `data/words.txt` - bundled 5-letter legal word list for validation
+- `import-words.js` - manual word import/sync script
 - `.env.example` - local environment variables
 
 ## Required environment variables
@@ -28,6 +30,8 @@ This folder contains the Railway/Postgres pivot for Lingo.
 npm install
 npm start
 ```
+
+The app will automatically sync `data/words.txt` into the `words` table on startup.
 
 Then open:
 
@@ -50,6 +54,14 @@ Railway should automatically run:
 npm start
 ```
 
+That startup also auto-imports the bundled legal word list into Postgres.
+
+If you ever need to resync the word list manually, run:
+
+```bash
+npm run import-words
+```
+
 ## Current scope
 
 This is the first Railway slice, not the full game yet.
@@ -58,7 +70,7 @@ Included:
 
 - backend-owned session state
 - host controls for word / round / balls / answer reveal
-- player guess submission
+- player guess submission with legal-word validation
 - host inspection of accepted guesses
 
 Still to migrate:

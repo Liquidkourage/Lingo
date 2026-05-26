@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const { Pool } = require("pg");
+const { countWords, isFiveLetterWord, isLegalWord, normalizeWordInput, seedWordsTable } = require("./words");
 require("dotenv").config();
 
 const app = express();
@@ -28,10 +29,6 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function validateWord(word) {
-  return /^[A-Z]{5}$/.test(word);
-}
-
 function normalizeDisplayName(displayName) {
   return String(displayName || "").trim();
 }
@@ -52,6 +49,7 @@ function requireAdmin(req, res, next) {
 async function ensureSchema() {
   const sql = fs.readFileSync(schemaPath, "utf8");
   await pool.query(sql);
+  await seedWordsTable(pool);
 }
 
 function serializeState(row) {
@@ -188,13 +186,13 @@ app.get("/api/public-state", async (_req, res) => {
 
 app.post("/api/public/submit-guess", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
-  const guess = String(req.body.guess || "").trim().toUpperCase();
+  const guess = normalizeWordInput(req.body.guess);
 
   if (!displayName) {
     res.status(400).json({ ok: false, error: "Display name is required." });
     return;
   }
-  if (!validateWord(guess)) {
+  if (!isFiveLetterWord(guess)) {
     res.status(400).json({ ok: false, error: "Guess must be exactly 5 letters." });
     return;
   }
@@ -209,6 +207,9 @@ app.post("/api/public/submit-guess", async (req, res) => {
     }
     if (!state.current_word) {
       throw new Error("The host has not set a word yet.");
+    }
+    if (!(await isLegalWord(client, guess))) {
+      throw new Error("Guess must be a legal 5-letter Scrabble word.");
     }
 
     const upsertResult = await client.query(
@@ -304,7 +305,7 @@ app.get("/api/admin/players", requireAdmin, async (_req, res) => {
 
 async function handleAdminAction(action, body) {
   const state = await getState();
-  const word = String(body.word || "").trim().toUpperCase();
+  const word = normalizeWordInput(body.word);
 
   switch (action) {
     case "state":
@@ -327,8 +328,11 @@ async function handleAdminAction(action, body) {
         results_window_opened_at: null,
       }));
     case "set-word":
-      if (word && !validateWord(word)) {
+      if (word && !isFiveLetterWord(word)) {
         throw new Error("Word must be exactly 5 letters.");
+      }
+      if (word && !(await isLegalWord(pool, word))) {
+        throw new Error("Word must be a legal 5-letter Scrabble word.");
       }
       return serializeState(await updateState({
         current_word: word,
@@ -423,7 +427,8 @@ app.use((req, res, next) => {
 ensureSchema()
   .then(async () => {
     const state = await getState();
-    console.log(`Lingo online app ready on port ${port}. Session: ${state.session_id}`);
+    const totalWords = await countWords(pool);
+    console.log(`Lingo online app ready on port ${port}. Session: ${state.session_id}. Words: ${totalWords}`);
     app.listen(port, () => {
       console.log(`Listening on http://localhost:${port}`);
     });
