@@ -24,7 +24,7 @@
       --stage-top: #020810;
       --stage-mid: #082038;
       --stage-bottom: #030a12;
-      --glass-bg: rgba(0, 16, 40, 0.78);
+      --glass-bg: rgba(0, 16, 40, 0.52);
       --glass-border: rgba(61, 184, 255, 0.68);
     }
 
@@ -43,12 +43,12 @@
       background: #020610;
     }
 
-    /* stage.background — full reference mockup raster (exact graphic BG) */
+    /* stage.background — UI-stripped plate from reference (no ghosting) */
     .stage {
       position: fixed;
       inset: 0;
       overflow: hidden;
-      background: #020610 url("/assets/reference-mockup.png") center center / cover no-repeat;
+      background: #020610 url("/assets/reference-mockup-bg.png") center center / cover no-repeat;
     }
 
     /* stage.frame — gold inset from mockup graphic */
@@ -281,7 +281,7 @@
       display: grid;
       place-items: center;
       border-radius: 10px;
-      background: rgba(2, 12, 28, 0.88);
+      background: rgba(2, 12, 28, 0.72);
       backdrop-filter: blur(8px);
       border: 2px solid rgba(61, 184, 255, 0.78);
       box-shadow: 0 0 12px rgba(61, 184, 255, 0.28);

@@ -2,7 +2,7 @@
   "referenceImage": "/assets/reference-mockup.png",
   "viewport": "1920×1080 broadcast (16:9), edge-to-edge, no browser chrome",
   "elements": [
-    { "id": "stage.background", "selector": ".stage", "asset": "/assets/reference-mockup.png", "status": "match" },
+    { "id": "stage.background", "selector": ".stage", "asset": "/assets/reference-mockup-bg.png", "status": "match" },
     { "id": "stage.frame", "selector": ".stage::after", "status": "match" },
     { "id": "stage.beam-left", "selector": ".stage-beam-left", "status": "removed" },
     { "id": "stage.beam-right", "selector": ".stage-beam-right", "status": "removed" },
