@@ -1,14 +1,20 @@
 {
   "referenceImage": "/assets/reference-mockup.png",
-  "architecture": "The exemplar PNG is the full page. Live HTML overlays only appear when game state differs from the idle mockup.",
-  "viewport": "reference-mockup.png scaled with object-fit:cover",
+  "architecture": "Stage background plate + extracted logo + native HTML UI chrome. One cohesive broadcast design; values update in place.",
+  "stage": {
+    "width": 1024,
+    "height": 575,
+    "background": "/assets/reference-mockup-bg.png",
+    "logo": "/assets/lingo-logo.png"
+  },
   "elements": [
-    { "id": "baseArt", "selector": "#baseArt", "asset": "/assets/reference-mockup.png", "status": "match" },
-    { "id": "liveLayer", "selector": "#liveLayer", "status": "match", "note": "Hidden (.is-idle) when API state matches idle mockup exactly" },
-    { "id": "timerOverlay", "selector": "#timerOverlay", "status": "match" },
-    { "id": "badgeOverlay", "selector": "#badgeOverlay", "status": "match" },
-    { "id": "wordLayer", "selector": "#wordLayer", "status": "match" },
-    { "id": "statsOverlays", "selector": ".ov-stat", "status": "match" },
-    { "id": "playersLayer", "selector": "#playersLayer", "status": "match" }
+    { "id": "stageBg", "selector": ".stage-bg", "asset": "/assets/reference-mockup-bg.png", "status": "match" },
+    { "id": "logo", "selector": ".logo", "asset": "/assets/lingo-logo.png", "status": "match" },
+    { "id": "statusBadge", "selector": "#statusBadge", "status": "match" },
+    { "id": "statusSubtitle", "selector": "#statusSubtitle", "status": "match" },
+    { "id": "timerPanel", "selector": ".timer-panel", "status": "match" },
+    { "id": "wordRow", "selector": "#wordRow", "status": "match" },
+    { "id": "statsBar", "selector": ".stats-bar", "status": "match" },
+    { "id": "playerBoard", "selector": ".player-board", "status": "match" }
   ]
 }

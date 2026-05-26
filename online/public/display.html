@@ -6,7 +6,7 @@
   <title>Lingo Public Display</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
 
@@ -18,7 +18,6 @@
       background: #020610;
     }
 
-    /* The exemplar graphic IS the page. */
     .viewport {
       position: fixed;
       inset: 0;
@@ -27,135 +26,163 @@
       background: #020610;
     }
 
-    .art-frame {
+    .stage {
       position: relative;
       width: min(100vw, 100vh * (1024 / 575));
       height: min(100vh, 100vw * (575 / 1024));
       container-type: inline-size;
+      font-family: Montserrat, "Segoe UI", Arial, sans-serif;
+      color: #fff;
     }
 
-    #baseArt {
-      width: 100%;
-      height: 100%;
-      display: block;
-      user-select: none;
-      pointer-events: none;
-    }
-
-    /* Live data overlays — hidden when state matches the idle mockup exactly. */
-    .live-layer {
+    .stage-bg {
       position: absolute;
       inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
       pointer-events: none;
-      font-family: Montserrat, "Segoe UI", Arial, sans-serif;
+      user-select: none;
     }
 
-    .live-layer.is-idle {
-      visibility: hidden;
-    }
-
-    /* Paint over baked-in mockup values when live data is shown */
-    .live-layer:not(.is-idle) .ov-timer {
-      background: rgba(2, 12, 28, 0.94);
-      padding: 6px 14px;
-      border-radius: 8px;
-      min-width: 3.5em;
-    }
-
-    .live-layer:not(.is-idle) .ov-stat {
-      background: rgba(2, 12, 28, 0.94);
-      padding: 3px 12px;
-      border-radius: 8px;
-      min-width: 2em;
-    }
-
-    .live-layer:not(.is-idle) .ov-badge,
-    .live-layer:not(.is-idle) .ov-callout,
-    .live-layer:not(.is-idle) .ov-subtitle {
-      background: rgba(2, 8, 20, 0.88);
-    }
-
-    .live-layer:not(.is-idle) .players-layer {
-      background: rgba(2, 12, 28, 0.94);
-      border-radius: 11px;
-    }
-
-    .ov {
+    .scene {
       position: absolute;
-      transform: translate(-50%, -50%);
-      text-align: center;
+      inset: 0;
+    }
+
+    .logo {
+      position: absolute;
+      left: 50%;
+      top: 3.8%;
+      transform: translateX(-50%);
+      width: 56%;
+      height: auto;
+      filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.55));
+      pointer-events: none;
+    }
+
+    .status-badge {
+      position: absolute;
+      left: 50%;
+      top: 18.8%;
+      transform: translateX(-50%);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      padding: 0.38em 1.05em;
+      border-radius: 999px;
+      border: 2px solid #ffd700;
+      background: rgba(0, 0, 0, 0.62);
+      box-shadow: 0 0 14px rgba(255, 215, 0, 0.28);
+      font-size: clamp(0.52rem, 1.35cqw, 0.72rem);
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ffd700;
       white-space: nowrap;
     }
 
-    /* Positions calibrated to reference-mockup.png (1024×575) */
-    .ov-timer {
-      left: 88.5%;
-      top: 10.5%;
-      font-size: clamp(1.6rem, 4.8cqw, 2.8rem);
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: 0.06em;
-      text-shadow: 0 0 18px rgba(255, 255, 255, 0.85), 0 0 36px rgba(61, 184, 255, 0.45);
+    .status-badge.guessing {
+      color: #00ff66;
+      border-color: #00ff66;
+      box-shadow: 0 0 14px rgba(0, 255, 102, 0.28);
     }
 
-    .ov-badge {
-      left: 50%;
-      top: 21.5%;
-      font-size: clamp(0.55rem, 1.4cqw, 0.72rem);
-      font-weight: 800;
-      letter-spacing: 0.11em;
-      text-transform: uppercase;
-      color: #ffd700;
-      padding: 4px 12px;
-      border-radius: 999px;
-      border: 2px solid #ffd700;
-      background: rgba(0, 0, 0, 0.65);
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+    .status-badge.results {
+      color: #4db8ff;
+      border-color: #4db8ff;
+      box-shadow: 0 0 14px rgba(77, 184, 255, 0.28);
     }
 
-    .ov-badge.guessing { color: #00ff66; border-color: #00ff66; }
-    .ov-badge.revealed { color: #00e5ff; border-color: #00e5ff; }
-
-    .ov-subtitle {
-      left: 50%;
-      top: 25.5%;
-      width: min(480px, 72cqw);
-      font-size: clamp(0.62rem, 1.25cqw, 0.76rem);
-      font-weight: 600;
-      color: #9eb8d8;
-      line-height: 1.45;
-      white-space: normal;
-      transform: translate(-50%, 0);
+    .status-badge.revealed {
+      color: #00e5ff;
+      border-color: #00e5ff;
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.28);
     }
 
-    .ov-callout {
-      left: 50%;
-      top: 24%;
-      font-size: clamp(0.95rem, 2.5cqw, 1.4rem);
-      font-weight: 800;
-      color: #fff;
-      text-shadow: 0 0 14px rgba(61, 184, 255, 0.35);
+    .status-badge svg {
+      width: 0.95em;
+      height: 0.95em;
+      flex-shrink: 0;
     }
 
-    .word-layer {
+    .status-subtitle {
       position: absolute;
       left: 50%;
-      top: 33.5%;
+      top: 23.8%;
+      transform: translateX(-50%);
+      width: 72%;
+      margin: 0;
+      text-align: center;
+      font-size: clamp(0.58rem, 1.2cqw, 0.74rem);
+      font-weight: 600;
+      line-height: 1.45;
+      color: #9eb8d8;
+    }
+
+    .timer-panel {
+      position: absolute;
+      right: 3.2%;
+      top: 4.8%;
+      width: 14.8%;
+      min-height: 16%;
+      padding: 0.55em 0.45em 0.45em;
+      border-radius: 10px;
+      border: 2px solid rgba(61, 184, 255, 0.82);
+      background: rgba(2, 12, 28, 0.78);
+      box-shadow: 0 0 16px rgba(61, 184, 255, 0.22), inset 0 0 18px rgba(61, 184, 255, 0.06);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.15em;
+    }
+
+    .timer-label {
+      font-size: clamp(0.38rem, 0.82cqw, 0.52rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #d8e8ff;
+      line-height: 1.25;
+    }
+
+    .timer-value {
+      font-size: clamp(1.35rem, 4.2cqw, 2.35rem);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: #fff;
+      text-shadow: 0 0 16px rgba(255, 255, 255, 0.75), 0 0 28px rgba(61, 184, 255, 0.35);
+      line-height: 1;
+    }
+
+    .timer-unit {
+      font-size: clamp(0.38rem, 0.82cqw, 0.52rem);
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #4db8ff;
+    }
+
+    .word-row {
+      position: absolute;
+      left: 50%;
+      top: 33.2%;
       transform: translate(-50%, -50%);
       display: flex;
-      gap: clamp(8px, 1.6cqw, 14px);
+      gap: clamp(7px, 1.45cqw, 12px);
     }
 
     .word-cell {
-      width: clamp(72px, 9.8cqw, 100px);
+      width: clamp(68px, 9.2cqw, 96px);
       aspect-ratio: 1;
       display: grid;
       place-items: center;
       border-radius: 10px;
-      background: rgba(2, 12, 28, 0.82);
       border: 2px solid rgba(61, 184, 255, 0.82);
-      box-shadow: 0 0 12px rgba(61, 184, 255, 0.28);
-      font-size: clamp(1.8rem, 5cqw, 2.8rem);
+      background: rgba(2, 12, 28, 0.82);
+      box-shadow: 0 0 12px rgba(61, 184, 255, 0.24), inset 0 0 12px rgba(61, 184, 255, 0.05);
+      font-size: clamp(1.65rem, 4.8cqw, 2.55rem);
       font-weight: 900;
       text-transform: uppercase;
       color: #fff;
@@ -166,48 +193,165 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: rgba(61, 184, 255, 0.9);
-      box-shadow: 0 0 6px rgba(61, 184, 255, 0.5);
+      background: rgba(61, 184, 255, 0.92);
+      box-shadow: 0 0 8px rgba(61, 184, 255, 0.55);
     }
 
     .word-cell.revealed {
       background: rgba(0, 90, 48, 0.82);
       border-color: rgba(0, 255, 102, 0.88);
+      box-shadow: 0 0 12px rgba(0, 255, 102, 0.28);
     }
 
-    .ov-stat {
-      top: 47.5%;
-      font-size: clamp(1.2rem, 2.8cqw, 1.85rem);
+    .stats-bar {
+      position: absolute;
+      left: 50%;
+      top: 44.8%;
+      transform: translate(-50%, -50%);
+      width: 90.5%;
+      height: 11.8%;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border-radius: 10px;
+      border: 2px solid rgba(61, 184, 255, 0.72);
+      background: rgba(2, 12, 28, 0.72);
+      box-shadow: 0 0 14px rgba(61, 184, 255, 0.18);
+      overflow: hidden;
+    }
+
+    .stat-cell {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.08em;
+      padding: 0.35em 0.2em 0.25em;
+      min-width: 0;
+    }
+
+    .stat-cell + .stat-cell::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 14%;
+      bottom: 14%;
+      width: 1px;
+      background: rgba(61, 184, 255, 0.35);
+    }
+
+    .stat-icon {
+      width: clamp(14px, 2.1cqw, 22px);
+      height: clamp(14px, 2.1cqw, 22px);
+    }
+
+    .stat-label {
+      font-size: clamp(0.38rem, 0.78cqw, 0.52rem);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #d8e8ff;
+    }
+
+    .stat-value {
+      font-size: clamp(0.95rem, 2.35cqw, 1.55rem);
       font-weight: 900;
       line-height: 1;
     }
 
-    .ov-stat-round { left: 10%; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.45); }
-    .ov-stat-balls { left: 30%; color: #4db8ff; text-shadow: 0 0 10px rgba(77, 184, 255, 0.45); }
-    .ov-stat-mult { left: 50%; color: #00ff66; text-shadow: 0 0 10px rgba(0, 255, 102, 0.45); }
-    .ov-stat-players { left: 70%; color: #cc66ff; text-shadow: 0 0 10px rgba(204, 102, 255, 0.45); }
-    .ov-stat-submitted { left: 90%; color: #00e5ff; text-shadow: 0 0 10px rgba(0, 229, 255, 0.45); }
+    .stat-value.round { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.45); }
+    .stat-value.balls { color: #4db8ff; text-shadow: 0 0 10px rgba(77, 184, 255, 0.45); }
+    .stat-value.mult { color: #00ff66; text-shadow: 0 0 10px rgba(0, 255, 102, 0.45); }
+    .stat-value.players { color: #cc66ff; text-shadow: 0 0 10px rgba(204, 102, 255, 0.45); }
+    .stat-value.submitted { color: #00e5ff; text-shadow: 0 0 10px rgba(0, 229, 255, 0.45); }
 
-    .players-layer {
+    .player-board {
       position: absolute;
       left: 50%;
-      top: 54%;
+      top: 52.2%;
       transform: translateX(-50%);
-      width: 92%;
-      height: 42%;
+      width: 90.5%;
+      height: 42.5%;
+      border-radius: 11px;
+      border: 2px solid rgba(61, 184, 255, 0.78);
+      background: rgba(2, 12, 28, 0.72);
+      box-shadow: 0 0 16px rgba(61, 184, 255, 0.18);
       display: flex;
       flex-direction: column;
       min-height: 0;
-      padding: 16px 12px 10px;
+    }
+
+    .player-board-tab {
+      position: relative;
+      align-self: center;
+      margin-top: -0.72em;
+      padding: 0.18em 1.1em;
+      font-size: clamp(0.42rem, 0.88cqw, 0.56rem);
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #d8e8ff;
+      background: rgba(2, 12, 28, 0.96);
+    }
+
+    .player-board-tab::before,
+    .player-board-tab::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 2.2em;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(61, 184, 255, 0.75));
+    }
+
+    .player-board-tab::before {
+      right: 100%;
+      margin-right: 0.35em;
+      transform: scaleX(-1);
+    }
+
+    .player-board-tab::after {
+      left: 100%;
+      margin-left: 0.35em;
+    }
+
+    .player-board-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0.55em 0.75em 0.65em;
       overflow: hidden;
     }
 
-    .players-summary {
-      color: #9eb8d8;
-      font-size: 0.78rem;
+    .board-empty {
+      flex: 1;
+      display: grid;
+      place-content: center;
+      gap: 0.45em;
+      color: #6f8aa8;
       text-align: center;
-      margin-bottom: 6px;
+    }
+
+    .board-empty svg {
+      width: clamp(22px, 3.2cqw, 34px);
+      height: clamp(22px, 3.2cqw, 34px);
+      margin: 0 auto;
+      opacity: 0.85;
+    }
+
+    .board-empty p {
+      margin: 0;
+      font-size: clamp(0.62rem, 1.15cqw, 0.82rem);
       font-weight: 600;
+    }
+
+    .players-summary {
+      margin: 0 0 0.35em;
+      text-align: center;
+      font-size: clamp(0.55rem, 1cqw, 0.72rem);
+      font-weight: 600;
+      color: #9eb8d8;
       flex-shrink: 0;
     }
 
@@ -215,154 +359,242 @@
       flex: 1;
       min-height: 0;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 8px;
-      overflow: hidden;
+      grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+      gap: 0.45em;
       align-content: start;
+      overflow: hidden;
     }
 
     .player-card {
-      border-radius: 10px;
-      padding: 10px;
-      background: rgba(6, 20, 42, 0.92);
-      border: 1px solid rgba(61, 184, 255, 0.4);
+      border-radius: 8px;
+      padding: 0.45em 0.55em;
+      background: rgba(4, 18, 42, 0.92);
+      border: 1px solid rgba(61, 184, 255, 0.42);
+      box-shadow: inset 0 0 10px rgba(61, 184, 255, 0.04);
     }
 
-    .player-card.locked { background: rgba(50, 38, 8, 0.92); border-color: rgba(255, 215, 0, 0.55); }
-    .player-card.solved { background: rgba(8, 50, 28, 0.92); border-color: rgba(0, 255, 102, 0.65); }
+    .player-card.locked {
+      background: rgba(42, 32, 8, 0.92);
+      border-color: rgba(255, 215, 0, 0.52);
+    }
+
+    .player-card.solved {
+      background: rgba(8, 48, 28, 0.92);
+      border-color: rgba(0, 255, 102, 0.58);
+    }
 
     .player-card-top {
       display: flex;
       justify-content: space-between;
-      gap: 6px;
-      margin-bottom: 4px;
+      gap: 0.35em;
+      margin-bottom: 0.2em;
     }
 
-    .player-name { font-size: 0.88rem; font-weight: 800; }
-    .player-status-pill {
-      font-size: 0.55rem;
+    .player-name {
+      font-size: clamp(0.58rem, 1.05cqw, 0.78rem);
       font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-status-pill {
+      flex-shrink: 0;
+      font-size: clamp(0.42rem, 0.72cqw, 0.55rem);
+      font-weight: 800;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: #9eb8d8;
-      padding: 2px 6px;
+      padding: 0.12em 0.45em;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.08);
     }
 
-    .player-meta { font-size: 0.72rem; color: #9eb8d8; margin-bottom: 6px; }
+    .player-meta {
+      font-size: clamp(0.48rem, 0.82cqw, 0.62rem);
+      color: #9eb8d8;
+      margin-bottom: 0.28em;
+    }
 
     .feedback-row {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 3px;
+      gap: 2px;
     }
 
     .feedback-cell {
       aspect-ratio: 1;
-      border-radius: 5px;
+      border-radius: 4px;
       display: grid;
       place-items: center;
-      font-size: 0.75rem;
+      font-size: clamp(0.45rem, 0.78cqw, 0.62rem);
       font-weight: 900;
       background: rgba(255, 255, 255, 0.06);
     }
 
     .feedback-cell.pending { background: rgba(255, 215, 0, 0.35); }
-    .feedback-cell.correct { background: rgba(0, 255, 102, 0.6); }
-    .feedback-cell.present { background: rgba(255, 180, 0, 0.6); }
+    .feedback-cell.correct { background: rgba(0, 255, 102, 0.62); }
+    .feedback-cell.present { background: rgba(255, 180, 0, 0.62); }
     .feedback-cell.absent { background: rgba(220, 60, 60, 0.55); }
 
-    /* Dense layout */
-    .live-layer.dense .ov-badge,
-    .live-layer.dense .ov-subtitle,
-    .live-layer.dense .ov-callout { display: none; }
+    .stage.dense .status-badge,
+    .stage.dense .status-subtitle { display: none; }
 
-    .live-layer.dense .word-layer { top: 8%; left: 12%; transform: none; }
-    .live-layer.dense .ov-timer { top: 6%; left: 92%; font-size: 1.2rem; }
-    .live-layer.dense .ov-stat { top: 14%; font-size: 0.85rem; }
-    .live-layer.dense .players-layer { top: 18%; height: 78%; width: 96%; padding: 8px; }
+    .stage.dense .word-row { top: 8.5%; transform: translate(0, 0); left: 3.5%; }
+    .stage.dense .timer-panel { top: 3.5%; right: 2.5%; width: 12%; min-height: 12%; }
+    .stage.dense .stats-bar { top: 15.5%; height: 8.5%; }
+    .stage.dense .player-board { top: 17.5%; height: 78%; }
 
     .players-grid.dense {
       grid-template-columns: repeat(var(--cols, 8), minmax(0, 1fr));
-      gap: var(--gap, 3px);
+      gap: var(--gap, 2px);
     }
 
     .player-tile {
       border-radius: 4px;
-      padding: 3px 4px;
-      background: rgba(6, 18, 38, 0.92);
+      padding: 2px 3px;
+      background: rgba(4, 18, 42, 0.92);
       border: 1px solid rgba(61, 184, 255, 0.35);
-      font-size: var(--tile-font, 0.68rem);
+      font-size: var(--tile-font, 0.62rem);
     }
 
-    .player-tile-name { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-tile-name {
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .player-tile-feedback {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 1px;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
-    .mini-cell { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,0.06); }
+    .mini-cell {
+      aspect-ratio: 1;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
     .mini-cell.pending { background: rgba(255, 215, 0, 0.45); }
     .mini-cell.correct { background: rgba(0, 255, 102, 0.8); }
     .mini-cell.present { background: rgba(255, 180, 0, 0.8); }
     .mini-cell.absent { background: rgba(220, 60, 60, 0.7); }
+
+    .player-tile-status {
+      color: #9eb8d8;
+      font-size: 0.85em;
+      margin-top: 1px;
+    }
   </style>
 </head>
 <body>
   <div class="viewport">
-    <div class="art-frame">
-      <img id="baseArt" src="/assets/reference-mockup.png" width="1024" height="575" alt="" />
-      <div id="liveLayer" class="live-layer is-idle" aria-live="polite">
-        <div id="timerOverlay" class="ov ov-timer">--</div>
-        <div id="badgeOverlay" class="ov ov-badge"></div>
-        <div id="calloutOverlay" class="ov ov-callout"></div>
-        <div id="subtitleOverlay" class="ov ov-subtitle"></div>
-        <div id="wordLayer" class="word-layer"></div>
-        <div id="roundOverlay" class="ov ov-stat ov-stat-round">0</div>
-        <div id="ballsOverlay" class="ov ov-stat ov-stat-balls">0</div>
-        <div id="multOverlay" class="ov ov-stat ov-stat-mult">1x</div>
-        <div id="playersCountOverlay" class="ov ov-stat ov-stat-players">0</div>
-        <div id="submittedOverlay" class="ov ov-stat ov-stat-submitted">0</div>
-        <div id="playersLayer" class="players-layer">
-          <p id="playersSummary" class="players-summary"></p>
-          <div id="playersGrid" class="players-grid"></div>
+    <div id="stage" class="stage">
+      <img class="stage-bg" src="/assets/reference-mockup-bg.png" width="1024" height="575" alt="" />
+      <div class="scene" aria-live="polite">
+        <img class="logo" src="/assets/lingo-logo.png" width="511" height="54" alt="Lingo" />
+
+        <div id="statusBadge" class="status-badge">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span id="statusBadgeText">Waiting for the host</span>
         </div>
+
+        <p id="statusSubtitle" class="status-subtitle">
+          The public display will update automatically when the next online round starts.
+        </p>
+
+        <aside class="timer-panel">
+          <div id="timerLabel" class="timer-label">Next round starts in</div>
+          <div id="timerValue" class="timer-value">--</div>
+          <div class="timer-unit">Seconds</div>
+        </aside>
+
+        <div id="wordRow" class="word-row"></div>
+
+        <div class="stats-bar">
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#ffd700" d="M12 2l2.2 6.8H21l-5.5 4 2.1 6.7L12 16.8 6.4 19.5l2.1-6.7L3 8.8h6.8z"/>
+            </svg>
+            <span class="stat-label">Round</span>
+            <span id="roundValue" class="stat-value round">0</span>
+          </div>
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="#4db8ff"/>
+              <text x="12" y="16" text-anchor="middle" fill="#02101f" font-size="10" font-weight="900">B</text>
+            </svg>
+            <span class="stat-label">Balls</span>
+            <span id="ballsValue" class="stat-value balls">0</span>
+          </div>
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#00ff66" d="M4 18h16v2H4zm3-4l3-4 3 3 5-7 2 2-7 10-3-3z"/>
+            </svg>
+            <span class="stat-label">Multiplier</span>
+            <span id="multValue" class="stat-value mult">1x</span>
+          </div>
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#cc66ff" d="M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1 .1 1.2.9 2 2.1 2 3.9v2h6v-2c0-2.7-5.3-4-8-4z"/>
+            </svg>
+            <span class="stat-label">Players</span>
+            <span id="playersValue" class="stat-value players">0</span>
+          </div>
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#00e5ff" d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+            </svg>
+            <span class="stat-label">Submitted</span>
+            <span id="submittedValue" class="stat-value submitted">0</span>
+          </div>
+        </div>
+
+        <section class="player-board">
+          <div class="player-board-tab">Player board</div>
+          <div class="player-board-body">
+            <p id="playersSummary" class="players-summary" hidden></p>
+            <div id="boardEmpty" class="board-empty">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1 .1 1.2.9 2 2.1 2 3.9v2h6v-2c0-2.7-5.3-4-8-4z"/>
+              </svg>
+              <p>No player cards yet</p>
+            </div>
+            <div id="playersGrid" class="players-grid" hidden></div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
 
   <script>
     const DENSE_PLAYER_THRESHOLD = 24;
-    const ART = '/assets/reference-mockup.png';
 
     const els = {
-      baseArt: document.getElementById('baseArt'),
-      liveLayer: document.getElementById('liveLayer'),
-      timerOverlay: document.getElementById('timerOverlay'),
-      badgeOverlay: document.getElementById('badgeOverlay'),
-      calloutOverlay: document.getElementById('calloutOverlay'),
-      subtitleOverlay: document.getElementById('subtitleOverlay'),
-      wordLayer: document.getElementById('wordLayer'),
-      roundOverlay: document.getElementById('roundOverlay'),
-      ballsOverlay: document.getElementById('ballsOverlay'),
-      multOverlay: document.getElementById('multOverlay'),
-      playersCountOverlay: document.getElementById('playersCountOverlay'),
-      submittedOverlay: document.getElementById('submittedOverlay'),
+      stage: document.getElementById('stage'),
+      statusBadge: document.getElementById('statusBadge'),
+      statusBadgeText: document.getElementById('statusBadgeText'),
+      statusSubtitle: document.getElementById('statusSubtitle'),
+      timerLabel: document.getElementById('timerLabel'),
+      timerValue: document.getElementById('timerValue'),
+      wordRow: document.getElementById('wordRow'),
+      roundValue: document.getElementById('roundValue'),
+      ballsValue: document.getElementById('ballsValue'),
+      multValue: document.getElementById('multValue'),
+      playersValue: document.getElementById('playersValue'),
+      submittedValue: document.getElementById('submittedValue'),
+      boardEmpty: document.getElementById('boardEmpty'),
       playersSummary: document.getElementById('playersSummary'),
       playersGrid: document.getElementById('playersGrid'),
     };
 
     let currentState = null;
-
-    function formatSeconds(totalSeconds) {
-      if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '--';
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
 
     function timeRemainingSeconds(state) {
       if (!state) return null;
@@ -375,20 +607,6 @@
         return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
       }
       return null;
-    }
-
-    function isPureIdle(state) {
-      if (!state) return true;
-      const phase = state.phase || 'idle';
-      const players = Array.isArray(state.players) ? state.players : [];
-      return phase === 'idle'
-        && Number(state.roundNumber || 0) === 0
-        && Number(state.ballsRemaining || 0) === 0
-        && Number(state.playerCount || 0) === 0
-        && Number(state.submittedThisRound || 0) === 0
-        && players.length === 0
-        && !state.revealedWord
-        && timeRemainingSeconds(state) === null;
     }
 
     function escapeHtml(text) {
@@ -426,9 +644,9 @@
       }).join('');
     }
 
-    function renderTiles(text, revealed) {
+    function renderWordRow(text, revealed) {
       const normalized = String(text || '').toUpperCase().padEnd(5, '.').slice(0, 5);
-      els.wordLayer.innerHTML = normalized.split('').map((char) => {
+      els.wordRow.innerHTML = normalized.split('').map((char) => {
         const hidden = char === '.';
         const cls = `word-cell${hidden ? ' hidden' : ''}${revealed && !hidden ? ' revealed' : ''}`;
         return `<div class="${cls}">${hidden ? '' : char}</div>`;
@@ -466,17 +684,21 @@
     function renderPlayers(players, phase) {
       const safePlayers = Array.isArray(players) ? players : [];
       const dense = safePlayers.length >= DENSE_PLAYER_THRESHOLD;
-      els.liveLayer.classList.toggle('dense', dense);
+      els.stage.classList.toggle('dense', dense);
       els.playersGrid.classList.toggle('dense', dense);
 
       if (!safePlayers.length) {
-        els.playersSummary.textContent = '';
+        els.boardEmpty.hidden = false;
+        els.playersGrid.hidden = true;
+        els.playersSummary.hidden = true;
         els.playersGrid.innerHTML = '';
-        els.playersLayer.style.visibility = 'hidden';
         return;
       }
 
-      els.playersLayer.style.visibility = 'visible';
+      els.boardEmpty.hidden = true;
+      els.playersGrid.hidden = false;
+      els.playersSummary.hidden = false;
+
       const submitted = safePlayers.filter((p) => p && p.hasSubmitted).length;
       if (phase === 'guessing') {
         els.playersSummary.textContent = `${submitted} of ${safePlayers.length} locked in.`;
@@ -496,22 +718,23 @@
         .join('');
     }
 
-    function renderTimer() {
-      const remaining = timeRemainingSeconds(currentState);
-      els.timerOverlay.textContent = remaining === null ? '--' : formatSeconds(remaining);
+    function renderTimer(state) {
+      const remaining = timeRemainingSeconds(state);
+      const phase = state?.phase || 'idle';
+
+      if (phase === 'guessing') {
+        els.timerLabel.textContent = 'Time remaining';
+      } else if (phase === 'results') {
+        els.timerLabel.textContent = 'Next round starts in';
+      } else {
+        els.timerLabel.textContent = 'Next round starts in';
+      }
+
+      els.timerValue.textContent = remaining === null ? '--' : String(remaining);
     }
 
     function renderState(state) {
       currentState = state || {};
-
-      if (isPureIdle(currentState)) {
-        els.baseArt.src = ART;
-        els.liveLayer.classList.add('is-idle');
-        return;
-      }
-
-      els.baseArt.src = ART;
-      els.liveLayer.classList.remove('is-idle');
 
       const phase = currentState.phase || 'idle';
       const roundNumber = Number(currentState.roundNumber || 0);
@@ -525,38 +748,32 @@
       const displayWord = revealedWord || maskedWord;
       const isRevealed = Boolean(revealedWord);
 
-      els.badgeOverlay.className = 'ov ov-badge';
-      if (phase === 'guessing') els.badgeOverlay.classList.add('guessing');
-      else if (phase === 'ended' && isRevealed) els.badgeOverlay.classList.add('revealed');
-
+      els.statusBadge.className = 'status-badge';
       if (phase === 'guessing') {
-        els.badgeOverlay.textContent = 'Guessing Open';
-        els.calloutOverlay.textContent = `Round ${roundNumber} is live`;
-        els.subtitleOverlay.textContent = `Guess the 5-letter word: ${maskedWord}`;
+        els.statusBadge.classList.add('guessing');
+        els.statusBadgeText.textContent = 'Guessing open';
+        els.statusSubtitle.textContent = `Guess the 5-letter word: ${maskedWord}`;
       } else if (phase === 'results') {
-        els.badgeOverlay.textContent = 'Results';
-        els.calloutOverlay.textContent = `Round ${roundNumber} results`;
-        els.subtitleOverlay.textContent = `${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
+        els.statusBadge.classList.add('results');
+        els.statusBadgeText.textContent = 'Results';
+        els.statusSubtitle.textContent = `${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
       } else if (phase === 'ended' && isRevealed) {
-        els.badgeOverlay.textContent = 'Answer Revealed';
-        els.calloutOverlay.textContent = `The word was ${revealedWord}`;
-        els.subtitleOverlay.textContent = 'Waiting for the host to set up the next round.';
+        els.statusBadge.classList.add('revealed');
+        els.statusBadgeText.textContent = 'Answer revealed';
+        els.statusSubtitle.textContent = 'Waiting for the host to set up the next round.';
       } else {
-        els.badgeOverlay.textContent = 'Waiting for the host';
-        els.calloutOverlay.textContent = '';
-        els.subtitleOverlay.textContent = 'The public display will update automatically when the next online round starts.';
+        els.statusBadgeText.textContent = 'Waiting for the host';
+        els.statusSubtitle.textContent = 'The public display will update automatically when the next online round starts.';
       }
 
-      els.calloutOverlay.style.display = els.calloutOverlay.textContent ? 'block' : 'none';
+      renderWordRow(displayWord, isRevealed);
+      renderTimer(currentState);
 
-      renderTiles(displayWord, isRevealed);
-      renderTimer();
-
-      els.roundOverlay.textContent = String(roundNumber);
-      els.ballsOverlay.textContent = String(balls);
-      els.multOverlay.textContent = multiplier;
-      els.playersCountOverlay.textContent = String(players);
-      els.submittedOverlay.textContent = String(submitted);
+      els.roundValue.textContent = String(roundNumber);
+      els.ballsValue.textContent = String(balls);
+      els.multValue.textContent = multiplier;
+      els.playersValue.textContent = String(players);
+      els.submittedValue.textContent = String(submitted);
       renderPlayers(displayPlayers, phase);
     }
 
@@ -568,17 +785,18 @@
     }
 
     fetchPublicState().catch((error) => {
-      els.liveLayer.classList.remove('is-idle');
-      els.badgeOverlay.textContent = 'Display unavailable';
-      els.subtitleOverlay.textContent = error.message || 'Could not load public state.';
+      els.statusBadgeText.textContent = 'Display unavailable';
+      els.statusSubtitle.textContent = error.message || 'Could not load public state.';
     });
 
     window.setInterval(() => {
-      if (!currentState || isPureIdle(currentState)) return;
-      renderTimer();
+      if (!currentState) return;
+      renderTimer(currentState);
     }, 1000);
 
     window.setInterval(() => fetchPublicState().catch(() => {}), 5000);
+
+    renderWordRow('.....', false);
   </script>
 </body>
 </html>
