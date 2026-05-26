@@ -9,19 +9,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --navy-deep: #020610;
-      --gold: #e6b422;
-      --gold-bright: #ffd700;
+      --gold: #ffd700;
+      --gold-dim: #c8961a;
       --neon-blue: #3db8ff;
       --neon-cyan: #00e5ff;
       --text: #ffffff;
-      --muted: #9cb8dc;
+      --muted: #a8c4e8;
       --stat-round: #ffd700;
       --stat-balls: #4db8ff;
       --stat-mult: #00ff66;
       --stat-players: #cc66ff;
       --stat-submitted: #00e5ff;
-      --panel-blue: rgba(61, 184, 255, 0.72);
+      --panel-border: rgba(61, 184, 255, 0.65);
+      --glass: rgba(0, 14, 36, 0.55);
     }
 
     * { box-sizing: border-box; }
@@ -36,19 +36,18 @@
     body {
       color: var(--text);
       font-family: Montserrat, "Segoe UI", Arial, sans-serif;
-      background: var(--navy-deep);
+      background: #020610;
     }
 
-    /* --- Broadcast stage --- */
     .stage {
       position: fixed;
       inset: 0;
       overflow: hidden;
       background:
-        radial-gradient(ellipse 95% 58% at 50% -10%, rgba(80, 195, 255, 0.72) 0%, rgba(40, 120, 200, 0.18) 38%, transparent 62%),
-        radial-gradient(rgba(61, 184, 255, 0.055) 1px, transparent 1px),
-        linear-gradient(180deg, #020810 0%, #0c2a4a 38%, #040c16 100%);
-      background-size: 100% 100%, 24px 24px, 100% 100%;
+        radial-gradient(ellipse 88% 52% at 50% -6%, rgba(70, 185, 255, 0.78) 0%, rgba(35, 110, 190, 0.22) 42%, transparent 68%),
+        radial-gradient(rgba(61, 184, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(180deg, #020810 0%, #0a2540 36%, #030a14 100%);
+      background-size: 100% 100%, 26px 26px, 100% 100%;
     }
 
     .stage::after {
@@ -57,55 +56,30 @@
       inset: 0;
       pointer-events: none;
       box-shadow:
-        inset 0 0 0 4px rgba(255, 215, 0, 0.52),
-        inset 0 0 0 9px rgba(61, 184, 255, 0.14),
-        inset 0 0 120px rgba(61, 184, 255, 0.1);
+        inset 0 0 0 3px rgba(255, 215, 0, 0.48),
+        inset 0 0 0 7px rgba(61, 184, 255, 0.12),
+        inset 0 0 90px rgba(61, 184, 255, 0.08);
     }
 
     .stage-beam {
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 32%;
+      width: 26%;
       pointer-events: none;
       z-index: 1;
     }
 
     .stage-beam-left {
       left: 0;
-      background:
-        linear-gradient(115deg, rgba(255, 215, 0, 0.42) 0%, rgba(255, 215, 0, 0.08) 28%, transparent 58%),
-        linear-gradient(120deg, rgba(61, 184, 255, 0.32) 0%, transparent 55%);
-      clip-path: polygon(0 0, 100% 0, 52% 100%, 0 100%);
+      background: linear-gradient(112deg, rgba(255, 215, 0, 0.28) 0%, rgba(255, 215, 0, 0.04) 32%, transparent 62%);
+      clip-path: polygon(0 0, 100% 0, 48% 100%, 0 100%);
     }
 
     .stage-beam-right {
       right: 0;
-      background:
-        linear-gradient(245deg, rgba(255, 215, 0, 0.42) 0%, rgba(255, 215, 0, 0.08) 28%, transparent 58%),
-        linear-gradient(240deg, rgba(61, 184, 255, 0.32) 0%, transparent 55%);
-      clip-path: polygon(48% 0, 100% 0, 100% 100%, 0 100%);
-    }
-
-    .corner-accent {
-      position: absolute;
-      pointer-events: none;
-      z-index: 3;
-      opacity: 0.95;
-    }
-
-    .corner-accent-left {
-      left: 0;
-      top: 0;
-      width: 140px;
-      height: 100%;
-    }
-
-    .corner-accent-right {
-      right: 0;
-      top: 0;
-      width: 140px;
-      height: 100%;
+      background: linear-gradient(248deg, rgba(255, 215, 0, 0.28) 0%, rgba(255, 215, 0, 0.04) 32%, transparent 62%);
+      clip-path: polygon(52% 0, 100% 0, 100% 100%, 0 100%);
     }
 
     .screen {
@@ -113,103 +87,113 @@
       z-index: 2;
       width: 100%;
       height: 100%;
+      padding: 16px 44px 12px;
       display: flex;
       flex-direction: column;
-      padding: 18px 40px 14px;
     }
 
     .board {
       flex: 1;
-      display: flex;
-      flex-direction: column;
       min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto auto minmax(0, 1fr);
+      gap: 0;
     }
 
     .board.phase-idle .round-callout { display: none; }
 
-    h1, h2, p { margin: 0; }
+    h1, p { margin: 0; }
 
-    /* --- Header: centered brand, floating timer --- */
+    /* --- Header --- */
     .show-header {
       position: relative;
-      flex-shrink: 0;
-      margin-bottom: 10px;
-      min-height: 148px;
+      text-align: center;
+      padding: 0 190px 6px;
     }
 
-    .brand-stack {
-      text-align: center;
-      padding: 0 200px;
+    .logo-spotlight {
+      position: absolute;
+      left: 50%;
+      top: -20px;
+      transform: translateX(-50%);
+      width: min(680px, 72vw);
+      height: 180px;
+      background: radial-gradient(ellipse at center, rgba(80, 200, 255, 0.45) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .logo-wrap {
+      position: relative;
+      z-index: 1;
       display: flex;
       justify-content: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       filter:
-        drop-shadow(0 0 28px rgba(61, 184, 255, 0.75))
-        drop-shadow(0 0 56px rgba(61, 184, 255, 0.35))
-        drop-shadow(0 6px 12px rgba(0, 0, 0, 0.55));
+        drop-shadow(0 0 22px rgba(61, 184, 255, 0.85))
+        drop-shadow(0 0 44px rgba(61, 184, 255, 0.4))
+        drop-shadow(0 5px 10px rgba(0, 0, 0, 0.45));
     }
 
-    .logo-img {
-      width: min(500px, 56vw);
+    .logo-svg {
+      width: min(480px, 54vw);
       height: auto;
       display: block;
     }
 
     .status-badge {
+      position: relative;
+      z-index: 1;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       border-radius: 999px;
-      padding: 7px 18px;
+      padding: 6px 16px;
       font-weight: 800;
-      letter-spacing: 0.11em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      font-size: 0.78rem;
-      border: 2px solid var(--gold-bright);
-      background: rgba(0, 0, 0, 0.55);
-      color: var(--gold-bright);
-      box-shadow: 0 0 16px rgba(255, 215, 0, 0.35);
-      margin-bottom: 7px;
+      font-size: 0.74rem;
+      border: 2px solid var(--gold);
+      background: rgba(0, 0, 0, 0.6);
+      color: var(--gold);
+      box-shadow: 0 0 14px rgba(255, 215, 0, 0.32);
+      margin-bottom: 6px;
     }
 
     .status-badge.guessing {
       border-color: var(--stat-mult);
       color: var(--stat-mult);
-      box-shadow: 0 0 16px rgba(0, 255, 102, 0.4);
+      box-shadow: 0 0 14px rgba(0, 255, 102, 0.35);
     }
 
     .status-badge.results {
-      border-color: var(--gold-bright);
-      color: var(--gold-bright);
+      border-color: var(--gold);
+      color: var(--gold);
     }
 
     .status-badge.revealed {
       border-color: var(--neon-cyan);
       color: var(--neon-cyan);
-      box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
     }
 
     .badge-icon {
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
       flex-shrink: 0;
     }
 
     .round-callout {
-      font-size: clamp(1.15rem, 2.3vw, 1.65rem);
+      font-size: clamp(1.1rem, 2.2vw, 1.55rem);
       font-weight: 800;
-      margin-bottom: 5px;
-      text-shadow: 0 0 14px rgba(61, 184, 255, 0.35);
+      margin-bottom: 4px;
     }
 
     .subtitle {
-      font-size: clamp(0.72rem, 1.15vw, 0.84rem);
+      font-size: clamp(0.68rem, 1.05vw, 0.8rem);
       color: var(--muted);
       line-height: 1.45;
-      max-width: 520px;
+      max-width: 500px;
       margin: 0 auto;
       font-weight: 600;
     }
@@ -218,143 +202,137 @@
       position: absolute;
       top: 0;
       right: 0;
-      min-width: 168px;
-      padding: 12px 16px 10px;
+      width: 156px;
+      padding: 10px 12px 8px;
       text-align: center;
       border-radius: 10px;
-      background: rgba(0, 6, 20, 0.82);
-      border: 2px solid var(--panel-blue);
-      box-shadow: 0 0 22px rgba(61, 184, 255, 0.32);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 2px solid var(--panel-border);
+      box-shadow: 0 0 18px rgba(61, 184, 255, 0.28);
     }
 
     .timer-label {
-      font-size: 0.6rem;
-      letter-spacing: 0.11em;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.82);
-      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.88);
+      margin-bottom: 6px;
       font-weight: 700;
+      line-height: 1.3;
     }
 
     .timer-value {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      min-height: 56px;
+      gap: 5px;
+      min-height: 50px;
     }
 
     .digit-box {
       display: grid;
       place-items: center;
-      min-width: clamp(44px, 5vw, 58px);
-      height: clamp(44px, 5vw, 58px);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      font-size: clamp(2rem, 4.5vw, 3rem);
-      line-height: 1;
+      width: 46px;
+      height: 46px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 2.2rem;
       font-weight: 900;
       color: #fff;
-      text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+      text-shadow: 0 0 16px rgba(255, 255, 255, 0.75);
     }
 
     .digit-sep {
-      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-size: 2rem;
       font-weight: 900;
       color: #fff;
       line-height: 1;
-      padding: 0 2px;
     }
 
     .timer-subtext {
-      margin-top: 6px;
+      margin-top: 5px;
       color: var(--neon-cyan);
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       text-transform: uppercase;
-      letter-spacing: 0.13em;
+      letter-spacing: 0.14em;
       font-weight: 700;
     }
 
-    /* --- Square letter tiles --- */
+    /* --- Letter tiles --- */
     .word-wrap {
       display: flex;
       justify-content: center;
-      gap: clamp(10px, 1.6vw, 18px);
-      margin: 2px 0 16px;
-      flex-shrink: 0;
+      gap: clamp(10px, 1.4vw, 16px);
+      padding: 6px 0 14px;
     }
 
     .tile {
-      width: clamp(86px, 8.5vw, 112px);
-      aspect-ratio: 1 / 1;
+      width: clamp(84px, 8vw, 108px);
+      aspect-ratio: 1;
       display: grid;
       place-items: center;
       border-radius: 10px;
-      background: linear-gradient(180deg, rgba(6, 22, 46, 0.98) 0%, rgba(2, 10, 24, 0.99) 100%);
-      border: 2px solid rgba(61, 184, 255, 0.9);
-      box-shadow: 0 0 18px rgba(61, 184, 255, 0.38);
-      font-size: clamp(2.1rem, 4.8vw, 3.2rem);
+      background: rgba(4, 16, 34, 0.85);
+      backdrop-filter: blur(6px);
+      border: 2px solid rgba(61, 184, 255, 0.82);
+      box-shadow: 0 0 14px rgba(61, 184, 255, 0.32);
+      font-size: clamp(2rem, 4.5vw, 3rem);
       font-weight: 900;
       text-transform: uppercase;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.65);
-    }
-
-    .tile.hidden {
-      color: rgba(61, 184, 255, 0.85);
-      font-size: clamp(1rem, 2vw, 1.35rem);
     }
 
     .tile.hidden::before {
       content: "";
-      width: 10px;
-      height: 10px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      background: rgba(61, 184, 255, 0.85);
-      box-shadow: 0 0 8px rgba(61, 184, 255, 0.6);
+      background: rgba(61, 184, 255, 0.9);
+      box-shadow: 0 0 6px rgba(61, 184, 255, 0.55);
     }
 
     .tile.revealed {
-      background: linear-gradient(180deg, rgba(0, 170, 85, 0.55) 0%, rgba(0, 70, 40, 0.9) 100%);
-      border-color: rgba(0, 255, 102, 0.9);
-      box-shadow: 0 0 24px rgba(0, 255, 102, 0.5);
+      background: rgba(0, 90, 48, 0.75);
+      border-color: rgba(0, 255, 102, 0.88);
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.45);
     }
 
-    /* --- Stats row --- */
+    /* --- Stats --- */
     .stats {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 8px;
-      margin-bottom: 12px;
-      flex-shrink: 0;
+      gap: 7px;
+      padding-bottom: 10px;
     }
 
     .stat {
-      padding: 10px 6px 11px;
+      padding: 9px 6px 10px;
       text-align: center;
       border-radius: 10px;
-      background: rgba(0, 6, 18, 0.88);
-      border: 2px solid var(--panel-blue);
-      box-shadow: 0 0 10px rgba(61, 184, 255, 0.12);
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      border: 2px solid var(--panel-border);
+      box-shadow: 0 0 8px rgba(61, 184, 255, 0.1);
     }
 
     .stat-icon {
-      width: 26px;
-      height: 26px;
-      margin: 0 auto 5px;
+      width: 24px;
+      height: 24px;
+      margin: 0 auto 4px;
       display: block;
     }
 
     .stat-label {
       text-transform: uppercase;
-      letter-spacing: 0.09em;
-      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      font-size: 0.55rem;
       font-weight: 700;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .stat-value {
-      font-size: clamp(1.55rem, 2.6vw, 2.05rem);
+      font-size: clamp(1.45rem, 2.4vw, 1.95rem);
       font-weight: 900;
       line-height: 1;
     }
@@ -365,35 +343,27 @@
     .stat-players .stat-label, .stat-players .stat-value { color: var(--stat-players); }
     .stat-submitted .stat-label, .stat-submitted .stat-value { color: var(--stat-submitted); }
 
-    .stat-round .stat-value { text-shadow: 0 0 12px rgba(255, 215, 0, 0.55); }
-    .stat-balls .stat-value { text-shadow: 0 0 12px rgba(77, 184, 255, 0.55); }
-    .stat-mult .stat-value { text-shadow: 0 0 12px rgba(0, 255, 102, 0.55); }
-    .stat-players .stat-value { text-shadow: 0 0 12px rgba(204, 102, 255, 0.55); }
-    .stat-submitted .stat-value { text-shadow: 0 0 12px rgba(0, 229, 255, 0.55); }
-
     /* --- Player board --- */
     .player-panel {
-      flex: 1 1 auto;
+      position: relative;
       display: flex;
       flex-direction: column;
       min-height: 0;
-      position: relative;
-      margin-top: 4px;
-      padding: 22px 14px 12px;
+      padding: 20px 14px 10px;
       border-radius: 12px;
-      background: rgba(0, 6, 18, 0.62);
-      border: 2px solid var(--panel-blue);
-      box-shadow: 0 0 24px rgba(61, 184, 255, 0.22), inset 0 0 36px rgba(0, 0, 0, 0.28);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 2px solid var(--panel-border);
+      box-shadow: 0 0 20px rgba(61, 184, 255, 0.18), inset 0 0 30px rgba(0, 0, 0, 0.22);
     }
 
     .panel-tab-wrap {
       position: absolute;
-      top: -14px;
+      top: -12px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
       align-items: flex-end;
-      gap: 0;
     }
 
     .panel-wing {
@@ -403,33 +373,32 @@
     }
 
     .panel-wing-left {
-      border-width: 9px 14px 9px 0;
-      border-color: transparent rgba(61, 184, 255, 0.85) transparent transparent;
+      border-width: 8px 11px 8px 0;
+      border-color: transparent rgba(61, 184, 255, 0.75) transparent transparent;
       margin-right: -1px;
     }
 
     .panel-wing-right {
-      border-width: 9px 0 9px 14px;
-      border-color: transparent transparent transparent rgba(61, 184, 255, 0.85);
+      border-width: 8px 0 8px 11px;
+      border-color: transparent transparent transparent rgba(61, 184, 255, 0.75);
       margin-left: -1px;
     }
 
     .panel-tab {
-      padding: 5px 22px 6px;
-      background: rgba(6, 24, 48, 0.96);
-      border: 2px solid var(--panel-blue);
-      color: #fff;
+      padding: 4px 20px 5px;
+      background: rgba(5, 22, 44, 0.95);
+      border: 2px solid var(--panel-border);
+      color: rgba(255, 255, 255, 0.92);
       font-weight: 800;
-      font-size: 0.68rem;
-      letter-spacing: 0.16em;
+      font-size: 0.64rem;
+      letter-spacing: 0.17em;
       text-transform: uppercase;
-      clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%);
-      box-shadow: 0 0 14px rgba(61, 184, 255, 0.3);
+      clip-path: polygon(5% 0, 95% 0, 100% 100%, 0 100%);
     }
 
     .players-summary {
       color: var(--muted);
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       text-align: center;
       margin-bottom: 8px;
       flex-shrink: 0;
@@ -440,7 +409,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 10px;
-      flex: 1 1 auto;
+      flex: 1;
       min-height: 0;
       overflow: hidden;
       align-content: start;
@@ -449,22 +418,18 @@
     .player-card {
       border-radius: 10px;
       padding: 12px;
-      background: rgba(6, 20, 42, 0.9);
-      border: 1px solid rgba(61, 184, 255, 0.4);
-      box-shadow: 0 0 10px rgba(61, 184, 255, 0.12);
+      background: rgba(6, 20, 42, 0.88);
+      border: 1px solid rgba(61, 184, 255, 0.38);
     }
 
     .player-card.locked {
       background: rgba(50, 38, 8, 0.9);
       border-color: rgba(255, 215, 0, 0.55);
-      box-shadow: 0 0 14px rgba(255, 215, 0, 0.25);
     }
 
-    .player-card.resolved { border-color: rgba(61, 184, 255, 0.55); }
     .player-card.solved {
       background: rgba(8, 50, 28, 0.9);
       border-color: rgba(0, 255, 102, 0.65);
-      box-shadow: 0 0 16px rgba(0, 255, 102, 0.3);
     }
 
     .player-card-top {
@@ -486,7 +451,6 @@
       text-transform: uppercase;
       font-size: 0.6rem;
       font-weight: 800;
-      letter-spacing: 0.05em;
     }
 
     .player-meta {
@@ -513,7 +477,7 @@
       font-weight: 900;
     }
 
-    .feedback-cell.pending { background: rgba(255, 215, 0, 0.35); color: #fff8c0; }
+    .feedback-cell.pending { background: rgba(255, 215, 0, 0.35); }
     .feedback-cell.correct { background: rgba(0, 255, 102, 0.6); }
     .feedback-cell.present { background: rgba(255, 180, 0, 0.6); }
     .feedback-cell.absent { background: rgba(220, 60, 60, 0.55); }
@@ -525,44 +489,42 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      color: rgba(140, 165, 195, 0.85);
-      font-size: 0.92rem;
+      gap: 10px;
+      color: rgba(130, 155, 185, 0.8);
+      font-size: 0.9rem;
       font-weight: 600;
     }
 
     .empty-players-icon {
-      width: 56px;
-      height: 56px;
-      opacity: 0.5;
+      width: 52px;
+      height: 52px;
+      opacity: 0.45;
     }
 
     .footer { display: none; }
 
-    /* --- Auto-density (24+ players) --- */
+    /* --- Dense layout --- */
     .screen.dense { padding: 8px 12px; }
 
-    .board.dense .logo-img { width: min(190px, 28vw); }
-    .board.dense .show-header { margin-bottom: 6px; min-height: 72px; }
-    .board.dense .brand-stack { text-align: left; padding: 0 100px 0 0; }
-    .board.dense .status-badge { padding: 4px 10px; font-size: 0.6rem; margin-bottom: 2px; }
-    .board.dense .round-callout { font-size: 0.95rem; display: inline; margin-bottom: 0; }
+    .board.dense .logo-svg { width: min(180px, 26vw); }
+    .board.dense .show-header { padding: 0 90px 0 0; }
+    .board.dense .logo-spotlight { display: none; }
+    .board.dense .status-badge { padding: 4px 10px; font-size: 0.58rem; }
     .board.dense .subtitle { display: none; }
-    .board.dense .timer-card { min-width: 78px; padding: 6px 8px; }
-    .board.dense .timer-label { font-size: 0.52rem; margin-bottom: 4px; }
+    .board.dense .round-callout { font-size: 0.9rem; display: inline; }
+    .board.dense .timer-card { width: 76px; padding: 5px 6px; }
+    .board.dense .timer-label { font-size: 0.5rem; }
     .board.dense .timer-subtext { display: none; }
-    .board.dense .digit-box { min-width: 28px; height: 28px; font-size: 1.1rem; }
-    .board.dense .digit-sep { font-size: 1rem; }
-    .board.dense .word-wrap { margin: 2px 0 6px; gap: 5px; justify-content: flex-start; }
-    .board.dense .word-wrap .tile { width: 40px; font-size: 1.2rem; border-radius: 6px; }
-    .board.dense .stats { grid-template-columns: repeat(5, auto); gap: 6px; margin-bottom: 6px; }
-    .board.dense .stat { padding: 4px 10px; display: flex; align-items: center; gap: 6px; border-radius: 999px; }
-    .board.dense .stat-icon { width: 18px; height: 18px; margin: 0; }
-    .board.dense .stat-label { margin: 0; font-size: 0.55rem; }
-    .board.dense .stat-value { font-size: 0.88rem; }
-    .board.dense .player-panel { padding: 16px 8px 8px; margin-top: 2px; }
-    .board.dense .panel-tab { font-size: 0.58rem; padding: 3px 12px; }
-    .board.dense .players-summary { font-size: 0.72rem; margin-bottom: 6px; }
+    .board.dense .digit-box { width: 26px; height: 26px; font-size: 1rem; }
+    .board.dense .word-wrap { justify-content: flex-start; padding: 2px 0 6px; gap: 4px; }
+    .board.dense .tile { width: 38px; font-size: 1.1rem; border-radius: 6px; }
+    .board.dense .stats { grid-template-columns: repeat(5, auto); gap: 5px; }
+    .board.dense .stat { padding: 4px 8px; display: flex; align-items: center; gap: 5px; border-radius: 999px; }
+    .board.dense .stat-icon { width: 16px; height: 16px; margin: 0; }
+    .board.dense .stat-label { margin: 0; font-size: 0.52rem; }
+    .board.dense .stat-value { font-size: 0.82rem; }
+    .board.dense .player-panel { padding: 14px 8px 8px; }
+    .board.dense .panel-tab { font-size: 0.55rem; padding: 3px 10px; }
 
     .players-grid.dense { gap: var(--grid-gap, 3px); }
 
@@ -618,34 +580,12 @@
     .board.dense.size-lg { --tile-font-size: 0.68rem; --grid-gap: 3px; --tile-pad: 3px 4px; }
     .board.dense.size-xl { --tile-font-size: 0.58rem; --grid-gap: 2px; --tile-pad: 2px 3px; }
     .board.dense.size-xxl { --tile-font-size: 0.5rem; --grid-gap: 2px; --tile-pad: 2px; }
-
-    @media (max-width: 900px) {
-      .brand-stack { padding: 0 0 80px; }
-      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
   </style>
 </head>
 <body>
   <div class="stage">
     <div class="stage-beam stage-beam-left" aria-hidden="true"></div>
     <div class="stage-beam stage-beam-right" aria-hidden="true"></div>
-
-    <svg class="corner-accent corner-accent-left" viewBox="0 0 140 720" preserveAspectRatio="xMinYMin slice" aria-hidden="true">
-      <path d="M0 0 L90 0 L0 130 Z" fill="none" stroke="rgba(255,215,0,0.55)" stroke-width="3"/>
-      <path d="M0 0 L70 0 L0 100 Z" fill="rgba(255,215,0,0.12)"/>
-      <path d="M0 720 L0 590 L90 720 Z" fill="none" stroke="rgba(255,215,0,0.45)" stroke-width="3"/>
-      <path d="M0 0 L28 0 L0 720 L0 0" fill="none" stroke="rgba(61,184,255,0.5)" stroke-width="2"/>
-      <path d="M8 40 L55 8" stroke="rgba(61,184,255,0.35)" stroke-width="2"/>
-      <path d="M8 680 L55 712" stroke="rgba(61,184,255,0.35)" stroke-width="2"/>
-    </svg>
-    <svg class="corner-accent corner-accent-right" viewBox="0 0 140 720" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
-      <path d="M140 0 L50 0 L140 130 Z" fill="none" stroke="rgba(255,215,0,0.55)" stroke-width="3"/>
-      <path d="M140 0 L70 0 L140 100 Z" fill="rgba(255,215,0,0.12)"/>
-      <path d="M140 720 L140 590 L50 720 Z" fill="none" stroke="rgba(255,215,0,0.45)" stroke-width="3"/>
-      <path d="M140 0 L112 0 L140 720 L140 0" fill="none" stroke="rgba(61,184,255,0.5)" stroke-width="2"/>
-      <path d="M132 40 L85 8" stroke="rgba(61,184,255,0.35)" stroke-width="2"/>
-      <path d="M132 680 L85 712" stroke="rgba(61,184,255,0.35)" stroke-width="2"/>
-    </svg>
 
     <main id="screen" class="screen">
       <section id="board" class="board">
@@ -659,22 +599,43 @@
             <div id="timerSubtext" class="timer-subtext">Seconds</div>
           </div>
 
-          <div class="brand-stack">
-            <div class="logo-wrap">
-              <img class="logo-img" src="/assets/lingo-logo.png" width="500" height="120" alt="LINGO" />
-            </div>
-
-            <div id="statusBadge" class="status-badge">
-              <svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <span id="badgeText">Waiting for the host</span>
-            </div>
-
-            <h1 id="titleLine" class="round-callout"></h1>
-            <p id="subtitleLine" class="subtitle">The public display will update automatically when the next online round starts.</p>
+          <div class="logo-spotlight" aria-hidden="true"></div>
+          <div class="logo-wrap" aria-hidden="true">
+            <svg class="logo-svg" viewBox="0 0 520 92" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LINGO">
+              <defs>
+                <linearGradient id="logoSilver" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="38%" stop-color="#d8e8f8"/>
+                  <stop offset="55%" stop-color="#8aa8c8"/>
+                  <stop offset="100%" stop-color="#eef6ff"/>
+                </linearGradient>
+                <linearGradient id="logoGold" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#fff0a0"/>
+                  <stop offset="45%" stop-color="#ffd700"/>
+                  <stop offset="100%" stop-color="#a07010"/>
+                </linearGradient>
+                <linearGradient id="logoGoldDeep" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#c8961a"/>
+                  <stop offset="100%" stop-color="#604808"/>
+                </linearGradient>
+              </defs>
+              <text x="260" y="72" text-anchor="middle" font-family="Montserrat, Impact, Arial Black, sans-serif" font-size="68" font-weight="900" fill="#503c06">LINGO</text>
+              <text x="260" y="69" text-anchor="middle" font-family="Montserrat, Impact, Arial Black, sans-serif" font-size="68" font-weight="900" fill="url(#logoGoldDeep)" stroke="#806010" stroke-width="1.5">LINGO</text>
+              <text x="260" y="66" text-anchor="middle" font-family="Montserrat, Impact, Arial Black, sans-serif" font-size="68" font-weight="900" fill="url(#logoGold)" stroke="#b8860b" stroke-width="2.5" paint-order="stroke fill">LINGO</text>
+              <text x="260" y="63" text-anchor="middle" font-family="Montserrat, Impact, Arial Black, sans-serif" font-size="68" font-weight="900" fill="url(#logoSilver)" stroke="rgba(255,255,255,0.35)" stroke-width="0.5">LINGO</text>
+            </svg>
           </div>
+
+          <div id="statusBadge" class="status-badge">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span id="badgeText">Waiting for the host</span>
+          </div>
+
+          <h1 id="titleLine" class="round-callout"></h1>
+          <p id="subtitleLine" class="subtitle">The public display will update automatically when the next online round starts.</p>
         </header>
 
         <div id="wordWrap" class="word-wrap" aria-label="Current word display"></div>
@@ -683,7 +644,6 @@
           <div class="stat stat-round">
             <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M8 4h8l1 4h3v2h-1l-1 10H7L6 10H5V8h3l1-4z" fill="#ffd700" stroke="#b8860b" stroke-width="0.5"/>
-              <path d="M9 10h6" stroke="#b8860b" stroke-width="1.5"/>
             </svg>
             <div class="stat-label">Round</div>
             <div id="roundValue" class="stat-value">0</div>
@@ -699,7 +659,6 @@
           <div class="stat stat-mult">
             <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M4 18 L8 10 L12 14 L16 6 L20 12" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M18 8 L20 12 L16 12" stroke="#00ff66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <div class="stat-label">Multiplier</div>
             <div id="multiplierValue" class="stat-value">1x</div>
@@ -709,7 +668,6 @@
               <circle cx="9" cy="8" r="3" fill="#cc66ff"/>
               <circle cx="16" cy="9" r="2.5" fill="#cc66ff"/>
               <path d="M4 18c0-3 2.5-5 5-5s5 2 5 5" fill="#cc66ff"/>
-              <path d="M14 18c0-2 1.5-3.5 3.5-3.5" stroke="#cc66ff" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
             <div class="stat-label">Players</div>
             <div id="playersValue" class="stat-value">0</div>
@@ -734,7 +692,6 @@
         </section>
 
         <div class="footer" aria-hidden="true">
-          <div id="footerText"></div>
           <div id="updatedText"></div>
         </div>
       </section>
@@ -939,7 +896,6 @@
               <circle cx="9" cy="8" r="3" fill="#8899aa"/>
               <circle cx="16" cy="9" r="2.5" fill="#8899aa"/>
               <path d="M4 18c0-3 2.5-5 5-5s5 2 5 5" fill="#8899aa"/>
-              <path d="M14 18c0-2 1.5-3.5 3.5-3.5" stroke="#8899aa" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
             No player cards yet
           </div>`;
