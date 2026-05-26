@@ -12,7 +12,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #020610;
+      background: #010408;
     }
 
     .viewport {
@@ -20,31 +20,155 @@
       inset: 0;
       display: grid;
       place-items: center;
-      background: #020610;
+      background: #010408;
     }
 
     .stage {
+      position: relative;
       width: min(100vw, 100vh * (1024 / 575));
       height: min(100vh, 100vw * (575 / 1024));
+      overflow: hidden;
     }
 
-    .stage-bg {
-      display: block;
-      width: 100%;
-      height: 100%;
+    /* Native CSS recreation of the reference stage — no PNG assets. */
+    .lingo-stage {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 90% 70% at 50% 38%, rgba(14, 42, 88, 0.45) 0%, transparent 62%),
+        radial-gradient(ellipse 120% 85% at 50% 115%, rgba(2, 8, 22, 0.95) 0%, transparent 55%),
+        linear-gradient(180deg, #061428 0%, #030c1c 42%, #020812 100%);
+    }
+
+    .lingo-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 55% 38% at 50% -8%, rgba(88, 168, 255, 0.38) 0%, rgba(40, 110, 200, 0.12) 38%, transparent 68%),
+        radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.07) 0%, transparent 28%);
+      pointer-events: none;
+    }
+
+    .dot-grid {
+      position: absolute;
+      inset: 0;
+      opacity: 0.38;
+      background-image: radial-gradient(circle, rgba(72, 140, 210, 0.55) 1px, transparent 1px);
+      background-size: 14px 14px;
+      mask-image: radial-gradient(ellipse 85% 75% at 50% 35%, #000 15%, transparent 72%);
+      pointer-events: none;
+    }
+
+    .beam {
+      position: absolute;
+      pointer-events: none;
+      filter: blur(0.3px);
+    }
+
+    .beam-gold-left {
+      top: -8%;
+      left: -18%;
+      width: 48%;
+      height: 72%;
+      background: linear-gradient(
+        118deg,
+        transparent 38%,
+        rgba(255, 210, 60, 0.55) 46%,
+        rgba(255, 190, 40, 0.28) 52%,
+        transparent 62%
+      );
+      transform: skewX(-8deg);
+    }
+
+    .beam-gold-right {
+      top: -8%;
+      right: -18%;
+      width: 48%;
+      height: 72%;
+      background: linear-gradient(
+        242deg,
+        transparent 38%,
+        rgba(255, 210, 60, 0.55) 46%,
+        rgba(255, 190, 40, 0.28) 52%,
+        transparent 62%
+      );
+      transform: skewX(8deg);
+    }
+
+    .beam-blue-left {
+      bottom: 8%;
+      left: -12%;
+      width: 42%;
+      height: 55%;
+      background: linear-gradient(
+        125deg,
+        transparent 42%,
+        rgba(45, 160, 255, 0.22) 50%,
+        rgba(20, 100, 220, 0.12) 56%,
+        transparent 66%
+      );
+    }
+
+    .beam-blue-right {
+      bottom: 8%;
+      right: -12%;
+      width: 42%;
+      height: 55%;
+      background: linear-gradient(
+        235deg,
+        transparent 42%,
+        rgba(45, 160, 255, 0.22) 50%,
+        rgba(20, 100, 220, 0.12) 56%,
+        transparent 66%
+      );
+    }
+
+    .edge-frame {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 22%;
+      pointer-events: none;
+    }
+
+    .edge-frame-left {
+      left: 0;
+      background:
+        linear-gradient(138deg, transparent 58%, rgba(255, 200, 50, 0.75) 59.2%, rgba(255, 200, 50, 0.75) 59.8%, transparent 61%),
+        linear-gradient(152deg, transparent 68%, rgba(55, 180, 255, 0.65) 69.2%, rgba(55, 180, 255, 0.65) 69.8%, transparent 71%),
+        linear-gradient(125deg, transparent 78%, rgba(255, 200, 50, 0.45) 79%, transparent 81%);
+    }
+
+    .edge-frame-right {
+      right: 0;
+      background:
+        linear-gradient(222deg, transparent 58%, rgba(255, 200, 50, 0.75) 59.2%, rgba(255, 200, 50, 0.75) 59.8%, transparent 61%),
+        linear-gradient(208deg, transparent 68%, rgba(55, 180, 255, 0.65) 69.2%, rgba(55, 180, 255, 0.65) 69.8%, transparent 71%),
+        linear-gradient(235deg, transparent 78%, rgba(255, 200, 50, 0.45) 79%, transparent 81%);
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
   <div class="viewport">
     <div class="stage">
-      <img
-        class="stage-bg"
-        src="/assets/reference-mockup-bg.png"
-        width="1024"
-        height="575"
-        alt=""
-      />
+      <div class="lingo-stage" aria-hidden="true">
+        <div class="dot-grid"></div>
+        <div class="beam beam-gold-left"></div>
+        <div class="beam beam-gold-right"></div>
+        <div class="beam beam-blue-left"></div>
+        <div class="beam beam-blue-right"></div>
+        <div class="edge-frame edge-frame-left"></div>
+        <div class="edge-frame edge-frame-right"></div>
+        <div class="vignette"></div>
+      </div>
     </div>
   </div>
 </body>

@@ -1,5 +1,5 @@
 {
   "referenceImage": "/assets/reference-mockup.png",
-  "stageBackground": "/assets/reference-mockup-bg.png",
-  "note": "Background-only baseline. UI layers to be added incrementally."
+  "stageBackground": "native-css",
+  "note": "Background-only page built with CSS gradients and layers. No PNG assets used."
 }
