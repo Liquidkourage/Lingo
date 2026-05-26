@@ -37,6 +37,44 @@ function normalizePlayerKey(displayName) {
   return normalizeDisplayName(displayName).replace(/[^a-zA-Z0-9]/g, "_").toLowerCase() || "player";
 }
 
+function getLingoResultPattern(targetWord, guess) {
+  const target = normalizeWordInput(targetWord);
+  const attempt = normalizeWordInput(guess);
+
+  if (!isFiveLetterWord(target) || !isFiveLetterWord(attempt)) {
+    return "";
+  }
+  if (target === attempt) {
+    return "!!!!!";
+  }
+
+  const targetChars = target.split("");
+  const guessChars = attempt.split("");
+  const result = new Array(5).fill("/");
+
+  for (let index = 0; index < 5; index += 1) {
+    if (targetChars[index] === guessChars[index]) {
+      result[index] = "!";
+      targetChars[index] = null;
+      guessChars[index] = null;
+    }
+  }
+
+  for (let index = 0; index < 5; index += 1) {
+    if (!guessChars[index]) {
+      continue;
+    }
+
+    const matchIndex = targetChars.indexOf(guessChars[index]);
+    if (matchIndex !== -1) {
+      result[index] = "?";
+      targetChars[matchIndex] = null;
+    }
+  }
+
+  return result.join("");
+}
+
 function requireAdmin(req, res, next) {
   const provided = String(req.get("x-lingo-admin-key") || "").trim();
   if (!adminKey || provided !== adminKey) {
@@ -139,8 +177,8 @@ async function updateState(patch, client = pool) {
   return result.rows[0];
 }
 
-async function listPlayers(sessionId) {
-  const result = await pool.query(
+async function listPlayers(sessionId, client = pool) {
+  const result = await client.query(
     `select p.*,
             (
               select count(*)
@@ -185,6 +223,62 @@ async function getPublicMetrics(sessionId, roundNumber, client = pool) {
   };
 }
 
+function serializePublicDisplayPlayer(player, state) {
+  const currentRound = Number(state.round_number || 0);
+  const submittedThisRound = Number(player.roundNumber || 0) === currentRound && !!player.currentGuess;
+  const phase = String(state.phase || "idle");
+  const guess = submittedThisRound ? normalizeWordInput(player.currentGuess) : "";
+  const resultPattern = guess ? getLingoResultPattern(state.current_word, guess) : "";
+
+  let status = "waiting";
+  let statusText = "Waiting for guess";
+
+  if (phase === "guessing") {
+    if (submittedThisRound) {
+      status = "locked";
+      statusText = "Locked in";
+    }
+  } else if (phase === "results" || phase === "ended") {
+    if (!submittedThisRound) {
+      statusText = "No guess this round";
+    } else if (resultPattern === "!!!!!") {
+      status = "solved";
+      statusText = "Solved it";
+    } else if (resultPattern) {
+      status = "resolved";
+      statusText = "Round result";
+    }
+  }
+
+  return {
+    id: player.id,
+    displayName: player.displayName,
+    hasSubmitted: submittedThisRound,
+    status,
+    statusText,
+    resultPattern,
+    isWinner: resultPattern === "!!!!!",
+    submissionCount: Number(player.submissionCount || 0),
+    submittedAtIso: player.submittedAtIso,
+  };
+}
+
+async function getPublicDisplayPlayers(state, client = pool) {
+  const players = await listPlayers(state.session_id, client);
+  return players.map((player) => serializePublicDisplayPlayer(player, state));
+}
+
+async function clearSessionGuesses(sessionId, client = pool) {
+  await client.query(
+    `update players
+     set current_guess = '',
+         submitted_at = null,
+         updated_at = now()
+     where session_id = $1`,
+    [sessionId]
+  );
+}
+
 app.get("/health", async (_req, res) => {
   try {
     await pool.query("select 1");
@@ -198,11 +292,13 @@ app.get("/api/public-state", async (_req, res) => {
   try {
     const state = await getState();
     const metrics = await getPublicMetrics(state.session_id, state.round_number);
+    const players = await getPublicDisplayPlayers(state);
     res.json({
       ok: true,
       state: {
         ...serializePublicState(state),
         ...metrics,
+        players,
       },
     });
   } catch (error) {
@@ -371,15 +467,27 @@ async function handleAdminAction(action, body) {
       }
       const nextRound = Number(state.round_number || 0) + 1;
       const multiplier = Number(state.ball_multiplier || 1);
-      return serializeState(await updateState({
-        phase: "guessing",
-        round_number: nextRound,
-        answer_revealed: false,
-        balls_remaining: 6 * multiplier,
-        guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
-        results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
-        guess_window_opened_at: nowIso(),
-      }));
+      const client = await pool.connect();
+      try {
+        await client.query("begin");
+        const nextState = await updateState({
+          phase: "guessing",
+          round_number: nextRound,
+          answer_revealed: false,
+          balls_remaining: 6 * multiplier,
+          guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
+          results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
+          guess_window_opened_at: nowIso(),
+        }, client);
+        await clearSessionGuesses(nextState.session_id, client);
+        await client.query("commit");
+        return serializeState(nextState);
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      } finally {
+        client.release();
+      }
     }
     case "reveal-results":
       return serializeState(await updateState({
@@ -387,11 +495,25 @@ async function handleAdminAction(action, body) {
         results_window_opened_at: nowIso(),
       }));
     case "continue-round":
-      return serializeState(await updateState({
-        phase: "guessing",
-        guess_window_opened_at: nowIso(),
-        guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
-      }));
+      {
+        const client = await pool.connect();
+        try {
+          await client.query("begin");
+          const nextState = await updateState({
+            phase: "guessing",
+            guess_window_opened_at: nowIso(),
+            guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
+          }, client);
+          await clearSessionGuesses(nextState.session_id, client);
+          await client.query("commit");
+          return serializeState(nextState);
+        } catch (error) {
+          await client.query("rollback");
+          throw error;
+        } finally {
+          client.release();
+        }
+      }
     case "toggle-double-balls":
       return serializeState(await updateState({
         ball_multiplier: Number(state.ball_multiplier || 1) === 2 ? 1 : 2,
