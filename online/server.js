@@ -166,6 +166,25 @@ async function listPlayers(sessionId) {
   }));
 }
 
+async function getPublicMetrics(sessionId, roundNumber, client = pool) {
+  const result = await client.query(
+    `select
+       count(*)::int as player_count,
+       count(*) filter (
+         where round_number = $2
+           and current_guess <> ''
+       )::int as submitted_this_round
+     from players
+     where session_id = $1`,
+    [sessionId, roundNumber]
+  );
+
+  return {
+    playerCount: Number(result.rows[0]?.player_count || 0),
+    submittedThisRound: Number(result.rows[0]?.submitted_this_round || 0),
+  };
+}
+
 app.get("/health", async (_req, res) => {
   try {
     await pool.query("select 1");
@@ -178,7 +197,14 @@ app.get("/health", async (_req, res) => {
 app.get("/api/public-state", async (_req, res) => {
   try {
     const state = await getState();
-    res.json({ ok: true, state: serializePublicState(state) });
+    const metrics = await getPublicMetrics(state.session_id, state.round_number);
+    res.json({
+      ok: true,
+      state: {
+        ...serializePublicState(state),
+        ...metrics,
+      },
+    });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
@@ -421,7 +447,12 @@ app.use((req, res, next) => {
     next();
     return;
   }
-  res.sendFile(path.join(staticDir, req.path === "/host" ? "host.html" : "index.html"));
+  const fileName = req.path === "/host"
+    ? "host.html"
+    : req.path === "/display"
+      ? "display.html"
+      : "index.html";
+  res.sendFile(path.join(staticDir, fileName));
 });
 
 ensureSchema()

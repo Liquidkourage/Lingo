@@ -9,6 +9,7 @@ This folder contains the Railway/Postgres pivot for Lingo.
 - `server.js` - Express app serving both pages and API
 - `public/index.html` - player guessing page
 - `public/host.html` - host dashboard
+- `public/display.html` - public display / OBS page
 - `db/schema.sql` - Postgres schema, auto-applied on startup
 - `data/words.txt` - bundled 5-letter legal word list for validation
 - `import-words.js` - manual word import/sync script
@@ -37,6 +38,7 @@ Then open:
 
 - `http://localhost:3000/` - player page
 - `http://localhost:3000/host` - host dashboard
+- `http://localhost:3000/display` - public display / OBS view
 
 ## Railway deploy
 
@@ -71,11 +73,11 @@ Included:
 - backend-owned session state
 - host controls for word / round / balls / answer reveal
 - player guess submission with legal-word validation
+- public display / OBS page
 - host inspection of accepted guesses
 
 Still to migrate:
 
 - scoring parity with the VB app
-- public display / OBS page
 - Twitch integration
 - bingo flows

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lingo Public Display</title>
+  <style>
+    :root {
+      --bg: #03060b;
+      --panel: rgba(13, 110, 253, 0.88);
+      --panel-light: rgba(58, 140, 255, 0.95);
+      --text: #ffffff;
+      --muted: #d9e7ff;
+      --border: rgba(255, 255, 255, 0.16);
+      --shadow: rgba(0, 0, 0, 0.45);
+      --good: #27ae60;
+      --warn: #f39c12;
+      --idle: #5375a8;
+      --tile: rgba(5, 22, 44, 0.76);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(58, 140, 255, 0.18), transparent 35%),
+        linear-gradient(180deg, #04080f 0%, #02050a 100%);
+    }
+
+    .screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+    }
+
+    .board {
+      width: min(96vw, 1540px);
+      border-radius: 34px;
+      padding: 26px;
+      background: linear-gradient(180deg, var(--panel-light), var(--panel));
+      border: 1px solid var(--border);
+      box-shadow: 0 22px 48px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    .topbar,
+    .stats {
+      display: grid;
+      gap: 14px;
+    }
+
+    .topbar {
+      grid-template-columns: 1.4fr 1fr;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .hero,
+    .timer-card,
+    .stat,
+    .footer {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .hero {
+      padding: 24px 26px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 8px 14px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .badge-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    .title {
+      font-size: clamp(2.4rem, 5vw, 4.6rem);
+      line-height: 1;
+      margin-bottom: 10px;
+      text-shadow: 4px 4px 0 #000;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 2vw, 1.45rem);
+      color: var(--muted);
+      line-height: 1.35;
+      min-height: 2.7em;
+    }
+
+    .timer-card {
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .timer-label {
+      font-size: 0.95rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .timer-value {
+      font-size: clamp(3.2rem, 9vw, 7rem);
+      line-height: 1;
+      font-weight: 900;
+      text-shadow: 4px 4px 0 #000;
+    }
+
+    .timer-subtext {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 1rem;
+      min-height: 1.3em;
+    }
+
+    .word-wrap {
+      margin: 8px 0 22px;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .tile {
+      aspect-ratio: 1 / 1;
+      display: grid;
+      place-items: center;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), var(--tile));
+      border: 3px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      text-shadow: 3px 3px 0 #000;
+    }
+
+    .tile.hidden {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .tile.revealed {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(39, 174, 96, 0.55));
+    }
+
+    .stats {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      padding: 18px;
+      text-align: center;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: clamp(1.5rem, 3vw, 2.4rem);
+      font-weight: 900;
+      word-break: break-word;
+    }
+
+    .footer {
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .footer-text {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .footer strong {
+      color: #fff;
+    }
+
+    @media (max-width: 980px) {
+      .topbar,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .word-wrap {
+        gap: 10px;
+      }
+
+      .board {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <section class="board">
+      <div class="topbar">
+        <div class="hero">
+          <div class="badge">
+            <span id="badgeDot" class="badge-dot"></span>
+            <span id="badgeText">Waiting</span>
+          </div>
+          <h1 id="titleLine" class="title">Waiting for the host</h1>
+          <p id="subtitleLine" class="subtitle">The public display will update automatically when the next online round starts.</p>
+        </div>
+
+        <div class="timer-card">
+          <div class="timer-label">Countdown</div>
+          <div id="timerValue" class="timer-value">--</div>
+          <div id="timerSubtext" class="timer-subtext">No active timer</div>
+        </div>
+      </div>
+
+      <div id="wordWrap" class="word-wrap" aria-label="Current word display"></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Round</div>
+          <div id="roundValue" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Balls</div>
+          <div id="ballsValue" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Multiplier</div>
+          <div id="multiplierValue" class="stat-value">1x</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Players</div>
+          <div id="playersValue" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Submitted</div>
+          <div id="submittedValue" class="stat-value">0</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div id="footerText" class="footer-text">Players submit guesses on the main page while this display stays read-only.</div>
+        <div id="updatedText" class="footer-text"><strong>Updated:</strong> --</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const els = {
+      badgeDot: document.getElementById('badgeDot'),
+      badgeText: document.getElementById('badgeText'),
+      titleLine: document.getElementById('titleLine'),
+      subtitleLine: document.getElementById('subtitleLine'),
+      timerValue: document.getElementById('timerValue'),
+      timerSubtext: document.getElementById('timerSubtext'),
+      wordWrap: document.getElementById('wordWrap'),
+      roundValue: document.getElementById('roundValue'),
+      ballsValue: document.getElementById('ballsValue'),
+      multiplierValue: document.getElementById('multiplierValue'),
+      playersValue: document.getElementById('playersValue'),
+      submittedValue: document.getElementById('submittedValue'),
+      footerText: document.getElementById('footerText'),
+      updatedText: document.getElementById('updatedText'),
+    };
+
+    let currentState = null;
+
+    function formatSeconds(totalSeconds) {
+      if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '--';
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function timeRemainingSeconds(state) {
+      if (!state) return null;
+
+      if (state.phase === 'guessing' && state.guessWindowOpenedAtIso && Number.isFinite(state.guessWindowSeconds)) {
+        const endsAt = Date.parse(state.guessWindowOpenedAtIso) + (state.guessWindowSeconds * 1000);
+        return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      }
+
+      if (state.phase === 'results' && state.resultsWindowOpenedAtIso && Number.isFinite(state.resultsWindowSeconds)) {
+        const endsAt = Date.parse(state.resultsWindowOpenedAtIso) + (state.resultsWindowSeconds * 1000);
+        return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      }
+
+      return null;
+    }
+
+    function renderTiles(text, revealed) {
+      const normalized = String(text || '').toUpperCase().padEnd(5, '.').slice(0, 5);
+      els.wordWrap.innerHTML = normalized
+        .split('')
+        .map((char) => {
+          const hidden = char === '.';
+          const tileClass = `tile${hidden ? ' hidden' : ''}${revealed && !hidden ? ' revealed' : ''}`;
+          return `<div class="${tileClass}">${hidden ? '&bull;' : char}</div>`;
+        })
+        .join('');
+    }
+
+    function renderTimer() {
+      const remaining = timeRemainingSeconds(currentState);
+      if (remaining === null) {
+        els.timerValue.textContent = '--';
+        els.timerSubtext.textContent = 'No active timer';
+        return;
+      }
+
+      els.timerValue.textContent = formatSeconds(remaining);
+      els.timerSubtext.textContent = currentState.phase === 'guessing'
+        ? 'Guess window open'
+        : 'Results screen active';
+    }
+
+    function renderState(state) {
+      currentState = state || {};
+
+      const phase = currentState.phase || 'idle';
+      const roundNumber = Number(currentState.roundNumber || 0);
+      const balls = Number(currentState.ballsRemaining || 0);
+      const multiplier = `${currentState.ballMultiplier || 1}x`;
+      const players = Number(currentState.playerCount || 0);
+      const submitted = Number(currentState.submittedThisRound || 0);
+      const revealedWord = currentState.revealedWord || '';
+      const maskedWord = currentState.publicFirstLetter || '.....';
+      const displayWord = revealedWord || maskedWord;
+      const isRevealed = Boolean(revealedWord);
+
+      if (phase === 'guessing') {
+        els.badgeText.textContent = 'Guessing Open';
+        els.badgeDot.style.background = 'var(--good)';
+        els.titleLine.textContent = `Round ${roundNumber} is live`;
+        els.subtitleLine.textContent = `Guess the 5-letter word: ${maskedWord}`;
+        els.footerText.innerHTML = '<strong>Public display only.</strong> Players should submit guesses on the main page.';
+      } else if (phase === 'results') {
+        els.badgeText.textContent = 'Results';
+        els.badgeDot.style.background = 'var(--warn)';
+        els.titleLine.textContent = `Round ${roundNumber} results`;
+        els.subtitleLine.textContent = `Guessing is closed. ${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
+        els.footerText.innerHTML = '<strong>Results phase is active.</strong> Hold on for the next guess window.';
+      } else if (phase === 'ended' && isRevealed) {
+        els.badgeText.textContent = 'Answer Revealed';
+        els.badgeDot.style.background = 'var(--good)';
+        els.titleLine.textContent = `The word was ${revealedWord}`;
+        els.subtitleLine.textContent = 'Waiting for the host to set up the next round.';
+        els.footerText.innerHTML = '<strong>Round complete.</strong> The next word will appear here automatically.';
+      } else {
+        els.badgeText.textContent = 'Waiting';
+        els.badgeDot.style.background = 'var(--idle)';
+        els.titleLine.textContent = 'Waiting for the host';
+        els.subtitleLine.textContent = 'The public display will update automatically when the next online round starts.';
+        els.footerText.innerHTML = '<strong>Public display only.</strong> Players should submit guesses on the main page.';
+      }
+
+      renderTiles(displayWord, isRevealed);
+      renderTimer();
+
+      els.roundValue.textContent = String(roundNumber);
+      els.ballsValue.textContent = String(balls);
+      els.multiplierValue.textContent = multiplier;
+      els.playersValue.textContent = String(players);
+      els.submittedValue.textContent = String(submitted);
+      els.updatedText.innerHTML = `<strong>Updated:</strong> ${currentState.updatedAtIso || '--'}`;
+    }
+
+    async function fetchPublicState() {
+      const response = await fetch('/api/public-state');
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'Could not load public display state.');
+      }
+      renderState(payload.state);
+    }
+
+    fetchPublicState().catch((error) => {
+      els.titleLine.textContent = 'Display unavailable';
+      els.subtitleLine.textContent = error.message || 'Could not load public state.';
+    });
+
+    window.setInterval(() => {
+      renderTimer();
+    }, 1000);
+
+    window.setInterval(() => {
+      fetchPublicState().catch(() => {});
+    }, 5000);
+  </script>
+</body>
+</html>
