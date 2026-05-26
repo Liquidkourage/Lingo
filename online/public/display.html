@@ -6,572 +6,523 @@
   <title>Lingo Public Display</title>
   <style>
     :root {
-      --navy: #050a18;
       --navy-deep: #020610;
-      --gold: #ffd700;
-      --gold-dark: #e6a800;
-      --neon-blue: #4db8ff;
-      --neon-cyan: #00ffff;
+      --navy: #061428;
+      --gold: #e6b422;
+      --gold-bright: #ffd700;
+      --neon-blue: #3db8ff;
+      --neon-cyan: #00e5ff;
       --text: #ffffff;
-      --muted: #c8dcff;
-      --good: #00ff88;
-      --warn: #ffcc00;
+      --muted: #a8c4e8;
       --stat-round: #ffd700;
       --stat-balls: #4db8ff;
       --stat-mult: #00ff66;
       --stat-players: #cc66ff;
-      --stat-submitted: #00ffff;
-    }
-
-    @keyframes logo-pulse {
-      0%, 100% { filter: drop-shadow(0 0 28px rgba(77, 184, 255, 0.95)) drop-shadow(0 0 60px rgba(77, 184, 255, 0.55)); }
-      50% { filter: drop-shadow(0 0 40px rgba(77, 184, 255, 1)) drop-shadow(0 0 80px rgba(255, 215, 0, 0.35)); }
-    }
-
-    @keyframes tile-glow {
-      0%, 100% { box-shadow: 0 0 24px rgba(77, 184, 255, 0.7), 0 0 48px rgba(77, 184, 255, 0.35), inset 0 0 40px rgba(77, 184, 255, 0.25); }
-      50% { box-shadow: 0 0 36px rgba(77, 184, 255, 0.95), 0 0 72px rgba(77, 184, 255, 0.5), inset 0 0 50px rgba(77, 184, 255, 0.35); }
-    }
-
-    @keyframes badge-pulse {
-      0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 12px rgba(255, 215, 0, 0.15); }
-      50% { box-shadow: 0 0 32px rgba(255, 215, 0, 0.85), inset 0 0 18px rgba(255, 215, 0, 0.25); }
+      --stat-submitted: #00e5ff;
+      --panel-blue: rgba(61, 184, 255, 0.55);
     }
 
     * { box-sizing: border-box; }
 
-    body {
+    html, body {
       margin: 0;
-      min-height: 100vh;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
       color: var(--text);
       font-family: "Segoe UI", Arial, Helvetica, sans-serif;
-      background-color: var(--navy-deep);
-      background-image:
-        radial-gradient(circle at 50% 0%, rgba(77, 184, 255, 0.45) 0%, transparent 45%),
-        radial-gradient(circle at 15% 50%, rgba(255, 215, 0, 0.12) 0%, transparent 35%),
-        radial-gradient(circle at 85% 50%, rgba(255, 215, 0, 0.12) 0%, transparent 35%),
-        radial-gradient(rgba(77, 184, 255, 0.08) 1px, transparent 1px),
-        linear-gradient(180deg, #030810 0%, #0a1830 45%, #050a18 100%);
-      background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px, 100% 100%;
+      background: var(--navy-deep);
     }
 
-    body::before,
-    body::after {
-      content: "";
+    /* --- Full-screen broadcast stage --- */
+    .stage {
       position: fixed;
       inset: 0;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    body::before {
+      overflow: hidden;
       background:
-        linear-gradient(115deg, transparent 38%, rgba(77, 184, 255, 0.18) 46%, transparent 54%),
-        linear-gradient(245deg, transparent 38%, rgba(255, 215, 0, 0.14) 46%, transparent 54%),
-        linear-gradient(135deg, rgba(255, 215, 0, 0.22) 0%, transparent 22%),
-        linear-gradient(225deg, rgba(255, 215, 0, 0.22) 0%, transparent 22%),
-        linear-gradient(45deg, rgba(77, 184, 255, 0.18) 0%, transparent 24%),
-        linear-gradient(315deg, rgba(77, 184, 255, 0.18) 0%, transparent 24%);
+        radial-gradient(ellipse 70% 45% at 50% -5%, rgba(61, 184, 255, 0.55) 0%, transparent 55%),
+        radial-gradient(rgba(61, 184, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(180deg, #030810 0%, #081830 42%, #040c18 100%);
+      background-size: 100% 100%, 22px 22px, 100% 100%;
     }
 
-    body::after {
+    .stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
       box-shadow:
-        inset 0 0 0 4px rgba(255, 215, 0, 0.55),
-        inset 0 0 0 8px rgba(77, 184, 255, 0.2),
-        inset 0 0 120px rgba(77, 184, 255, 0.12);
+        inset 0 0 0 3px rgba(230, 180, 34, 0.45),
+        inset 0 0 0 6px rgba(61, 184, 255, 0.15),
+        inset 0 0 100px rgba(61, 184, 255, 0.08);
+    }
+
+    .stage-beam {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 28%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .stage-beam-left {
+      left: 0;
+      background:
+        linear-gradient(118deg, rgba(230, 180, 34, 0.35) 0%, transparent 55%),
+        linear-gradient(125deg, rgba(61, 184, 255, 0.25) 0%, transparent 60%);
+      clip-path: polygon(0 0, 100% 0, 55% 100%, 0 100%);
+    }
+
+    .stage-beam-right {
+      right: 0;
+      background:
+        linear-gradient(242deg, rgba(230, 180, 34, 0.35) 0%, transparent 55%),
+        linear-gradient(235deg, rgba(61, 184, 255, 0.25) 0%, transparent 60%);
+      clip-path: polygon(45% 0, 100% 0, 100% 100%, 0 100%);
     }
 
     .screen {
       position: relative;
-      z-index: 1;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 20px;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 36px 16px;
     }
 
     .board {
-      width: min(98vw, 1680px);
-      min-height: min(96vh, 980px);
+      flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 28px 32px 24px;
-      border-radius: 20px;
-      background:
-        linear-gradient(180deg, rgba(10, 30, 60, 0.92) 0%, rgba(5, 15, 35, 0.96) 100%);
-      border: 2px solid rgba(77, 184, 255, 0.75);
-      box-shadow:
-        0 0 60px rgba(77, 184, 255, 0.45),
-        0 0 120px rgba(77, 184, 255, 0.15),
-        0 24px 60px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15),
-        inset 0 0 80px rgba(77, 184, 255, 0.08);
+      min-height: 0;
+      background: transparent;
     }
 
-    .board.phase-idle .round-callout {
-      display: none;
-    }
+    .board.phase-idle .round-callout { display: none; }
 
     h1, h2, p { margin: 0; }
 
+    /* --- Header --- */
     .show-header {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 24px;
+      gap: 20px;
       align-items: start;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      flex-shrink: 0;
     }
 
     .brand-stack {
       text-align: center;
     }
 
-    .logo {
-      font-size: clamp(4rem, 9vw, 6.5rem);
-      font-weight: 900;
-      letter-spacing: 0.16em;
-      line-height: 1;
-      margin-bottom: 16px;
-      color: #ffffff;
-      text-shadow:
-        0 0 30px rgba(255, 255, 255, 0.95),
-        0 0 60px rgba(77, 184, 255, 0.8),
-        0 4px 0 #1e5a9e,
-        0 8px 0 #0c3a6e,
-        0 0 20px rgba(255, 215, 0, 0.4);
-      -webkit-text-stroke: 2px rgba(30, 90, 160, 0.9);
-      animation: logo-pulse 3s ease-in-out infinite;
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 24px rgba(61, 184, 255, 0.7)) drop-shadow(0 0 48px rgba(61, 184, 255, 0.35));
+    }
+
+    .logo-svg {
+      width: min(420px, 52vw);
+      height: auto;
     }
 
     .status-badge {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       border-radius: 999px;
-      padding: 10px 24px;
+      padding: 8px 20px;
       font-weight: 800;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      font-size: 0.9rem;
-      border: 2px solid var(--gold);
-      background: linear-gradient(180deg, rgba(255, 215, 0, 0.3), rgba(180, 130, 0, 0.2));
-      color: var(--gold);
-      animation: badge-pulse 2.5s ease-in-out infinite;
-      margin-bottom: 10px;
+      font-size: 0.82rem;
+      border: 2px solid var(--gold-bright);
+      background: rgba(0, 0, 0, 0.45);
+      color: var(--gold-bright);
+      box-shadow: 0 0 18px rgba(255, 215, 0, 0.4);
+      margin-bottom: 8px;
     }
 
     .status-badge.guessing {
-      border-color: var(--good);
-      background: linear-gradient(180deg, rgba(0, 255, 136, 0.3), rgba(0, 140, 70, 0.2));
-      color: var(--good);
-      box-shadow: 0 0 28px rgba(0, 255, 136, 0.65);
-      animation: none;
+      border-color: var(--stat-mult);
+      color: var(--stat-mult);
+      box-shadow: 0 0 18px rgba(0, 255, 102, 0.45);
     }
 
     .status-badge.results {
-      border-color: var(--warn);
-      background: linear-gradient(180deg, rgba(255, 204, 0, 0.35), rgba(180, 120, 0, 0.2));
-      color: var(--warn);
-      box-shadow: 0 0 28px rgba(255, 204, 0, 0.65);
-      animation: none;
+      border-color: var(--gold-bright);
+      color: var(--gold-bright);
     }
 
     .status-badge.revealed {
       border-color: var(--neon-cyan);
-      background: linear-gradient(180deg, rgba(0, 255, 255, 0.3), rgba(0, 140, 160, 0.2));
       color: var(--neon-cyan);
-      box-shadow: 0 0 28px rgba(0, 255, 255, 0.65);
-      animation: none;
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.45);
     }
 
-    .badge-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: currentColor;
-      box-shadow: 0 0 10px currentColor;
+    .badge-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
     }
 
     .round-callout {
-      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-size: clamp(1.2rem, 2.5vw, 1.8rem);
       font-weight: 800;
-      line-height: 1.15;
-      margin-bottom: 8px;
-      text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+      margin-bottom: 6px;
+      text-shadow: 0 0 16px rgba(61, 184, 255, 0.4);
     }
 
     .subtitle {
-      font-size: clamp(0.85rem, 1.5vw, 1rem);
-      color: #e0eeff;
+      font-size: clamp(0.78rem, 1.3vw, 0.92rem);
+      color: var(--muted);
       line-height: 1.4;
-      max-width: 640px;
+      max-width: 560px;
       margin: 0 auto;
-      text-shadow: 0 0 12px rgba(77, 184, 255, 0.3);
     }
 
+    /* --- Timer --- */
     .timer-card {
-      min-width: 200px;
-      padding: 16px 20px;
+      min-width: 180px;
+      padding: 14px 18px;
       text-align: center;
-      border-radius: 16px;
-      background: rgba(0, 10, 30, 0.7);
-      border: 2px solid rgba(77, 184, 255, 0.75);
-      box-shadow:
-        0 0 30px rgba(77, 184, 255, 0.45),
-        inset 0 0 30px rgba(77, 184, 255, 0.12);
+      border-radius: 12px;
+      background: rgba(0, 8, 24, 0.75);
+      border: 2px solid var(--panel-blue);
+      box-shadow: 0 0 24px rgba(61, 184, 255, 0.35);
     }
 
     .timer-label {
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-weight: 700;
     }
 
     .timer-value {
-      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-size: clamp(3rem, 6.5vw, 4.8rem);
       line-height: 1;
       font-weight: 900;
-      letter-spacing: 0.06em;
-      color: #ffffff;
-      text-shadow:
-        0 0 20px rgba(255, 255, 255, 0.95),
-        0 0 40px rgba(77, 184, 255, 0.7);
+      color: #fff;
+      text-shadow: 0 0 24px rgba(255, 255, 255, 0.85), 0 0 48px rgba(61, 184, 255, 0.5);
     }
 
     .timer-subtext {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 0.78rem;
+      margin-top: 4px;
+      color: var(--neon-cyan);
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.12em;
       font-weight: 700;
     }
 
+    /* --- Letter tiles (square slots) --- */
     .word-wrap {
       display: flex;
       justify-content: center;
-      gap: clamp(10px, 2vw, 18px);
-      margin: 8px 0 24px;
+      gap: clamp(12px, 2vw, 20px);
+      margin: 4px 0 20px;
+      flex-shrink: 0;
     }
 
     .tile {
-      width: clamp(72px, 10vw, 110px);
-      height: clamp(96px, 14vw, 140px);
+      width: clamp(80px, 9vw, 118px);
+      aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
-      border-radius: 14px;
-      background: linear-gradient(180deg, rgba(30, 80, 150, 0.7) 0%, rgba(8, 25, 55, 0.9) 100%);
-      border: 2px solid rgba(77, 184, 255, 0.95);
-      animation: tile-glow 2.8s ease-in-out infinite;
-      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(8, 28, 58, 0.95) 0%, rgba(4, 14, 32, 0.98) 100%);
+      border: 2px solid rgba(61, 184, 255, 0.85);
+      box-shadow:
+        0 0 20px rgba(61, 184, 255, 0.45),
+        inset 0 0 24px rgba(61, 184, 255, 0.12);
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
       font-weight: 900;
       text-transform: uppercase;
-      text-shadow:
-        0 0 16px rgba(255, 255, 255, 0.8),
-        2px 2px 0 rgba(0, 0, 0, 0.5);
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
     }
 
     .tile.hidden {
-      color: rgba(77, 184, 255, 0.85);
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      text-shadow: 0 0 20px rgba(77, 184, 255, 0.8);
+      color: rgba(61, 184, 255, 0.75);
+      font-size: clamp(1.4rem, 3vw, 2rem);
     }
 
     .tile.revealed {
-      background: linear-gradient(180deg, rgba(0, 255, 136, 0.55) 0%, rgba(0, 120, 60, 0.75) 100%);
-      border-color: rgba(0, 255, 136, 1);
-      animation: none;
-      box-shadow:
-        0 0 36px rgba(0, 255, 136, 0.75),
-        0 0 72px rgba(0, 255, 136, 0.35),
-        inset 0 0 40px rgba(0, 255, 136, 0.25);
+      background: linear-gradient(180deg, rgba(0, 180, 90, 0.5) 0%, rgba(0, 80, 45, 0.85) 100%);
+      border-color: rgba(0, 255, 102, 0.9);
+      box-shadow: 0 0 28px rgba(0, 255, 102, 0.55), inset 0 0 24px rgba(0, 255, 102, 0.15);
     }
 
+    /* --- Stats (uniform blue boxes, colored content) --- */
     .stats {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-shrink: 0;
     }
 
     .stat {
-      padding: 14px 12px;
+      padding: 12px 8px;
       text-align: center;
-      border-radius: 14px;
-      background: rgba(0, 8, 25, 0.75);
-      border: 2px solid rgba(77, 184, 255, 0.55);
-      box-shadow:
-        0 0 20px rgba(77, 184, 255, 0.2),
-        inset 0 0 20px rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      background: rgba(0, 8, 22, 0.8);
+      border: 2px solid var(--panel-blue);
+      box-shadow: 0 0 12px rgba(61, 184, 255, 0.15);
     }
 
-    .stat:nth-child(1) { border-color: rgba(255, 215, 0, 0.6); box-shadow: 0 0 24px rgba(255, 215, 0, 0.25), inset 0 0 16px rgba(0, 0, 0, 0.3); }
-    .stat:nth-child(2) { border-color: rgba(77, 184, 255, 0.7); box-shadow: 0 0 24px rgba(77, 184, 255, 0.3), inset 0 0 16px rgba(0, 0, 0, 0.3); }
-    .stat:nth-child(3) { border-color: rgba(0, 255, 102, 0.6); box-shadow: 0 0 24px rgba(0, 255, 102, 0.25), inset 0 0 16px rgba(0, 0, 0, 0.3); }
-    .stat:nth-child(4) { border-color: rgba(204, 102, 255, 0.6); box-shadow: 0 0 24px rgba(204, 102, 255, 0.25), inset 0 0 16px rgba(0, 0, 0, 0.3); }
-    .stat:nth-child(5) { border-color: rgba(0, 255, 255, 0.6); box-shadow: 0 0 24px rgba(0, 255, 255, 0.25), inset 0 0 16px rgba(0, 0, 0, 0.3); }
-
     .stat-icon {
-      font-size: 1.5rem;
-      line-height: 1;
-      margin-bottom: 6px;
-      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+      width: 28px;
+      height: 28px;
+      margin: 0 auto 6px;
+      display: block;
     }
 
     .stat-label {
-      color: #d0e4ff;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      font-size: 0.62rem;
       font-weight: 700;
       margin-bottom: 4px;
     }
 
     .stat-value {
-      font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+      font-size: clamp(1.6rem, 2.8vw, 2.2rem);
       font-weight: 900;
       line-height: 1;
     }
 
-    .stat-value.round { color: var(--stat-round); text-shadow: 0 0 20px rgba(255, 215, 0, 0.85); }
-    .stat-value.balls { color: var(--stat-balls); text-shadow: 0 0 20px rgba(77, 184, 255, 0.85); }
-    .stat-value.mult { color: var(--stat-mult); text-shadow: 0 0 20px rgba(0, 255, 102, 0.85); }
-    .stat-value.players { color: var(--stat-players); text-shadow: 0 0 20px rgba(204, 102, 255, 0.85); }
-    .stat-value.submitted { color: var(--stat-submitted); text-shadow: 0 0 20px rgba(0, 255, 255, 0.85); }
+    .stat-round .stat-label, .stat-round .stat-value { color: var(--stat-round); }
+    .stat-balls .stat-label, .stat-balls .stat-value { color: var(--stat-balls); }
+    .stat-mult .stat-label, .stat-mult .stat-value { color: var(--stat-mult); }
+    .stat-players .stat-label, .stat-players .stat-value { color: var(--stat-players); }
+    .stat-submitted .stat-label, .stat-submitted .stat-value { color: var(--stat-submitted); }
 
+    .stat-round .stat-value { text-shadow: 0 0 14px rgba(255, 215, 0, 0.6); }
+    .stat-balls .stat-value { text-shadow: 0 0 14px rgba(77, 184, 255, 0.6); }
+    .stat-mult .stat-value { text-shadow: 0 0 14px rgba(0, 255, 102, 0.6); }
+    .stat-players .stat-value { text-shadow: 0 0 14px rgba(204, 102, 255, 0.6); }
+    .stat-submitted .stat-value { text-shadow: 0 0 14px rgba(0, 229, 255, 0.6); }
+
+    /* --- Player board (blue mockup style) --- */
     .player-panel {
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      min-height: 180px;
+      min-height: 0;
       position: relative;
-      margin-top: 8px;
-      padding: 22px 18px 16px;
-      border-radius: 16px;
-      background: rgba(0, 8, 20, 0.65);
-      border: 2px solid rgba(255, 215, 0, 0.75);
-      box-shadow:
-        0 0 40px rgba(255, 215, 0, 0.25),
-        0 0 80px rgba(77, 184, 255, 0.12),
-        inset 0 0 40px rgba(0, 0, 0, 0.35);
+      margin-top: 6px;
+      padding: 24px 16px 14px;
+      border-radius: 14px;
+      background: rgba(0, 8, 22, 0.55);
+      border: 2px solid var(--panel-blue);
+      box-shadow: 0 0 28px rgba(61, 184, 255, 0.2), inset 0 0 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .panel-tab-wrap {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .panel-wing {
+      width: 0;
+      height: 0;
+      border-style: solid;
+    }
+
+    .panel-wing-left {
+      border-width: 8px 12px 8px 0;
+      border-color: transparent rgba(61, 184, 255, 0.7) transparent transparent;
+      margin-right: -2px;
+    }
+
+    .panel-wing-right {
+      border-width: 8px 0 8px 12px;
+      border-color: transparent transparent transparent rgba(61, 184, 255, 0.7);
+      margin-left: -2px;
     }
 
     .panel-tab {
-      position: absolute;
-      top: -14px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 7px 28px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #ffe566 0%, var(--gold) 40%, var(--gold-dark) 100%);
-      color: #1a0e00;
-      font-weight: 900;
-      font-size: 0.82rem;
+      padding: 5px 20px;
+      background: rgba(8, 30, 58, 0.95);
+      border: 2px solid var(--panel-blue);
+      color: var(--neon-blue);
+      font-weight: 800;
+      font-size: 0.72rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      box-shadow:
-        0 0 24px rgba(255, 215, 0, 0.65),
-        0 4px 12px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 16px rgba(61, 184, 255, 0.35);
     }
 
     .players-summary {
       color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.35;
+      font-size: 0.85rem;
       text-align: center;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
     }
 
     .players-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
       flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      align-content: start;
     }
 
     .player-card {
-      border-radius: 14px;
-      padding: 14px;
-      background: linear-gradient(180deg, rgba(15, 45, 90, 0.95), rgba(5, 18, 40, 0.98));
-      border: 2px solid rgba(77, 184, 255, 0.55);
-      box-shadow: 0 0 16px rgba(77, 184, 255, 0.2), 0 8px 20px rgba(0, 0, 0, 0.35);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(6, 20, 42, 0.9);
+      border: 1px solid rgba(61, 184, 255, 0.4);
+      box-shadow: 0 0 10px rgba(61, 184, 255, 0.12);
     }
 
     .player-card.locked {
-      background: linear-gradient(180deg, rgba(140, 100, 10, 0.95), rgba(80, 55, 5, 0.98));
-      border-color: rgba(255, 215, 0, 0.85);
-      box-shadow: 0 0 24px rgba(255, 215, 0, 0.45);
+      background: rgba(50, 38, 8, 0.9);
+      border-color: rgba(255, 215, 0, 0.55);
+      box-shadow: 0 0 14px rgba(255, 215, 0, 0.25);
     }
 
-    .player-card.resolved {
-      border-color: rgba(77, 184, 255, 0.7);
-      box-shadow: 0 0 20px rgba(77, 184, 255, 0.3);
-    }
-
+    .player-card.resolved { border-color: rgba(61, 184, 255, 0.55); }
     .player-card.solved {
-      background: linear-gradient(180deg, rgba(0, 120, 60, 0.95), rgba(0, 60, 30, 0.98));
-      border-color: rgba(0, 255, 136, 0.9);
-      box-shadow: 0 0 28px rgba(0, 255, 136, 0.55);
+      background: rgba(8, 50, 28, 0.9);
+      border-color: rgba(0, 255, 102, 0.65);
+      box-shadow: 0 0 16px rgba(0, 255, 102, 0.3);
     }
 
     .player-card-top {
       display: flex;
       align-items: start;
       justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 6px;
     }
 
-    .player-name {
-      font-size: 1.05rem;
-      font-weight: 800;
-      line-height: 1.15;
-      word-break: break-word;
-    }
+    .player-name { font-size: 0.95rem; font-weight: 800; word-break: break-word; }
 
     .player-status-pill {
-      flex: 0 0 auto;
+      flex-shrink: 0;
       border-radius: 999px;
-      padding: 4px 10px;
-      background: rgba(255, 255, 255, 0.1);
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.08);
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       font-weight: 800;
+      letter-spacing: 0.05em;
     }
 
     .player-meta {
       color: var(--muted);
-      font-size: 0.82rem;
-      min-height: 2em;
-      line-height: 1.3;
-      margin-bottom: 10px;
+      font-size: 0.78rem;
+      min-height: 1.6em;
+      margin-bottom: 8px;
     }
 
     .feedback-row {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
     }
 
     .feedback-cell {
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 1;
       display: grid;
       place-items: center;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.06);
-      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 0.85rem;
       font-weight: 900;
     }
 
-    .feedback-cell.pending { background: rgba(240, 192, 64, 0.35); border-color: rgba(240, 192, 64, 0.6); color: #fff2b0; }
-    .feedback-cell.correct { background: rgba(74, 222, 128, 0.65); border-color: rgba(74, 222, 128, 0.8); }
-    .feedback-cell.present { background: rgba(251, 191, 36, 0.65); border-color: rgba(251, 191, 36, 0.8); }
-    .feedback-cell.absent { background: rgba(239, 68, 68, 0.55); border-color: rgba(239, 68, 68, 0.7); }
-    .feedback-cell.blank { color: rgba(255, 255, 255, 0.2); }
+    .feedback-cell.pending { background: rgba(255, 215, 0, 0.35); color: #fff8c0; }
+    .feedback-cell.correct { background: rgba(0, 255, 102, 0.6); }
+    .feedback-cell.present { background: rgba(255, 180, 0, 0.6); }
+    .feedback-cell.absent { background: rgba(220, 60, 60, 0.55); }
+    .feedback-cell.blank { color: rgba(255, 255, 255, 0.15); }
 
     .empty-players {
       flex: 1;
-      display: grid;
-      place-items: center;
-      padding: 40px 24px;
-      border-radius: 12px;
-      border: 2px dashed rgba(77, 184, 255, 0.45);
-      color: #c8dcff;
-      text-align: center;
-      font-size: 1.05rem;
-      font-weight: 700;
-      text-shadow: 0 0 12px rgba(77, 184, 255, 0.35);
-      box-shadow: inset 0 0 40px rgba(77, 184, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 600;
     }
 
     .empty-players-icon {
-      font-size: 2.8rem;
-      opacity: 0.55;
-      margin-bottom: 10px;
-      filter: drop-shadow(0 0 12px rgba(204, 102, 255, 0.5));
+      width: 48px;
+      height: 48px;
+      opacity: 0.45;
     }
 
-    .footer {
-      margin-top: 14px;
-      padding-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      align-items: center;
-      flex-wrap: wrap;
-      border-top: 1px solid rgba(58, 157, 255, 0.2);
-    }
-
-    .footer-text {
-      color: rgba(184, 204, 232, 0.7);
-      font-size: 0.82rem;
-    }
-
-    .footer strong { color: var(--muted); }
+    .footer { display: none; }
 
     /* --- Auto-density (24+ players) --- */
-    .screen.dense { padding: 8px; place-items: stretch; }
+    .screen.dense { padding: 8px 12px; }
 
-    .board.dense {
-      width: 100%;
-      max-width: none;
-      min-height: calc(100vh - 16px);
-      padding: 12px 14px;
-      border-radius: 12px;
-    }
-
-    .board.dense .logo { font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 6px; }
-    .board.dense .show-header { grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 8px; }
+    .board.dense .logo-svg { width: min(200px, 30vw); }
+    .board.dense .show-header { margin-bottom: 6px; gap: 8px; }
     .board.dense .brand-stack { text-align: left; }
-    .board.dense .status-badge { padding: 5px 12px; font-size: 0.68rem; margin-bottom: 4px; }
-    .board.dense .round-callout { font-size: 1rem; margin-bottom: 0; display: inline; }
+    .board.dense .status-badge { padding: 4px 10px; font-size: 0.62rem; margin-bottom: 2px; }
+    .board.dense .round-callout { font-size: 0.95rem; display: inline; margin-bottom: 0; }
     .board.dense .subtitle { display: none; }
-    .board.dense .timer-card { min-width: 90px; padding: 8px 12px; }
-    .board.dense .timer-label { font-size: 0.6rem; margin-bottom: 4px; }
+    .board.dense .timer-card { min-width: 80px; padding: 6px 10px; }
+    .board.dense .timer-label { font-size: 0.55rem; }
     .board.dense .timer-subtext { display: none; }
-    .board.dense .timer-value { font-size: 1.8rem; }
-    .board.dense .word-wrap { margin: 4px 0 8px; gap: 6px; justify-content: flex-start; }
-    .board.dense .word-wrap .tile { width: 42px; height: 52px; font-size: 1.3rem; border-radius: 8px; }
-    .board.dense .stats { grid-template-columns: repeat(5, auto); gap: 8px; margin-bottom: 8px; justify-content: start; }
-    .board.dense .stat { padding: 6px 12px; border-radius: 999px; display: flex; align-items: center; gap: 8px; }
-    .board.dense .stat-icon { font-size: 1rem; margin-bottom: 0; }
-    .board.dense .stat-label { margin-bottom: 0; font-size: 0.62rem; }
-    .board.dense .stat-value { font-size: 0.95rem; }
-    .board.dense .player-panel { margin-top: 4px; padding: 14px 10px 10px; min-height: 0; }
-    .board.dense .panel-tab { font-size: 0.68rem; padding: 4px 16px; top: -11px; }
-    .board.dense .players-summary { font-size: 0.78rem; margin-bottom: 8px; }
-    .board.dense .footer { display: none; }
+    .board.dense .timer-value { font-size: 1.6rem; }
+    .board.dense .word-wrap { margin: 2px 0 6px; gap: 5px; justify-content: flex-start; }
+    .board.dense .word-wrap .tile { width: 40px; font-size: 1.2rem; border-radius: 6px; }
+    .board.dense .stats { grid-template-columns: repeat(5, auto); gap: 6px; margin-bottom: 6px; }
+    .board.dense .stat { padding: 4px 10px; display: flex; align-items: center; gap: 6px; border-radius: 999px; }
+    .board.dense .stat-icon { width: 18px; height: 18px; margin: 0; }
+    .board.dense .stat-label { margin: 0; font-size: 0.55rem; }
+    .board.dense .stat-value { font-size: 0.88rem; }
+    .board.dense .player-panel { padding: 16px 8px 8px; margin-top: 2px; }
+    .board.dense .panel-tab { font-size: 0.6rem; padding: 3px 12px; }
+    .board.dense .players-summary { font-size: 0.72rem; margin-bottom: 6px; }
 
-    .players-grid.dense {
-      align-content: start;
-      gap: var(--grid-gap, 4px);
-    }
+    .players-grid.dense { gap: var(--grid-gap, 3px); }
 
     .player-tile {
-      border-radius: 6px;
-      padding: var(--tile-pad, 4px 5px);
-      background: rgba(8, 22, 44, 0.9);
-      border: 1px solid rgba(58, 157, 255, 0.3);
+      border-radius: 5px;
+      padding: var(--tile-pad, 3px 4px);
+      background: rgba(6, 18, 38, 0.92);
+      border: 1px solid rgba(61, 184, 255, 0.35);
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
       overflow: hidden;
     }
 
-    .player-tile.waiting { opacity: 0.65; }
-    .player-tile.locked { background: rgba(100, 75, 15, 0.85); border-color: rgba(240, 192, 64, 0.6); }
-    .player-tile.resolved { border-color: rgba(94, 184, 255, 0.45); }
-    .player-tile.solved { background: rgba(25, 90, 50, 0.9); border-color: rgba(74, 222, 128, 0.7); box-shadow: 0 0 6px rgba(74, 222, 128, 0.3); }
+    .player-tile.waiting { opacity: 0.6; }
+    .player-tile.locked { background: rgba(60, 45, 8, 0.9); border-color: rgba(255, 215, 0, 0.5); }
+    .player-tile.solved { background: rgba(8, 55, 30, 0.92); border-color: rgba(0, 255, 102, 0.6); }
 
     .player-tile-name {
-      font-size: var(--tile-font-size, 0.78rem);
+      font-size: var(--tile-font-size, 0.72rem);
       font-weight: 800;
       white-space: nowrap;
       overflow: hidden;
@@ -580,106 +531,155 @@
 
     .player-tile-feedback {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 2px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
     }
 
     .player-tile-feedback .mini-cell {
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 1;
       border-radius: 2px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.05);
     }
 
-    .player-tile-feedback .mini-cell.pending { background: rgba(240, 192, 64, 0.5); }
-    .player-tile-feedback .mini-cell.correct { background: rgba(74, 222, 128, 0.85); }
-    .player-tile-feedback .mini-cell.present { background: rgba(251, 191, 36, 0.85); }
-    .player-tile-feedback .mini-cell.absent { background: rgba(239, 68, 68, 0.75); }
-    .player-tile-feedback .mini-cell.blank { background: rgba(255, 255, 255, 0.04); }
+    .player-tile-feedback .mini-cell.pending { background: rgba(255, 215, 0, 0.45); }
+    .player-tile-feedback .mini-cell.correct { background: rgba(0, 255, 102, 0.8); }
+    .player-tile-feedback .mini-cell.present { background: rgba(255, 180, 0, 0.8); }
+    .player-tile-feedback .mini-cell.absent { background: rgba(220, 60, 60, 0.7); }
 
     .player-tile-status {
-      font-size: calc(var(--tile-font-size, 0.78rem) * 0.85);
+      font-size: calc(var(--tile-font-size, 0.72rem) * 0.85);
       color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .board.dense.size-lg { --tile-font-size: 0.72rem; --grid-gap: 4px; --tile-pad: 4px 5px; }
-    .board.dense.size-xl { --tile-font-size: 0.62rem; --grid-gap: 3px; --tile-pad: 3px 4px; }
-    .board.dense.size-xxl { --tile-font-size: 0.54rem; --grid-gap: 2px; --tile-pad: 2px 3px; }
-    .board.dense.size-xxl .player-tile-feedback { gap: 1px; }
+    .board.dense.size-lg { --tile-font-size: 0.68rem; --grid-gap: 3px; --tile-pad: 3px 4px; }
+    .board.dense.size-xl { --tile-font-size: 0.58rem; --grid-gap: 2px; --tile-pad: 2px 3px; }
+    .board.dense.size-xxl { --tile-font-size: 0.5rem; --grid-gap: 2px; --tile-pad: 2px; }
 
     @media (max-width: 900px) {
       .show-header, .stats { grid-template-columns: 1fr; }
       .brand-stack { text-align: left; }
-      .timer-card { justify-self: start; }
     }
   </style>
 </head>
 <body>
-  <main id="screen" class="screen">
-    <section id="board" class="board">
-      <header class="show-header">
-        <div class="brand-stack">
-          <div class="logo" aria-hidden="true">LINGO</div>
-          <div id="statusBadge" class="status-badge">
-            <span id="badgeDot" class="badge-dot"></span>
-            <span id="badgeText">Waiting</span>
+  <div class="stage">
+    <div class="stage-beam stage-beam-left" aria-hidden="true"></div>
+    <div class="stage-beam stage-beam-right" aria-hidden="true"></div>
+
+    <main id="screen" class="screen">
+      <section id="board" class="board">
+        <header class="show-header">
+          <div class="brand-stack">
+            <div class="logo-wrap" aria-hidden="true">
+              <svg class="logo-svg" viewBox="0 0 420 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LINGO">
+                <defs>
+                  <linearGradient id="logoFace" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#e8f4ff"/>
+                    <stop offset="100%" stop-color="#9ec5ef"/>
+                  </linearGradient>
+                  <linearGradient id="logoGold" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ffe566"/>
+                    <stop offset="100%" stop-color="#c8961a"/>
+                  </linearGradient>
+                  <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feMerge>
+                      <feMergeNode in="blur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+                <text x="210" y="56" text-anchor="middle" fill="url(#logoGold)" font-size="54" font-weight="900" font-family="Arial Black, Impact, sans-serif" stroke="#a07810" stroke-width="1.5">LINGO</text>
+                <text x="210" y="53" text-anchor="middle" fill="url(#logoFace)" font-size="54" font-weight="900" font-family="Arial Black, Impact, sans-serif" filter="url(#logoGlow)">LINGO</text>
+              </svg>
+            </div>
+
+            <div id="statusBadge" class="status-badge">
+              <svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span id="badgeText">Waiting for the host</span>
+            </div>
+
+            <h1 id="titleLine" class="round-callout"></h1>
+            <p id="subtitleLine" class="subtitle">The public display will update automatically when the next online round starts.</p>
           </div>
-          <h1 id="titleLine" class="round-callout">Waiting for the host</h1>
-          <p id="subtitleLine" class="subtitle">The public display will update automatically when the next online round starts.</p>
+
+          <div class="timer-card">
+            <div id="timerLabel" class="timer-label">Next round starts in</div>
+            <div id="timerValue" class="timer-value">--</div>
+            <div id="timerSubtext" class="timer-subtext">Seconds</div>
+          </div>
+        </header>
+
+        <div id="wordWrap" class="word-wrap" aria-label="Current word display"></div>
+
+        <div class="stats">
+          <div class="stat stat-round">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M8 4h8l1 4h3v2h-1l-1 10H7L6 10H5V8h3l1-4z" fill="#ffd700" stroke="#b8860b" stroke-width="0.5"/>
+              <path d="M9 10h6" stroke="#b8860b" stroke-width="1.5"/>
+            </svg>
+            <div class="stat-label">Round</div>
+            <div id="roundValue" class="stat-value">0</div>
+          </div>
+          <div class="stat stat-balls">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="#4db8ff" stroke="#2080cc" stroke-width="1"/>
+              <circle cx="9" cy="10" r="2" fill="rgba(255,255,255,0.35)"/>
+            </svg>
+            <div class="stat-label">Balls</div>
+            <div id="ballsValue" class="stat-value">0</div>
+          </div>
+          <div class="stat stat-mult">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 18 L8 10 L12 14 L16 6 L20 12" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M18 8 L20 12 L16 12" stroke="#00ff66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div class="stat-label">Multiplier</div>
+            <div id="multiplierValue" class="stat-value">1x</div>
+          </div>
+          <div class="stat stat-players">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="9" cy="8" r="3" fill="#cc66ff"/>
+              <circle cx="16" cy="9" r="2.5" fill="#cc66ff"/>
+              <path d="M4 18c0-3 2.5-5 5-5s5 2 5 5" fill="#cc66ff"/>
+              <path d="M14 18c0-2 1.5-3.5 3.5-3.5" stroke="#cc66ff" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <div class="stat-label">Players</div>
+            <div id="playersValue" class="stat-value">0</div>
+          </div>
+          <div class="stat stat-submitted">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 12 L20 4 L16 20 L11 13 L4 12z" fill="#00e5ff" stroke="#00a0b8" stroke-width="0.5"/>
+            </svg>
+            <div class="stat-label">Submitted</div>
+            <div id="submittedValue" class="stat-value">0</div>
+          </div>
         </div>
 
-        <div class="timer-card">
-          <div id="timerLabel" class="timer-label">Next round starts in</div>
-          <div id="timerValue" class="timer-value">--</div>
-          <div id="timerSubtext" class="timer-subtext">Seconds</div>
-        </div>
-      </header>
+        <section class="player-panel">
+          <div class="panel-tab-wrap">
+            <span class="panel-wing panel-wing-left" aria-hidden="true"></span>
+            <div class="panel-tab">Player Board</div>
+            <span class="panel-wing panel-wing-right" aria-hidden="true"></span>
+          </div>
+          <p id="playersSummary" class="players-summary"></p>
+          <div id="playersGrid" class="players-grid"></div>
+        </section>
 
-      <div id="wordWrap" class="word-wrap" aria-label="Current word display"></div>
-
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-icon">🏆</div>
-          <div class="stat-label">Round</div>
-          <div id="roundValue" class="stat-value round">0</div>
+        <div class="footer" aria-hidden="true">
+          <div id="footerText"></div>
+          <div id="updatedText"></div>
         </div>
-        <div class="stat">
-          <div class="stat-icon">🔵</div>
-          <div class="stat-label">Balls</div>
-          <div id="ballsValue" class="stat-value balls">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-icon">📈</div>
-          <div class="stat-label">Multiplier</div>
-          <div id="multiplierValue" class="stat-value mult">1x</div>
-        </div>
-        <div class="stat">
-          <div class="stat-icon">👥</div>
-          <div class="stat-label">Players</div>
-          <div id="playersValue" class="stat-value players">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-icon">✈️</div>
-          <div class="stat-label">Submitted</div>
-          <div id="submittedValue" class="stat-value submitted">0</div>
-        </div>
-      </div>
-
-      <section class="player-panel">
-        <div class="panel-tab">Player Board</div>
-        <p id="playersSummary" class="players-summary">Waiting for players to join this session.</p>
-        <div id="playersGrid" class="players-grid"></div>
       </section>
-
-      <div class="footer">
-        <div id="footerText" class="footer-text">Public display only. Players submit guesses on the main page.</div>
-        <div id="updatedText" class="footer-text"><strong>Updated:</strong> --</div>
-      </div>
-    </section>
-  </main>
+    </main>
+  </div>
 
   <script>
     const DENSE_PLAYER_THRESHOLD = 24;
@@ -688,7 +688,6 @@
       screen: document.getElementById('screen'),
       board: document.getElementById('board'),
       statusBadge: document.getElementById('statusBadge'),
-      badgeDot: document.getElementById('badgeDot'),
       badgeText: document.getElementById('badgeText'),
       titleLine: document.getElementById('titleLine'),
       subtitleLine: document.getElementById('subtitleLine'),
@@ -703,7 +702,6 @@
       submittedValue: document.getElementById('submittedValue'),
       playersSummary: document.getElementById('playersSummary'),
       playersGrid: document.getElementById('playersGrid'),
-      footerText: document.getElementById('footerText'),
       updatedText: document.getElementById('updatedText'),
     };
 
@@ -866,7 +864,12 @@
         els.playersGrid.style.gridTemplateColumns = '';
         els.playersGrid.innerHTML = `
           <div class="empty-players">
-            <div class="empty-players-icon">👥</div>
+            <svg class="empty-players-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="9" cy="8" r="3" fill="#8899aa"/>
+              <circle cx="16" cy="9" r="2.5" fill="#8899aa"/>
+              <path d="M4 18c0-3 2.5-5 5-5s5 2 5 5" fill="#8899aa"/>
+              <path d="M14 18c0-2 1.5-3.5 3.5-3.5" stroke="#8899aa" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
             No player cards yet
           </div>`;
         return;
@@ -944,7 +947,9 @@
       els.playersValue.textContent = String(players);
       els.submittedValue.textContent = String(submitted);
       renderPlayers(displayPlayers, phase);
-      els.updatedText.innerHTML = `<strong>Updated:</strong> ${currentState.updatedAtIso || '--'}`;
+      if (els.updatedText) {
+        els.updatedText.textContent = currentState.updatedAtIso || '';
+      }
     }
 
     async function fetchPublicState() {
@@ -957,7 +962,8 @@
     }
 
     fetchPublicState().catch((error) => {
-      els.titleLine.textContent = 'Display unavailable';
+      els.badgeText.textContent = 'Display unavailable';
+      els.titleLine.textContent = '';
       els.subtitleLine.textContent = error.message || 'Could not load public state.';
     });
 
