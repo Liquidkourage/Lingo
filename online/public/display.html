@@ -9,20 +9,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <style>
+    /* Spec-calibrated tokens — see /display-spec.json */
     :root {
       --gold: #ffd700;
-      --gold-dim: #c8961a;
       --neon-blue: #3db8ff;
       --neon-cyan: #00e5ff;
       --text: #ffffff;
-      --muted: #a8c4e8;
+      --muted: #9eb8d8;
       --stat-round: #ffd700;
       --stat-balls: #4db8ff;
       --stat-mult: #00ff66;
       --stat-players: #cc66ff;
       --stat-submitted: #00e5ff;
-      --panel-border: rgba(61, 184, 255, 0.65);
-      --glass: rgba(0, 14, 36, 0.55);
+      --stage-top: #020810;
+      --stage-mid: #082038;
+      --stage-bottom: #030a12;
+      --glass-bg: rgba(0, 16, 40, 0.52);
+      --glass-border: rgba(61, 184, 255, 0.68);
     }
 
     * { box-sizing: border-box; }
@@ -40,55 +43,77 @@
       background: #020610;
     }
 
+    /* stage.background */
     .stage {
       position: fixed;
       inset: 0;
       overflow: hidden;
       background:
-        radial-gradient(ellipse 88% 52% at 50% -6%, rgba(70, 185, 255, 0.78) 0%, rgba(35, 110, 190, 0.22) 42%, transparent 68%),
-        radial-gradient(rgba(61, 184, 255, 0.045) 1px, transparent 1px),
-        linear-gradient(180deg, #020810 0%, #0a2540 36%, #030a14 100%);
-      background-size: 100% 100%, 26px 26px, 100% 100%;
+        radial-gradient(ellipse 92% 56% at 50% -8%, rgba(62, 188, 255, 0.74) 0%, rgba(30, 100, 175, 0.2) 44%, transparent 70%),
+        radial-gradient(rgba(61, 184, 255, 0.038) 1px, transparent 1px),
+        linear-gradient(180deg, var(--stage-top) 0%, var(--stage-mid) 34%, var(--stage-bottom) 100%);
+      background-size: 100% 100%, 24px 24px, 100% 100%;
     }
 
+    /* stage.frame */
     .stage::after {
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
+      z-index: 4;
       box-shadow:
-        inset 0 0 0 3px rgba(255, 215, 0, 0.48),
-        inset 0 0 0 7px rgba(61, 184, 255, 0.12),
-        inset 0 0 90px rgba(61, 184, 255, 0.08);
+        inset 0 0 0 3px rgba(255, 215, 0, 0.5),
+        inset 0 0 0 6px rgba(61, 184, 255, 0.1),
+        inset 0 0 80px rgba(61, 184, 255, 0.06);
     }
 
+    /* stage.beam-left / stage.beam-right */
     .stage-beam {
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 26%;
+      width: 22%;
       pointer-events: none;
       z-index: 1;
     }
 
     .stage-beam-left {
       left: 0;
-      background: linear-gradient(112deg, rgba(255, 215, 0, 0.28) 0%, rgba(255, 215, 0, 0.04) 32%, transparent 62%);
-      clip-path: polygon(0 0, 100% 0, 48% 100%, 0 100%);
+      background:
+        linear-gradient(108deg, rgba(255, 215, 0, 0.24) 0%, rgba(255, 215, 0, 0.03) 36%, transparent 64%),
+        linear-gradient(115deg, rgba(61, 184, 255, 0.16) 0%, transparent 58%);
+      clip-path: polygon(0 0, 100% 0, 42% 100%, 0 100%);
     }
 
     .stage-beam-right {
       right: 0;
-      background: linear-gradient(248deg, rgba(255, 215, 0, 0.28) 0%, rgba(255, 215, 0, 0.04) 32%, transparent 62%);
-      clip-path: polygon(52% 0, 100% 0, 100% 100%, 0 100%);
+      background:
+        linear-gradient(252deg, rgba(255, 215, 0, 0.24) 0%, rgba(255, 215, 0, 0.03) 36%, transparent 64%),
+        linear-gradient(245deg, rgba(61, 184, 255, 0.16) 0%, transparent 58%);
+      clip-path: polygon(58% 0, 100% 0, 100% 100%, 0 100%);
     }
+
+    .stage-corner {
+      position: absolute;
+      pointer-events: none;
+      z-index: 2;
+      width: 110px;
+      height: 110px;
+      opacity: 0.85;
+    }
+
+    .stage-corner-tl { top: 0; left: 0; }
+    .stage-corner-tr { top: 0; right: 0; transform: scaleX(-1); }
+    .stage-corner-bl { bottom: 0; left: 0; transform: scaleY(-1); }
+    .stage-corner-br { bottom: 0; right: 0; transform: scale(-1, -1); }
 
     .screen {
       position: relative;
-      z-index: 2;
+      z-index: 3;
       width: 100%;
       height: 100%;
-      padding: 16px 44px 12px;
+      padding: 12px 38px 10px;
       display: flex;
       flex-direction: column;
     }
@@ -97,7 +122,7 @@
       flex: 1;
       min-height: 0;
       display: grid;
-      grid-template-rows: auto auto auto minmax(0, 1fr);
+      grid-template-rows: minmax(0, 24vh) auto auto minmax(0, 1fr);
       gap: 0;
     }
 
@@ -109,17 +134,22 @@
     .show-header {
       position: relative;
       text-align: center;
-      padding: 0 190px 6px;
+      padding: 4px 175px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
     }
 
+    /* header.logo-glow */
     .logo-spotlight {
       position: absolute;
       left: 50%;
-      top: -20px;
+      top: -8px;
       transform: translateX(-50%);
-      width: min(680px, 72vw);
-      height: 180px;
-      background: radial-gradient(ellipse at center, rgba(80, 200, 255, 0.45) 0%, transparent 70%);
+      width: min(720px, 76vw);
+      height: 160px;
+      background: radial-gradient(ellipse at center, rgba(75, 195, 255, 0.5) 0%, rgba(45, 130, 210, 0.12) 50%, transparent 72%);
       pointer-events: none;
       z-index: 0;
     }
@@ -129,36 +159,37 @@
       z-index: 1;
       display: flex;
       justify-content: center;
-      margin-bottom: 8px;
-      filter:
-        drop-shadow(0 0 22px rgba(61, 184, 255, 0.85))
-        drop-shadow(0 0 44px rgba(61, 184, 255, 0.4))
-        drop-shadow(0 5px 10px rgba(0, 0, 0, 0.45));
+      margin-bottom: 6px;
     }
 
+    /* header.logo */
     .logo-img {
-      width: min(520px, 58vw);
+      width: min(600px, 58vw);
       height: auto;
       display: block;
+      filter:
+        drop-shadow(0 0 18px rgba(61, 184, 255, 0.75))
+        drop-shadow(0 0 36px rgba(61, 184, 255, 0.35));
     }
 
+    /* header.status-badge */
     .status-badge {
       position: relative;
       z-index: 1;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 6px;
       border-radius: 999px;
-      padding: 6px 16px;
+      padding: 5px 14px;
       font-weight: 800;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.11em;
       text-transform: uppercase;
-      font-size: 0.74rem;
+      font-size: 0.7rem;
       border: 2px solid var(--gold);
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.58);
       color: var(--gold);
-      box-shadow: 0 0 14px rgba(255, 215, 0, 0.32);
-      margin-bottom: 6px;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.28);
+      margin-bottom: 5px;
     }
 
     .status-badge.guessing {
@@ -190,54 +221,58 @@
       margin-bottom: 4px;
     }
 
+    /* header.subtitle */
     .subtitle {
-      font-size: clamp(0.68rem, 1.05vw, 0.8rem);
+      font-size: clamp(0.65rem, 1vw, 0.76rem);
       color: var(--muted);
-      line-height: 1.45;
-      max-width: 500px;
+      line-height: 1.5;
+      max-width: 480px;
       margin: 0 auto;
       font-weight: 600;
     }
 
+    /* timer.container */
     .timer-card {
       position: absolute;
-      top: 0;
+      top: 2px;
       right: 0;
-      width: 156px;
-      padding: 10px 12px 8px;
+      width: 148px;
+      padding: 9px 10px 7px;
       text-align: center;
       border-radius: 10px;
-      background: var(--glass);
+      background: var(--glass-bg);
       backdrop-filter: blur(10px);
-      border: 2px solid var(--panel-border);
-      box-shadow: 0 0 18px rgba(61, 184, 255, 0.28);
+      border: 2px solid var(--glass-border);
+      box-shadow: 0 0 16px rgba(61, 184, 255, 0.24);
     }
 
+    /* timer.label */
     .timer-label {
-      font-size: 0.58rem;
-      letter-spacing: 0.1em;
+      font-size: 0.56rem;
+      letter-spacing: 0.09em;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.88);
-      margin-bottom: 6px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 5px;
       font-weight: 700;
-      line-height: 1.3;
+      line-height: 1.25;
     }
 
+    /* timer.value */
     .timer-value {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      min-height: 50px;
+      gap: 4px;
+      min-height: 46px;
     }
 
     .timer-idle-dash {
-      font-size: clamp(2.4rem, 5vw, 3.2rem);
+      font-size: clamp(2.2rem, 4.6vw, 3rem);
       font-weight: 900;
       line-height: 1;
       color: #fff;
-      letter-spacing: 0.06em;
-      text-shadow: 0 0 20px rgba(255, 255, 255, 0.85), 0 0 40px rgba(61, 184, 255, 0.45);
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 18px rgba(255, 255, 255, 0.8), 0 0 36px rgba(61, 184, 255, 0.4);
     }
 
     .digit-box {
@@ -261,45 +296,46 @@
       line-height: 1;
     }
 
+    /* timer.subtext */
     .timer-subtext {
-      margin-top: 5px;
+      margin-top: 4px;
       color: var(--neon-cyan);
-      font-size: 0.6rem;
+      font-size: 0.58rem;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.13em;
       font-weight: 700;
     }
 
-    /* --- Letter tiles --- */
+    /* word.row / word.tile */
     .word-wrap {
       display: flex;
       justify-content: center;
-      gap: clamp(10px, 1.4vw, 16px);
-      padding: 6px 0 14px;
+      gap: clamp(11px, 1.35vw, 15px);
+      padding: 4px 0 11px;
     }
 
     .tile {
-      width: clamp(84px, 8vw, 108px);
+      width: clamp(86px, 8.2vw, 104px);
       aspect-ratio: 1;
       display: grid;
       place-items: center;
       border-radius: 10px;
-      background: rgba(4, 16, 34, 0.85);
-      backdrop-filter: blur(6px);
-      border: 2px solid rgba(61, 184, 255, 0.82);
-      box-shadow: 0 0 14px rgba(61, 184, 255, 0.32);
-      font-size: clamp(2rem, 4.5vw, 3rem);
+      background: rgba(2, 12, 28, 0.72);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(61, 184, 255, 0.78);
+      box-shadow: 0 0 12px rgba(61, 184, 255, 0.28);
+      font-size: clamp(1.95rem, 4.2vw, 2.85rem);
       font-weight: 900;
       text-transform: uppercase;
     }
 
     .tile.hidden::before {
       content: "";
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: rgba(61, 184, 255, 0.9);
-      box-shadow: 0 0 6px rgba(61, 184, 255, 0.55);
+      background: rgba(61, 184, 255, 0.85);
+      box-shadow: 0 0 5px rgba(61, 184, 255, 0.5);
     }
 
     .tile.revealed {
@@ -308,42 +344,42 @@
       box-shadow: 0 0 20px rgba(0, 255, 102, 0.45);
     }
 
-    /* --- Stats --- */
+    /* stats.row + stats.* */
     .stats {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 7px;
-      padding-bottom: 10px;
+      gap: 6px;
+      padding-bottom: 8px;
     }
 
     .stat {
-      padding: 9px 6px 10px;
+      padding: 8px 4px 9px;
       text-align: center;
       border-radius: 10px;
-      background: var(--glass);
+      background: var(--glass-bg);
       backdrop-filter: blur(8px);
-      border: 2px solid var(--panel-border);
-      box-shadow: 0 0 8px rgba(61, 184, 255, 0.1);
+      border: 2px solid var(--glass-border);
+      box-shadow: 0 0 6px rgba(61, 184, 255, 0.08);
     }
 
     .stat-icon {
-      width: 24px;
-      height: 24px;
-      margin: 0 auto 4px;
+      width: 22px;
+      height: 22px;
+      margin: 0 auto 3px;
       display: block;
     }
 
     .stat-label {
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-size: 0.55rem;
+      letter-spacing: 0.09em;
+      font-size: 0.52rem;
       font-weight: 700;
-      margin-bottom: 2px;
-      color: rgba(255, 255, 255, 0.88);
+      margin-bottom: 1px;
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .stat-value {
-      font-size: clamp(1.45rem, 2.4vw, 1.95rem);
+      font-size: clamp(1.4rem, 2.2vw, 1.85rem);
       font-weight: 900;
       line-height: 1;
     }
@@ -354,23 +390,23 @@
     .stat-players .stat-value { color: var(--stat-players); text-shadow: 0 0 10px rgba(204, 102, 255, 0.45); }
     .stat-submitted .stat-value { color: var(--stat-submitted); text-shadow: 0 0 10px rgba(0, 229, 255, 0.45); }
 
-    /* --- Player board --- */
+    /* players.panel / players.tab */
     .player-panel {
       position: relative;
       display: flex;
       flex-direction: column;
-      min-height: min(42vh, 420px);
-      padding: 20px 14px 10px;
-      border-radius: 12px;
-      background: var(--glass);
+      min-height: 0;
+      padding: 18px 12px 8px;
+      border-radius: 11px;
+      background: var(--glass-bg);
       backdrop-filter: blur(10px);
-      border: 2px solid var(--panel-border);
-      box-shadow: 0 0 20px rgba(61, 184, 255, 0.18), inset 0 0 30px rgba(0, 0, 0, 0.22);
+      border: 2px solid var(--glass-border);
+      box-shadow: 0 0 18px rgba(61, 184, 255, 0.16), inset 0 0 28px rgba(0, 0, 0, 0.2);
     }
 
     .panel-tab-wrap {
       position: absolute;
-      top: -12px;
+      top: -11px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -384,27 +420,28 @@
     }
 
     .panel-wing-left {
-      border-width: 8px 11px 8px 0;
-      border-color: transparent rgba(61, 184, 255, 0.75) transparent transparent;
+      border-width: 7px 10px 7px 0;
+      border-color: transparent rgba(61, 184, 255, 0.8) transparent transparent;
       margin-right: -1px;
     }
 
     .panel-wing-right {
-      border-width: 8px 0 8px 11px;
-      border-color: transparent transparent transparent rgba(61, 184, 255, 0.75);
+      border-width: 7px 0 7px 10px;
+      border-color: transparent transparent transparent rgba(61, 184, 255, 0.8);
       margin-left: -1px;
     }
 
     .panel-tab {
-      padding: 4px 20px 5px;
-      background: rgba(5, 22, 44, 0.95);
-      border: 2px solid var(--panel-border);
-      color: rgba(255, 255, 255, 0.92);
+      padding: 3px 18px 4px;
+      background: rgba(4, 20, 42, 0.96);
+      border: 2px solid var(--glass-border);
+      color: rgba(255, 255, 255, 0.94);
       font-weight: 800;
-      font-size: 0.64rem;
-      letter-spacing: 0.17em;
+      font-size: 0.62rem;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      clip-path: polygon(5% 0, 95% 0, 100% 100%, 0 100%);
+      clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%);
+      box-shadow: 0 0 10px rgba(61, 184, 255, 0.2);
     }
 
     .players-summary {
@@ -494,22 +531,23 @@
     .feedback-cell.absent { background: rgba(220, 60, 60, 0.55); }
     .feedback-cell.blank { color: rgba(255, 255, 255, 0.15); }
 
+    /* players.empty */
     .empty-players {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      color: rgba(130, 155, 185, 0.8);
-      font-size: 0.9rem;
+      gap: 8px;
+      color: rgba(122, 148, 184, 0.82);
+      font-size: 0.88rem;
       font-weight: 600;
     }
 
     .empty-players-icon {
-      width: 52px;
-      height: 52px;
-      opacity: 0.45;
+      width: 58px;
+      height: 58px;
+      opacity: 0.38;
     }
 
     .footer { display: none; }
@@ -597,9 +635,23 @@
   <div class="stage" data-spec-id="stage.background">
     <div class="stage-beam stage-beam-left" data-spec-id="stage.beam-left" aria-hidden="true"></div>
     <div class="stage-beam stage-beam-right" data-spec-id="stage.beam-right" aria-hidden="true"></div>
+    <svg class="stage-corner stage-corner-tl" viewBox="0 0 110 110" aria-hidden="true">
+      <path d="M0 0 L72 0 L0 78 Z" fill="rgba(255,215,0,0.1)" stroke="rgba(255,215,0,0.45)" stroke-width="2"/>
+      <path d="M0 0 L0 72 L52 0" fill="none" stroke="rgba(61,184,255,0.35)" stroke-width="1.5"/>
+    </svg>
+    <svg class="stage-corner stage-corner-tr" viewBox="0 0 110 110" aria-hidden="true">
+      <path d="M0 0 L72 0 L0 78 Z" fill="rgba(255,215,0,0.1)" stroke="rgba(255,215,0,0.45)" stroke-width="2"/>
+      <path d="M0 0 L0 72 L52 0" fill="none" stroke="rgba(61,184,255,0.35)" stroke-width="1.5"/>
+    </svg>
+    <svg class="stage-corner stage-corner-bl" viewBox="0 0 110 110" aria-hidden="true">
+      <path d="M0 0 L72 0 L0 78 Z" fill="rgba(255,215,0,0.08)" stroke="rgba(255,215,0,0.35)" stroke-width="2"/>
+    </svg>
+    <svg class="stage-corner stage-corner-br" viewBox="0 0 110 110" aria-hidden="true">
+      <path d="M0 0 L72 0 L0 78 Z" fill="rgba(255,215,0,0.08)" stroke="rgba(255,215,0,0.35)" stroke-width="2"/>
+    </svg>
 
     <main id="screen" class="screen">
-      <section id="board" class="board">
+      <section id="board" class="board phase-idle">
         <header class="show-header">
           <div class="timer-card" data-spec-id="timer.container">
             <div id="timerLabel" class="timer-label" data-spec-id="timer.label">Next round starts in</div>
@@ -888,9 +940,10 @@
         els.playersGrid.innerHTML = `
           <div class="empty-players" data-spec-id="players.empty">
             <svg class="empty-players-icon" data-spec-id="players.empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="9" cy="8" r="3" fill="#8899aa"/>
-              <circle cx="16" cy="9" r="2.5" fill="#8899aa"/>
-              <path d="M4 18c0-3 2.5-5 5-5s5 2 5 5" fill="#8899aa"/>
+              <circle cx="9" cy="8" r="3" fill="#7a94b8"/>
+              <circle cx="16" cy="9" r="2.5" fill="#7a94b8"/>
+              <path d="M4 18c0-3 2.5-5 5-5s5 2 5 5" fill="#7a94b8"/>
+              <path d="M14 18c0-2 1.5-3.5 3.5-3.5" stroke="#7a94b8" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
             <span data-spec-id="players.empty-text">No player cards yet</span>
           </div>`;

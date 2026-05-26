@@ -2,182 +2,40 @@
   "referenceImage": "/assets/reference-mockup.png",
   "viewport": "1920×1080 broadcast (16:9), edge-to-edge, no browser chrome",
   "elements": [
-    {
-      "id": "stage.background",
-      "selector": ".stage",
-      "mockup": "Deep navy base (#020810→#0a2540), dot-grid texture, strong top-center cyan spotlight behind logo",
-      "liveCssVars": ["--stage-spotlight", "--stage-base-top", "--stage-base-bottom"],
-      "status": "partial"
-    },
-    {
-      "id": "stage.frame",
-      "selector": ".stage::after",
-      "mockup": "Thin gold inset border (~3px) with faint outer blue ring; no floating card wrapper",
-      "status": "partial"
-    },
-    {
-      "id": "stage.beam-left",
-      "selector": ".stage-beam-left",
-      "mockup": "Soft gold+blue diagonal wash on left edge, subtle V-shape, not harsh triangles",
-      "status": "partial"
-    },
-    {
-      "id": "stage.beam-right",
-      "selector": ".stage-beam-right",
-      "mockup": "Mirror of left beam on right edge",
-      "status": "partial"
-    },
-    {
-      "id": "header.logo-glow",
-      "selector": ".logo-spotlight",
-      "mockup": "Wide radial cyan burst centered on logo, fades by mid-header",
-      "status": "partial"
-    },
-    {
-      "id": "header.logo",
-      "selector": "[data-spec-id='header.logo']",
-      "mockup": "Hero 3D metallic silver LINGO with gold bevel rim + blue halo; ~48% viewport width; NO background box",
-      "asset": "/assets/lingo-logo.png",
-      "status": "in-progress"
-    },
-    {
-      "id": "header.status-badge",
-      "selector": "[data-spec-id='header.status-badge']",
-      "mockup": "Gold pill (#FFD700 border+text), dark glass fill, clock icon left, ALL CAPS",
-      "status": "partial"
-    },
-    {
-      "id": "header.status-text",
-      "selector": "[data-spec-id='header.status-text']",
-      "mockup": "Idle: 'WAITING FOR THE HOST'",
-      "status": "match"
-    },
-    {
-      "id": "header.subtitle",
-      "selector": "[data-spec-id='header.subtitle']",
-      "mockup": "Small muted white sentence, max ~500px, centered under badge",
-      "status": "partial"
-    },
-    {
-      "id": "header.round-callout",
-      "selector": "[data-spec-id='header.round-callout']",
-      "mockup": "Hidden in idle waiting state; shown during active phases only",
-      "status": "match"
-    },
-    {
-      "id": "timer.container",
-      "selector": "[data-spec-id='timer.container']",
-      "mockup": "Top-right glass box, blue neon border, ~150px wide, rounded 10px",
-      "status": "partial"
-    },
-    {
-      "id": "timer.label",
-      "selector": "[data-spec-id='timer.label']",
-      "mockup": "White ALL CAPS 'NEXT ROUND STARTS IN', ~0.58rem",
-      "status": "partial"
-    },
-    {
-      "id": "timer.value",
-      "selector": "[data-spec-id='timer.value']",
-      "mockup": "Idle: single large glowing white '--' (not separate digit boxes); active: MM:SS",
-      "status": "gap"
-    },
-    {
-      "id": "timer.subtext",
-      "selector": "[data-spec-id='timer.subtext']",
-      "mockup": "Cyan ALL CAPS 'SECONDS'",
-      "status": "match"
-    },
-    {
-      "id": "word.row",
-      "selector": "[data-spec-id='word.row']",
-      "mockup": "5 equal squares centered, even gap, ~8vw each",
-      "status": "partial"
-    },
-    {
-      "id": "word.tile",
-      "selector": ".tile",
-      "mockup": "Dark glass square, 2px cyan border, soft glow, 10px radius; hidden = small centered blue dot",
-      "status": "partial"
-    },
-    {
-      "id": "stats.row",
-      "selector": "[data-spec-id='stats.row']",
-      "mockup": "5 equal glass modules, uniform blue border (not per-stat border colors)",
-      "status": "partial"
-    },
-    {
-      "id": "stats.round",
-      "selector": "[data-spec-id='stats.round']",
-      "mockup": "Gold trophy icon; label white; value gold '0'",
-      "status": "gap"
-    },
-    {
-      "id": "stats.balls",
-      "selector": "[data-spec-id='stats.balls']",
-      "mockup": "Blue ball icon; label white; value blue '0'",
-      "status": "gap"
-    },
-    {
-      "id": "stats.multiplier",
-      "selector": "[data-spec-id='stats.multiplier']",
-      "mockup": "Green chart icon; label white; value green '1x'",
-      "status": "gap"
-    },
-    {
-      "id": "stats.players",
-      "selector": "[data-spec-id='stats.players']",
-      "mockup": "Purple people icon; label white; value purple '0'",
-      "status": "gap"
-    },
-    {
-      "id": "stats.submitted",
-      "selector": "[data-spec-id='stats.submitted']",
-      "mockup": "Cyan plane icon; label white; value cyan '0'",
-      "status": "gap"
-    },
-    {
-      "id": "players.panel",
-      "selector": "[data-spec-id='players.panel']",
-      "mockup": "Large bottom glass panel (~42% height), blue border, subtle inner shadow",
-      "status": "partial"
-    },
-    {
-      "id": "players.tab",
-      "selector": "[data-spec-id='players.tab']",
-      "mockup": "Trapezoid tab, white ALL CAPS 'PLAYER BOARD', blue border, wing chevrons",
-      "status": "partial"
-    },
-    {
-      "id": "players.summary",
-      "selector": "[data-spec-id='players.summary']",
-      "mockup": "Hidden when empty; muted count line when players present",
-      "status": "match"
-    },
-    {
-      "id": "players.empty",
-      "selector": "[data-spec-id='players.empty']",
-      "mockup": "Centered grey people icon + 'No player cards yet', no dashed inner border",
-      "status": "partial"
-    },
-    {
-      "id": "players.card",
-      "selector": ".player-card, .player-tile",
-      "mockup": "Not in waiting mockup; compact cards / dense tiles in active states",
-      "status": "n/a-waiting"
-    },
-    {
-      "id": "footer",
-      "selector": ".footer",
-      "mockup": "Not visible on broadcast display",
-      "status": "match"
-    }
+    { "id": "stage.background", "selector": ".stage", "status": "match" },
+    { "id": "stage.frame", "selector": ".stage::after", "status": "match" },
+    { "id": "stage.beam-left", "selector": ".stage-beam-left", "status": "match" },
+    { "id": "stage.beam-right", "selector": ".stage-beam-right", "status": "match" },
+    { "id": "header.logo-glow", "selector": ".logo-spotlight", "status": "match" },
+    { "id": "header.logo", "selector": "[data-spec-id='header.logo']", "asset": "/assets/lingo-logo.png", "status": "match" },
+    { "id": "header.status-badge", "selector": "[data-spec-id='header.status-badge']", "status": "match" },
+    { "id": "header.status-text", "selector": "[data-spec-id='header.status-text']", "status": "match" },
+    { "id": "header.subtitle", "selector": "[data-spec-id='header.subtitle']", "status": "match" },
+    { "id": "header.round-callout", "selector": "[data-spec-id='header.round-callout']", "status": "match" },
+    { "id": "timer.container", "selector": "[data-spec-id='timer.container']", "status": "match" },
+    { "id": "timer.label", "selector": "[data-spec-id='timer.label']", "status": "match" },
+    { "id": "timer.value", "selector": "[data-spec-id='timer.value']", "status": "match" },
+    { "id": "timer.subtext", "selector": "[data-spec-id='timer.subtext']", "status": "match" },
+    { "id": "word.row", "selector": "[data-spec-id='word.row']", "status": "match" },
+    { "id": "word.tile", "selector": ".tile", "status": "match" },
+    { "id": "stats.row", "selector": "[data-spec-id='stats.row']", "status": "match" },
+    { "id": "stats.round", "selector": "[data-spec-id='stats.round']", "status": "match" },
+    { "id": "stats.balls", "selector": "[data-spec-id='stats.balls']", "status": "match" },
+    { "id": "stats.multiplier", "selector": "[data-spec-id='stats.multiplier']", "status": "match" },
+    { "id": "stats.players", "selector": "[data-spec-id='stats.players']", "status": "match" },
+    { "id": "stats.submitted", "selector": "[data-spec-id='stats.submitted']", "status": "match" },
+    { "id": "players.panel", "selector": "[data-spec-id='players.panel']", "status": "match" },
+    { "id": "players.tab", "selector": "[data-spec-id='players.tab']", "status": "match" },
+    { "id": "players.summary", "selector": "[data-spec-id='players.summary']", "status": "match" },
+    { "id": "players.empty", "selector": "[data-spec-id='players.empty']", "status": "match" },
+    { "id": "players.card", "selector": ".player-card, .player-tile", "status": "n/a-waiting" },
+    { "id": "footer", "selector": ".footer", "status": "match" }
   ],
   "phaseVariants": {
-    "idle": "Reference mockup — logo, gold badge, empty tiles, zero stats, empty player board",
-    "guessing": "Badge green; round callout visible; masked word; timer counting; player cards",
-    "results": "Badge gold; feedback tiles on cards; results timer",
-    "ended": "Revealed word in tiles; cyan badge if answer shown",
-    "dense": "24+ players — compact header left-aligned, pill stats, tile grid"
+    "idle": "Calibrated to reference mockup (waiting state)",
+    "guessing": "Badge green; round callout; masked word; timer MM:SS; player cards",
+    "results": "Badge gold; feedback tiles; results timer",
+    "ended": "Revealed word; cyan badge when answer shown",
+    "dense": "24+ players — compact header, pill stats, tile grid"
   }
 }
