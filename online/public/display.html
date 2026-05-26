@@ -6,17 +6,22 @@
   <title>Lingo Public Display</title>
   <style>
     :root {
-      --bg: #03060b;
-      --panel: rgba(13, 110, 253, 0.88);
-      --panel-light: rgba(58, 140, 255, 0.95);
+      --navy: #071428;
+      --navy-deep: #040b16;
+      --gold: #f0c040;
+      --gold-dark: #c8961a;
+      --neon-blue: #3a9dff;
+      --neon-cyan: #22d3ee;
       --text: #ffffff;
-      --muted: #d9e7ff;
-      --border: rgba(255, 255, 255, 0.16);
-      --shadow: rgba(0, 0, 0, 0.45);
-      --good: #27ae60;
-      --warn: #f39c12;
-      --idle: #5375a8;
-      --tile: rgba(5, 22, 44, 0.76);
+      --muted: #b8cce8;
+      --good: #4ade80;
+      --warn: #fbbf24;
+      --idle: #7aa3d4;
+      --stat-round: #f0c040;
+      --stat-balls: #5eb8ff;
+      --stat-mult: #4ade80;
+      --stat-players: #c084fc;
+      --stat-submitted: #22d3ee;
     }
 
     * { box-sizing: border-box; }
@@ -25,270 +30,347 @@
       margin: 0;
       min-height: 100vh;
       color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
       background:
-        radial-gradient(circle at top, rgba(58, 140, 255, 0.18), transparent 35%),
-        linear-gradient(180deg, #04080f 0%, #02050a 100%);
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(58, 157, 255, 0.35), transparent 60%),
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(240, 192, 64, 0.08), transparent 50%),
+        linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 50%, #050d1a 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      background:
+        linear-gradient(135deg, rgba(240, 192, 64, 0.15) 0%, transparent 18%),
+        linear-gradient(225deg, rgba(240, 192, 64, 0.12) 0%, transparent 18%),
+        linear-gradient(45deg, rgba(58, 157, 255, 0.1) 0%, transparent 22%),
+        linear-gradient(315deg, rgba(58, 157, 255, 0.1) 0%, transparent 22%);
+    }
+
+    body::after {
+      box-shadow:
+        inset 0 0 0 3px rgba(240, 192, 64, 0.35),
+        inset 0 0 60px rgba(58, 157, 255, 0.08);
     }
 
     .screen {
+      position: relative;
+      z-index: 1;
       min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 28px;
+      padding: 20px;
     }
 
     .board {
-      width: min(96vw, 1540px);
-      border-radius: 34px;
-      padding: 26px;
-      background: linear-gradient(180deg, var(--panel-light), var(--panel));
-      border: 1px solid var(--border);
-      box-shadow: 0 22px 48px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      width: min(98vw, 1680px);
+      min-height: min(96vh, 980px);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 32px 24px;
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(12, 35, 68, 0.95) 0%, rgba(8, 22, 44, 0.98) 100%);
+      border: 2px solid rgba(58, 157, 255, 0.45);
+      box-shadow:
+        0 0 40px rgba(58, 157, 255, 0.2),
+        0 24px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
-    .topbar,
-    .stats {
+    h1, h2, p { margin: 0; }
+
+    .show-header {
       display: grid;
-      gap: 14px;
-    }
-
-    .topbar {
-      grid-template-columns: 1.4fr 1fr;
-      align-items: stretch;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: start;
       margin-bottom: 20px;
     }
 
-    .hero,
-    .timer-card,
-    .stat,
-    .footer {
-      background: rgba(0, 0, 0, 0.22);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    .brand-stack {
+      text-align: center;
     }
 
-    .hero {
-      padding: 24px 26px;
+    .logo {
+      font-size: clamp(3.5rem, 8vw, 5.5rem);
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      line-height: 1;
+      margin-bottom: 14px;
+      color: #eef4ff;
+      text-shadow:
+        0 0 20px rgba(58, 157, 255, 0.8),
+        0 4px 0 #1a4a8a,
+        0 6px 0 #0d2d5c,
+        0 8px 16px rgba(0, 0, 0, 0.6),
+        3px 3px 0 rgba(0, 0, 0, 0.4);
+      -webkit-text-stroke: 2px rgba(26, 74, 138, 0.9);
     }
 
-    .badge {
+    .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 10px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.12);
-      padding: 8px 14px;
+      padding: 10px 22px;
       font-weight: 800;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 16px;
+      font-size: 0.88rem;
+      border: 2px solid var(--gold);
+      background: linear-gradient(180deg, rgba(240, 192, 64, 0.25), rgba(200, 150, 26, 0.15));
+      color: var(--gold);
+      box-shadow: 0 0 20px rgba(240, 192, 64, 0.25);
+      margin-bottom: 12px;
+    }
+
+    .status-badge.guessing {
+      border-color: var(--good);
+      background: linear-gradient(180deg, rgba(74, 222, 128, 0.2), rgba(34, 120, 70, 0.15));
+      color: var(--good);
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.25);
+    }
+
+    .status-badge.results {
+      border-color: var(--warn);
+      background: linear-gradient(180deg, rgba(251, 191, 36, 0.2), rgba(180, 120, 20, 0.15));
+      color: var(--warn);
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.25);
+    }
+
+    .status-badge.revealed {
+      border-color: var(--neon-cyan);
+      background: linear-gradient(180deg, rgba(34, 211, 238, 0.2), rgba(20, 120, 140, 0.15));
+      color: var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.25);
     }
 
     .badge-dot {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 999px;
-      background: #ffffff;
-      box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
     }
 
-    h1,
-    h2,
-    p {
-      margin: 0;
-    }
-
-    .title {
-      font-size: clamp(2.4rem, 5vw, 4.6rem);
-      line-height: 1;
-      margin-bottom: 10px;
-      text-shadow: 4px 4px 0 #000;
+    .round-callout {
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 8px;
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
     }
 
     .subtitle {
-      font-size: clamp(1rem, 2vw, 1.45rem);
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
       color: var(--muted);
-      line-height: 1.35;
-      min-height: 2.7em;
+      line-height: 1.4;
+      max-width: 640px;
+      margin: 0 auto;
     }
 
     .timer-card {
-      display: grid;
-      place-items: center;
-      padding: 20px;
+      min-width: 200px;
+      padding: 16px 20px;
       text-align: center;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 2px solid rgba(58, 157, 255, 0.4);
+      box-shadow: inset 0 0 24px rgba(58, 157, 255, 0.08);
     }
 
     .timer-label {
-      font-size: 0.95rem;
+      font-size: 0.72rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      font-weight: 700;
     }
 
     .timer-value {
-      font-size: clamp(3.2rem, 9vw, 7rem);
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
       line-height: 1;
       font-weight: 900;
-      text-shadow: 4px 4px 0 #000;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 24px rgba(255, 255, 255, 0.4);
     }
 
     .timer-subtext {
-      margin-top: 8px;
+      margin-top: 6px;
       color: var(--muted);
-      font-size: 1rem;
-      min-height: 1.3em;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
     }
 
     .word-wrap {
-      margin: 8px 0 22px;
-      display: grid;
-      gap: 14px;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      display: flex;
+      justify-content: center;
+      gap: clamp(10px, 2vw, 18px);
+      margin: 8px 0 24px;
     }
 
     .tile {
-      aspect-ratio: 1 / 1;
+      width: clamp(72px, 10vw, 110px);
+      height: clamp(96px, 14vw, 140px);
       display: grid;
       place-items: center;
-      border-radius: 24px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), var(--tile));
-      border: 3px solid rgba(255, 255, 255, 0.14);
-      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
-      font-size: clamp(3rem, 8vw, 6rem);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(58, 157, 255, 0.35) 0%, rgba(20, 60, 120, 0.6) 100%);
+      border: 2px solid rgba(58, 157, 255, 0.7);
+      box-shadow:
+        0 0 20px rgba(58, 157, 255, 0.25),
+        inset 0 0 30px rgba(58, 157, 255, 0.15);
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
       font-weight: 900;
       text-transform: uppercase;
-      text-shadow: 3px 3px 0 #000;
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
     }
 
     .tile.hidden {
-      color: rgba(255, 255, 255, 0.35);
+      color: rgba(180, 210, 255, 0.5);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
     }
 
     .tile.revealed {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(39, 174, 96, 0.55));
+      background: linear-gradient(180deg, rgba(74, 222, 128, 0.45) 0%, rgba(34, 120, 70, 0.55) 100%);
+      border-color: rgba(74, 222, 128, 0.8);
+      box-shadow: 0 0 28px rgba(74, 222, 128, 0.35);
     }
 
     .stats {
+      display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      margin-bottom: 18px;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
     .stat {
-      padding: 18px;
+      padding: 14px 12px;
       text-align: center;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 2px solid rgba(58, 157, 255, 0.35);
+      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.2));
     }
 
     .stat-label {
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.82rem;
-      margin-bottom: 8px;
+      letter-spacing: 0.1em;
+      font-size: 0.68rem;
+      font-weight: 700;
+      margin-bottom: 4px;
     }
 
     .stat-value {
-      font-size: clamp(1.5rem, 3vw, 2.4rem);
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
       font-weight: 900;
-      word-break: break-word;
+      line-height: 1;
     }
 
-    .footer {
-      padding: 18px 22px;
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .footer-text {
-      color: var(--muted);
-      font-size: 1rem;
-      line-height: 1.35;
-    }
-
-    .footer strong {
-      color: #fff;
-    }
+    .stat-value.round { color: var(--stat-round); }
+    .stat-value.balls { color: var(--stat-balls); }
+    .stat-value.mult { color: var(--stat-mult); }
+    .stat-value.players { color: var(--stat-players); }
+    .stat-value.submitted { color: var(--stat-submitted); }
 
     .player-panel {
-      margin-bottom: 18px;
-      padding: 18px;
-      background: rgba(0, 0, 0, 0.22);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    }
-
-    .players-head {
+      flex: 1 1 auto;
       display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: end;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
+      flex-direction: column;
+      min-height: 180px;
+      position: relative;
+      margin-top: 8px;
+      padding: 22px 18px 16px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px solid rgba(240, 192, 64, 0.45);
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.25);
     }
 
-    .players-head h2 {
-      font-size: clamp(1.3rem, 2.4vw, 2rem);
-      margin-bottom: 6px;
+    .panel-tab {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 24px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--gold), var(--gold-dark));
+      color: #1a1200;
+      font-weight: 900;
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
     .players-summary {
       color: var(--muted);
-      font-size: 1rem;
+      font-size: 0.92rem;
       line-height: 1.35;
+      text-align: center;
+      margin-bottom: 14px;
     }
 
     .players-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 12px;
+      flex: 1 1 auto;
     }
 
     .player-card {
-      border-radius: 22px;
-      padding: 16px;
-      background: rgba(6, 17, 34, 0.72);
-      border: 2px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
-    }
-
-    .player-card.waiting {
-      border-color: rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 14px;
+      background: linear-gradient(180deg, rgba(15, 40, 75, 0.9), rgba(8, 22, 44, 0.95));
+      border: 2px solid rgba(58, 157, 255, 0.35);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     }
 
     .player-card.locked {
-      background: rgba(111, 84, 13, 0.72);
-      border-color: rgba(255, 214, 102, 0.8);
+      background: linear-gradient(180deg, rgba(120, 90, 20, 0.85), rgba(80, 55, 10, 0.9));
+      border-color: rgba(240, 192, 64, 0.7);
     }
 
     .player-card.resolved {
-      background: rgba(10, 42, 82, 0.78);
-      border-color: rgba(132, 181, 255, 0.45);
+      border-color: rgba(94, 184, 255, 0.5);
     }
 
     .player-card.solved {
-      background: rgba(22, 85, 45, 0.82);
-      border-color: rgba(95, 230, 151, 0.72);
+      background: linear-gradient(180deg, rgba(30, 100, 55, 0.9), rgba(18, 60, 35, 0.95));
+      border-color: rgba(74, 222, 128, 0.75);
+      box-shadow: 0 0 16px rgba(74, 222, 128, 0.25);
     }
 
     .player-card-top {
       display: flex;
       align-items: start;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 8px;
     }
 
     .player-name {
-      font-size: 1.15rem;
-      font-weight: 900;
+      font-size: 1.05rem;
+      font-weight: 800;
       line-height: 1.15;
       word-break: break-word;
     }
@@ -296,217 +378,125 @@
     .player-status-pill {
       flex: 0 0 auto;
       border-radius: 999px;
-      padding: 6px 10px;
-      background: rgba(255, 255, 255, 0.12);
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.1);
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      font-size: 0.65rem;
       font-weight: 800;
     }
 
     .player-meta {
       color: var(--muted);
-      font-size: 0.94rem;
-      min-height: 2.5em;
+      font-size: 0.82rem;
+      min-height: 2em;
       line-height: 1.3;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .feedback-row {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 8px;
+      gap: 6px;
     }
 
     .feedback-cell {
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
-      border-radius: 14px;
-      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
       background: rgba(255, 255, 255, 0.06);
-      font-size: 1.3rem;
+      font-size: 1rem;
       font-weight: 900;
-      text-transform: uppercase;
     }
 
-    .feedback-cell.pending {
-      background: rgba(255, 214, 102, 0.22);
-      border-color: rgba(255, 214, 102, 0.6);
-      color: #fff2b0;
-    }
-
-    .feedback-cell.correct {
-      background: rgba(39, 174, 96, 0.55);
-      border-color: rgba(95, 230, 151, 0.7);
-    }
-
-    .feedback-cell.present {
-      background: rgba(243, 156, 18, 0.55);
-      border-color: rgba(255, 207, 114, 0.8);
-    }
-
-    .feedback-cell.absent {
-      background: rgba(192, 57, 43, 0.45);
-      border-color: rgba(255, 159, 145, 0.6);
-    }
-
-    .feedback-cell.blank {
-      color: rgba(255, 255, 255, 0.22);
-    }
+    .feedback-cell.pending { background: rgba(240, 192, 64, 0.35); border-color: rgba(240, 192, 64, 0.6); color: #fff2b0; }
+    .feedback-cell.correct { background: rgba(74, 222, 128, 0.65); border-color: rgba(74, 222, 128, 0.8); }
+    .feedback-cell.present { background: rgba(251, 191, 36, 0.65); border-color: rgba(251, 191, 36, 0.8); }
+    .feedback-cell.absent { background: rgba(239, 68, 68, 0.55); border-color: rgba(239, 68, 68, 0.7); }
+    .feedback-cell.blank { color: rgba(255, 255, 255, 0.2); }
 
     .empty-players {
-      padding: 24px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px dashed rgba(255, 255, 255, 0.18);
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 40px 24px;
+      border-radius: 12px;
+      border: 2px dashed rgba(58, 157, 255, 0.3);
       color: var(--muted);
       text-align: center;
       font-size: 1rem;
     }
 
-    /* --- Auto-density mode (24+ players) --- */
-    .screen.dense {
-      padding: 8px;
-      place-items: stretch;
+    .empty-players-icon {
+      font-size: 2.5rem;
+      opacity: 0.4;
+      margin-bottom: 10px;
     }
+
+    .footer {
+      margin-top: 14px;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      border-top: 1px solid rgba(58, 157, 255, 0.2);
+    }
+
+    .footer-text {
+      color: rgba(184, 204, 232, 0.7);
+      font-size: 0.82rem;
+    }
+
+    .footer strong { color: var(--muted); }
+
+    /* --- Auto-density (24+ players) --- */
+    .screen.dense { padding: 8px; place-items: stretch; }
 
     .board.dense {
       width: 100%;
       max-width: none;
       min-height: calc(100vh - 16px);
-      display: flex;
-      flex-direction: column;
-      border-radius: 16px;
       padding: 12px 14px;
+      border-radius: 12px;
     }
 
-    .board.dense .topbar {
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-
-    .board.dense .hero {
-      padding: 10px 14px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px 16px;
-    }
-
-    .board.dense .badge {
-      margin-bottom: 0;
-      padding: 5px 10px;
-      font-size: 0.72rem;
-    }
-
-    .board.dense .badge-dot {
-      width: 8px;
-      height: 8px;
-    }
-
-    .board.dense .title {
-      font-size: clamp(1.1rem, 2vw, 1.6rem);
-      margin-bottom: 0;
-      flex: 1 1 auto;
-    }
-
-    .board.dense .subtitle {
-      display: none;
-    }
-
-    .board.dense .timer-card {
-      padding: 8px 14px;
-      min-width: 100px;
-    }
-
-    .board.dense .timer-label,
-    .board.dense .timer-subtext {
-      display: none;
-    }
-
-    .board.dense .timer-value {
-      font-size: clamp(1.6rem, 3vw, 2.4rem);
-    }
-
-    .board.dense .word-wrap {
-      margin: 0;
-      gap: 6px;
-      grid-template-columns: repeat(5, 42px);
-      flex: 0 0 auto;
-    }
-
-    .board.dense .word-wrap .tile {
-      border-radius: 8px;
-      border-width: 2px;
-      font-size: 1.4rem;
-      box-shadow: none;
-    }
-
-    .board.dense .stats {
-      grid-template-columns: repeat(5, auto);
-      gap: 8px;
-      margin-bottom: 8px;
-      justify-content: start;
-    }
-
-    .board.dense .stat {
-      padding: 6px 12px;
-      border-radius: 999px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-align: left;
-    }
-
-    .board.dense .stat-label {
-      margin-bottom: 0;
-      font-size: 0.68rem;
-    }
-
-    .board.dense .stat-value {
-      font-size: 0.95rem;
-    }
-
-    .board.dense .player-panel {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      margin-bottom: 0;
-      padding: 10px;
-    }
-
-    .board.dense .players-head {
-      margin-bottom: 8px;
-    }
-
-    .board.dense .players-head h2 {
-      font-size: 0.95rem;
-      margin-bottom: 2px;
-    }
-
-    .board.dense .players-summary {
-      font-size: 0.82rem;
-    }
-
-    .board.dense .footer {
-      display: none;
-    }
+    .board.dense .logo { font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 6px; }
+    .board.dense .show-header { grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 8px; }
+    .board.dense .brand-stack { text-align: left; }
+    .board.dense .status-badge { padding: 5px 12px; font-size: 0.68rem; margin-bottom: 4px; }
+    .board.dense .round-callout { font-size: 1rem; margin-bottom: 0; display: inline; }
+    .board.dense .subtitle { display: none; }
+    .board.dense .timer-card { min-width: 90px; padding: 8px 12px; }
+    .board.dense .timer-label { font-size: 0.6rem; margin-bottom: 4px; }
+    .board.dense .timer-subtext { display: none; }
+    .board.dense .timer-value { font-size: 1.8rem; }
+    .board.dense .word-wrap { margin: 4px 0 8px; gap: 6px; justify-content: flex-start; }
+    .board.dense .word-wrap .tile { width: 42px; height: 52px; font-size: 1.3rem; border-radius: 8px; }
+    .board.dense .stats { grid-template-columns: repeat(5, auto); gap: 8px; margin-bottom: 8px; justify-content: start; }
+    .board.dense .stat { padding: 6px 12px; border-radius: 999px; display: flex; align-items: center; gap: 8px; }
+    .board.dense .stat-icon { font-size: 1rem; margin-bottom: 0; }
+    .board.dense .stat-label { margin-bottom: 0; font-size: 0.62rem; }
+    .board.dense .stat-value { font-size: 0.95rem; }
+    .board.dense .player-panel { margin-top: 4px; padding: 14px 10px 10px; min-height: 0; }
+    .board.dense .panel-tab { font-size: 0.68rem; padding: 4px 16px; top: -11px; }
+    .board.dense .players-summary { font-size: 0.78rem; margin-bottom: 8px; }
+    .board.dense .footer { display: none; }
 
     .players-grid.dense {
-      flex: 1 1 auto;
       align-content: start;
       gap: var(--grid-gap, 4px);
     }
 
     .player-tile {
-      border-radius: 8px;
+      border-radius: 6px;
       padding: var(--tile-pad, 4px 5px);
-      background: rgba(6, 17, 34, 0.82);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(8, 22, 44, 0.9);
+      border: 1px solid rgba(58, 157, 255, 0.3);
       min-width: 0;
       display: flex;
       flex-direction: column;
@@ -514,30 +504,14 @@
       overflow: hidden;
     }
 
-    .player-tile.waiting {
-      opacity: 0.72;
-    }
-
-    .player-tile.locked {
-      background: rgba(111, 84, 13, 0.78);
-      border-color: rgba(255, 214, 102, 0.65);
-    }
-
-    .player-tile.resolved {
-      background: rgba(10, 42, 82, 0.82);
-      border-color: rgba(132, 181, 255, 0.35);
-    }
-
-    .player-tile.solved {
-      background: rgba(22, 85, 45, 0.88);
-      border-color: rgba(95, 230, 151, 0.72);
-      box-shadow: 0 0 8px rgba(95, 230, 151, 0.35);
-    }
+    .player-tile.waiting { opacity: 0.65; }
+    .player-tile.locked { background: rgba(100, 75, 15, 0.85); border-color: rgba(240, 192, 64, 0.6); }
+    .player-tile.resolved { border-color: rgba(94, 184, 255, 0.45); }
+    .player-tile.solved { background: rgba(25, 90, 50, 0.9); border-color: rgba(74, 222, 128, 0.7); box-shadow: 0 0 6px rgba(74, 222, 128, 0.3); }
 
     .player-tile-name {
       font-size: var(--tile-font-size, 0.78rem);
       font-weight: 800;
-      line-height: 1.1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -551,30 +525,16 @@
 
     .player-tile-feedback .mini-cell {
       aspect-ratio: 1 / 1;
-      border-radius: 3px;
+      border-radius: 2px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       background: rgba(255, 255, 255, 0.06);
     }
 
-    .player-tile-feedback .mini-cell.pending {
-      background: rgba(255, 214, 102, 0.45);
-    }
-
-    .player-tile-feedback .mini-cell.correct {
-      background: rgba(39, 174, 96, 0.85);
-    }
-
-    .player-tile-feedback .mini-cell.present {
-      background: rgba(243, 156, 18, 0.85);
-    }
-
-    .player-tile-feedback .mini-cell.absent {
-      background: rgba(192, 57, 43, 0.75);
-    }
-
-    .player-tile-feedback .mini-cell.blank {
-      background: rgba(255, 255, 255, 0.04);
-    }
+    .player-tile-feedback .mini-cell.pending { background: rgba(240, 192, 64, 0.5); }
+    .player-tile-feedback .mini-cell.correct { background: rgba(74, 222, 128, 0.85); }
+    .player-tile-feedback .mini-cell.present { background: rgba(251, 191, 36, 0.85); }
+    .player-tile-feedback .mini-cell.absent { background: rgba(239, 68, 68, 0.75); }
+    .player-tile-feedback .mini-cell.blank { background: rgba(255, 255, 255, 0.04); }
 
     .player-tile-status {
       font-size: calc(var(--tile-font-size, 0.78rem) * 0.85);
@@ -584,105 +544,77 @@
       text-overflow: ellipsis;
     }
 
-    .board.dense.size-lg {
-      --tile-font-size: 0.72rem;
-      --grid-gap: 4px;
-      --tile-pad: 4px 5px;
-    }
+    .board.dense.size-lg { --tile-font-size: 0.72rem; --grid-gap: 4px; --tile-pad: 4px 5px; }
+    .board.dense.size-xl { --tile-font-size: 0.62rem; --grid-gap: 3px; --tile-pad: 3px 4px; }
+    .board.dense.size-xxl { --tile-font-size: 0.54rem; --grid-gap: 2px; --tile-pad: 2px 3px; }
+    .board.dense.size-xxl .player-tile-feedback { gap: 1px; }
 
-    .board.dense.size-xl {
-      --tile-font-size: 0.62rem;
-      --grid-gap: 3px;
-      --tile-pad: 3px 4px;
-    }
-
-    .board.dense.size-xxl {
-      --tile-font-size: 0.54rem;
-      --grid-gap: 2px;
-      --tile-pad: 2px 3px;
-    }
-
-    .board.dense.size-xxl .player-tile-feedback {
-      gap: 1px;
-    }
-
-    @media (max-width: 980px) {
-      .topbar,
-      .stats {
-        grid-template-columns: 1fr;
-      }
-
-      .word-wrap {
-        gap: 10px;
-      }
-
-      .board {
-        padding: 18px;
-      }
-
-      .players-head {
-        align-items: start;
-      }
+    @media (max-width: 900px) {
+      .show-header, .stats { grid-template-columns: 1fr; }
+      .brand-stack { text-align: left; }
+      .timer-card { justify-self: start; }
     }
   </style>
 </head>
 <body>
   <main id="screen" class="screen">
     <section id="board" class="board">
-      <div class="topbar">
-        <div class="hero">
-          <div class="badge">
+      <header class="show-header">
+        <div class="brand-stack">
+          <div class="logo" aria-hidden="true">LINGO</div>
+          <div id="statusBadge" class="status-badge">
             <span id="badgeDot" class="badge-dot"></span>
             <span id="badgeText">Waiting</span>
           </div>
-          <h1 id="titleLine" class="title">Waiting for the host</h1>
+          <h1 id="titleLine" class="round-callout">Waiting for the host</h1>
           <p id="subtitleLine" class="subtitle">The public display will update automatically when the next online round starts.</p>
         </div>
 
         <div class="timer-card">
-          <div class="timer-label">Countdown</div>
+          <div id="timerLabel" class="timer-label">Next round starts in</div>
           <div id="timerValue" class="timer-value">--</div>
-          <div id="timerSubtext" class="timer-subtext">No active timer</div>
+          <div id="timerSubtext" class="timer-subtext">Seconds</div>
         </div>
-      </div>
+      </header>
 
       <div id="wordWrap" class="word-wrap" aria-label="Current word display"></div>
 
       <div class="stats">
         <div class="stat">
+          <div class="stat-icon">🏆</div>
           <div class="stat-label">Round</div>
-          <div id="roundValue" class="stat-value">0</div>
+          <div id="roundValue" class="stat-value round">0</div>
         </div>
         <div class="stat">
+          <div class="stat-icon">🔵</div>
           <div class="stat-label">Balls</div>
-          <div id="ballsValue" class="stat-value">0</div>
+          <div id="ballsValue" class="stat-value balls">0</div>
         </div>
         <div class="stat">
+          <div class="stat-icon">📈</div>
           <div class="stat-label">Multiplier</div>
-          <div id="multiplierValue" class="stat-value">1x</div>
+          <div id="multiplierValue" class="stat-value mult">1x</div>
         </div>
         <div class="stat">
+          <div class="stat-icon">👥</div>
           <div class="stat-label">Players</div>
-          <div id="playersValue" class="stat-value">0</div>
+          <div id="playersValue" class="stat-value players">0</div>
         </div>
         <div class="stat">
+          <div class="stat-icon">✈️</div>
           <div class="stat-label">Submitted</div>
-          <div id="submittedValue" class="stat-value">0</div>
+          <div id="submittedValue" class="stat-value submitted">0</div>
         </div>
       </div>
 
       <section class="player-panel">
-        <div class="players-head">
-          <div>
-            <h2>Player Board</h2>
-            <p id="playersSummary" class="players-summary">Waiting for players to join this session.</p>
-          </div>
-        </div>
+        <div class="panel-tab">Player Board</div>
+        <p id="playersSummary" class="players-summary">Waiting for players to join this session.</p>
         <div id="playersGrid" class="players-grid"></div>
       </section>
 
       <div class="footer">
-        <div id="footerText" class="footer-text">Players submit guesses on the main page while this display stays read-only.</div>
+        <div id="footerText" class="footer-text">Public display only. Players submit guesses on the main page.</div>
         <div id="updatedText" class="footer-text"><strong>Updated:</strong> --</div>
       </div>
     </section>
@@ -694,10 +626,12 @@
     const els = {
       screen: document.getElementById('screen'),
       board: document.getElementById('board'),
+      statusBadge: document.getElementById('statusBadge'),
       badgeDot: document.getElementById('badgeDot'),
       badgeText: document.getElementById('badgeText'),
       titleLine: document.getElementById('titleLine'),
       subtitleLine: document.getElementById('subtitleLine'),
+      timerLabel: document.getElementById('timerLabel'),
       timerValue: document.getElementById('timerValue'),
       timerSubtext: document.getElementById('timerSubtext'),
       wordWrap: document.getElementById('wordWrap'),
@@ -723,17 +657,14 @@
 
     function timeRemainingSeconds(state) {
       if (!state) return null;
-
       if (state.phase === 'guessing' && state.guessWindowOpenedAtIso && Number.isFinite(state.guessWindowSeconds)) {
         const endsAt = Date.parse(state.guessWindowOpenedAtIso) + (state.guessWindowSeconds * 1000);
         return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
       }
-
       if (state.phase === 'results' && state.resultsWindowOpenedAtIso && Number.isFinite(state.resultsWindowSeconds)) {
         const endsAt = Date.parse(state.resultsWindowOpenedAtIso) + (state.resultsWindowSeconds * 1000);
         return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
       }
-
       return null;
     }
 
@@ -750,17 +681,19 @@
     }
 
     function renderTimer() {
+      const phase = currentState?.phase || 'idle';
       const remaining = timeRemainingSeconds(currentState);
+
       if (remaining === null) {
         els.timerValue.textContent = '--';
-        els.timerSubtext.textContent = 'No active timer';
+        els.timerLabel.textContent = phase === 'idle' ? 'Next round starts in' : 'Time remaining';
+        els.timerSubtext.textContent = 'Seconds';
         return;
       }
 
       els.timerValue.textContent = formatSeconds(remaining);
-      els.timerSubtext.textContent = currentState.phase === 'guessing'
-        ? 'Guess window open'
-        : 'Results screen active';
+      els.timerLabel.textContent = phase === 'guessing' ? 'Guess window' : 'Results window';
+      els.timerSubtext.textContent = 'Seconds';
     }
 
     function escapeHtml(text) {
@@ -821,9 +754,7 @@
       els.board.classList.toggle('dense', dense);
       els.playersGrid.classList.toggle('dense', dense);
       els.board.classList.remove('size-lg', 'size-xl', 'size-xxl');
-      if (dense) {
-        els.board.classList.add(densitySizeClass(playerCount));
-      }
+      if (dense) els.board.classList.add(densitySizeClass(playerCount));
       return dense;
     }
 
@@ -843,14 +774,14 @@
 
     function renderCardPlayerTile(player, phase) {
       const detail = player.status === 'locked'
-        ? 'Guess received and locked for this round.'
+        ? 'Guess locked for this round.'
         : player.status === 'solved'
-          ? 'Exact match. This player solved the word.'
+          ? 'Solved the word!'
           : player.status === 'resolved'
-            ? 'Round feedback is shown below.'
+            ? 'Round feedback below.'
             : phase === 'guessing'
-              ? 'Waiting for a guess in the active round.'
-              : 'No accepted guess for this round.';
+              ? 'Waiting for guess.'
+              : 'No guess this round.';
 
       return `
         <article class="player-card ${escapeHtml(player.status || 'waiting')}">
@@ -870,40 +801,46 @@
       const dense = setLayoutDensity(safePlayers.length);
 
       if (!safePlayers.length) {
-        els.playersSummary.textContent = 'No players have joined this session yet.';
+        els.playersSummary.textContent = '';
         els.playersGrid.style.gridTemplateColumns = '';
-        els.playersGrid.innerHTML = '<div class="empty-players">No player cards to show yet. Once guesses start coming in, they will appear here automatically.</div>';
+        els.playersGrid.innerHTML = `
+          <div class="empty-players">
+            <div class="empty-players-icon">👥</div>
+            No player cards yet
+          </div>`;
         return;
       }
 
       if (phase === 'guessing') {
-        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} players have locked in a guess.`;
+        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} players locked in.`;
       } else if (phase === 'results' || phase === 'ended') {
-        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} players submitted a guess this round.`;
+        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} submitted this round.`;
       } else {
-        els.playersSummary.textContent = `${safePlayers.length} players are in the current online session.`;
+        els.playersSummary.textContent = `${safePlayers.length} players in session.`;
       }
 
       if (dense) {
         const columns = computeGridColumns(safePlayers.length);
         els.playersGrid.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
-        els.playersSummary.textContent += ` · Compact ${columns}-column grid`;
+        els.playersSummary.textContent += ` · ${columns}-column grid`;
       } else {
         els.playersGrid.style.gridTemplateColumns = '';
       }
 
       els.playersGrid.innerHTML = safePlayers
-        .map((player) => (
-          dense
-            ? renderDensePlayerTile(player, phase)
-            : renderCardPlayerTile(player, phase)
-        ))
+        .map((player) => (dense ? renderDensePlayerTile(player, phase) : renderCardPlayerTile(player, phase)))
         .join('');
+    }
+
+    function setBadgePhase(phase) {
+      els.statusBadge.className = 'status-badge';
+      if (phase === 'guessing') els.statusBadge.classList.add('guessing');
+      else if (phase === 'results') els.statusBadge.classList.add('results');
+      else if (phase === 'ended') els.statusBadge.classList.add('revealed');
     }
 
     function renderState(state) {
       currentState = state || {};
-
       const phase = currentState.phase || 'idle';
       const roundNumber = Number(currentState.roundNumber || 0);
       const balls = Number(currentState.ballsRemaining || 0);
@@ -916,30 +853,24 @@
       const displayWord = revealedWord || maskedWord;
       const isRevealed = Boolean(revealedWord);
 
+      setBadgePhase(isRevealed && phase === 'ended' ? 'ended' : phase);
+
       if (phase === 'guessing') {
         els.badgeText.textContent = 'Guessing Open';
-        els.badgeDot.style.background = 'var(--good)';
         els.titleLine.textContent = `Round ${roundNumber} is live`;
         els.subtitleLine.textContent = `Guess the 5-letter word: ${maskedWord}`;
-        els.footerText.innerHTML = '<strong>Public display only.</strong> Players should submit guesses on the main page.';
       } else if (phase === 'results') {
         els.badgeText.textContent = 'Results';
-        els.badgeDot.style.background = 'var(--warn)';
         els.titleLine.textContent = `Round ${roundNumber} results`;
-        els.subtitleLine.textContent = `Guessing is closed. ${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
-        els.footerText.innerHTML = '<strong>Results phase is active.</strong> Hold on for the next guess window.';
+        els.subtitleLine.textContent = `${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
       } else if (phase === 'ended' && isRevealed) {
         els.badgeText.textContent = 'Answer Revealed';
-        els.badgeDot.style.background = 'var(--good)';
         els.titleLine.textContent = `The word was ${revealedWord}`;
         els.subtitleLine.textContent = 'Waiting for the host to set up the next round.';
-        els.footerText.innerHTML = '<strong>Round complete.</strong> The next word will appear here automatically.';
       } else {
-        els.badgeText.textContent = 'Waiting';
-        els.badgeDot.style.background = 'var(--idle)';
+        els.badgeText.textContent = 'Waiting for the host';
         els.titleLine.textContent = 'Waiting for the host';
         els.subtitleLine.textContent = 'The public display will update automatically when the next online round starts.';
-        els.footerText.innerHTML = '<strong>Public display only.</strong> Players should submit guesses on the main page.';
       }
 
       renderTiles(displayWord, isRevealed);
@@ -968,13 +899,8 @@
       els.subtitleLine.textContent = error.message || 'Could not load public state.';
     });
 
-    window.setInterval(() => {
-      renderTimer();
-    }, 1000);
-
-    window.setInterval(() => {
-      fetchPublicState().catch(() => {});
-    }, 5000);
+    window.setInterval(() => renderTimer(), 1000);
+    window.setInterval(() => fetchPublicState().catch(() => {}), 5000);
   </script>
 </body>
 </html>
