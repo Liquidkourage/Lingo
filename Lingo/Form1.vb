@@ -13,8 +13,18 @@ Imports System.Runtime.Serialization
 Imports System.Runtime.Serialization.Formatters.Binary
 Imports System.IO
 Imports System.ComponentModel
+Imports System.Reflection
+Imports System.Collections
+Imports System.Linq
+Imports System.Text.RegularExpressions
+Imports Google.Cloud.Firestore
 
 Public Class Form1
+    ' REVERT: set UseWebFormOnly = False to restore whisper guesses/signup/feedback.
+    Private Const UseWebFormOnly As Boolean = True
+    ' Optional URL included in Twitch chat announcements (web-only mode).
+    Private Const LingoWebUrl As String = "https://lingo.liquidkourage.com"
+
     Public g As Graphics
     Public client As TwitchClient
     Public wordlist1, wordlist2 As List(Of String)
@@ -26,6 +36,15 @@ Public Class Form1
     Public players As New List(Of Player)
     Public numballs As Integer = 0
     Public roundnum As Integer = 0
+    Public ballmultiplier As Integer = 1
+    Private channel As String
+    Private firestoreListener As FirestoreExample
+    Private ReadOnly processedWebGuesses As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+    Friend answerRevealed As Boolean = False
+    Private bingoOverlayActive As Boolean = False
+    Private bingoLastCall As String = ""
+    Private bingoRecentCalls As New List(Of String)
+    Private bingoHostForm As BingoHostForm
 
     Enum GameModes
         registration
@@ -34,6 +53,18 @@ Public Class Form1
         results
     End Enum
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles Me.Load
+        ballmultiplier = 1
+        Dim credPath As String = ExtractResourceToFile("Lingo.liquidkourage-16fe5-43e37d656052.json")
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credPath)
+
+        If String.IsNullOrEmpty(My.Settings.channel) Then
+            channel = InputBox("What is the name of your channel?  Omit the 'twitch.tv/' part.")
+            My.Settings.channel = channel
+            My.Settings.Save()
+        Else
+            channel = My.Settings.channel
+        End If
+
         gametimer = New Timer(1000)
         AddHandler gametimer.Elapsed, New ElapsedEventHandler(AddressOf GameTimer_Tick)
         wordlist = My.Resources.LingoWords.Split(vbCrLf.ToCharArray, StringSplitOptions.RemoveEmptyEntries).ToList
@@ -41,17 +72,11 @@ Public Class Form1
         For i As Integer = 0 To 999
             ListBox1.Items.Add(wordlist(r.Next(wordlist.Count - 1)))
         Next
-        Dim credentials As New ConnectionCredentials("kouragethecowardlybot", "mui2jnpzbi4ne7uohndwz5j0scbpym")
+
+        Dim credentials As New ConnectionCredentials("kouragethecowardlybot", "mui2jnpzbi4ne7uohndwz5j0scbpym", "wss://irc-ws.chat.twitch.tv:443")
         client = New TwitchClient()
-        client.Initialize(credentials, "liquid_kourage")
-        AddHandler client.OnJoinedChannel, AddressOf OnJoinedChannel
-        AddHandler client.OnMessageReceived, AddressOf OnMessageReceived
-        AddHandler client.OnWhisperReceived, AddressOf OnWhisperReceived
-        AddHandler client.OnConnected, AddressOf Client_OnConnected
-        AddHandler client.OnDisconnected, AddressOf Client_OnDisconnected
-        AddHandler client.OnReconnected, AddressOf Client_OnReconnected
-        AddHandler client.OnLeftChannel, AddressOf Client_onLeftChannel
-        AddHandler client.OnError, AddressOf Client_onError
+        client.Initialize(credentials, channel)
+        AttachTwitchClientHandlers()
         Try
             client.Connect()
         Catch
@@ -60,9 +85,266 @@ Public Class Form1
             Me.Invoke(Sub() Me.Close())
         End Try
 
-        PublicDisplay.Location = Screen.AllScreens(0).Bounds.Location
-        PublicDisplay.Size = Screen.AllScreens(0).Bounds.Size
+        Dim screenIndex As Integer = 0
+        If My.Settings.screennumber = -1 Then
+            screenIndex = CInt(InputBox("Which monitor should the public display use?  Typically, 0 is your 'main' display and 1,2,etc. are additional displays.  It is recommended to have the public display set up on a separate monitor from your main one."))
+            My.Settings.screennumber = screenIndex
+            My.Settings.Save()
+        Else
+            screenIndex = My.Settings.screennumber
+        End If
+        PublicDisplay.Location = Screen.AllScreens(screenIndex).Bounds.Location
+        PublicDisplay.Size = Screen.AllScreens(screenIndex).Bounds.Size
         PublicDisplay.Show()
+
+        firestoreListener = New FirestoreExample(Me)
+
+        If BingoFeature.Enabled Then
+            Button10.Visible = True
+        Else
+            Button10.Visible = False
+        End If
+    End Sub
+
+    Public Sub SetBingoOverlay(lastCall As String, recentCalls As List(Of String))
+        bingoOverlayActive = Not String.IsNullOrEmpty(lastCall)
+        bingoLastCall = If(lastCall, "")
+        bingoRecentCalls = If(recentCalls Is Nothing, New List(Of String)(), New List(Of String)(recentCalls))
+        DrawBingoOverlay()
+    End Sub
+
+    Public Sub ClearBingoOverlay()
+        bingoOverlayActive = False
+        bingoLastCall = ""
+        bingoRecentCalls.Clear()
+        drawalluserresults()
+    End Sub
+
+    Private Sub DrawBingoOverlay()
+        Using g As Graphics = PublicDisplay.PictureBox1.CreateGraphics()
+            g.DrawImage(My.Resources.lingobg11, 0, 0, 1920, 1080)
+            Using sf As New StringFormat With {.Alignment = StringAlignment.Center}
+                Using f As New FontFamily("Arial")
+                    Dim titlePath As New GraphicsPath()
+                    titlePath.AddString("BINGO", f, FontStyle.Bold, 96, New Rectangle(0, 40, 1920, 120), sf)
+                    g.FillPath(Brushes.Gold, titlePath)
+                    g.DrawPath(Pens.Black, titlePath)
+
+                    Dim callPath As New GraphicsPath()
+                    Dim callText = If(String.IsNullOrEmpty(bingoLastCall), "—", bingoLastCall)
+                    callPath.AddString(callText, f, FontStyle.Bold, 180, New Rectangle(0, 320, 1920, 220), sf)
+                    g.FillPath(Brushes.White, callPath)
+                    g.DrawPath(Pens.Black, callPath)
+
+                    Dim historyY = 600
+                    For i As Integer = 0 To Math.Min(bingoRecentCalls.Count - 1, 11)
+                        Dim label = bingoRecentCalls(bingoRecentCalls.Count - 1 - i)
+                        Dim hp As New GraphicsPath()
+                        hp.AddString(label, f, FontStyle.Regular, 48, New Rectangle(0, historyY + i * 56, 1920, 50), sf)
+                        g.DrawPath(Pens.White, hp)
+                    Next
+                End Using
+            End Using
+        End Using
+        Using g As Graphics = PublicDisplay.PictureBox2.CreateGraphics
+            g.DrawImage(My.Resources.hack2, 0, 0)
+        End Using
+    End Sub
+
+    Private Sub AttachTwitchClientHandlers()
+        AddHandler client.OnJoinedChannel, AddressOf OnJoinedChannel
+        AddHandler client.OnMessageReceived, AddressOf OnMessageReceived
+        If Not UseWebFormOnly Then
+            AddHandler client.OnWhisperReceived, AddressOf OnWhisperReceived
+        End If
+        AddHandler client.OnConnected, AddressOf Client_OnConnected
+        AddHandler client.OnDisconnected, AddressOf Client_OnDisconnected
+        AddHandler client.OnReconnected, AddressOf Client_OnReconnected
+        AddHandler client.OnLeftChannel, AddressOf Client_onLeftChannel
+        AddHandler client.OnError, AddressOf Client_onError
+    End Sub
+
+    Private Function WebSiteLabel() As String
+        If Not String.IsNullOrWhiteSpace(LingoWebUrl) Then Return LingoWebUrl
+        Return "the Lingo website"
+    End Function
+
+    Private Function WebGuessInstructions() As String
+        Return "Submit your guess at " + WebSiteLabel() + " (use your exact Twitch username)."
+    End Function
+
+    Private Function LiveSignupChatMessage() As String
+        If UseWebFormOnly Then
+            Return "Lingo is LIVE! Type !in in chat to join (or sign up on " + WebSiteLabel() + "). Guesses are submitted on the website only — match your Twitch username exactly."
+        End If
+        Return "Lingo is LIVE!  To sign up: Using either the Twitch chat or a whisper to KourageTheCowardlyBot, type the word '!in'!"
+    End Function
+
+    Private Function ExtractResourceToFile(resourceName As String) As String
+        Dim stream As Stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
+        If stream Is Nothing Then Throw New Exception("Resource not found: " + resourceName)
+        Dim tempFile As String = Path.GetTempFileName()
+        Using outStream As New FileStream(tempFile, FileMode.Create, FileAccess.Write)
+            stream.CopyTo(outStream)
+        End Using
+        Return tempFile
+    End Function
+
+    Friend Sub SetFirestoreStatus(message As String)
+        If Me.IsHandleCreated AndAlso TextBox3 IsNot Nothing Then
+            If Me.InvokeRequired Then
+                Me.Invoke(Sub() TextBox3.Text = message)
+            Else
+                TextBox3.Text = message
+            End If
+        End If
+        Debug.WriteLine(message)
+    End Sub
+
+    Public Sub ProcessUserGameChanges(previousSnapshot As QuerySnapshot, currentSnapshot As QuerySnapshot)
+        Dim previousDocs = previousSnapshot.Documents.ToDictionary(Function(doc) doc.Id)
+        Dim currentDocs = currentSnapshot.Documents.ToDictionary(Function(doc) doc.Id)
+
+        For Each doc In currentSnapshot.Documents
+            If Not previousDocs.ContainsKey(doc.Id) Then
+                ProcessUserGameDocument(doc, "Added")
+            ElseIf Not doc.Equals(previousDocs(doc.Id)) Then
+                ProcessUserGameDocument(doc, "Modified")
+            End If
+        Next
+
+        For Each doc In previousSnapshot.Documents
+            If Not currentDocs.ContainsKey(doc.Id) Then
+                ProcessUserGameDocument(doc, "Removed")
+            End If
+        Next
+    End Sub
+
+    Public Sub ProcessSubmissionChanges(previousSnapshot As QuerySnapshot, currentSnapshot As QuerySnapshot)
+        Dim previousDocs = previousSnapshot.Documents.ToDictionary(Function(doc) doc.Id)
+        For Each doc In currentSnapshot.Documents
+            If Not previousDocs.ContainsKey(doc.Id) Then
+                ProcessSubmissionDocument(doc)
+            End If
+        Next
+    End Sub
+
+    Private Sub ProcessSubmissionDocument(document As DocumentSnapshot)
+        If Not document.Exists Then Return
+        Try
+            Dim displayName As String = document.GetValue(Of String)("display_name")
+            Dim response As String = document.GetValue(Of String)("response")
+            QueueWebGuess(displayName, response)
+        Catch ex As Exception
+            SetFirestoreStatus("Submission parse: " + ex.Message)
+        End Try
+    End Sub
+
+    Private Sub ProcessUserGameDocument(document As DocumentSnapshot, changeType As String)
+        If Not document.Exists Then Return
+
+        Dim displayName As String = ""
+        Try
+            displayName = document.GetValue(Of String)("display_name")
+        Catch
+            Return
+        End Try
+
+        Dim lastResponse As String = GetLastResponseFromDocument(document)
+        Dim playerExists As Boolean = players.Any(Function(p) String.Equals(p.Name, displayName, StringComparison.OrdinalIgnoreCase))
+
+        If changeType = "Removed" AndAlso playerExists Then
+            unregisterplayer(displayName)
+            Return
+        End If
+
+        If changeType = "Added" Then
+            If Not playerExists Then registerplayer(displayName)
+            QueueWebGuess(displayName, lastResponse)
+            Return
+        End If
+
+        If changeType = "Modified" Then
+            If Not playerExists Then registerplayer(displayName)
+            QueueWebGuess(displayName, lastResponse)
+        End If
+    End Sub
+
+    Private Function ResponseFromAnswerEntry(entry As Object) As String
+        If entry Is Nothing Then Return ""
+        If TypeOf entry Is Dictionary(Of String, Object) Then
+            Dim dict = DirectCast(entry, Dictionary(Of String, Object))
+            If dict.ContainsKey("response") AndAlso dict("response") IsNot Nothing Then
+                Return dict("response").ToString()
+            End If
+        ElseIf TypeOf entry Is IDictionary Then
+            Dim dict = DirectCast(entry, IDictionary)
+            If dict.Contains("response") AndAlso dict("response") IsNot Nothing Then
+                Return dict("response").ToString()
+            End If
+        End If
+        Return ""
+    End Function
+
+    Private Function GetLastResponseFromDocument(document As DocumentSnapshot) As String
+        Try
+            If Not document.ContainsField("answers") Then Return ""
+
+            Try
+                Dim answers = document.GetValue(Of List(Of Dictionary(Of String, Object)))("answers")
+                If answers IsNot Nothing AndAlso answers.Count > 0 Then
+                    Return ResponseFromAnswerEntry(answers(answers.Count - 1))
+                End If
+            Catch
+            End Try
+
+            Dim answersObj = document.GetValue(Of Object)("answers")
+            If answersObj Is Nothing Then Return ""
+
+            If TypeOf answersObj Is IEnumerable AndAlso Not TypeOf answersObj Is String Then
+                Dim entries = DirectCast(answersObj, IEnumerable).Cast(Of Object)().ToList()
+                If entries.Count > 0 Then
+                    Return ResponseFromAnswerEntry(entries(entries.Count - 1))
+                End If
+            End If
+        Catch ex As Exception
+            SetFirestoreStatus("Answer parse: " + ex.Message)
+        End Try
+        Return ""
+    End Function
+
+    Private Sub QueueWebGuess(displayName As String, response As String)
+        If String.IsNullOrWhiteSpace(displayName) OrElse String.IsNullOrWhiteSpace(response) Then Return
+
+        Dim guessKey As String = displayName.Trim() + "|" + response.Trim().ToUpperInvariant()
+        If processedWebGuesses.Contains(guessKey) Then Return
+        processedWebGuesses.Add(guessKey)
+
+        ApplyWebGuess(displayName.Trim(), response.Trim().ToUpperInvariant())
+    End Sub
+
+    Private Sub ApplyWebGuess(displayName As String, response As String)
+        Dim playerExists As Boolean = players.Exists(Function(p) String.Equals(p.Name, displayName, StringComparison.OrdinalIgnoreCase))
+        If Not playerExists Then registerplayer(displayName)
+
+        If gamemode <> GameModes.guessing OrElse roundnum <= 0 Then
+            updateplayernotes(displayName, response)
+            Return
+        End If
+
+        If Regex.IsMatch(response, "^[A-Za-z]{5}$") Then
+            updateplayerguess(displayName, response)
+            lockinplayerguess(displayName)
+            Dim stillwaiting As Boolean = False
+            For Each p As Player In players
+                If roundnum > 0 Then
+                    If (String.IsNullOrEmpty(p.guess) AndAlso p.roundresult(roundnum - 1) < 1) OrElse p.guess = "@@@@@" Then stillwaiting = True
+                End If
+            Next
+            If Not stillwaiting Then Button1.PerformClick()
+        Else
+            updateplayernotes(displayName, response)
+        End If
     End Sub
 
     Private Sub Client_onError(sender As Object, e As OnErrorEventArgs)
@@ -88,14 +370,8 @@ Public Class Form1
         Dim credentials As New ConnectionCredentials("kouragethecowardlybot", "mui2jnpzbi4ne7uohndwz5j0scbpym")
         'Dim credentials As New ConnectionCredentials("liquid_kourage", "j1kiijo0ymyef61xq6nbvr9jsw7f7i")
         client = New TwitchClient()
-        client.Initialize(credentials, "liquid_kourage")
-        AddHandler client.OnJoinedChannel, AddressOf OnJoinedChannel
-        AddHandler client.OnMessageReceived, AddressOf OnMessageReceived
-        AddHandler client.OnWhisperReceived, AddressOf OnWhisperReceived
-        AddHandler client.OnConnected, AddressOf Client_OnConnected
-        AddHandler client.OnDisconnected, AddressOf Client_OnDisconnected
-        AddHandler client.OnReconnected, AddressOf Client_OnReconnected
-        AddHandler client.OnLeftChannel, AddressOf Client_onLeftChannel
+        client.Initialize(credentials, channel)
+        AttachTwitchClientHandlers()
         Try
             client.Connect()
         Catch
@@ -113,7 +389,7 @@ Public Class Form1
     End Sub
 
     Private Sub OnJoinedChannel(ByVal sender As Object, ByVal e As OnJoinedChannelArgs)
-        client.SendMessage(e.Channel, "Lingo is LIVE!  To sign up: Using either the Twitch chat or a whisper to KourageTheCowardlyBot, type the word '!in'!")
+        client.SendMessage(e.Channel, LiveSignupChatMessage())
         If gamemode = Nothing Then gamemode = GameModes.registration
     End Sub
     Private Sub OnMessageReceived(ByVal sender As Object, ByVal e As OnMessageReceivedArgs)
@@ -122,6 +398,8 @@ Public Class Form1
                 Me.Invoke(Sub() registerplayer(e.ChatMessage.Username))
             Case e.ChatMessage.Message.ToLower = "!out"
                 Me.Invoke(Sub() unregisterplayer(e.ChatMessage.Username))
+            Case e.ChatMessage.Message.ToLower = "!feedback"
+                Me.Invoke(Sub() sendfeedback(e.ChatMessage.Username, client, "chat"))
                 'Case gamemode = GameModes.guessing
                 '    If System.Text.RegularExpressions.Regex.IsMatch(e.ChatMessage.Message, "^[A-Za-z]{5}$") Then
                 '        client.SendMessage(e.ChatMessage.Channel, "/delete " + e.ChatMessage.Id)
@@ -162,6 +440,7 @@ Public Class Form1
     End Sub
 
     Private Sub OnWhisperReceived(ByVal sender As Object, ByVal e As OnWhisperReceivedArgs)
+        If UseWebFormOnly Then Return
         Select Case True
             Case e.WhisperMessage.Message.ToLower = "!in"
                 'client.SendWhisper(e.WhisperMessage.Username, "Your entry is confirmed.")
@@ -169,14 +448,14 @@ Public Class Form1
             Case e.WhisperMessage.Message.ToLower = "!out"
                 Me.Invoke(Sub() unregisterplayer(e.WhisperMessage.Username))
             Case e.WhisperMessage.Message.ToLower = "!feedback"
-                Me.Invoke(Sub() sendfeedback(e.WhisperMessage.Username, client))
+                Me.Invoke(Sub() sendfeedback(e.WhisperMessage.Username, client, "whisper"))
             Case gamemode = GameModes.guessing
                 If System.Text.RegularExpressions.Regex.IsMatch(e.WhisperMessage.Message, "^[A-Za-z]{5}$") Then
                     Me.Invoke(Sub() updateplayerguess(e.WhisperMessage.Username, e.WhisperMessage.Message))
                     Me.Invoke(Sub() lockinplayerguess(e.WhisperMessage.Username))
                     Dim stillwaiting As Boolean = False
                     For Each p As Player In players
-                        If p.guess = "" OrElse p.guess = "@@@@@" Then stillwaiting = True
+                        If (p.guess = "" AndAlso p.roundresult(roundnum - 1) < 1) OrElse p.guess = "@@@@@" Then stillwaiting = True
                     Next
                     If Not stillwaiting Then Me.Invoke(Sub() Button1.PerformClick())
                 Else
@@ -211,12 +490,17 @@ Public Class Form1
         End Select
     End Sub
 
-    Private Sub sendfeedback(username As String, client As TwitchClient)
+    Private Sub sendfeedback(username As String, client As TwitchClient, mode As String)
         Dim match As Predicate(Of Player) = Function(pl) pl.Name = username
-        If players.Exists(match) Then
-            Dim p As Player = players.Find(match)
-            p.setfeedback()
+        If Not players.Exists(match) Then Return
+        Dim p As Player = players.Find(match)
+        Dim deliveryMode As String = mode
+        If UseWebFormOnly AndAlso deliveryMode = "whisper" Then deliveryMode = "chat"
+        p.setfeedback(deliveryMode)
+        If deliveryMode = "whisper" Then
             client.SendWhisper(username, p.feedback)
+        ElseIf deliveryMode = "chat" Then
+            client.SendMessage(channel, p.feedback)
         End If
     End Sub
 
@@ -269,16 +553,21 @@ Public Class Form1
             If beenguessed = False AndAlso p.roundresult(roundnum - 1) >= 1 Then beenguessed = True
             p.allguesses.Add(p.guess)
         Next
-        drawalluserresults()
 
-        If numballs = 6 Then numballs = 5
-        If beenguessed Then numballs -= 1
-        If numballs >= 2 Then
+        Dim lastGuessWasTwoBall As Boolean = (numballs = 2 * ballmultiplier)
+        If numballs = 6 * ballmultiplier Then numballs = 5 * ballmultiplier
+        If beenguessed Then numballs -= 1 * ballmultiplier
+        If lastGuessWasTwoBall Then answerRevealed = True
+        drawalluserresults()
+        If lastGuessWasTwoBall Then
+            AnnounceWordAnswer()
+            gametimer.Stop()
+        ElseIf numballs >= 2 * ballmultiplier Then
             While client.JoinedChannels.Count = 0
                 client.Connect()
                 Threading.Thread.Sleep(5000)
             End While
-            Me.Invoke(Sub() client.SendMessage(client.JoinedChannels(0), "Time's up!  You now have 45 seconds to look at your feedback.  To see this at any time, whisper !feedback to KourageTheCowardlyBot."))
+            Me.Invoke(Sub() client.SendMessage(client.JoinedChannels(0), "Time's up!  You now have 45 seconds to look at your feedback.  To see this at any time, type !feedback in chat."))
             gametime = 45
             gametimer.Start()
         Else
@@ -286,7 +575,21 @@ Public Class Form1
         End If
     End Sub
 
+    Private Sub AnnounceWordAnswer()
+        While client.JoinedChannels.Count = 0
+            client.Connect()
+            Threading.Thread.Sleep(5000)
+        End While
+        If client.JoinedChannels.Count > 0 Then
+            client.SendMessage(client.JoinedChannels(0), "The word was: " + Label4.Text.ToUpper() + "!")
+        End If
+    End Sub
+
     Private Sub drawalluserresults()
+        If bingoOverlayActive Then
+            DrawBingoOverlay()
+            Return
+        End If
         Using g As Graphics = PublicDisplay.PictureBox1.CreateGraphics
             g.DrawImage(My.Resources.lingobg11, 0, 0, 1920, 1080)
             Using sf As New StringFormat
@@ -295,11 +598,22 @@ Public Class Form1
                 Dim r3 As New Rectangle(0, 1020, 1920, 60)
                 Dim gp As New GraphicsPath()
                 Using f As FontFamily = New FontFamily("Boomer Tantrum")
-                    If roundnum > 0 Then gp.AddString("This guess worth " + numballs.ToString + " balls", f, FontStyle.Regular, g.DpiY * 48 / 72, r2, sf)
-                    If gamemode = GameModes.results Then
+                    If answerRevealed Then
+                        gp.AddString("THE WORD WAS: " + Label4.Text.ToUpper(), f, FontStyle.Regular, g.DpiY * 72 / 72, r2, sf)
                         gp.AddString("Here are the results.  DO NOT GUESS NOW!", f, FontStyle.Regular, g.DpiY * 48 / 72, r3, sf)
-                    Else
-                        If roundnum > 0 Then gp.AddString("Word #" + roundnum.ToString + ", first letter is " + Label4.Text(0).ToString.ToUpper, f, FontStyle.Regular, g.DpiY * 48 / 72, r3, sf)
+                        sf.LineAlignment = StringAlignment.Center
+                        Dim rCenter As New Rectangle(0, 380, 1920, 220)
+                        gp.AddString(Label4.Text.ToUpper(), f, FontStyle.Regular, g.DpiY * 120 / 72, rCenter, sf)
+                        sf.LineAlignment = StringAlignment.Near
+                    ElseIf roundnum > 0 Then
+                        gp.AddString("This guess worth " + numballs.ToString + " balls", f, FontStyle.Regular, g.DpiY * 48 / 72, r2, sf)
+                    End If
+                    If Not answerRevealed Then
+                        If gamemode = GameModes.results Then
+                            gp.AddString("Here are the results.  DO NOT GUESS NOW!", f, FontStyle.Regular, g.DpiY * 48 / 72, r3, sf)
+                        Else
+                            If roundnum > 0 Then gp.AddString("Word #" + roundnum.ToString + ", first letter is " + Label4.Text(0).ToString.ToUpper, f, FontStyle.Regular, g.DpiY * 48 / 72, r3, sf)
+                        End If
                     End If
                     sf.LineAlignment = StringAlignment.Far
                     g.DrawPath(Pens.Black, gp)
@@ -356,7 +670,9 @@ Public Class Form1
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
         roundnum += 1
         gamemode = GameModes.guessing
-        numballs = 6
+        answerRevealed = False
+        processedWebGuesses.Clear()
+        numballs = 6 * ballmultiplier
         For Each p As Player In players
             p.updategraphic("     ", False)
             p.guess = ""
@@ -370,13 +686,14 @@ Public Class Form1
             client.Connect()
             Threading.Thread.Sleep(5000)
         End While
-        Me.Invoke(Sub() client.SendMessage(client.JoinedChannels(0), "Round " + roundnum.ToString + " has started!  The first letter is " + Label4.Text.Chars(0) + ".  You have 90 seconds to submit your guess via whisper!"))
+        Me.Invoke(Sub() client.SendMessage(client.JoinedChannels(0), "Round " + roundnum.ToString + " has started!  The first letter is " + Label4.Text.Chars(0) + ".  You have 90 seconds. " + WebGuessInstructions()))
         gametime = 90
         gametimer.Start()
     End Sub
 
     Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
         gamemode = GameModes.guessing
+        processedWebGuesses.Clear()
         For Each p As Player In players
             p.guess = ""
             p.updategraphic("     ", False)
@@ -389,7 +706,7 @@ Public Class Form1
             client.Connect()
             Threading.Thread.Sleep(5000)
         End While
-        Me.Invoke(Sub() client.SendMessage(client.JoinedChannels(0), "Round " + roundnum.ToString + " continues for " + numballs.ToString + " balls!  The first letter is " + Label4.Text.Chars(0) + ".  You have 90 seconds to submit your guess via whisper!"))
+        Me.Invoke(Sub() client.SendMessage(client.JoinedChannels(0), "Round " + roundnum.ToString + " continues for " + numballs.ToString + " balls!  The first letter is " + Label4.Text.Chars(0) + ".  You have 90 seconds. " + WebGuessInstructions()))
         gametime = 90
         gametimer.Start()
     End Sub
@@ -550,7 +867,35 @@ Public Class Form1
         End If
     End Sub
 
+    Private Sub Button10_Click(sender As Object, e As EventArgs) Handles Button10.Click
+        If bingoHostForm Is Nothing OrElse bingoHostForm.IsDisposed Then
+            bingoHostForm = New BingoHostForm(Me)
+        End If
+        bingoHostForm.Show()
+        bingoHostForm.BringToFront()
+    End Sub
+
+    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click
+        If MsgBox("This mode cannot be disabled.  Are you sure?", MsgBoxStyle.YesNo, "Enable 2x Ball Mode") <> MsgBoxResult.No Then
+            ballmultiplier = 2
+            Button9.Enabled = False
+            If client.JoinedChannels.Count > 0 Then
+                client.SendMessage(client.JoinedChannels(0), "Hold your hats everyone, now we're playing for DOUBLE BALLS!")
+            End If
+        End If
+    End Sub
+
+    Private Sub TextBox1_TextChanged(sender As Object, e As EventArgs) Handles TextBox1.TextChanged
+    End Sub
+
+    Private Sub TextBox1_KeyDown(sender As Object, e As KeyEventArgs) Handles TextBox1.KeyDown
+        If e.KeyCode = Keys.Enter Then
+            Label4.Text = TextBox1.Text.ToUpper()
+        End If
+    End Sub
+
     Private Sub Form1_Closing(sender As Object, e As CancelEventArgs) Handles Me.Closing
+        If firestoreListener IsNot Nothing Then firestoreListener.StopListening()
         dumpdata()
     End Sub
 End Class

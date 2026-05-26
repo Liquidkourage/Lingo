@@ -1,0 +1,25 @@
+{
+  "name": "lingo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "emulators": "firebase emulators:start --only hosting,functions",
+    "deploy": "firebase deploy --only hosting,functions",
+    "functions:lint": "npm --prefix functions run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Liquidkourage/Lingo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Liquidkourage/Lingo/issues"
+  },
+  "homepage": "https://github.com/Liquidkourage/Lingo#readme",
+  "description": "",
+  "devDependencies": {
+    "firebase-tools": "^15.18.0"
+  }
+}

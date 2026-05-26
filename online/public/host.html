@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lingo Host Dashboard</title>
+  <style>
+    :root {
+      --bg: #05070a;
+      --panel: #0d6efd;
+      --panel-dark: #0849a6;
+      --panel-light: #3a8cff;
+      --danger: #c0392b;
+      --warning: #f39c12;
+      --good: #27ae60;
+      --text: #ffffff;
+      --muted: #d9e7ff;
+      --shadow: rgba(0, 0, 0, 0.4);
+      --border: rgba(255, 255, 255, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 20px;
+      background: radial-gradient(circle at top, rgba(58, 140, 255, 0.14), transparent 35%), var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    h1, h2, p { margin: 0; }
+    .hero { margin-bottom: 18px; }
+    .hero h1 { font-size: clamp(1.9rem, 4vw, 3rem); margin-bottom: 8px; }
+    .hero p { color: var(--muted); max-width: 860px; line-height: 1.45; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .panel {
+      grid-column: span 12;
+      background: linear-gradient(180deg, var(--panel-light), var(--panel));
+      border-radius: 20px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 32px var(--shadow);
+    }
+
+    .panel h2 { margin-bottom: 14px; font-size: 1.15rem; }
+    .panel.cols-7 { grid-column: span 7; }
+    .panel.cols-5 { grid-column: span 5; }
+    .panel.cols-12 { grid-column: span 12; }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1 1 180px;
+    }
+
+    label { font-weight: 700; font-size: 0.95rem; }
+
+    input {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(180deg, #0850bb, var(--panel-dark));
+      cursor: pointer;
+    }
+
+    button.secondary { background: linear-gradient(180deg, #5375a8, #415978); }
+    button.warning { background: linear-gradient(180deg, #f5b041, #d68910); }
+    button.danger { background: linear-gradient(180deg, #d35454, var(--danger)); }
+    button.good { background: linear-gradient(180deg, #38c172, var(--good)); }
+
+    .status {
+      min-height: 1.2em;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+    .status.error { color: #ffd4d4; }
+    .status.success { color: #d8ffea; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .summary-card {
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .summary-card .label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .summary-card .value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      border-radius: 14px;
+      overflow: auto;
+      background: rgba(0, 0, 0, 0.28);
+      line-height: 1.35;
+      font-size: 0.88rem;
+    }
+
+    .muted { color: var(--muted); font-size: 0.92rem; line-height: 1.4; }
+
+    @media (max-width: 900px) {
+      .panel.cols-7,
+      .panel.cols-5 {
+        grid-column: span 12;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Lingo Host Dashboard</h1>
+      <p>Railway/Postgres version. The browser controls the show through a single Node backend, and Postgres holds the live session plus accepted player guesses.</p>
+    </div>
+
+    <div class="grid">
+      <section class="panel cols-7">
+        <h2>Host Access</h2>
+        <div class="row">
+          <div class="field">
+            <label for="adminKey">Admin key</label>
+            <input id="adminKey" type="password" autocomplete="current-password" placeholder="Enter the Railway env var LINGO_ADMIN_KEY" />
+          </div>
+          <button id="connectBtn" class="good" type="button">Connect</button>
+          <button id="refreshBtn" class="secondary" type="button">Refresh state</button>
+        </div>
+        <div id="connectStatus" class="status"></div>
+      </section>
+
+      <section class="panel cols-5">
+        <h2>Session Summary</h2>
+        <div class="summary">
+          <div class="summary-card"><div class="label">Phase</div><div class="value" id="phaseValue">idle</div></div>
+          <div class="summary-card"><div class="label">Round</div><div class="value" id="roundValue">0</div></div>
+          <div class="summary-card"><div class="label">Balls</div><div class="value" id="ballsValue">0</div></div>
+          <div class="summary-card"><div class="label">Multiplier</div><div class="value" id="multiplierValue">1x</div></div>
+          <div class="summary-card"><div class="label">Word</div><div class="value" id="wordValue">—</div></div>
+          <div class="summary-card"><div class="label">Updated</div><div class="value" id="updatedValue">—</div></div>
+        </div>
+      </section>
+
+      <section class="panel cols-7">
+        <h2>Round Controls</h2>
+        <div class="row">
+          <div class="field">
+            <label for="wordInput">Current 5-letter word</label>
+            <input id="wordInput" type="text" maxlength="5" placeholder="LINGO" />
+          </div>
+          <div class="field">
+            <label for="guessSecondsInput">Guess window seconds</label>
+            <input id="guessSecondsInput" type="number" min="10" step="5" value="90" />
+          </div>
+          <div class="field">
+            <label for="resultsSecondsInput">Results window seconds</label>
+            <input id="resultsSecondsInput" type="number" min="10" step="5" value="45" />
+          </div>
+          <div class="field">
+            <label for="ballsInput">Manual balls remaining</label>
+            <input id="ballsInput" type="number" min="0" step="1" value="0" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="newSessionBtn" type="button">Create / reset session</button>
+          <button id="setWordBtn" type="button">Set word</button>
+          <button id="startRoundBtn" class="good" type="button">Start round</button>
+          <button id="revealResultsBtn" class="warning" type="button">Reveal results</button>
+          <button id="continueRoundBtn" type="button">Continue round</button>
+          <button id="toggleDoubleBtn" type="button">Toggle 2x balls</button>
+          <button id="setBallsBtn" type="button">Set balls</button>
+          <button id="revealAnswerBtn" class="warning" type="button">Reveal answer</button>
+          <button id="resetSessionBtn" class="danger" type="button">Hard reset</button>
+        </div>
+
+        <div id="actionStatus" class="status"></div>
+      </section>
+
+      <section class="panel cols-5">
+        <h2>Backend State</h2>
+        <p class="muted">Raw server state stored in Postgres. Later, the public display and scoring engine can read from the same backend model.</p>
+        <pre id="stateJson">{}</pre>
+      </section>
+
+      <section class="panel cols-12">
+        <h2>Current Player Guesses</h2>
+        <p class="muted">Accepted submissions for the active session.</p>
+        <div class="summary" style="margin: 14px 0 12px;">
+          <div class="summary-card"><div class="label">Players in session</div><div class="value" id="playerCountValue">0</div></div>
+          <div class="summary-card"><div class="label">Submitted this round</div><div class="value" id="submittedCountValue">0</div></div>
+        </div>
+        <pre id="playersJson">[]</pre>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const els = {
+      adminKey: document.getElementById('adminKey'),
+      connectBtn: document.getElementById('connectBtn'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      connectStatus: document.getElementById('connectStatus'),
+      actionStatus: document.getElementById('actionStatus'),
+      wordInput: document.getElementById('wordInput'),
+      guessSecondsInput: document.getElementById('guessSecondsInput'),
+      resultsSecondsInput: document.getElementById('resultsSecondsInput'),
+      ballsInput: document.getElementById('ballsInput'),
+      phaseValue: document.getElementById('phaseValue'),
+      roundValue: document.getElementById('roundValue'),
+      ballsValue: document.getElementById('ballsValue'),
+      multiplierValue: document.getElementById('multiplierValue'),
+      wordValue: document.getElementById('wordValue'),
+      updatedValue: document.getElementById('updatedValue'),
+      stateJson: document.getElementById('stateJson'),
+      playersJson: document.getElementById('playersJson'),
+      playerCountValue: document.getElementById('playerCountValue'),
+      submittedCountValue: document.getElementById('submittedCountValue'),
+      newSessionBtn: document.getElementById('newSessionBtn'),
+      setWordBtn: document.getElementById('setWordBtn'),
+      startRoundBtn: document.getElementById('startRoundBtn'),
+      revealResultsBtn: document.getElementById('revealResultsBtn'),
+      continueRoundBtn: document.getElementById('continueRoundBtn'),
+      toggleDoubleBtn: document.getElementById('toggleDoubleBtn'),
+      setBallsBtn: document.getElementById('setBallsBtn'),
+      revealAnswerBtn: document.getElementById('revealAnswerBtn'),
+      resetSessionBtn: document.getElementById('resetSessionBtn'),
+    };
+
+    let currentState = null;
+    let pollHandle = null;
+
+    function storedKey() {
+      return localStorage.getItem('lingo_host_admin_key') || '';
+    }
+
+    function setStoredKey(value) {
+      localStorage.setItem('lingo_host_admin_key', value);
+    }
+
+    function setStatus(target, text, type = '') {
+      target.textContent = text || '';
+      target.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function adminFetch(path, options = {}) {
+      const key = els.adminKey.value.trim();
+      return fetch(path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-lingo-admin-key': key,
+          ...(options.headers || {}),
+        },
+      });
+    }
+
+    async function loadState(showStatus = false) {
+      const response = await adminFetch('/api/admin/state');
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'Could not load backend state.');
+      }
+      currentState = payload.state;
+      renderState();
+      if (showStatus) {
+        setStatus(els.connectStatus, 'Connected to Railway backend.', 'success');
+      }
+    }
+
+    async function loadPlayers() {
+      const response = await adminFetch('/api/admin/players');
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'Could not load player guesses.');
+      }
+      const state = payload.state || {};
+      const players = state.players || [];
+      const currentRound = Number((state.session && state.session.roundNumber) || (currentState && currentState.roundNumber) || 0);
+      const submittedThisRound = players.filter((player) => Number(player.roundNumber || 0) === currentRound && !!player.currentGuess);
+
+      els.playerCountValue.textContent = String(players.length);
+      els.submittedCountValue.textContent = String(submittedThisRound.length);
+      els.playersJson.textContent = JSON.stringify(players, null, 2);
+    }
+
+    function renderState() {
+      const state = currentState || {};
+      els.phaseValue.textContent = state.phase || 'idle';
+      els.roundValue.textContent = String(state.roundNumber ?? 0);
+      els.ballsValue.textContent = String(state.ballsRemaining ?? 0);
+      els.multiplierValue.textContent = `${state.ballMultiplier || 1}x`;
+      els.wordValue.textContent = state.currentWord || '—';
+      els.updatedValue.textContent = state.updatedAtIso || '—';
+      els.wordInput.value = state.currentWord || '';
+      els.guessSecondsInput.value = String(state.guessWindowSeconds || 90);
+      els.resultsSecondsInput.value = String(state.resultsWindowSeconds || 45);
+      els.ballsInput.value = String(state.ballsRemaining ?? 0);
+      els.stateJson.textContent = JSON.stringify(state, null, 2);
+    }
+
+    async function runAction(action, body = {}, successText = 'Saved.') {
+      setStatus(els.actionStatus, '');
+      const response = await adminFetch(`/api/admin/${action}`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || `Action failed: ${action}`);
+      }
+      currentState = payload.state;
+      renderState();
+      await loadPlayers();
+      setStatus(els.actionStatus, successText, 'success');
+    }
+
+    els.connectBtn.addEventListener('click', async () => {
+      try {
+        const key = els.adminKey.value.trim();
+        if (!key) {
+          setStatus(els.connectStatus, 'Enter the admin key first.', 'error');
+          return;
+        }
+        setStoredKey(key);
+        await loadState(true);
+        await loadPlayers();
+        if (pollHandle) window.clearInterval(pollHandle);
+        pollHandle = window.setInterval(() => {
+          loadState().catch(() => {});
+          loadPlayers().catch(() => {});
+        }, 5000);
+      } catch (error) {
+        setStatus(els.connectStatus, error.message || 'Connection failed.', 'error');
+      }
+    });
+
+    els.refreshBtn.addEventListener('click', async () => {
+      try {
+        await loadState(true);
+        await loadPlayers();
+      } catch (error) {
+        setStatus(els.connectStatus, error.message || 'Refresh failed.', 'error');
+      }
+    });
+
+    els.newSessionBtn.addEventListener('click', () => runAction('create-session', {}, 'Created a fresh online session.'));
+    els.setWordBtn.addEventListener('click', () => runAction('set-word', { word: els.wordInput.value }, 'Current word updated.'));
+    els.startRoundBtn.addEventListener('click', () => runAction('start-round', {
+      guessWindowSeconds: Number(els.guessSecondsInput.value),
+      resultsWindowSeconds: Number(els.resultsSecondsInput.value),
+    }, 'Round started.'));
+    els.revealResultsBtn.addEventListener('click', () => runAction('reveal-results', {}, 'Results phase opened.'));
+    els.continueRoundBtn.addEventListener('click', () => runAction('continue-round', {
+      guessWindowSeconds: Number(els.guessSecondsInput.value),
+    }, 'Guessing resumed.'));
+    els.toggleDoubleBtn.addEventListener('click', () => runAction('toggle-double-balls', {}, 'Updated ball multiplier.'));
+    els.setBallsBtn.addEventListener('click', () => runAction('set-balls', {
+      ballsRemaining: Number(els.ballsInput.value),
+    }, 'Balls remaining updated.'));
+    els.revealAnswerBtn.addEventListener('click', () => runAction('reveal-answer', {}, 'Answer reveal flagged.'));
+    els.resetSessionBtn.addEventListener('click', async () => {
+      if (!window.confirm('Hard reset the backend session?')) return;
+      await runAction('reset-session', {}, 'Session reset.');
+    });
+
+    els.adminKey.value = storedKey();
+    if (els.adminKey.value) {
+      Promise.all([loadState(), loadPlayers()]).then(() => {
+        pollHandle = window.setInterval(() => {
+          loadState().catch(() => {});
+          loadPlayers().catch(() => {});
+        }, 5000);
+      }).catch((error) => {
+        setStatus(els.connectStatus, error.message || 'Enter a valid admin key.', 'error');
+      });
+    }
+  </script>
+</body>
+</html>

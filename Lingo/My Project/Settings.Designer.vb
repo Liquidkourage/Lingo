@@ -65,6 +65,30 @@ Namespace My
                 Me("champion") = value
             End Set
         End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("")>  _
+        Public Property channel() As String
+            Get
+                Return CType(Me("channel"),String)
+            End Get
+            Set
+                Me("channel") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("-1")>  _
+        Public Property screennumber() As Integer
+            Get
+                Return CType(Me("screennumber"),Integer)
+            End Get
+            Set
+                Me("screennumber") = value
+            End Set
+        End Property
     End Class
 End Namespace
 

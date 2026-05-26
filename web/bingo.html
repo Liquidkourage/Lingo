@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lingo Bingo — Liquid Kourage</title>
+  <style>
+    :root {
+      --bg: #05070a;
+      --panel: #0d6efd;
+      --panel-dark: #0849a6;
+      --called: #ffd54f;
+      --marked: #4caf50;
+      --text: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      padding: 16px;
+    }
+    .wrap { max-width: 520px; margin: 0 auto; }
+    h1 { text-align: center; font-size: 1.6rem; margin: 0 0 8px; }
+    .sub { text-align: center; color: #b8d4ff; margin-bottom: 16px; font-size: 0.95rem; }
+    .panel {
+      background: linear-gradient(180deg, #3a8cff, var(--panel));
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    label { display: block; margin-bottom: 6px; font-weight: 700; }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+    }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    button {
+      flex: 1;
+      min-width: 120px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(180deg, #0850bb, var(--panel-dark));
+      color: #fff;
+    }
+    button.secondary { background: linear-gradient(180deg, #5c6f8a, #40536f); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .last-call {
+      text-align: center;
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      margin: 8px 0;
+    }
+    .message { text-align: center; min-height: 1.2em; font-weight: 700; margin: 8px 0; }
+    .message.error { color: #ffcdd2; }
+    .message.success { color: #d8ffea; }
+    .card-wrap { overflow-x: auto; }
+    table.bingo {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+    table.bingo th {
+      background: rgba(0,0,0,0.25);
+      padding: 8px;
+      font-size: 1.2rem;
+    }
+    table.bingo td {
+      width: 20%;
+      aspect-ratio: 1;
+      text-align: center;
+      vertical-align: middle;
+      font-size: clamp(1rem, 4vw, 1.4rem);
+      font-weight: 800;
+      border: 2px solid rgba(255,255,255,0.35);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    table.bingo td.free {
+      background: rgba(255,255,255,0.2);
+      cursor: default;
+      font-size: 0.85rem;
+    }
+    table.bingo td.called { background: rgba(255, 213, 79, 0.45); }
+    table.bingo td.marked {
+      background: var(--marked);
+      color: #042;
+      transform: scale(0.96);
+    }
+    table.bingo td.marked.called { box-shadow: inset 0 0 0 3px var(--called); }
+    .history {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .history span {
+      background: rgba(0,0,0,0.3);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Lingo Bingo</h1>
+    <p class="sub">Tap numbers to mark your card. Called balls highlight automatically.</p>
+
+    <div class="panel">
+      <label for="playerName">Twitch / display name (exact match)</label>
+      <input id="playerName" type="text" maxlength="40" autocomplete="username" />
+      <div class="row">
+        <button type="button" id="loadCardBtn">Load my card</button>
+        <button type="button" id="getCardBtn" class="secondary">Get new card</button>
+      </div>
+      <p id="status" class="message" aria-live="polite"></p>
+    </div>
+
+    <div class="panel">
+      <div>Last call</div>
+      <div id="lastCall" class="last-call">—</div>
+      <div id="callHistory" class="history"></div>
+    </div>
+
+    <div class="panel card-wrap" id="cardPanel" hidden>
+      <table class="bingo" id="bingoTable" aria-label="Your bingo card">
+        <thead>
+          <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
+        </thead>
+        <tbody id="bingoBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:14px">
+        <button type="button" id="bingoBtn">BINGO!</button>
+        <button type="button" id="saveMarksBtn" class="secondary">Save marks</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+    import {
+      getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
+      collection, query, where, getDocs, serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCtQ_PsKFpCSf2SEYZriqEn2EOHOWRVCvM",
+      authDomain: "liquidkourage-16fe5.firebaseapp.com",
+      projectId: "liquidkourage-16fe5",
+      storageBucket: "liquidkourage-16fe5.firebasestorage.app",
+      messagingSenderId: "996742695407",
+      appId: "1:996742695407:web:c1e1dc0a472f827bdace1a"
+    };
+
+    const params = new URLSearchParams(location.search);
+    let gameId = params.get('game') || '';
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const els = {
+      playerName: document.getElementById('playerName'),
+      loadCardBtn: document.getElementById('loadCardBtn'),
+      getCardBtn: document.getElementById('getCardBtn'),
+      status: document.getElementById('status'),
+      lastCall: document.getElementById('lastCall'),
+      callHistory: document.getElementById('callHistory'),
+      cardPanel: document.getElementById('cardPanel'),
+      bingoBody: document.getElementById('bingoBody'),
+      bingoBtn: document.getElementById('bingoBtn'),
+      saveMarksBtn: document.getElementById('saveMarksBtn')
+    };
+
+    let cardDocRef = null;
+    let grid = [];
+    let marked = [];
+    let calledNumbers = new Set();
+    let unsubscribeGame = null;
+
+    function setStatus(text, type = '') {
+      els.status.textContent = text || '';
+      els.status.className = 'message' + (type ? ' ' + type : '');
+    }
+
+    function cardDocId(displayName) {
+      const safe = displayName.trim().replace(/[^a-zA-Z0-9]/g, '_') || 'player';
+      return `${gameId}_${safe}`;
+    }
+
+    function storeName(name) {
+      localStorage.setItem('bingo_display_name', name);
+      localStorage.setItem('bingo_display_name_ts', String(Date.now()));
+    }
+
+    function getStoredName() {
+      const name = localStorage.getItem('bingo_display_name');
+      const ts = parseInt(localStorage.getItem('bingo_display_name_ts') || '', 10);
+      if (!name || Number.isNaN(ts) || Date.now() - ts > 86400000) return '';
+      return name;
+    }
+
+    function generateCard(displayName) {
+      const seed = hashString(gameId + displayName);
+      const rng = mulberry32(seed);
+      grid = Array.from({ length: 5 }, () => Array(5).fill(0));
+      marked = Array.from({ length: 5 }, () => Array(5).fill(false));
+
+      for (let col = 0; col < 5; col++) {
+        const min = col * 15 + 1;
+        const pool = shuffle(Array.from({ length: 15 }, (_, i) => min + i), rng);
+        for (let row = 0; row < 5; row++) grid[row][col] = pool[row];
+      }
+      grid[2][2] = 0;
+      marked[2][2] = true;
+    }
+
+    function hashString(s) {
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i) | 0;
+      return h >>> 0;
+    }
+
+    function mulberry32(a) {
+      return function() {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function shuffle(arr, rng) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function renderCard() {
+      els.bingoBody.innerHTML = '';
+      for (let row = 0; row < 5; row++) {
+        const tr = document.createElement('tr');
+        for (let col = 0; col < 5; col++) {
+          const td = document.createElement('td');
+          const val = grid[row][col];
+          const isFree = row === 2 && col === 2;
+          td.textContent = isFree ? 'FREE' : String(val);
+          if (isFree) td.classList.add('free');
+          if (!isFree && calledNumbers.has(val)) td.classList.add('called');
+          if (marked[row][col]) td.classList.add('marked');
+          if (!isFree) {
+            td.addEventListener('click', () => toggleMark(row, col, td));
+          }
+          tr.appendChild(td);
+        }
+        els.bingoBody.appendChild(tr);
+      }
+      els.cardPanel.hidden = false;
+    }
+
+    function toggleMark(row, col, td) {
+      if (row === 2 && col === 2) return;
+      marked[row][col] = !marked[row][col];
+      td.classList.toggle('marked', marked[row][col]);
+      if (hasLineWin()) {
+        setStatus('You have a line! Tap BINGO! when ready.', 'success');
+      }
+    }
+
+    function hasLineWin() {
+      const line = (fn) => {
+        for (let i = 0; i < 5; i++) if ([0,1,2,3,4].every(c => fn(i, c))) return true;
+        return false;
+      };
+      if (line((r, c) => marked[r][c])) return true;
+      if (line((c, r) => marked[r][c])) return true;
+      if ([0,1,2,3,4].every(i => marked[i][i])) return true;
+      if ([0,1,2,3,4].every(i => marked[i][4 - i])) return true;
+      return false;
+    }
+
+    function applyCalledFromGame(data) {
+      calledNumbers = new Set();
+      const called = data?.called || [];
+      called.forEach(entry => {
+        if (entry?.number) calledNumbers.add(entry.number);
+      });
+      els.lastCall.textContent = data?.current_call || '—';
+      els.callHistory.innerHTML = '';
+      called.slice().reverse().slice(0, 12).forEach(entry => {
+        const span = document.createElement('span');
+        span.textContent = entry.label || `${entry.letter}-${entry.number}`;
+        els.callHistory.appendChild(span);
+      });
+      if (grid.length) {
+        for (let r = 0; r < 5; r++) {
+          for (let c = 0; c < 5; c++) {
+            if (grid[r][c] && calledNumbers.has(grid[r][c])) marked[r][c] = true;
+          }
+        }
+        renderCard();
+      }
+    }
+
+    function listenToGame() {
+      if (!gameId) return;
+      if (unsubscribeGame) unsubscribeGame();
+      unsubscribeGame = onSnapshot(doc(db, 'bingoGames', gameId), (snap) => {
+        if (snap.exists()) applyCalledFromGame(snap.data());
+      }, (err) => setStatus('Game listen error: ' + err.message, 'error'));
+    }
+
+    async function loadCard(createIfMissing = false) {
+      if (!gameId) {
+        setStatus('Missing ?game= in URL. Ask the host for the bingo link.', 'error');
+        return;
+      }
+      const displayName = els.playerName.value.trim();
+      if (!displayName) {
+        setStatus('Enter your Twitch username.', 'error');
+        return;
+      }
+      storeName(displayName);
+      const ref = doc(db, 'bingoCards', cardDocId(displayName));
+      const snap = await getDoc(ref);
+
+      if (!snap.exists()) {
+        if (!createIfMissing) {
+          setStatus('No card yet. Tap "Get new card" or ask the host to generate one.', 'error');
+          return;
+        }
+        generateCard(displayName);
+        await saveCard(ref, displayName);
+      } else {
+        const data = snap.data();
+        grid = data.grid;
+        marked = data.marked;
+      }
+      cardDocRef = ref;
+      renderCard();
+      setStatus('Card loaded.', 'success');
+    }
+
+    async function saveCard(ref, displayName) {
+      await setDoc(ref, {
+        game_id: gameId,
+        display_name: displayName,
+        grid,
+        marked,
+        updated_at: serverTimestamp()
+      }, { merge: true });
+    }
+
+    async function saveMarks() {
+      if (!cardDocRef) return;
+      await updateDoc(cardDocRef, { marked, updated_at: serverTimestamp() });
+      setStatus('Marks saved.', 'success');
+    }
+
+    async function claimBingo() {
+      if (!cardDocRef || !hasLineWin()) {
+        setStatus('You need a completed line before calling BINGO!', 'error');
+        return;
+      }
+      const displayName = els.playerName.value.trim();
+      await setDoc(doc(collection(db, 'bingoClaims')), {
+        game_id: gameId,
+        display_name: displayName,
+        created_at: serverTimestamp()
+      });
+      setStatus('BINGO sent! Host will verify.', 'success');
+    }
+
+    els.loadCardBtn.addEventListener('click', () => loadCard(false));
+    els.getCardBtn.addEventListener('click', () => loadCard(true));
+    els.saveMarksBtn.addEventListener('click', saveMarks);
+    els.bingoBtn.addEventListener('click', claimBingo);
+
+    const stored = getStoredName();
+    if (stored) els.playerName.value = stored;
+
+    if (!gameId) {
+      setStatus('Add ?game=GAME_ID from the host app, or wait for the host link.');
+    } else {
+      listenToGame();
+      setStatus('Game linked. Load your card when ready.');
+    }
+  </script>
+</body>
+</html>

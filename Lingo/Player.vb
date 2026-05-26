@@ -106,23 +106,39 @@ Public Class Player
         End Using
         Me.graphic = b
     End Sub
-    Friend Sub setfeedback()
-        Dim outputstring As String = "Previous guesses: "
+    Friend Sub setfeedback(Optional mode As String = "chat")
+        If mode = "chat" Then
+            Dim outputstring As String = Name + ", your last on-screen feedback was: "
+            If allguesses.Count > 0 Then
+                Dim lastGuess As String = allguesses(allguesses.Count - 1)
+                If Form1.wordlist.Contains(lastGuess.ToUpper()) Then
+                    Dim temp As String = Form1.getLingoResult(Form1.Label4.Text, lastGuess)
+                    temp = temp.Replace("!", "🔲")
+                    temp = temp.Replace("?", "◯")
+                    temp = temp.Replace("/", "☒")
+                    outputstring += temp
+                Else
+                    outputstring += "NOT A WORD"
+                End If
+            End If
+            Me.feedback = outputstring
+            Return
+        End If
+
+        Dim history As String = "Previous guesses: "
         For Each g As String In Me.allguesses
             If g <> "" Then
-                Select Case Form1.wordlist.Contains(g.ToUpper())
-                    Case True
-                        Dim temp As String = Form1.getLingoResult(Form1.Label4.Text, g)
-                        temp = temp.Replace("!", "🔲")
-                        temp = temp.Replace("?", "◯")
-                        temp = temp.Replace("/", "☒")
-                        outputstring += g.ToUpper + " - " + temp + "     "
-                    Case False
-                        outputstring += g.ToUpper + " - " + "NOT A WORD" + "     "
-                End Select
-
+                If Form1.wordlist.Contains(g.ToUpper()) Then
+                    Dim temp As String = Form1.getLingoResult(Form1.Label4.Text, g)
+                    temp = temp.Replace("!", "🔲")
+                    temp = temp.Replace("?", "◯")
+                    temp = temp.Replace("/", "☒")
+                    history += g.ToUpper + " - " + temp + "     "
+                Else
+                    history += g.ToUpper + " - " + "NOT A WORD" + "     "
+                End If
             End If
         Next
-        Me.feedback = outputstring
+        Me.feedback = history
     End Sub
 End Class
