@@ -31,158 +31,120 @@
       width: min(100vw, 100vh * (1024 / 575));
       height: min(100vh, 100vw * (575 / 1024));
       container-type: inline-size;
-      font-family: Montserrat, "Segoe UI", Arial, sans-serif;
-      color: #fff;
     }
 
-    .stage-bg {
-      position: absolute;
-      inset: 0;
+    /* The reference graphic is the entire UI. Nothing duplicates it. */
+    #art {
+      display: block;
       width: 100%;
       height: 100%;
-      object-fit: fill;
-      pointer-events: none;
       user-select: none;
+      pointer-events: none;
     }
 
-    .scene {
+    .live {
       position: absolute;
       inset: 0;
-    }
-
-    .logo {
-      position: absolute;
-      left: 50%;
-      top: 3.8%;
-      transform: translateX(-50%);
-      width: 56%;
-      height: auto;
-      filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.55));
       pointer-events: none;
+      font-family: Montserrat, "Segoe UI", Arial, sans-serif;
     }
 
-    .status-badge {
+    .live.off {
+      visibility: hidden;
+    }
+
+    .slot {
       position: absolute;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .slot-badge {
       left: 50%;
-      top: 18.8%;
-      transform: translateX(-50%);
+      top: 20.5%;
+      transform: translate(-50%, -50%);
       display: inline-flex;
       align-items: center;
-      gap: 0.45em;
-      padding: 0.38em 1.05em;
+      gap: 0.4em;
+      padding: 0.35em 0.95em;
       border-radius: 999px;
       border: 2px solid #ffd700;
-      background: rgba(0, 0, 0, 0.62);
-      box-shadow: 0 0 14px rgba(255, 215, 0, 0.28);
-      font-size: clamp(0.52rem, 1.35cqw, 0.72rem);
+      background: rgba(0, 0, 0, 0.72);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+      font-size: clamp(0.5rem, 1.28cqw, 0.68rem);
       font-weight: 800;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.11em;
       text-transform: uppercase;
       color: #ffd700;
       white-space: nowrap;
     }
 
-    .status-badge.guessing {
-      color: #00ff66;
-      border-color: #00ff66;
-      box-shadow: 0 0 14px rgba(0, 255, 102, 0.28);
-    }
+    .slot-badge.guessing { color: #00ff66; border-color: #00ff66; box-shadow: 0 0 12px rgba(0, 255, 102, 0.25); }
+    .slot-badge.results { color: #4db8ff; border-color: #4db8ff; box-shadow: 0 0 12px rgba(77, 184, 255, 0.25); }
+    .slot-badge.revealed { color: #00e5ff; border-color: #00e5ff; box-shadow: 0 0 12px rgba(0, 229, 255, 0.25); }
 
-    .status-badge.results {
-      color: #4db8ff;
-      border-color: #4db8ff;
-      box-shadow: 0 0 14px rgba(77, 184, 255, 0.28);
-    }
+    .slot-badge svg { width: 0.9em; height: 0.9em; flex-shrink: 0; }
 
-    .status-badge.revealed {
-      color: #00e5ff;
-      border-color: #00e5ff;
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.28);
-    }
-
-    .status-badge svg {
-      width: 0.95em;
-      height: 0.95em;
-      flex-shrink: 0;
-    }
-
-    .status-subtitle {
-      position: absolute;
+    .slot-subtitle {
       left: 50%;
-      top: 23.8%;
-      transform: translateX(-50%);
-      width: 72%;
+      top: 24.7%;
+      transform: translate(-50%, 0);
+      width: 62%;
       margin: 0;
-      text-align: center;
-      font-size: clamp(0.58rem, 1.2cqw, 0.74rem);
+      font-size: clamp(0.56rem, 1.15cqw, 0.72rem);
       font-weight: 600;
       line-height: 1.45;
       color: #9eb8d8;
     }
 
-    .timer-panel {
-      position: absolute;
-      right: 3.2%;
-      top: 4.8%;
-      width: 14.8%;
-      min-height: 16%;
-      padding: 0.55em 0.45em 0.45em;
-      border-radius: 10px;
-      border: 2px solid rgba(61, 184, 255, 0.82);
-      background: rgba(2, 12, 28, 0.78);
-      box-shadow: 0 0 16px rgba(61, 184, 255, 0.22), inset 0 0 18px rgba(61, 184, 255, 0.06);
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 0.15em;
-    }
-
-    .timer-label {
-      font-size: clamp(0.38rem, 0.82cqw, 0.52rem);
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #d8e8ff;
-      line-height: 1.25;
-    }
-
-    .timer-value {
-      font-size: clamp(1.35rem, 4.2cqw, 2.35rem);
+    .slot-timer {
+      left: 90.33%;
+      top: 11.8%;
+      font-size: clamp(1.4rem, 4.5cqw, 2.4rem);
       font-weight: 900;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       color: #fff;
-      text-shadow: 0 0 16px rgba(255, 255, 255, 0.75), 0 0 28px rgba(61, 184, 255, 0.35);
+      text-shadow: 0 0 16px rgba(255, 255, 255, 0.8), 0 0 30px rgba(61, 184, 255, 0.35);
+      background: rgb(22, 24, 35);
+      padding: 0.08em 0.35em;
+      border-radius: 4px;
+      min-width: 1.6em;
+    }
+
+    .slot-stat {
+      top: 49.6%;
+      font-size: clamp(1rem, 2.5cqw, 1.65rem);
+      font-weight: 900;
       line-height: 1;
+      padding: 0.12em 0.45em;
+      border-radius: 4px;
+      background: rgb(20, 22, 38);
     }
 
-    .timer-unit {
-      font-size: clamp(0.38rem, 0.82cqw, 0.52rem);
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #4db8ff;
-    }
+    .slot-stat.round { left: 9.96%; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.45); }
+    .slot-stat.balls { left: 30%; color: #4db8ff; text-shadow: 0 0 10px rgba(77, 184, 255, 0.45); background: rgb(0, 16, 58); }
+    .slot-stat.mult { left: 50%; color: #00ff66; text-shadow: 0 0 10px rgba(0, 255, 102, 0.45); background: rgb(0, 16, 52); }
+    .slot-stat.players { left: 70%; color: #cc66ff; text-shadow: 0 0 10px rgba(204, 102, 255, 0.45); background: rgb(0, 14, 50); }
+    .slot-stat.submitted { left: 90.04%; color: #00e5ff; text-shadow: 0 0 10px rgba(0, 229, 255, 0.45); }
 
-    .word-row {
-      position: absolute;
+    .slot-words {
       left: 50%;
-      top: 33.2%;
+      top: 36.2%;
       transform: translate(-50%, -50%);
       display: flex;
-      gap: clamp(7px, 1.45cqw, 12px);
+      gap: clamp(7px, 1.35cqw, 11px);
     }
 
     .word-cell {
-      width: clamp(68px, 9.2cqw, 96px);
+      width: clamp(66px, 9cqw, 92px);
       aspect-ratio: 1;
       display: grid;
       place-items: center;
       border-radius: 10px;
+      background: rgb(22, 29, 73);
       border: 2px solid rgba(61, 184, 255, 0.82);
-      background: rgba(2, 12, 28, 0.82);
-      box-shadow: 0 0 12px rgba(61, 184, 255, 0.24), inset 0 0 12px rgba(61, 184, 255, 0.05);
-      font-size: clamp(1.65rem, 4.8cqw, 2.55rem);
+      box-shadow: 0 0 10px rgba(61, 184, 255, 0.22);
+      font-size: clamp(1.55rem, 4.6cqw, 2.45rem);
       font-weight: 900;
       text-transform: uppercase;
       color: #fff;
@@ -194,204 +156,67 @@
       height: 8px;
       border-radius: 50%;
       background: rgba(61, 184, 255, 0.92);
-      box-shadow: 0 0 8px rgba(61, 184, 255, 0.55);
+      box-shadow: 0 0 8px rgba(61, 184, 255, 0.5);
     }
 
     .word-cell.revealed {
-      background: rgba(0, 90, 48, 0.82);
+      background: rgba(0, 90, 48, 0.92);
       border-color: rgba(0, 255, 102, 0.88);
-      box-shadow: 0 0 12px rgba(0, 255, 102, 0.28);
     }
 
-    .stats-bar {
-      position: absolute;
+    .slot-board {
       left: 50%;
-      top: 44.8%;
+      top: 76%;
       transform: translate(-50%, -50%);
-      width: 90.5%;
-      height: 11.8%;
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      border-radius: 10px;
-      border: 2px solid rgba(61, 184, 255, 0.72);
-      background: rgba(2, 12, 28, 0.72);
-      box-shadow: 0 0 14px rgba(61, 184, 255, 0.18);
-      overflow: hidden;
-    }
-
-    .stat-cell {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.08em;
-      padding: 0.35em 0.2em 0.25em;
-      min-width: 0;
-    }
-
-    .stat-cell + .stat-cell::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 14%;
-      bottom: 14%;
-      width: 1px;
-      background: rgba(61, 184, 255, 0.35);
-    }
-
-    .stat-icon {
-      width: clamp(14px, 2.1cqw, 22px);
-      height: clamp(14px, 2.1cqw, 22px);
-    }
-
-    .stat-label {
-      font-size: clamp(0.38rem, 0.78cqw, 0.52rem);
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #d8e8ff;
-    }
-
-    .stat-value {
-      font-size: clamp(0.95rem, 2.35cqw, 1.55rem);
-      font-weight: 900;
-      line-height: 1;
-    }
-
-    .stat-value.round { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.45); }
-    .stat-value.balls { color: #4db8ff; text-shadow: 0 0 10px rgba(77, 184, 255, 0.45); }
-    .stat-value.mult { color: #00ff66; text-shadow: 0 0 10px rgba(0, 255, 102, 0.45); }
-    .stat-value.players { color: #cc66ff; text-shadow: 0 0 10px rgba(204, 102, 255, 0.45); }
-    .stat-value.submitted { color: #00e5ff; text-shadow: 0 0 10px rgba(0, 229, 255, 0.45); }
-
-    .player-board {
-      position: absolute;
-      left: 50%;
-      top: 52.2%;
-      transform: translateX(-50%);
-      width: 90.5%;
-      height: 42.5%;
-      border-radius: 11px;
-      border: 2px solid rgba(61, 184, 255, 0.78);
-      background: rgba(2, 12, 28, 0.72);
-      box-shadow: 0 0 16px rgba(61, 184, 255, 0.18);
+      width: 88%;
+      height: 36%;
       display: flex;
       flex-direction: column;
       min-height: 0;
-    }
-
-    .player-board-tab {
-      position: relative;
-      align-self: center;
-      margin-top: -0.72em;
-      padding: 0.18em 1.1em;
-      font-size: clamp(0.42rem, 0.88cqw, 0.56rem);
-      font-weight: 800;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: #d8e8ff;
-      background: rgba(2, 12, 28, 0.96);
-    }
-
-    .player-board-tab::before,
-    .player-board-tab::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      width: 2.2em;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(61, 184, 255, 0.75));
-    }
-
-    .player-board-tab::before {
-      right: 100%;
-      margin-right: 0.35em;
-      transform: scaleX(-1);
-    }
-
-    .player-board-tab::after {
-      left: 100%;
-      margin-left: 0.35em;
-    }
-
-    .player-board-body {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      padding: 0.55em 0.75em 0.65em;
+      padding: 0.5em 0.65em;
+      background: rgb(2, 11, 42);
+      border-radius: 8px;
       overflow: hidden;
     }
 
-    .board-empty {
-      flex: 1;
-      display: grid;
-      place-content: center;
-      gap: 0.45em;
-      color: #6f8aa8;
+    .board-summary {
+      margin: 0 0 0.3em;
       text-align: center;
-    }
-
-    .board-empty svg {
-      width: clamp(22px, 3.2cqw, 34px);
-      height: clamp(22px, 3.2cqw, 34px);
-      margin: 0 auto;
-      opacity: 0.85;
-    }
-
-    .board-empty p {
-      margin: 0;
-      font-size: clamp(0.62rem, 1.15cqw, 0.82rem);
-      font-weight: 600;
-    }
-
-    .players-summary {
-      margin: 0 0 0.35em;
-      text-align: center;
-      font-size: clamp(0.55rem, 1cqw, 0.72rem);
+      font-size: clamp(0.52rem, 0.95cqw, 0.68rem);
       font-weight: 600;
       color: #9eb8d8;
       flex-shrink: 0;
     }
 
-    .players-grid {
+    .board-grid {
       flex: 1;
       min-height: 0;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
-      gap: 0.45em;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.4em;
       align-content: start;
       overflow: hidden;
     }
 
     .player-card {
-      border-radius: 8px;
-      padding: 0.45em 0.55em;
-      background: rgba(4, 18, 42, 0.92);
-      border: 1px solid rgba(61, 184, 255, 0.42);
-      box-shadow: inset 0 0 10px rgba(61, 184, 255, 0.04);
+      border-radius: 7px;
+      padding: 0.4em 0.5em;
+      background: rgba(4, 18, 42, 0.94);
+      border: 1px solid rgba(61, 184, 255, 0.38);
     }
 
-    .player-card.locked {
-      background: rgba(42, 32, 8, 0.92);
-      border-color: rgba(255, 215, 0, 0.52);
-    }
-
-    .player-card.solved {
-      background: rgba(8, 48, 28, 0.92);
-      border-color: rgba(0, 255, 102, 0.58);
-    }
+    .player-card.locked { background: rgba(42, 32, 8, 0.94); border-color: rgba(255, 215, 0, 0.5); }
+    .player-card.solved { background: rgba(8, 48, 28, 0.94); border-color: rgba(0, 255, 102, 0.55); }
 
     .player-card-top {
       display: flex;
       justify-content: space-between;
-      gap: 0.35em;
-      margin-bottom: 0.2em;
+      gap: 0.3em;
+      margin-bottom: 0.15em;
     }
 
     .player-name {
-      font-size: clamp(0.58rem, 1.05cqw, 0.78rem);
+      font-size: clamp(0.55rem, 1cqw, 0.75rem);
       font-weight: 800;
       white-space: nowrap;
       overflow: hidden;
@@ -400,20 +225,19 @@
 
     .player-status-pill {
       flex-shrink: 0;
-      font-size: clamp(0.42rem, 0.72cqw, 0.55rem);
+      font-size: clamp(0.4rem, 0.68cqw, 0.52rem);
       font-weight: 800;
-      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: #9eb8d8;
-      padding: 0.12em 0.45em;
+      padding: 0.1em 0.4em;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.08);
     }
 
     .player-meta {
-      font-size: clamp(0.48rem, 0.82cqw, 0.62rem);
+      font-size: clamp(0.45rem, 0.78cqw, 0.58rem);
       color: #9eb8d8;
-      margin-bottom: 0.28em;
+      margin-bottom: 0.25em;
     }
 
     .feedback-row {
@@ -424,10 +248,10 @@
 
     .feedback-cell {
       aspect-ratio: 1;
-      border-radius: 4px;
+      border-radius: 3px;
       display: grid;
       place-items: center;
-      font-size: clamp(0.45rem, 0.78cqw, 0.62rem);
+      font-size: clamp(0.42rem, 0.72cqw, 0.58rem);
       font-weight: 900;
       background: rgba(255, 255, 255, 0.06);
     }
@@ -437,25 +261,25 @@
     .feedback-cell.present { background: rgba(255, 180, 0, 0.62); }
     .feedback-cell.absent { background: rgba(220, 60, 60, 0.55); }
 
-    .stage.dense .status-badge,
-    .stage.dense .status-subtitle { display: none; }
+    .live.dense .slot-badge,
+    .live.dense .slot-subtitle { display: none; }
 
-    .stage.dense .word-row { top: 8.5%; transform: translate(0, 0); left: 3.5%; }
-    .stage.dense .timer-panel { top: 3.5%; right: 2.5%; width: 12%; min-height: 12%; }
-    .stage.dense .stats-bar { top: 15.5%; height: 8.5%; }
-    .stage.dense .player-board { top: 17.5%; height: 78%; }
+    .live.dense .slot-words { top: 7%; left: 4%; transform: none; }
+    .live.dense .slot-timer { top: 5%; left: 94%; font-size: 1.1rem; }
+    .live.dense .slot-stat { top: 13.5%; font-size: 0.8rem; }
+    .live.dense .slot-board { top: 20%; height: 76%; width: 94%; }
 
-    .players-grid.dense {
+    .board-grid.dense {
       grid-template-columns: repeat(var(--cols, 8), minmax(0, 1fr));
-      gap: var(--gap, 2px);
+      gap: 2px;
     }
 
     .player-tile {
-      border-radius: 4px;
+      border-radius: 3px;
       padding: 2px 3px;
-      background: rgba(4, 18, 42, 0.92);
-      border: 1px solid rgba(61, 184, 255, 0.35);
-      font-size: var(--tile-font, 0.62rem);
+      background: rgba(4, 18, 42, 0.94);
+      border: 1px solid rgba(61, 184, 255, 0.32);
+      font-size: var(--tile-font, 0.58rem);
     }
 
     .player-tile-name {
@@ -472,126 +296,64 @@
       margin-top: 1px;
     }
 
-    .mini-cell {
-      aspect-ratio: 1;
-      border-radius: 2px;
-      background: rgba(255, 255, 255, 0.06);
-    }
-
+    .mini-cell { aspect-ratio: 1; border-radius: 2px; background: rgba(255, 255, 255, 0.06); }
     .mini-cell.pending { background: rgba(255, 215, 0, 0.45); }
     .mini-cell.correct { background: rgba(0, 255, 102, 0.8); }
     .mini-cell.present { background: rgba(255, 180, 0, 0.8); }
     .mini-cell.absent { background: rgba(220, 60, 60, 0.7); }
 
-    .player-tile-status {
-      color: #9eb8d8;
-      font-size: 0.85em;
-      margin-top: 1px;
-    }
+    .player-tile-status { color: #9eb8d8; font-size: 0.85em; }
   </style>
 </head>
 <body>
   <div class="viewport">
-    <div id="stage" class="stage">
-      <img class="stage-bg" src="/assets/reference-mockup-bg.png" width="1024" height="575" alt="" />
-      <div class="scene" aria-live="polite">
-        <img class="logo" src="/assets/lingo-logo.png" width="511" height="54" alt="Lingo" />
-
-        <div id="statusBadge" class="status-badge">
+    <div class="stage">
+      <img id="art" src="/assets/reference-mockup.png" width="1024" height="575" alt="" />
+      <div id="live" class="live off" aria-live="polite">
+        <div id="slotBadge" class="slot slot-badge" hidden>
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
             <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span id="statusBadgeText">Waiting for the host</span>
+          <span id="slotBadgeText"></span>
         </div>
-
-        <p id="statusSubtitle" class="status-subtitle">
-          The public display will update automatically when the next online round starts.
-        </p>
-
-        <aside class="timer-panel">
-          <div id="timerLabel" class="timer-label">Next round starts in</div>
-          <div id="timerValue" class="timer-value">--</div>
-          <div class="timer-unit">Seconds</div>
-        </aside>
-
-        <div id="wordRow" class="word-row"></div>
-
-        <div class="stats-bar">
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#ffd700" d="M12 2l2.2 6.8H21l-5.5 4 2.1 6.7L12 16.8 6.4 19.5l2.1-6.7L3 8.8h6.8z"/>
-            </svg>
-            <span class="stat-label">Round</span>
-            <span id="roundValue" class="stat-value round">0</span>
-          </div>
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" fill="#4db8ff"/>
-              <text x="12" y="16" text-anchor="middle" fill="#02101f" font-size="10" font-weight="900">B</text>
-            </svg>
-            <span class="stat-label">Balls</span>
-            <span id="ballsValue" class="stat-value balls">0</span>
-          </div>
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#00ff66" d="M4 18h16v2H4zm3-4l3-4 3 3 5-7 2 2-7 10-3-3z"/>
-            </svg>
-            <span class="stat-label">Multiplier</span>
-            <span id="multValue" class="stat-value mult">1x</span>
-          </div>
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#cc66ff" d="M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1 .1 1.2.9 2 2.1 2 3.9v2h6v-2c0-2.7-5.3-4-8-4z"/>
-            </svg>
-            <span class="stat-label">Players</span>
-            <span id="playersValue" class="stat-value players">0</span>
-          </div>
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#00e5ff" d="M2 21l21-9L2 3v7l15 2-15 2z"/>
-            </svg>
-            <span class="stat-label">Submitted</span>
-            <span id="submittedValue" class="stat-value submitted">0</span>
-          </div>
+        <p id="slotSubtitle" class="slot slot-subtitle" hidden></p>
+        <div id="slotTimer" class="slot slot-timer" hidden>--</div>
+        <div id="slotWords" class="slot slot-words" hidden></div>
+        <div id="slotRound" class="slot slot-stat round" hidden>0</div>
+        <div id="slotBalls" class="slot slot-stat balls" hidden>0</div>
+        <div id="slotMult" class="slot slot-stat mult" hidden>1x</div>
+        <div id="slotPlayers" class="slot slot-stat players" hidden>0</div>
+        <div id="slotSubmitted" class="slot slot-stat submitted" hidden>0</div>
+        <div id="slotBoard" class="slot slot-board" hidden>
+          <p id="boardSummary" class="board-summary"></p>
+          <div id="boardGrid" class="board-grid"></div>
         </div>
-
-        <section class="player-board">
-          <div class="player-board-tab">Player board</div>
-          <div class="player-board-body">
-            <p id="playersSummary" class="players-summary" hidden></p>
-            <div id="boardEmpty" class="board-empty">
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1 .1 1.2.9 2 2.1 2 3.9v2h6v-2c0-2.7-5.3-4-8-4z"/>
-              </svg>
-              <p>No player cards yet</p>
-            </div>
-            <div id="playersGrid" class="players-grid" hidden></div>
-          </div>
-        </section>
       </div>
     </div>
   </div>
 
   <script>
     const DENSE_PLAYER_THRESHOLD = 24;
+    const IDLE_BADGE = 'Waiting for the host';
+    const IDLE_SUBTITLE = 'The public display will update automatically when the next online round starts.';
 
     const els = {
-      stage: document.getElementById('stage'),
-      statusBadge: document.getElementById('statusBadge'),
-      statusBadgeText: document.getElementById('statusBadgeText'),
-      statusSubtitle: document.getElementById('statusSubtitle'),
-      timerLabel: document.getElementById('timerLabel'),
-      timerValue: document.getElementById('timerValue'),
-      wordRow: document.getElementById('wordRow'),
-      roundValue: document.getElementById('roundValue'),
-      ballsValue: document.getElementById('ballsValue'),
-      multValue: document.getElementById('multValue'),
-      playersValue: document.getElementById('playersValue'),
-      submittedValue: document.getElementById('submittedValue'),
-      boardEmpty: document.getElementById('boardEmpty'),
-      playersSummary: document.getElementById('playersSummary'),
-      playersGrid: document.getElementById('playersGrid'),
+      art: document.getElementById('art'),
+      live: document.getElementById('live'),
+      slotBadge: document.getElementById('slotBadge'),
+      slotBadgeText: document.getElementById('slotBadgeText'),
+      slotSubtitle: document.getElementById('slotSubtitle'),
+      slotTimer: document.getElementById('slotTimer'),
+      slotWords: document.getElementById('slotWords'),
+      slotRound: document.getElementById('slotRound'),
+      slotBalls: document.getElementById('slotBalls'),
+      slotMult: document.getElementById('slotMult'),
+      slotPlayers: document.getElementById('slotPlayers'),
+      slotSubmitted: document.getElementById('slotSubmitted'),
+      slotBoard: document.getElementById('slotBoard'),
+      boardSummary: document.getElementById('boardSummary'),
+      boardGrid: document.getElementById('boardGrid'),
     };
 
     let currentState = null;
@@ -607,6 +369,61 @@
         return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
       }
       return null;
+    }
+
+    function wordNeedsOverlay(displayWord, revealed) {
+      if (revealed) return true;
+      const w = String(displayWord || '').toUpperCase();
+      if (!w || w === '.....') return false;
+      return /[A-Z]/.test(w.replace(/\./g, ''));
+    }
+
+    function badgeText(state) {
+      const phase = state.phase || 'idle';
+      const isRevealed = Boolean(state.revealedWord);
+      if (phase === 'guessing') return 'Guessing open';
+      if (phase === 'results') return 'Results';
+      if (phase === 'ended' && isRevealed) return 'Answer revealed';
+      return IDLE_BADGE;
+    }
+
+    function subtitleText(state) {
+      const phase = state.phase || 'idle';
+      const submitted = Number(state.submittedThisRound || 0);
+      const maskedWord = state.publicFirstLetter || '.....';
+      const revealedWord = state.revealedWord || '';
+      const isRevealed = Boolean(revealedWord);
+      if (phase === 'guessing') return `Guess the 5-letter word: ${maskedWord}`;
+      if (phase === 'results') return `${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
+      if (phase === 'ended' && isRevealed) return 'Waiting for the host to set up the next round.';
+      return IDLE_SUBTITLE;
+    }
+
+    function needsLiveLayer(state) {
+      if (!state) return false;
+
+      const phase = state.phase || 'idle';
+      const roundNumber = Number(state.roundNumber || 0);
+      const balls = Number(state.ballsRemaining || 0);
+      const players = Number(state.playerCount || 0);
+      const submitted = Number(state.submittedThisRound || 0);
+      const multiplier = Number(state.ballMultiplier || 1);
+      const displayPlayers = Array.isArray(state.players) ? state.players : [];
+      const revealedWord = state.revealedWord || '';
+      const maskedWord = state.publicFirstLetter || '.....';
+      const displayWord = revealedWord || maskedWord;
+      const timer = timeRemainingSeconds(state);
+
+      if (phase !== 'idle') return true;
+      if (roundNumber !== 0 || balls !== 0 || players !== 0 || submitted !== 0) return true;
+      if (multiplier !== 1) return true;
+      if (displayPlayers.length > 0) return true;
+      if (revealedWord) return true;
+      if (wordNeedsOverlay(displayWord, Boolean(revealedWord))) return true;
+      if (timer !== null) return true;
+      if (badgeText(state).toLowerCase() !== IDLE_BADGE.toLowerCase()) return true;
+      if (subtitleText(state) !== IDLE_SUBTITLE) return true;
+      return false;
     }
 
     function escapeHtml(text) {
@@ -644,9 +461,9 @@
       }).join('');
     }
 
-    function renderWordRow(text, revealed) {
+    function renderWordCells(text, revealed) {
       const normalized = String(text || '').toUpperCase().padEnd(5, '.').slice(0, 5);
-      els.wordRow.innerHTML = normalized.split('').map((char) => {
+      els.slotWords.innerHTML = normalized.split('').map((char) => {
         const hidden = char === '.';
         const cls = `word-cell${hidden ? ' hidden' : ''}${revealed && !hidden ? ' revealed' : ''}`;
         return `<div class="${cls}">${hidden ? '' : char}</div>`;
@@ -681,100 +498,100 @@
         </article>`;
     }
 
-    function renderPlayers(players, phase) {
+    function renderBoard(players, phase) {
       const safePlayers = Array.isArray(players) ? players : [];
       const dense = safePlayers.length >= DENSE_PLAYER_THRESHOLD;
-      els.stage.classList.toggle('dense', dense);
-      els.playersGrid.classList.toggle('dense', dense);
+      els.live.classList.toggle('dense', dense);
+      els.boardGrid.classList.toggle('dense', dense);
 
       if (!safePlayers.length) {
-        els.boardEmpty.hidden = false;
-        els.playersGrid.hidden = true;
-        els.playersSummary.hidden = true;
-        els.playersGrid.innerHTML = '';
+        els.slotBoard.hidden = true;
+        els.boardGrid.innerHTML = '';
         return;
       }
 
-      els.boardEmpty.hidden = true;
-      els.playersGrid.hidden = false;
-      els.playersSummary.hidden = false;
-
+      els.slotBoard.hidden = false;
       const submitted = safePlayers.filter((p) => p && p.hasSubmitted).length;
       if (phase === 'guessing') {
-        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} locked in.`;
+        els.boardSummary.textContent = `${submitted} of ${safePlayers.length} locked in.`;
       } else if (phase === 'results' || phase === 'ended') {
-        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} submitted.`;
+        els.boardSummary.textContent = `${submitted} of ${safePlayers.length} submitted.`;
       } else {
-        els.playersSummary.textContent = `${safePlayers.length} players in session.`;
+        els.boardSummary.textContent = `${safePlayers.length} players in session.`;
       }
 
       if (dense) {
         const cols = Math.max(1, Math.ceil(Math.sqrt(safePlayers.length * 0.8)));
-        els.playersGrid.style.setProperty('--cols', String(cols));
+        els.boardGrid.style.setProperty('--cols', String(cols));
       }
 
-      els.playersGrid.innerHTML = safePlayers
+      els.boardGrid.innerHTML = safePlayers
         .map((p) => (dense ? renderDensePlayerTile(p, phase) : renderCardPlayerTile(p, phase)))
         .join('');
     }
 
-    function renderTimer(state) {
-      const remaining = timeRemainingSeconds(state);
-      const phase = state?.phase || 'idle';
-
-      if (phase === 'guessing') {
-        els.timerLabel.textContent = 'Time remaining';
-      } else if (phase === 'results') {
-        els.timerLabel.textContent = 'Next round starts in';
-      } else {
-        els.timerLabel.textContent = 'Next round starts in';
+    function setSlot(el, show, value) {
+      if (!show) {
+        el.hidden = true;
+        return;
       }
-
-      els.timerValue.textContent = remaining === null ? '--' : String(remaining);
+      el.hidden = false;
+      if (value !== undefined && value !== null) el.textContent = value;
     }
 
     function renderState(state) {
       currentState = state || {};
 
+      if (!needsLiveLayer(currentState)) {
+        els.live.classList.add('off');
+        return;
+      }
+
+      els.live.classList.remove('off');
+
       const phase = currentState.phase || 'idle';
       const roundNumber = Number(currentState.roundNumber || 0);
       const balls = Number(currentState.ballsRemaining || 0);
       const multiplier = `${currentState.ballMultiplier || 1}x`;
-      const players = Number(currentState.playerCount || 0);
+      const playerCount = Number(currentState.playerCount || 0);
       const submitted = Number(currentState.submittedThisRound || 0);
       const displayPlayers = Array.isArray(currentState.players) ? currentState.players : [];
       const revealedWord = currentState.revealedWord || '';
       const maskedWord = currentState.publicFirstLetter || '.....';
       const displayWord = revealedWord || maskedWord;
       const isRevealed = Boolean(revealedWord);
+      const timer = timeRemainingSeconds(currentState);
 
-      els.statusBadge.className = 'status-badge';
-      if (phase === 'guessing') {
-        els.statusBadge.classList.add('guessing');
-        els.statusBadgeText.textContent = 'Guessing open';
-        els.statusSubtitle.textContent = `Guess the 5-letter word: ${maskedWord}`;
-      } else if (phase === 'results') {
-        els.statusBadge.classList.add('results');
-        els.statusBadgeText.textContent = 'Results';
-        els.statusSubtitle.textContent = `${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
-      } else if (phase === 'ended' && isRevealed) {
-        els.statusBadge.classList.add('revealed');
-        els.statusBadgeText.textContent = 'Answer revealed';
-        els.statusSubtitle.textContent = 'Waiting for the host to set up the next round.';
+      const badge = badgeText(currentState);
+      const subtitle = subtitleText(currentState);
+
+      els.slotBadge.className = 'slot slot-badge';
+      if (phase === 'guessing') els.slotBadge.classList.add('guessing');
+      else if (phase === 'results') els.slotBadge.classList.add('results');
+      else if (phase === 'ended' && isRevealed) els.slotBadge.classList.add('revealed');
+
+      setSlot(els.slotBadge, badge.toLowerCase() !== IDLE_BADGE.toLowerCase());
+      els.slotBadgeText.textContent = badge;
+
+      setSlot(els.slotSubtitle, subtitle !== IDLE_SUBTITLE, subtitle);
+
+      setSlot(els.slotTimer, timer !== null, timer === null ? '--' : String(timer));
+
+      const showWords = wordNeedsOverlay(displayWord, isRevealed);
+      if (showWords) {
+        els.slotWords.hidden = false;
+        renderWordCells(displayWord, isRevealed);
       } else {
-        els.statusBadgeText.textContent = 'Waiting for the host';
-        els.statusSubtitle.textContent = 'The public display will update automatically when the next online round starts.';
+        els.slotWords.hidden = true;
       }
 
-      renderWordRow(displayWord, isRevealed);
-      renderTimer(currentState);
+      setSlot(els.slotRound, roundNumber !== 0, String(roundNumber));
+      setSlot(els.slotBalls, balls !== 0, String(balls));
+      setSlot(els.slotMult, multiplier !== '1x', multiplier);
+      setSlot(els.slotPlayers, playerCount !== 0, String(playerCount));
+      setSlot(els.slotSubmitted, submitted !== 0, String(submitted));
 
-      els.roundValue.textContent = String(roundNumber);
-      els.ballsValue.textContent = String(balls);
-      els.multValue.textContent = multiplier;
-      els.playersValue.textContent = String(players);
-      els.submittedValue.textContent = String(submitted);
-      renderPlayers(displayPlayers, phase);
+      renderBoard(displayPlayers, phase);
     }
 
     async function fetchPublicState() {
@@ -784,19 +601,21 @@
       renderState(payload.state);
     }
 
-    fetchPublicState().catch((error) => {
-      els.statusBadgeText.textContent = 'Display unavailable';
-      els.statusSubtitle.textContent = error.message || 'Could not load public state.';
+    fetchPublicState().catch(() => {
+      els.live.classList.remove('off');
+      els.slotBadge.hidden = false;
+      els.slotBadgeText.textContent = 'Display unavailable';
+      els.slotSubtitle.hidden = false;
+      els.slotSubtitle.textContent = 'Could not load public state.';
     });
 
     window.setInterval(() => {
-      if (!currentState) return;
-      renderTimer(currentState);
+      if (!currentState || !needsLiveLayer(currentState)) return;
+      const timer = timeRemainingSeconds(currentState);
+      setSlot(els.slotTimer, timer !== null, timer === null ? '--' : String(timer));
     }, 1000);
 
     window.setInterval(() => fetchPublicState().catch(() => {}), 5000);
-
-    renderWordRow('.....', false);
   </script>
 </body>
 </html>

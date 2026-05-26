@@ -1,0 +1,112 @@
+{
+  "size": [
+    1024,
+    575
+  ],
+  "logo": {
+    "left_pct": 11.5234375,
+    "top_pct": 1.391304347826087,
+    "width_pct": 76.953125
+  },
+  "timerValue": {
+    "left_pct": 90.33,
+    "top_pct": 11.83
+  },
+  "badge": {
+    "left_pct": 50,
+    "top_pct": 20.52,
+    "width_pct": 28,
+    "height_pct": 4.5
+  },
+  "subtitle": {
+    "left_pct": 50,
+    "top_pct": 24.7,
+    "width_pct": 62
+  },
+  "wordRow": {
+    "left_pct": 50,
+    "top_pct": 36.17,
+    "width_pct": 39.06,
+    "height_pct": 13.91
+  },
+  "stats": {
+    "round": {
+      "left_pct": 9.96,
+      "top_pct": 49.57
+    },
+    "balls": {
+      "left_pct": 30.0,
+      "top_pct": 49.57
+    },
+    "mult": {
+      "left_pct": 50.0,
+      "top_pct": 49.57
+    },
+    "players": {
+      "left_pct": 70.0,
+      "top_pct": 49.57
+    },
+    "submitted": {
+      "left_pct": 90.04,
+      "top_pct": 49.57
+    }
+  },
+  "playerBoard": {
+    "left_pct": 50,
+    "top_pct": 75.65,
+    "width_pct": 90.62,
+    "height_pct": 41.74
+  },
+  "colors": {
+    "timerValue": [
+      35,
+      29,
+      39
+    ],
+    "roundValue": [
+      31,
+      31,
+      41
+    ],
+    "ballsValue": [
+      0,
+      19,
+      70
+    ],
+    "multValue": [
+      1,
+      19,
+      67
+    ],
+    "playersValue": [
+      1,
+      17,
+      66
+    ],
+    "submittedValue": [
+      35,
+      29,
+      41
+    ],
+    "badgeCenter": [
+      0,
+      11,
+      35
+    ],
+    "subtitleCenter": [
+      3,
+      23,
+      110
+    ],
+    "wordRowCenter": [
+      22,
+      29,
+      73
+    ],
+    "boardCenter": [
+      2,
+      11,
+      42
+    ]
+  }
+}
