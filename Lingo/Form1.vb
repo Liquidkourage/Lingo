@@ -57,12 +57,17 @@ Public Class Form1
         Dim credPath As String = ExtractResourceToFile("Lingo.liquidkourage-16fe5-43e37d656052.json")
         Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credPath)
 
-        If String.IsNullOrEmpty(My.Settings.channel) Then
+        channel = GetConfiguredTwitchChannel()
+        If String.IsNullOrEmpty(channel) Then
             channel = InputBox("What is the name of your channel?  Omit the 'twitch.tv/' part.")
             My.Settings.channel = channel
+            My.Settings.twitch_channel = channel
             My.Settings.Save()
         Else
-            channel = My.Settings.channel
+            If String.IsNullOrWhiteSpace(My.Settings.channel) Then
+                My.Settings.channel = channel
+                My.Settings.Save()
+            End If
         End If
 
         gametimer = New Timer(1000)
@@ -73,7 +78,7 @@ Public Class Form1
             ListBox1.Items.Add(wordlist(r.Next(wordlist.Count - 1)))
         Next
 
-        Dim credentials As New ConnectionCredentials("kouragethecowardlybot", "mui2jnpzbi4ne7uohndwz5j0scbpym", "wss://irc-ws.chat.twitch.tv:443")
+        Dim credentials As New ConnectionCredentials(GetConfiguredBotUsername(), GetConfiguredBotOauth(), "wss://irc-ws.chat.twitch.tv:443")
         client = New TwitchClient()
         client.Initialize(credentials, channel)
         AttachTwitchClientHandlers()
@@ -171,6 +176,21 @@ Public Class Form1
 
     Private Function WebGuessInstructions() As String
         Return "Submit your guess at " + WebSiteLabel() + " (use your exact Twitch username)."
+    End Function
+
+    Private Function GetConfiguredTwitchChannel() As String
+        If Not String.IsNullOrWhiteSpace(My.Settings.twitch_channel) Then Return My.Settings.twitch_channel
+        Return My.Settings.channel
+    End Function
+
+    Private Function GetConfiguredBotUsername() As String
+        If Not String.IsNullOrWhiteSpace(My.Settings.twitch_username) Then Return My.Settings.twitch_username
+        Return "kouragethecowardlybot"
+    End Function
+
+    Private Function GetConfiguredBotOauth() As String
+        If Not String.IsNullOrWhiteSpace(My.Settings.twitch_oauth) Then Return My.Settings.twitch_oauth
+        Return "mui2jnpzbi4ne7uohndwz5j0scbpym"
     End Function
 
     Private Function LiveSignupChatMessage() As String
@@ -367,7 +387,7 @@ Public Class Form1
     Private Sub Client_OnDisconnected(ByVal sender As Object, ByVal e As OnDisconnectedEventArgs)
         Me.Invoke(Sub() TextBox2.Text = "Disconnected")
         Debug.WriteLine("Disconnected")
-        Dim credentials As New ConnectionCredentials("kouragethecowardlybot", "mui2jnpzbi4ne7uohndwz5j0scbpym")
+        Dim credentials As New ConnectionCredentials(GetConfiguredBotUsername(), GetConfiguredBotOauth())
         'Dim credentials As New ConnectionCredentials("liquid_kourage", "j1kiijo0ymyef61xq6nbvr9jsw7f7i")
         client = New TwitchClient()
         client.Initialize(credentials, channel)
