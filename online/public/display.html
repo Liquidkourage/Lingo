@@ -22,19 +22,21 @@
     .viewport {
       position: fixed;
       inset: 0;
+      display: grid;
+      place-items: center;
+      background: #020610;
     }
 
     .art-frame {
       position: relative;
-      width: 100%;
-      height: 100%;
+      width: min(100vw, 100vh * (1024 / 575));
+      height: min(100vh, 100vw * (575 / 1024));
+      container-type: inline-size;
     }
 
     #baseArt {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      object-position: center center;
       display: block;
       user-select: none;
       pointer-events: none;
@@ -89,7 +91,7 @@
     .ov-timer {
       left: 88.5%;
       top: 10.5%;
-      font-size: clamp(1.6rem, 3.8vw, 2.8rem);
+      font-size: clamp(1.6rem, 4.8cqw, 2.8rem);
       font-weight: 900;
       color: #fff;
       letter-spacing: 0.06em;
@@ -99,7 +101,7 @@
     .ov-badge {
       left: 50%;
       top: 21.5%;
-      font-size: clamp(0.55rem, 1.1vw, 0.72rem);
+      font-size: clamp(0.55rem, 1.4cqw, 0.72rem);
       font-weight: 800;
       letter-spacing: 0.11em;
       text-transform: uppercase;
@@ -117,8 +119,8 @@
     .ov-subtitle {
       left: 50%;
       top: 25.5%;
-      width: min(480px, 72vw);
-      font-size: clamp(0.62rem, 1vw, 0.76rem);
+      width: min(480px, 72cqw);
+      font-size: clamp(0.62rem, 1.25cqw, 0.76rem);
       font-weight: 600;
       color: #9eb8d8;
       line-height: 1.45;
@@ -129,7 +131,7 @@
     .ov-callout {
       left: 50%;
       top: 24%;
-      font-size: clamp(0.95rem, 2vw, 1.4rem);
+      font-size: clamp(0.95rem, 2.5cqw, 1.4rem);
       font-weight: 800;
       color: #fff;
       text-shadow: 0 0 14px rgba(61, 184, 255, 0.35);
@@ -141,11 +143,11 @@
       top: 33.5%;
       transform: translate(-50%, -50%);
       display: flex;
-      gap: clamp(8px, 1.3vw, 14px);
+      gap: clamp(8px, 1.6cqw, 14px);
     }
 
     .word-cell {
-      width: clamp(72px, 7.8vw, 100px);
+      width: clamp(72px, 9.8cqw, 100px);
       aspect-ratio: 1;
       display: grid;
       place-items: center;
@@ -153,7 +155,7 @@
       background: rgba(2, 12, 28, 0.82);
       border: 2px solid rgba(61, 184, 255, 0.82);
       box-shadow: 0 0 12px rgba(61, 184, 255, 0.28);
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-size: clamp(1.8rem, 5cqw, 2.8rem);
       font-weight: 900;
       text-transform: uppercase;
       color: #fff;
@@ -175,7 +177,7 @@
 
     .ov-stat {
       top: 47.5%;
-      font-size: clamp(1.2rem, 2.2vw, 1.85rem);
+      font-size: clamp(1.2rem, 2.8cqw, 1.85rem);
       font-weight: 900;
       line-height: 1;
     }
