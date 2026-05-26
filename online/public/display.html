@@ -24,7 +24,7 @@
       --stage-top: #020810;
       --stage-mid: #082038;
       --stage-bottom: #030a12;
-      --glass-bg: rgba(0, 16, 40, 0.52);
+      --glass-bg: rgba(0, 16, 40, 0.78);
       --glass-border: rgba(61, 184, 255, 0.68);
     }
 
@@ -43,19 +43,15 @@
       background: #020610;
     }
 
-    /* stage.background */
+    /* stage.background — full reference mockup raster (exact graphic BG) */
     .stage {
       position: fixed;
       inset: 0;
       overflow: hidden;
-      background:
-        radial-gradient(ellipse 92% 56% at 50% -8%, rgba(62, 188, 255, 0.74) 0%, rgba(30, 100, 175, 0.2) 44%, transparent 70%),
-        radial-gradient(rgba(61, 184, 255, 0.038) 1px, transparent 1px),
-        linear-gradient(180deg, var(--stage-top) 0%, var(--stage-mid) 34%, var(--stage-bottom) 100%);
-      background-size: 100% 100%, 24px 24px, 100% 100%;
+      background: #020610 url("/assets/reference-mockup.png") center center / cover no-repeat;
     }
 
-    /* stage.frame */
+    /* stage.frame — gold inset from mockup graphic */
     .stage::after {
       content: "";
       position: absolute;
@@ -64,49 +60,14 @@
       z-index: 4;
       box-shadow:
         inset 0 0 0 3px rgba(255, 215, 0, 0.5),
-        inset 0 0 0 6px rgba(61, 184, 255, 0.1),
-        inset 0 0 80px rgba(61, 184, 255, 0.06);
+        inset 0 0 0 6px rgba(61, 184, 255, 0.1);
     }
 
-    /* stage.beam-left / stage.beam-right */
-    .stage-beam {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 22%;
-      pointer-events: none;
-      z-index: 1;
+    .stage-beam,
+    .stage-corner,
+    .logo-spotlight {
+      display: none;
     }
-
-    .stage-beam-left {
-      left: 0;
-      background:
-        linear-gradient(108deg, rgba(255, 215, 0, 0.24) 0%, rgba(255, 215, 0, 0.03) 36%, transparent 64%),
-        linear-gradient(115deg, rgba(61, 184, 255, 0.16) 0%, transparent 58%);
-      clip-path: polygon(0 0, 100% 0, 42% 100%, 0 100%);
-    }
-
-    .stage-beam-right {
-      right: 0;
-      background:
-        linear-gradient(252deg, rgba(255, 215, 0, 0.24) 0%, rgba(255, 215, 0, 0.03) 36%, transparent 64%),
-        linear-gradient(245deg, rgba(61, 184, 255, 0.16) 0%, transparent 58%);
-      clip-path: polygon(58% 0, 100% 0, 100% 100%, 0 100%);
-    }
-
-    .stage-corner {
-      position: absolute;
-      pointer-events: none;
-      z-index: 2;
-      width: 110px;
-      height: 110px;
-      opacity: 0.85;
-    }
-
-    .stage-corner-tl { top: 0; left: 0; }
-    .stage-corner-tr { top: 0; right: 0; transform: scaleX(-1); }
-    .stage-corner-bl { bottom: 0; left: 0; transform: scaleY(-1); }
-    .stage-corner-br { bottom: 0; right: 0; transform: scale(-1, -1); }
 
     .screen {
       position: relative;
@@ -320,7 +281,7 @@
       display: grid;
       place-items: center;
       border-radius: 10px;
-      background: rgba(2, 12, 28, 0.72);
+      background: rgba(2, 12, 28, 0.88);
       backdrop-filter: blur(8px);
       border: 2px solid rgba(61, 184, 255, 0.78);
       box-shadow: 0 0 12px rgba(61, 184, 255, 0.28);
