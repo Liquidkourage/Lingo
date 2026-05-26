@@ -1,41 +1,14 @@
 {
   "referenceImage": "/assets/reference-mockup.png",
-  "viewport": "1920×1080 broadcast (16:9), edge-to-edge, no browser chrome",
+  "architecture": "The exemplar PNG is the full page. Live HTML overlays only appear when game state differs from the idle mockup.",
+  "viewport": "reference-mockup.png scaled with object-fit:cover",
   "elements": [
-    { "id": "stage.background", "selector": ".stage", "asset": "/assets/reference-mockup-bg.png", "status": "match" },
-    { "id": "stage.frame", "selector": ".stage::after", "status": "match" },
-    { "id": "stage.beam-left", "selector": ".stage-beam-left", "status": "removed" },
-    { "id": "stage.beam-right", "selector": ".stage-beam-right", "status": "removed" },
-    { "id": "header.logo-glow", "selector": ".logo-spotlight", "status": "removed" },
-    { "id": "header.logo", "selector": "[data-spec-id='header.logo']", "asset": "/assets/lingo-logo.png", "status": "match" },
-    { "id": "header.status-badge", "selector": "[data-spec-id='header.status-badge']", "status": "match" },
-    { "id": "header.status-text", "selector": "[data-spec-id='header.status-text']", "status": "match" },
-    { "id": "header.subtitle", "selector": "[data-spec-id='header.subtitle']", "status": "match" },
-    { "id": "header.round-callout", "selector": "[data-spec-id='header.round-callout']", "status": "match" },
-    { "id": "timer.container", "selector": "[data-spec-id='timer.container']", "status": "match" },
-    { "id": "timer.label", "selector": "[data-spec-id='timer.label']", "status": "match" },
-    { "id": "timer.value", "selector": "[data-spec-id='timer.value']", "status": "match" },
-    { "id": "timer.subtext", "selector": "[data-spec-id='timer.subtext']", "status": "match" },
-    { "id": "word.row", "selector": "[data-spec-id='word.row']", "status": "match" },
-    { "id": "word.tile", "selector": ".tile", "status": "match" },
-    { "id": "stats.row", "selector": "[data-spec-id='stats.row']", "status": "match" },
-    { "id": "stats.round", "selector": "[data-spec-id='stats.round']", "status": "match" },
-    { "id": "stats.balls", "selector": "[data-spec-id='stats.balls']", "status": "match" },
-    { "id": "stats.multiplier", "selector": "[data-spec-id='stats.multiplier']", "status": "match" },
-    { "id": "stats.players", "selector": "[data-spec-id='stats.players']", "status": "match" },
-    { "id": "stats.submitted", "selector": "[data-spec-id='stats.submitted']", "status": "match" },
-    { "id": "players.panel", "selector": "[data-spec-id='players.panel']", "status": "match" },
-    { "id": "players.tab", "selector": "[data-spec-id='players.tab']", "status": "match" },
-    { "id": "players.summary", "selector": "[data-spec-id='players.summary']", "status": "match" },
-    { "id": "players.empty", "selector": "[data-spec-id='players.empty']", "status": "match" },
-    { "id": "players.card", "selector": ".player-card, .player-tile", "status": "n/a-waiting" },
-    { "id": "footer", "selector": ".footer", "status": "match" }
-  ],
-  "phaseVariants": {
-    "idle": "Calibrated to reference mockup (waiting state)",
-    "guessing": "Badge green; round callout; masked word; timer MM:SS; player cards",
-    "results": "Badge gold; feedback tiles; results timer",
-    "ended": "Revealed word; cyan badge when answer shown",
-    "dense": "24+ players — compact header, pill stats, tile grid"
-  }
+    { "id": "baseArt", "selector": "#baseArt", "asset": "/assets/reference-mockup.png", "status": "match" },
+    { "id": "liveLayer", "selector": "#liveLayer", "status": "match", "note": "Hidden (.is-idle) when API state matches idle mockup exactly" },
+    { "id": "timerOverlay", "selector": "#timerOverlay", "status": "match" },
+    { "id": "badgeOverlay", "selector": "#badgeOverlay", "status": "match" },
+    { "id": "wordLayer", "selector": "#wordLayer", "status": "match" },
+    { "id": "statsOverlays", "selector": ".ov-stat", "status": "match" },
+    { "id": "playersLayer", "selector": "#playersLayer", "status": "match" }
+  ]
 }

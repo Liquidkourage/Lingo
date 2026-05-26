@@ -4,30 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lingo Public Display</title>
-  <!-- Element map: /display-spec.json · Reference: /assets/reference-mockup.png -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet" />
   <style>
-    /* Spec-calibrated tokens — see /display-spec.json */
-    :root {
-      --gold: #ffd700;
-      --neon-blue: #3db8ff;
-      --neon-cyan: #00e5ff;
-      --text: #ffffff;
-      --muted: #9eb8d8;
-      --stat-round: #ffd700;
-      --stat-balls: #4db8ff;
-      --stat-mult: #00ff66;
-      --stat-players: #cc66ff;
-      --stat-submitted: #00e5ff;
-      --stage-top: #020810;
-      --stage-mid: #082038;
-      --stage-bottom: #030a12;
-      --glass-bg: rgba(0, 16, 40, 0.52);
-      --glass-border: rgba(61, 184, 255, 0.68);
-    }
-
     * { box-sizing: border-box; }
 
     html, body {
@@ -35,699 +15,342 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-    }
-
-    body {
-      color: var(--text);
-      font-family: Montserrat, "Segoe UI", Arial, sans-serif;
       background: #020610;
     }
 
-    /* stage.background — UI-stripped plate from reference (no ghosting) */
-    .stage {
+    /* The exemplar graphic IS the page. */
+    .viewport {
       position: fixed;
       inset: 0;
-      overflow: hidden;
-      background: #020610 url("/assets/reference-mockup-bg.png") center center / cover no-repeat;
     }
 
-    /* stage.frame — gold inset from mockup graphic */
-    .stage::after {
-      content: "";
+    .art-frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    #baseArt {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* Live data overlays — hidden when state matches the idle mockup exactly. */
+    .live-layer {
       position: absolute;
       inset: 0;
       pointer-events: none;
-      z-index: 4;
-      box-shadow:
-        inset 0 0 0 3px rgba(255, 215, 0, 0.5),
-        inset 0 0 0 6px rgba(61, 184, 255, 0.1);
+      font-family: Montserrat, "Segoe UI", Arial, sans-serif;
     }
 
-    .stage-beam,
-    .stage-corner,
-    .logo-spotlight {
-      display: none;
+    .live-layer.is-idle {
+      visibility: hidden;
     }
 
-    .screen {
-      position: relative;
-      z-index: 3;
-      width: 100%;
-      height: 100%;
-      padding: 12px 38px 10px;
-      display: flex;
-      flex-direction: column;
+    /* Paint over baked-in mockup values when live data is shown */
+    .live-layer:not(.is-idle) .ov-timer {
+      background: rgba(2, 12, 28, 0.94);
+      padding: 6px 14px;
+      border-radius: 8px;
+      min-width: 3.5em;
     }
 
-    .board {
-      flex: 1;
-      min-height: 0;
-      display: grid;
-      grid-template-rows: minmax(0, 24vh) auto auto minmax(0, 1fr);
-      gap: 0;
+    .live-layer:not(.is-idle) .ov-stat {
+      background: rgba(2, 12, 28, 0.94);
+      padding: 3px 12px;
+      border-radius: 8px;
+      min-width: 2em;
     }
 
-    .board.phase-idle .round-callout { display: none; }
-
-    h1, p { margin: 0; }
-
-    /* --- Header --- */
-    .show-header {
-      position: relative;
-      text-align: center;
-      padding: 4px 175px 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
+    .live-layer:not(.is-idle) .ov-badge,
+    .live-layer:not(.is-idle) .ov-callout,
+    .live-layer:not(.is-idle) .ov-subtitle {
+      background: rgba(2, 8, 20, 0.88);
     }
 
-    /* header.logo-glow */
-    .logo-spotlight {
+    .live-layer:not(.is-idle) .players-layer {
+      background: rgba(2, 12, 28, 0.94);
+      border-radius: 11px;
+    }
+
+    .ov {
       position: absolute;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* Positions calibrated to reference-mockup.png (1024×575) */
+    .ov-timer {
+      left: 88.5%;
+      top: 10.5%;
+      font-size: clamp(1.6rem, 3.8vw, 2.8rem);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 18px rgba(255, 255, 255, 0.85), 0 0 36px rgba(61, 184, 255, 0.45);
+    }
+
+    .ov-badge {
       left: 50%;
-      top: -8px;
-      transform: translateX(-50%);
-      width: min(720px, 76vw);
-      height: 160px;
-      background: radial-gradient(ellipse at center, rgba(75, 195, 255, 0.5) 0%, rgba(45, 130, 210, 0.12) 50%, transparent 72%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .logo-wrap {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 6px;
-    }
-
-    /* header.logo */
-    .logo-img {
-      width: min(600px, 58vw);
-      height: auto;
-      display: block;
-      filter:
-        drop-shadow(0 0 18px rgba(61, 184, 255, 0.75))
-        drop-shadow(0 0 36px rgba(61, 184, 255, 0.35));
-    }
-
-    /* header.status-badge */
-    .status-badge {
-      position: relative;
-      z-index: 1;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 999px;
-      padding: 5px 14px;
+      top: 21.5%;
+      font-size: clamp(0.55rem, 1.1vw, 0.72rem);
       font-weight: 800;
       letter-spacing: 0.11em;
       text-transform: uppercase;
-      font-size: 0.7rem;
-      border: 2px solid var(--gold);
-      background: rgba(0, 0, 0, 0.58);
-      color: var(--gold);
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.28);
-      margin-bottom: 5px;
+      color: #ffd700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 2px solid #ffd700;
+      background: rgba(0, 0, 0, 0.65);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
     }
 
-    .status-badge.guessing {
-      border-color: var(--stat-mult);
-      color: var(--stat-mult);
-      box-shadow: 0 0 14px rgba(0, 255, 102, 0.35);
-    }
+    .ov-badge.guessing { color: #00ff66; border-color: #00ff66; }
+    .ov-badge.revealed { color: #00e5ff; border-color: #00e5ff; }
 
-    .status-badge.results {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-
-    .status-badge.revealed {
-      border-color: var(--neon-cyan);
-      color: var(--neon-cyan);
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
-    }
-
-    .badge-icon {
-      width: 14px;
-      height: 14px;
-      flex-shrink: 0;
-    }
-
-    .round-callout {
-      font-size: clamp(1.1rem, 2.2vw, 1.55rem);
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    /* header.subtitle */
-    .subtitle {
-      font-size: clamp(0.65rem, 1vw, 0.76rem);
-      color: var(--muted);
-      line-height: 1.5;
-      max-width: 480px;
-      margin: 0 auto;
+    .ov-subtitle {
+      left: 50%;
+      top: 25.5%;
+      width: min(480px, 72vw);
+      font-size: clamp(0.62rem, 1vw, 0.76rem);
       font-weight: 600;
+      color: #9eb8d8;
+      line-height: 1.45;
+      white-space: normal;
+      transform: translate(-50%, 0);
     }
 
-    /* timer.container */
-    .timer-card {
+    .ov-callout {
+      left: 50%;
+      top: 24%;
+      font-size: clamp(0.95rem, 2vw, 1.4rem);
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 0 14px rgba(61, 184, 255, 0.35);
+    }
+
+    .word-layer {
       position: absolute;
-      top: 2px;
-      right: 0;
-      width: 148px;
-      padding: 9px 10px 7px;
-      text-align: center;
-      border-radius: 10px;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border: 2px solid var(--glass-border);
-      box-shadow: 0 0 16px rgba(61, 184, 255, 0.24);
-    }
-
-    /* timer.label */
-    .timer-label {
-      font-size: 0.56rem;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.9);
-      margin-bottom: 5px;
-      font-weight: 700;
-      line-height: 1.25;
-    }
-
-    /* timer.value */
-    .timer-value {
+      left: 50%;
+      top: 33.5%;
+      transform: translate(-50%, -50%);
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      min-height: 46px;
+      gap: clamp(8px, 1.3vw, 14px);
     }
 
-    .timer-idle-dash {
-      font-size: clamp(2.2rem, 4.6vw, 3rem);
-      font-weight: 900;
-      line-height: 1;
-      color: #fff;
-      letter-spacing: 0.08em;
-      text-shadow: 0 0 18px rgba(255, 255, 255, 0.8), 0 0 36px rgba(61, 184, 255, 0.4);
-    }
-
-    .digit-box {
-      display: grid;
-      place-items: center;
-      width: 46px;
-      height: 46px;
-      border-radius: 7px;
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      font-size: 2.2rem;
-      font-weight: 900;
-      color: #fff;
-      text-shadow: 0 0 16px rgba(255, 255, 255, 0.75);
-    }
-
-    .digit-sep {
-      font-size: 2rem;
-      font-weight: 900;
-      color: #fff;
-      line-height: 1;
-    }
-
-    /* timer.subtext */
-    .timer-subtext {
-      margin-top: 4px;
-      color: var(--neon-cyan);
-      font-size: 0.58rem;
-      text-transform: uppercase;
-      letter-spacing: 0.13em;
-      font-weight: 700;
-    }
-
-    /* word.row / word.tile */
-    .word-wrap {
-      display: flex;
-      justify-content: center;
-      gap: clamp(11px, 1.35vw, 15px);
-      padding: 4px 0 11px;
-    }
-
-    .tile {
-      width: clamp(86px, 8.2vw, 104px);
+    .word-cell {
+      width: clamp(72px, 7.8vw, 100px);
       aspect-ratio: 1;
       display: grid;
       place-items: center;
       border-radius: 10px;
-      background: rgba(2, 12, 28, 0.72);
-      backdrop-filter: blur(8px);
-      border: 2px solid rgba(61, 184, 255, 0.78);
+      background: rgba(2, 12, 28, 0.82);
+      border: 2px solid rgba(61, 184, 255, 0.82);
       box-shadow: 0 0 12px rgba(61, 184, 255, 0.28);
-      font-size: clamp(1.95rem, 4.2vw, 2.85rem);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
       font-weight: 900;
       text-transform: uppercase;
+      color: #fff;
     }
 
-    .tile.hidden::before {
+    .word-cell.hidden::before {
       content: "";
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: rgba(61, 184, 255, 0.85);
-      box-shadow: 0 0 5px rgba(61, 184, 255, 0.5);
+      background: rgba(61, 184, 255, 0.9);
+      box-shadow: 0 0 6px rgba(61, 184, 255, 0.5);
     }
 
-    .tile.revealed {
-      background: rgba(0, 90, 48, 0.75);
+    .word-cell.revealed {
+      background: rgba(0, 90, 48, 0.82);
       border-color: rgba(0, 255, 102, 0.88);
-      box-shadow: 0 0 20px rgba(0, 255, 102, 0.45);
     }
 
-    /* stats.row + stats.* */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 6px;
-      padding-bottom: 8px;
-    }
-
-    .stat {
-      padding: 8px 4px 9px;
-      text-align: center;
-      border-radius: 10px;
-      background: var(--glass-bg);
-      backdrop-filter: blur(8px);
-      border: 2px solid var(--glass-border);
-      box-shadow: 0 0 6px rgba(61, 184, 255, 0.08);
-    }
-
-    .stat-icon {
-      width: 22px;
-      height: 22px;
-      margin: 0 auto 3px;
-      display: block;
-    }
-
-    .stat-label {
-      text-transform: uppercase;
-      letter-spacing: 0.09em;
-      font-size: 0.52rem;
-      font-weight: 700;
-      margin-bottom: 1px;
-      color: rgba(255, 255, 255, 0.9);
-    }
-
-    .stat-value {
-      font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+    .ov-stat {
+      top: 47.5%;
+      font-size: clamp(1.2rem, 2.2vw, 1.85rem);
       font-weight: 900;
       line-height: 1;
     }
 
-    .stat-round .stat-value { color: var(--stat-round); text-shadow: 0 0 10px rgba(255, 215, 0, 0.45); }
-    .stat-balls .stat-value { color: var(--stat-balls); text-shadow: 0 0 10px rgba(77, 184, 255, 0.45); }
-    .stat-mult .stat-value { color: var(--stat-mult); text-shadow: 0 0 10px rgba(0, 255, 102, 0.45); }
-    .stat-players .stat-value { color: var(--stat-players); text-shadow: 0 0 10px rgba(204, 102, 255, 0.45); }
-    .stat-submitted .stat-value { color: var(--stat-submitted); text-shadow: 0 0 10px rgba(0, 229, 255, 0.45); }
+    .ov-stat-round { left: 10%; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.45); }
+    .ov-stat-balls { left: 30%; color: #4db8ff; text-shadow: 0 0 10px rgba(77, 184, 255, 0.45); }
+    .ov-stat-mult { left: 50%; color: #00ff66; text-shadow: 0 0 10px rgba(0, 255, 102, 0.45); }
+    .ov-stat-players { left: 70%; color: #cc66ff; text-shadow: 0 0 10px rgba(204, 102, 255, 0.45); }
+    .ov-stat-submitted { left: 90%; color: #00e5ff; text-shadow: 0 0 10px rgba(0, 229, 255, 0.45); }
 
-    /* players.panel / players.tab */
-    .player-panel {
-      position: relative;
+    .players-layer {
+      position: absolute;
+      left: 50%;
+      top: 54%;
+      transform: translateX(-50%);
+      width: 92%;
+      height: 42%;
       display: flex;
       flex-direction: column;
       min-height: 0;
-      padding: 18px 12px 8px;
-      border-radius: 11px;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border: 2px solid var(--glass-border);
-      box-shadow: 0 0 18px rgba(61, 184, 255, 0.16), inset 0 0 28px rgba(0, 0, 0, 0.2);
-    }
-
-    .panel-tab-wrap {
-      position: absolute;
-      top: -11px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: flex-end;
-    }
-
-    .panel-wing {
-      width: 0;
-      height: 0;
-      border-style: solid;
-    }
-
-    .panel-wing-left {
-      border-width: 7px 10px 7px 0;
-      border-color: transparent rgba(61, 184, 255, 0.8) transparent transparent;
-      margin-right: -1px;
-    }
-
-    .panel-wing-right {
-      border-width: 7px 0 7px 10px;
-      border-color: transparent transparent transparent rgba(61, 184, 255, 0.8);
-      margin-left: -1px;
-    }
-
-    .panel-tab {
-      padding: 3px 18px 4px;
-      background: rgba(4, 20, 42, 0.96);
-      border: 2px solid var(--glass-border);
-      color: rgba(255, 255, 255, 0.94);
-      font-weight: 800;
-      font-size: 0.62rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%);
-      box-shadow: 0 0 10px rgba(61, 184, 255, 0.2);
+      padding: 16px 12px 10px;
+      overflow: hidden;
     }
 
     .players-summary {
-      color: var(--muted);
-      font-size: 0.8rem;
+      color: #9eb8d8;
+      font-size: 0.78rem;
       text-align: center;
-      margin-bottom: 8px;
-      flex-shrink: 0;
+      margin-bottom: 6px;
       font-weight: 600;
+      flex-shrink: 0;
     }
 
     .players-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
       flex: 1;
       min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
       overflow: hidden;
       align-content: start;
     }
 
     .player-card {
       border-radius: 10px;
-      padding: 12px;
-      background: rgba(6, 20, 42, 0.88);
-      border: 1px solid rgba(61, 184, 255, 0.38);
+      padding: 10px;
+      background: rgba(6, 20, 42, 0.92);
+      border: 1px solid rgba(61, 184, 255, 0.4);
     }
 
-    .player-card.locked {
-      background: rgba(50, 38, 8, 0.9);
-      border-color: rgba(255, 215, 0, 0.55);
-    }
-
-    .player-card.solved {
-      background: rgba(8, 50, 28, 0.9);
-      border-color: rgba(0, 255, 102, 0.65);
-    }
+    .player-card.locked { background: rgba(50, 38, 8, 0.92); border-color: rgba(255, 215, 0, 0.55); }
+    .player-card.solved { background: rgba(8, 50, 28, 0.92); border-color: rgba(0, 255, 102, 0.65); }
 
     .player-card-top {
       display: flex;
-      align-items: start;
       justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
+      gap: 6px;
+      margin-bottom: 4px;
     }
 
-    .player-name { font-size: 0.95rem; font-weight: 800; word-break: break-word; }
-
+    .player-name { font-size: 0.88rem; font-weight: 800; }
     .player-status-pill {
-      flex-shrink: 0;
-      border-radius: 999px;
-      padding: 3px 8px;
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--muted);
-      text-transform: uppercase;
-      font-size: 0.6rem;
+      font-size: 0.55rem;
       font-weight: 800;
+      text-transform: uppercase;
+      color: #9eb8d8;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
     }
 
-    .player-meta {
-      color: var(--muted);
-      font-size: 0.78rem;
-      min-height: 1.6em;
-      margin-bottom: 8px;
-    }
+    .player-meta { font-size: 0.72rem; color: #9eb8d8; margin-bottom: 6px; }
 
     .feedback-row {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
+      gap: 3px;
     }
 
     .feedback-cell {
       aspect-ratio: 1;
+      border-radius: 5px;
       display: grid;
       place-items: center;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(255, 255, 255, 0.05);
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       font-weight: 900;
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .feedback-cell.pending { background: rgba(255, 215, 0, 0.35); }
     .feedback-cell.correct { background: rgba(0, 255, 102, 0.6); }
     .feedback-cell.present { background: rgba(255, 180, 0, 0.6); }
     .feedback-cell.absent { background: rgba(220, 60, 60, 0.55); }
-    .feedback-cell.blank { color: rgba(255, 255, 255, 0.15); }
 
-    /* players.empty */
-    .empty-players {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      color: rgba(122, 148, 184, 0.82);
-      font-size: 0.88rem;
-      font-weight: 600;
+    /* Dense layout */
+    .live-layer.dense .ov-badge,
+    .live-layer.dense .ov-subtitle,
+    .live-layer.dense .ov-callout { display: none; }
+
+    .live-layer.dense .word-layer { top: 8%; left: 12%; transform: none; }
+    .live-layer.dense .ov-timer { top: 6%; left: 92%; font-size: 1.2rem; }
+    .live-layer.dense .ov-stat { top: 14%; font-size: 0.85rem; }
+    .live-layer.dense .players-layer { top: 18%; height: 78%; width: 96%; padding: 8px; }
+
+    .players-grid.dense {
+      grid-template-columns: repeat(var(--cols, 8), minmax(0, 1fr));
+      gap: var(--gap, 3px);
     }
-
-    .empty-players-icon {
-      width: 58px;
-      height: 58px;
-      opacity: 0.38;
-    }
-
-    .footer { display: none; }
-
-    /* --- Dense layout --- */
-    .screen.dense { padding: 8px 12px; }
-
-    .board.dense .logo-img { width: min(180px, 26vw); }
-    .board.dense .show-header { padding: 0 90px 0 0; }
-    .board.dense .logo-spotlight { display: none; }
-    .board.dense .status-badge { padding: 4px 10px; font-size: 0.58rem; }
-    .board.dense .subtitle { display: none; }
-    .board.dense .round-callout { font-size: 0.9rem; display: inline; }
-    .board.dense .timer-card { width: 76px; padding: 5px 6px; }
-    .board.dense .timer-label { font-size: 0.5rem; }
-    .board.dense .timer-subtext { display: none; }
-    .board.dense .digit-box { width: 26px; height: 26px; font-size: 1rem; }
-    .board.dense .word-wrap { justify-content: flex-start; padding: 2px 0 6px; gap: 4px; }
-    .board.dense .tile { width: 38px; font-size: 1.1rem; border-radius: 6px; }
-    .board.dense .stats { grid-template-columns: repeat(5, auto); gap: 5px; }
-    .board.dense .stat { padding: 4px 8px; display: flex; align-items: center; gap: 5px; border-radius: 999px; }
-    .board.dense .stat-icon { width: 16px; height: 16px; margin: 0; }
-    .board.dense .stat-label { margin: 0; font-size: 0.52rem; }
-    .board.dense .stat-value { font-size: 0.82rem; }
-    .board.dense .player-panel { padding: 14px 8px 8px; }
-    .board.dense .panel-tab { font-size: 0.55rem; padding: 3px 10px; }
-
-    .players-grid.dense { gap: var(--grid-gap, 3px); }
 
     .player-tile {
-      border-radius: 5px;
-      padding: var(--tile-pad, 3px 4px);
+      border-radius: 4px;
+      padding: 3px 4px;
       background: rgba(6, 18, 38, 0.92);
       border: 1px solid rgba(61, 184, 255, 0.35);
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      overflow: hidden;
+      font-size: var(--tile-font, 0.68rem);
     }
 
-    .player-tile.waiting { opacity: 0.6; }
-    .player-tile.locked { background: rgba(60, 45, 8, 0.9); border-color: rgba(255, 215, 0, 0.5); }
-    .player-tile.solved { background: rgba(8, 55, 30, 0.92); border-color: rgba(0, 255, 102, 0.6); }
-
-    .player-tile-name {
-      font-size: var(--tile-font-size, 0.72rem);
-      font-weight: 800;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .player-tile-name { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .player-tile-feedback {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 1px;
+      margin-top: 2px;
     }
 
-    .player-tile-feedback .mini-cell {
-      aspect-ratio: 1;
-      border-radius: 2px;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .player-tile-feedback .mini-cell.pending { background: rgba(255, 215, 0, 0.45); }
-    .player-tile-feedback .mini-cell.correct { background: rgba(0, 255, 102, 0.8); }
-    .player-tile-feedback .mini-cell.present { background: rgba(255, 180, 0, 0.8); }
-    .player-tile-feedback .mini-cell.absent { background: rgba(220, 60, 60, 0.7); }
-
-    .player-tile-status {
-      font-size: calc(var(--tile-font-size, 0.72rem) * 0.85);
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .board.dense.size-lg { --tile-font-size: 0.68rem; --grid-gap: 3px; --tile-pad: 3px 4px; }
-    .board.dense.size-xl { --tile-font-size: 0.58rem; --grid-gap: 2px; --tile-pad: 2px 3px; }
-    .board.dense.size-xxl { --tile-font-size: 0.5rem; --grid-gap: 2px; --tile-pad: 2px; }
+    .mini-cell { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,0.06); }
+    .mini-cell.pending { background: rgba(255, 215, 0, 0.45); }
+    .mini-cell.correct { background: rgba(0, 255, 102, 0.8); }
+    .mini-cell.present { background: rgba(255, 180, 0, 0.8); }
+    .mini-cell.absent { background: rgba(220, 60, 60, 0.7); }
   </style>
 </head>
 <body>
-  <div class="stage" data-spec-id="stage.background">
-    <div class="stage-beam stage-beam-left" data-spec-id="stage.beam-left" aria-hidden="true"></div>
-    <div class="stage-beam stage-beam-right" data-spec-id="stage.beam-right" aria-hidden="true"></div>
-    <svg class="stage-corner stage-corner-tl" viewBox="0 0 110 110" aria-hidden="true">
-      <path d="M0 0 L72 0 L0 78 Z" fill="rgba(255,215,0,0.1)" stroke="rgba(255,215,0,0.45)" stroke-width="2"/>
-      <path d="M0 0 L0 72 L52 0" fill="none" stroke="rgba(61,184,255,0.35)" stroke-width="1.5"/>
-    </svg>
-    <svg class="stage-corner stage-corner-tr" viewBox="0 0 110 110" aria-hidden="true">
-      <path d="M0 0 L72 0 L0 78 Z" fill="rgba(255,215,0,0.1)" stroke="rgba(255,215,0,0.45)" stroke-width="2"/>
-      <path d="M0 0 L0 72 L52 0" fill="none" stroke="rgba(61,184,255,0.35)" stroke-width="1.5"/>
-    </svg>
-    <svg class="stage-corner stage-corner-bl" viewBox="0 0 110 110" aria-hidden="true">
-      <path d="M0 0 L72 0 L0 78 Z" fill="rgba(255,215,0,0.08)" stroke="rgba(255,215,0,0.35)" stroke-width="2"/>
-    </svg>
-    <svg class="stage-corner stage-corner-br" viewBox="0 0 110 110" aria-hidden="true">
-      <path d="M0 0 L72 0 L0 78 Z" fill="rgba(255,215,0,0.08)" stroke="rgba(255,215,0,0.35)" stroke-width="2"/>
-    </svg>
-
-    <main id="screen" class="screen">
-      <section id="board" class="board phase-idle">
-        <header class="show-header">
-          <div class="timer-card" data-spec-id="timer.container">
-            <div id="timerLabel" class="timer-label" data-spec-id="timer.label">Next round starts in</div>
-            <div id="timerValue" class="timer-value" data-spec-id="timer.value">
-              <span class="timer-idle-dash">--</span>
-            </div>
-            <div id="timerSubtext" class="timer-subtext" data-spec-id="timer.subtext">Seconds</div>
-          </div>
-
-          <div class="logo-spotlight" data-spec-id="header.logo-glow" aria-hidden="true"></div>
-          <div class="logo-wrap">
-            <img
-              class="logo-img"
-              data-spec-id="header.logo"
-              src="/assets/lingo-logo.png"
-              width="520"
-              height="60"
-              alt="LINGO"
-            />
-          </div>
-
-          <div id="statusBadge" class="status-badge" data-spec-id="header.status-badge">
-            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span id="badgeText" data-spec-id="header.status-text">Waiting for the host</span>
-          </div>
-
-          <h1 id="titleLine" class="round-callout" data-spec-id="header.round-callout"></h1>
-          <p id="subtitleLine" class="subtitle" data-spec-id="header.subtitle">The public display will update automatically when the next online round starts.</p>
-        </header>
-
-        <div id="wordWrap" class="word-wrap" data-spec-id="word.row" aria-label="Current word display"></div>
-
-        <div class="stats" data-spec-id="stats.row">
-          <div class="stat stat-round" data-spec-id="stats.round">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M8 4h8l1 4h3v2h-1l-1 10H7L6 10H5V8h3l1-4z" fill="#ffd700" stroke="#b8860b" stroke-width="0.5"/>
-            </svg>
-            <div class="stat-label">Round</div>
-            <div id="roundValue" class="stat-value">0</div>
-          </div>
-          <div class="stat stat-balls" data-spec-id="stats.balls">
-            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" fill="#4db8ff" stroke="#2080cc" stroke-width="1"/>
-              <circle cx="9" cy="10" r="2" fill="rgba(255,255,255,0.35)"/>
-            </svg>
-            <div class="stat-label">Balls</div>
-            <div id="ballsValue" class="stat-value">0</div>
-          </div>
-          <div class="stat stat-mult" data-spec-id="stats.multiplier">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 18 L8 10 L12 14 L16 6 L20 12" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <div class="stat-label">Multiplier</div>
-            <div id="multiplierValue" class="stat-value">1x</div>
-          </div>
-          <div class="stat stat-players" data-spec-id="stats.players">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="9" cy="8" r="3" fill="#cc66ff"/>
-              <circle cx="16" cy="9" r="2.5" fill="#cc66ff"/>
-              <path d="M4 18c0-3 2.5-5 5-5s5 2 5 5" fill="#cc66ff"/>
-            </svg>
-            <div class="stat-label">Players</div>
-            <div id="playersValue" class="stat-value">0</div>
-          </div>
-          <div class="stat stat-submitted" data-spec-id="stats.submitted">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 12 L20 4 L16 20 L11 13 L4 12z" fill="#00e5ff" stroke="#00a0b8" stroke-width="0.5"/>
-            </svg>
-            <div class="stat-label">Submitted</div>
-            <div id="submittedValue" class="stat-value">0</div>
-          </div>
+  <div class="viewport">
+    <div class="art-frame">
+      <img id="baseArt" src="/assets/reference-mockup.png" width="1024" height="575" alt="" />
+      <div id="liveLayer" class="live-layer is-idle" aria-live="polite">
+        <div id="timerOverlay" class="ov ov-timer">--</div>
+        <div id="badgeOverlay" class="ov ov-badge"></div>
+        <div id="calloutOverlay" class="ov ov-callout"></div>
+        <div id="subtitleOverlay" class="ov ov-subtitle"></div>
+        <div id="wordLayer" class="word-layer"></div>
+        <div id="roundOverlay" class="ov ov-stat ov-stat-round">0</div>
+        <div id="ballsOverlay" class="ov ov-stat ov-stat-balls">0</div>
+        <div id="multOverlay" class="ov ov-stat ov-stat-mult">1x</div>
+        <div id="playersCountOverlay" class="ov ov-stat ov-stat-players">0</div>
+        <div id="submittedOverlay" class="ov ov-stat ov-stat-submitted">0</div>
+        <div id="playersLayer" class="players-layer">
+          <p id="playersSummary" class="players-summary"></p>
+          <div id="playersGrid" class="players-grid"></div>
         </div>
-
-        <section class="player-panel" data-spec-id="players.panel">
-          <div class="panel-tab-wrap">
-            <span class="panel-wing panel-wing-left" aria-hidden="true"></span>
-            <div class="panel-tab" data-spec-id="players.tab">Player Board</div>
-            <span class="panel-wing panel-wing-right" aria-hidden="true"></span>
-          </div>
-          <p id="playersSummary" class="players-summary" data-spec-id="players.summary"></p>
-          <div id="playersGrid" class="players-grid" data-spec-id="players.grid"></div>
-        </section>
-
-        <div class="footer" aria-hidden="true">
-          <div id="updatedText"></div>
-        </div>
-      </section>
-    </main>
+      </div>
+    </div>
   </div>
 
   <script>
     const DENSE_PLAYER_THRESHOLD = 24;
+    const ART = '/assets/reference-mockup.png';
 
     const els = {
-      screen: document.getElementById('screen'),
-      board: document.getElementById('board'),
-      statusBadge: document.getElementById('statusBadge'),
-      badgeText: document.getElementById('badgeText'),
-      titleLine: document.getElementById('titleLine'),
-      subtitleLine: document.getElementById('subtitleLine'),
-      timerLabel: document.getElementById('timerLabel'),
-      timerValue: document.getElementById('timerValue'),
-      timerSubtext: document.getElementById('timerSubtext'),
-      wordWrap: document.getElementById('wordWrap'),
-      roundValue: document.getElementById('roundValue'),
-      ballsValue: document.getElementById('ballsValue'),
-      multiplierValue: document.getElementById('multiplierValue'),
-      playersValue: document.getElementById('playersValue'),
-      submittedValue: document.getElementById('submittedValue'),
+      baseArt: document.getElementById('baseArt'),
+      liveLayer: document.getElementById('liveLayer'),
+      timerOverlay: document.getElementById('timerOverlay'),
+      badgeOverlay: document.getElementById('badgeOverlay'),
+      calloutOverlay: document.getElementById('calloutOverlay'),
+      subtitleOverlay: document.getElementById('subtitleOverlay'),
+      wordLayer: document.getElementById('wordLayer'),
+      roundOverlay: document.getElementById('roundOverlay'),
+      ballsOverlay: document.getElementById('ballsOverlay'),
+      multOverlay: document.getElementById('multOverlay'),
+      playersCountOverlay: document.getElementById('playersCountOverlay'),
+      submittedOverlay: document.getElementById('submittedOverlay'),
       playersSummary: document.getElementById('playersSummary'),
       playersGrid: document.getElementById('playersGrid'),
-      updatedText: document.getElementById('updatedText'),
     };
 
     let currentState = null;
@@ -737,17 +360,6 @@
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
-
-    function renderTimerDigits(text) {
-      if (text === '--') {
-        els.timerValue.innerHTML = '<span class="timer-idle-dash">--</span>';
-        return;
-      }
-      els.timerValue.innerHTML = text.split('').map((char) => {
-        if (char === ':') return '<span class="digit-sep">:</span>';
-        return `<span class="digit-box">${char}</span>`;
-      }).join('');
     }
 
     function timeRemainingSeconds(state) {
@@ -763,32 +375,18 @@
       return null;
     }
 
-    function renderTiles(text, revealed) {
-      const normalized = String(text || '').toUpperCase().padEnd(5, '.').slice(0, 5);
-      els.wordWrap.innerHTML = normalized
-        .split('')
-        .map((char) => {
-          const hidden = char === '.';
-          const tileClass = `tile${hidden ? ' hidden' : ''}${revealed && !hidden ? ' revealed' : ''}`;
-          return `<div class="${tileClass}">${hidden ? '' : char}</div>`;
-        })
-        .join('');
-    }
-
-    function renderTimer() {
-      const phase = currentState?.phase || 'idle';
-      const remaining = timeRemainingSeconds(currentState);
-
-      if (remaining === null) {
-        renderTimerDigits('--');
-        els.timerLabel.textContent = phase === 'idle' ? 'Next round starts in' : 'Time remaining';
-        els.timerSubtext.textContent = 'Seconds';
-        return;
-      }
-
-      renderTimerDigits(formatSeconds(remaining));
-      els.timerLabel.textContent = phase === 'guessing' ? 'Guess window' : 'Results window';
-      els.timerSubtext.textContent = 'Seconds';
+    function isPureIdle(state) {
+      if (!state) return true;
+      const phase = state.phase || 'idle';
+      const players = Array.isArray(state.players) ? state.players : [];
+      return phase === 'idle'
+        && Number(state.roundNumber || 0) === 0
+        && Number(state.ballsRemaining || 0) === 0
+        && Number(state.playerCount || 0) === 0
+        && Number(state.submittedThisRound || 0) === 0
+        && players.length === 0
+        && !state.revealedWord
+        && timeRemainingSeconds(state) === null;
     }
 
     function escapeHtml(text) {
@@ -813,71 +411,45 @@
       const pending = player.status === 'locked';
       const cellTag = compact ? 'mini-cell' : 'feedback-cell';
       const showSymbol = !compact;
-
-      return (pattern || '.....')
-        .slice(0, 5)
-        .padEnd(5, '.')
-        .split('')
-        .map((char) => {
-          const cellClass = feedbackCellClass(char, pending);
-          let symbol = '';
-          if (showSymbol) {
-            if (char === '!') symbol = '✓';
-            else if (char === '?') symbol = '•';
-            else if (char === '/') symbol = '×';
-            else if (pending || char === '.') symbol = '•';
-          }
-          return `<div class="${cellTag} ${cellClass}">${symbol}</div>`;
-        })
-        .join('');
+      return (pattern || '.....').slice(0, 5).padEnd(5, '.').split('').map((char) => {
+        const cellClass = feedbackCellClass(char, pending);
+        let symbol = '';
+        if (showSymbol) {
+          if (char === '!') symbol = '✓';
+          else if (char === '?') symbol = '•';
+          else if (char === '/') symbol = '×';
+          else if (pending || char === '.') symbol = '•';
+        }
+        return `<div class="${cellTag} ${cellClass}">${symbol}</div>`;
+      }).join('');
     }
 
-    function computeGridColumns(playerCount) {
-      return Math.max(1, Math.ceil(Math.sqrt(playerCount * 0.8)));
-    }
-
-    function densitySizeClass(playerCount) {
-      if (playerCount >= 80) return 'size-xxl';
-      if (playerCount >= 50) return 'size-xl';
-      if (playerCount >= DENSE_PLAYER_THRESHOLD) return 'size-lg';
-      return '';
-    }
-
-    function setLayoutDensity(playerCount) {
-      const dense = playerCount >= DENSE_PLAYER_THRESHOLD;
-      els.screen.classList.toggle('dense', dense);
-      els.board.classList.toggle('dense', dense);
-      els.playersGrid.classList.toggle('dense', dense);
-      els.board.classList.remove('size-lg', 'size-xl', 'size-xxl');
-      if (dense) els.board.classList.add(densitySizeClass(playerCount));
-      return dense;
+    function renderTiles(text, revealed) {
+      const normalized = String(text || '').toUpperCase().padEnd(5, '.').slice(0, 5);
+      els.wordLayer.innerHTML = normalized.split('').map((char) => {
+        const hidden = char === '.';
+        const cls = `word-cell${hidden ? ' hidden' : ''}${revealed && !hidden ? ' revealed' : ''}`;
+        return `<div class="${cls}">${hidden ? '' : char}</div>`;
+      }).join('');
     }
 
     function renderDensePlayerTile(player, phase) {
       const statusLine = phase === 'guessing'
         ? (player.status === 'locked' ? 'Locked in' : 'Waiting')
         : (player.statusText || 'Waiting');
-
       return `
-        <article class="player-tile ${escapeHtml(player.status || 'waiting')}" title="${escapeHtml(player.displayName)}">
+        <article class="player-tile ${escapeHtml(player.status || 'waiting')}">
           <div class="player-tile-name">${escapeHtml(player.displayName)}</div>
           <div class="player-tile-feedback">${renderFeedbackCells(player, true)}</div>
           <div class="player-tile-status">${escapeHtml(statusLine)}</div>
-        </article>
-      `;
+        </article>`;
     }
 
     function renderCardPlayerTile(player, phase) {
-      const detail = player.status === 'locked'
-        ? 'Guess locked for this round.'
-        : player.status === 'solved'
-          ? 'Solved the word!'
-          : player.status === 'resolved'
-            ? 'Round feedback below.'
-            : phase === 'guessing'
-              ? 'Waiting for guess.'
-              : 'No guess this round.';
-
+      const detail = player.status === 'locked' ? 'Guess locked.'
+        : player.status === 'solved' ? 'Solved!'
+          : player.status === 'resolved' ? 'Feedback below.'
+            : phase === 'guessing' ? 'Waiting for guess.' : 'No guess.';
       return `
         <article class="player-card ${escapeHtml(player.status || 'waiting')}">
           <div class="player-card-top">
@@ -886,61 +458,59 @@
           </div>
           <div class="player-meta">${escapeHtml(detail)}</div>
           <div class="feedback-row">${renderFeedbackCells(player, false)}</div>
-        </article>
-      `;
+        </article>`;
     }
 
     function renderPlayers(players, phase) {
       const safePlayers = Array.isArray(players) ? players : [];
-      const submitted = safePlayers.filter((player) => player && player.hasSubmitted).length;
-      const dense = setLayoutDensity(safePlayers.length);
+      const dense = safePlayers.length >= DENSE_PLAYER_THRESHOLD;
+      els.liveLayer.classList.toggle('dense', dense);
+      els.playersGrid.classList.toggle('dense', dense);
 
       if (!safePlayers.length) {
         els.playersSummary.textContent = '';
-        els.playersGrid.style.gridTemplateColumns = '';
-        els.playersGrid.innerHTML = `
-          <div class="empty-players" data-spec-id="players.empty">
-            <svg class="empty-players-icon" data-spec-id="players.empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="9" cy="8" r="3" fill="#7a94b8"/>
-              <circle cx="16" cy="9" r="2.5" fill="#7a94b8"/>
-              <path d="M4 18c0-3 2.5-5 5-5s5 2 5 5" fill="#7a94b8"/>
-              <path d="M14 18c0-2 1.5-3.5 3.5-3.5" stroke="#7a94b8" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-            <span data-spec-id="players.empty-text">No player cards yet</span>
-          </div>`;
+        els.playersGrid.innerHTML = '';
+        els.playersLayer.style.visibility = 'hidden';
         return;
       }
 
+      els.playersLayer.style.visibility = 'visible';
+      const submitted = safePlayers.filter((p) => p && p.hasSubmitted).length;
       if (phase === 'guessing') {
-        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} players locked in.`;
+        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} locked in.`;
       } else if (phase === 'results' || phase === 'ended') {
-        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} submitted this round.`;
+        els.playersSummary.textContent = `${submitted} of ${safePlayers.length} submitted.`;
       } else {
         els.playersSummary.textContent = `${safePlayers.length} players in session.`;
       }
 
       if (dense) {
-        const columns = computeGridColumns(safePlayers.length);
-        els.playersGrid.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
-        els.playersSummary.textContent += ` · ${columns}-column grid`;
-      } else {
-        els.playersGrid.style.gridTemplateColumns = '';
+        const cols = Math.max(1, Math.ceil(Math.sqrt(safePlayers.length * 0.8)));
+        els.playersGrid.style.setProperty('--cols', String(cols));
       }
 
       els.playersGrid.innerHTML = safePlayers
-        .map((player) => (dense ? renderDensePlayerTile(player, phase) : renderCardPlayerTile(player, phase)))
+        .map((p) => (dense ? renderDensePlayerTile(p, phase) : renderCardPlayerTile(p, phase)))
         .join('');
     }
 
-    function setBadgePhase(phase) {
-      els.statusBadge.className = 'status-badge';
-      if (phase === 'guessing') els.statusBadge.classList.add('guessing');
-      else if (phase === 'results') els.statusBadge.classList.add('results');
-      else if (phase === 'ended') els.statusBadge.classList.add('revealed');
+    function renderTimer() {
+      const remaining = timeRemainingSeconds(currentState);
+      els.timerOverlay.textContent = remaining === null ? '--' : formatSeconds(remaining);
     }
 
     function renderState(state) {
       currentState = state || {};
+
+      if (isPureIdle(currentState)) {
+        els.baseArt.src = ART;
+        els.liveLayer.classList.add('is-idle');
+        return;
+      }
+
+      els.baseArt.src = ART;
+      els.liveLayer.classList.remove('is-idle');
+
       const phase = currentState.phase || 'idle';
       const roundNumber = Number(currentState.roundNumber || 0);
       const balls = Number(currentState.ballsRemaining || 0);
@@ -953,57 +523,59 @@
       const displayWord = revealedWord || maskedWord;
       const isRevealed = Boolean(revealedWord);
 
-      setBadgePhase(isRevealed && phase === 'ended' ? 'ended' : phase);
-      els.board.classList.toggle('phase-idle', phase === 'idle' || (phase === 'ended' && !isRevealed));
+      els.badgeOverlay.className = 'ov ov-badge';
+      if (phase === 'guessing') els.badgeOverlay.classList.add('guessing');
+      else if (phase === 'ended' && isRevealed) els.badgeOverlay.classList.add('revealed');
 
       if (phase === 'guessing') {
-        els.badgeText.textContent = 'Guessing Open';
-        els.titleLine.textContent = `Round ${roundNumber} is live`;
-        els.subtitleLine.textContent = `Guess the 5-letter word: ${maskedWord}`;
+        els.badgeOverlay.textContent = 'Guessing Open';
+        els.calloutOverlay.textContent = `Round ${roundNumber} is live`;
+        els.subtitleOverlay.textContent = `Guess the 5-letter word: ${maskedWord}`;
       } else if (phase === 'results') {
-        els.badgeText.textContent = 'Results';
-        els.titleLine.textContent = `Round ${roundNumber} results`;
-        els.subtitleLine.textContent = `${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
+        els.badgeOverlay.textContent = 'Results';
+        els.calloutOverlay.textContent = `Round ${roundNumber} results`;
+        els.subtitleOverlay.textContent = `${submitted} accepted guess${submitted === 1 ? '' : 'es'} this round.`;
       } else if (phase === 'ended' && isRevealed) {
-        els.badgeText.textContent = 'Answer Revealed';
-        els.titleLine.textContent = `The word was ${revealedWord}`;
-        els.subtitleLine.textContent = 'Waiting for the host to set up the next round.';
+        els.badgeOverlay.textContent = 'Answer Revealed';
+        els.calloutOverlay.textContent = `The word was ${revealedWord}`;
+        els.subtitleOverlay.textContent = 'Waiting for the host to set up the next round.';
       } else {
-        els.badgeText.textContent = 'Waiting for the host';
-        els.titleLine.textContent = '';
-        els.subtitleLine.textContent = 'The public display will update automatically when the next online round starts.';
+        els.badgeOverlay.textContent = 'Waiting for the host';
+        els.calloutOverlay.textContent = '';
+        els.subtitleOverlay.textContent = 'The public display will update automatically when the next online round starts.';
       }
+
+      els.calloutOverlay.style.display = els.calloutOverlay.textContent ? 'block' : 'none';
 
       renderTiles(displayWord, isRevealed);
       renderTimer();
 
-      els.roundValue.textContent = String(roundNumber);
-      els.ballsValue.textContent = String(balls);
-      els.multiplierValue.textContent = multiplier;
-      els.playersValue.textContent = String(players);
-      els.submittedValue.textContent = String(submitted);
+      els.roundOverlay.textContent = String(roundNumber);
+      els.ballsOverlay.textContent = String(balls);
+      els.multOverlay.textContent = multiplier;
+      els.playersCountOverlay.textContent = String(players);
+      els.submittedOverlay.textContent = String(submitted);
       renderPlayers(displayPlayers, phase);
-      if (els.updatedText) {
-        els.updatedText.textContent = currentState.updatedAtIso || '';
-      }
     }
 
     async function fetchPublicState() {
       const response = await fetch('/api/public-state');
       const payload = await response.json();
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || 'Could not load public display state.');
-      }
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not load public display state.');
       renderState(payload.state);
     }
 
     fetchPublicState().catch((error) => {
-      els.badgeText.textContent = 'Display unavailable';
-      els.titleLine.textContent = '';
-      els.subtitleLine.textContent = error.message || 'Could not load public state.';
+      els.liveLayer.classList.remove('is-idle');
+      els.badgeOverlay.textContent = 'Display unavailable';
+      els.subtitleOverlay.textContent = error.message || 'Could not load public state.';
     });
 
-    window.setInterval(() => renderTimer(), 1000);
+    window.setInterval(() => {
+      if (!currentState || isPureIdle(currentState)) return;
+      renderTimer();
+    }, 1000);
+
     window.setInterval(() => fetchPublicState().catch(() => {}), 5000);
   </script>
 </body>
