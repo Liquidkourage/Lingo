@@ -1,5 +1,7 @@
 # Lingo Online (Railway + Postgres)
 
+This is the **current online migration path** for Lingo.
+
 This folder contains the Railway/Postgres pivot for Lingo.
 
 ## What it includes

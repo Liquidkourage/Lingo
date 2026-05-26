@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "emulators": "firebase emulators:start --only hosting,functions",
-    "deploy": "firebase deploy --only hosting,functions",
-    "functions:lint": "npm --prefix functions run lint"
+    "online:start": "npm --prefix online start",
+    "online:lint": "npm --prefix online run lint",
+    "firebase:emulators": "firebase emulators:start --only hosting,functions",
+    "firebase:deploy": "firebase deploy --only hosting,functions",
+    "firebase:functions:lint": "npm --prefix functions run lint"
   },
   "repository": {
     "type": "git",
@@ -18,7 +20,7 @@
     "url": "https://github.com/Liquidkourage/Lingo/issues"
   },
   "homepage": "https://github.com/Liquidkourage/Lingo#readme",
-  "description": "",
+  "description": "Lingo repo utilities. Current browser app lives in online/; Firebase files are legacy prototype scaffolding.",
   "devDependencies": {
     "firebase-tools": "^15.18.0"
   }

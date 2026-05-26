@@ -408,8 +408,12 @@ app.post("/api/admin/:action", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("*", (req, res, next) => {
+app.use((req, res, next) => {
   if (req.path.startsWith("/api/")) {
+    next();
+    return;
+  }
+  if (req.method !== "GET") {
     next();
     return;
   }
