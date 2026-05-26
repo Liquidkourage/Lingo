@@ -1,6 +1,5 @@
 {
   "referenceImage": "/assets/reference-mockup.png",
-  "architecture": "reference-mockup.png IS the full UI at idle. Live layer shows only when state diverges; each slot covers and replaces one dynamic region.",
-  "stage": { "width": 1024, "height": 575 },
-  "layout": "/display-layout.json"
+  "stageBackground": "/assets/reference-mockup-bg.png",
+  "note": "Background-only baseline. UI layers to be added incrementally."
 }
