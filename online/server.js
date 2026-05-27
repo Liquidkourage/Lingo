@@ -1131,7 +1131,7 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
       status = "solved";
       statusText = "Congratulations!";
       cardTone = "solved";
-    } else if (resultPattern) {
+    } else {
       status = "resolved";
       statusText = "Round result";
     }

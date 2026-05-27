@@ -1633,17 +1633,47 @@
       }
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"],
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="solved"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="winner"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="resolved"] {
+      border-color: var(--show-magenta);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 26px rgba(187, 68, 255, 0.58),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="solved"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="winner"] {
+      border-color: var(--show-green);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 32px rgba(0, 255, 85, 0.62),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"]::after {
+      opacity: 0.92;
+    }
+
+    .stage[data-phase="results"] .player-card[data-card-skin] .player-name {
+      color: var(--show-white);
+      text-shadow: 0 2px 0 #000, 0 0 16px rgba(255, 255, 255, 0.28);
+    }
+
+    .stage[data-phase="results"] .player-card[data-card-skin] .player-balls {
+      color: var(--show-cyan);
+      text-shadow: 0 1px 0 #000, 0 0 16px rgba(0, 212, 255, 0.9);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="locked"],
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="solved"],
-    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="solved"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="solved"],
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="winner"],
-    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="winner"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="winner"],
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="resolved"],
-    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="resolved"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="resolved"] {
       border-color: rgba(190, 165, 255, 0.62);
       box-shadow:
@@ -2983,6 +3013,24 @@
       box-shadow: inset 0 0 0 1px rgba(255, 34, 68, 0.35);
     }
 
+    .stage[data-phase="results"] .pattern-cell[data-mark="!"] {
+      background: var(--show-green);
+      border-color: #00cc44;
+      box-shadow: 0 0 20px rgba(0, 255, 85, 0.92);
+    }
+
+    .stage[data-phase="results"] .pattern-cell[data-mark="?"] {
+      background: var(--show-gold);
+      border-color: #e6b800;
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.88);
+    }
+
+    .stage[data-phase="results"] .pattern-cell[data-mark="/"] {
+      background: #6a1830;
+      border-color: var(--show-red);
+      box-shadow: 0 0 18px rgba(255, 34, 68, 0.82);
+    }
+
     .stage[data-live-density="lg"] .pattern-cell,
     .stage[data-live-density="xl"] .pattern-cell {
       width: 0.98em;
@@ -2996,16 +3044,16 @@
       display: none;
     }
 
+    .stage[data-phase="results"] .player-card .player-name,
+    .stage[data-phase="ended"] .player-card .player-name {
+      font-size: 0.64em;
+      line-height: 1.1;
+    }
+
     .stage[data-phase="results"] .player-card .player-balls,
     .stage[data-phase="ended"] .player-card .player-balls {
       margin-top: 0;
-      font-size: 0.44em;
-    }
-
-    .stage[data-phase="results"] .player-card .player-name,
-    .stage[data-phase="ended"] .player-card .player-name {
-      font-size: 0.6em;
-      line-height: 1.1;
+      font-size: 0.48em;
     }
 
     .stage[data-phase="results"] .player-card[data-card-tone="invalid"] .pattern-cell,
