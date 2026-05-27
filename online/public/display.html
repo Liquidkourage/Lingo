@@ -656,32 +656,33 @@
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto auto auto auto minmax(50cqh, 1fr);
+      grid-template-rows: auto auto minmax(50cqh, 1fr);
       grid-template-areas:
-        "badge"
-        "subtitle"
-        "clue"
+        "hud"
         "stats"
         "board";
       justify-items: stretch;
       align-content: start;
-      gap: 0.28em;
-      padding: 7% 2.5% 0.25%;
+      gap: 0.22em;
+      padding: 6.5% 2.5% 0.25%;
       overflow: hidden;
       font-size: clamp(14px, 2.4cqh, 32px);
     }
 
-    .stage[data-phase="guessing"] .stage-ui .status-badge,
-    .stage[data-phase="results"] .stage-ui .status-badge,
-    .stage[data-phase="ended"] .stage-ui .status-badge,
-    .stage[data-phase="guessing"] .stage-ui .subtitle,
-    .stage[data-phase="results"] .stage-ui .subtitle,
-    .stage[data-phase="ended"] .stage-ui .subtitle,
-    .stage[data-phase="guessing"] .stage-ui .word-tiles,
-    .stage[data-phase="results"] .stage-ui .word-tiles,
-    .stage[data-phase="guessing"] .stage-ui .word-clue,
-    .stage[data-phase="results"] .stage-ui .word-clue,
-    .stage[data-phase="ended"] .stage-ui .word-clue,
+    .stage[data-phase="guessing"] .stage-ui .live-hud,
+    .stage[data-phase="results"] .stage-ui .live-hud,
+    .stage[data-phase="ended"] .stage-ui .live-hud,
+    .stage[data-phase="guessing"] .live-hud .status-badge,
+    .stage[data-phase="results"] .live-hud .status-badge,
+    .stage[data-phase="ended"] .live-hud .status-badge,
+    .stage[data-phase="guessing"] .live-hud .subtitle,
+    .stage[data-phase="results"] .live-hud .subtitle,
+    .stage[data-phase="ended"] .live-hud .subtitle,
+    .stage[data-phase="guessing"] .live-hud .word-tiles,
+    .stage[data-phase="results"] .live-hud .word-tiles,
+    .stage[data-phase="guessing"] .live-hud .word-clue,
+    .stage[data-phase="results"] .live-hud .word-clue,
+    .stage[data-phase="ended"] .live-hud .word-clue,
     .stage[data-phase="guessing"] .stage-ui .stats-row,
     .stage[data-phase="results"] .stage-ui .stats-row,
     .stage[data-phase="ended"] .stage-ui .stats-row,
@@ -765,21 +766,66 @@
       50% { box-shadow: 0 0 52px rgba(255, 80, 60, 0.9); transform: scale(1.03); }
     }
 
+    .stage[data-phase="idle"] .live-hud {
+      display: none !important;
+    }
+
+    .stage:not([data-phase="idle"]) .live-hud {
+      grid-area: hud;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.22em;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .stage:not([data-phase="idle"]) .live-hud .status-badge,
+    .stage:not([data-phase="idle"]) .live-hud .subtitle,
+    .stage:not([data-phase="idle"]) .live-hud .word-tiles,
+    .stage:not([data-phase="idle"]) .live-hud .word-clue {
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      left: auto !important;
+      transform: none !important;
+    }
+
+    .stage:not([data-phase="idle"]) .live-hud .status-badge {
+      display: inline-flex !important;
+    }
+
+    .stage:not([data-phase="idle"]) .live-hud .word-tiles:not([hidden]) {
+      display: flex !important;
+    }
+
+    .stage[data-phase="guessing"] .live-hud {
+      gap: 0.18em;
+      padding: 0 6%;
+      min-height: 5.5em;
+    }
+
+    .stage[data-phase="guessing"] .live-hud .subtitle {
+      display: none !important;
+    }
+
     .stage[data-phase="guessing"] .status-badge,
     .stage[data-phase="results"] .status-badge,
     .stage[data-phase="ended"] .status-badge {
-      grid-area: badge;
+      position: relative;
       justify-self: center;
       width: fit-content;
-      max-width: 92%;
+      max-width: 100%;
       min-width: 0;
       margin: 0;
       white-space: nowrap;
     }
 
     .stage[data-phase="guessing"] .status-badge {
-      padding: 0.38em 1em;
-      font-size: 0.72em;
+      padding: 0.32em 0.9em;
+      font-size: 0.68em;
       border-width: 2px;
       animation: live-pulse-grid 1.1s ease-in-out infinite;
     }
@@ -805,63 +851,53 @@
     .stage[data-phase="guessing"] .subtitle,
     .stage[data-phase="results"] .subtitle,
     .stage[data-phase="ended"] .subtitle {
-      grid-area: subtitle;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.12em;
+      gap: 0.08em;
       width: 100%;
       max-width: 100%;
       margin: 0;
-      padding: 0 2%;
+      padding: 0;
       text-align: center;
-      line-height: 1.3;
-    }
-
-    .subtitle-round {
-      font-size: 0.88em;
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      color: rgba(240, 248, 255, 0.96);
-    }
-
-    .subtitle-hint {
-      font-size: 0.76em;
+      line-height: 1.25;
+      font-size: 0.72em;
       font-weight: 600;
-      color: rgba(220, 235, 255, 0.92);
+      color: rgba(220, 235, 255, 0.9);
     }
 
-    .subtitle-worth {
-      font-size: 0.62em;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--show-gold-hot);
-      text-shadow: 0 0 10px rgba(255, 200, 60, 0.45);
+    .stage[data-phase="results"] .subtitle,
+    .stage[data-phase="ended"] .subtitle {
+      font-size: 0.68em;
     }
 
     .stage[data-phase="guessing"] .word-tiles,
     .stage[data-phase="results"] .word-tiles {
-      grid-area: clue;
-      justify-self: center;
-      margin: 0.12em 0 0.08em;
+      margin: 0;
+      gap: 0.48em;
     }
 
     .stage[data-phase="guessing"] .word-tile,
     .stage[data-phase="results"] .word-tile {
-      width: 1.85em;
-      height: 1.85em;
-      font-size: 1.18em;
+      width: 2.35em;
+      height: 2.35em;
+      font-size: 1.42em;
+    }
+
+    .stage[data-phase="results"] .word-tile {
+      width: 2em;
+      height: 2em;
+      font-size: 1.2em;
     }
 
     .stage[data-phase="ended"] .word-clue:not([hidden]) {
-      grid-area: clue;
       position: relative;
       top: auto;
       left: auto;
       transform: none;
-      margin: 0.1em 0;
+      margin: 0.08em 0 0;
+      text-align: center;
     }
 
     .stage[data-phase="ended"] .word-clue:not([hidden]) .word-clue-value {
@@ -894,7 +930,9 @@
     .stage[data-phase="guessing"] .stat-icon,
     .stage[data-phase="results"] .stat-icon,
     .stage[data-phase="ended"] .stat-icon {
-      display: none;
+      display: block;
+      width: 0.88em;
+      height: 0.88em;
     }
 
     .stage[data-phase="guessing"] .stat-label,
@@ -2245,22 +2283,24 @@
           <p class="timer-unit">seconds</p>
         </aside>
 
-        <div class="status-badge" id="statusBadge">
-          <svg class="status-icon-live" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-            <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <span class="status-icon-dot" aria-hidden="true"></span>
-          <span id="statusText">Sign up — game starts soon</span>
-        </div>
+        <div class="live-hud" id="liveHud">
+          <div class="status-badge" id="statusBadge">
+            <svg class="status-icon-live" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="status-icon-dot" aria-hidden="true"></span>
+            <span id="statusText">Sign up — game starts soon</span>
+          </div>
 
-        <p class="subtitle" id="subtitle" hidden></p>
+          <p class="subtitle" id="subtitle" hidden></p>
 
-        <div class="word-tiles" id="wordTiles" hidden aria-label="Word progress"></div>
+          <div class="word-tiles" id="wordTiles" hidden aria-label="Word progress"></div>
 
-        <div class="word-clue" id="wordClue" hidden aria-live="polite">
-          <span class="word-clue-label" id="wordClueLabel"></span>
-          <span class="word-clue-value" id="wordClueValue"></span>
+          <div class="word-clue" id="wordClue" hidden aria-live="polite">
+            <span class="word-clue-label" id="wordClueLabel"></span>
+            <span class="word-clue-value" id="wordClueValue"></span>
+          </div>
         </div>
 
         <div class="stats-row" aria-label="Game stats">
@@ -2337,6 +2377,7 @@
       timerPanel: document.querySelector(".timer-panel"),
       timerLabel: document.getElementById("timerLabel"),
       timerValue: document.getElementById("timerValue"),
+      liveHud: document.getElementById("liveHud"),
       statusText: document.getElementById("statusText"),
       subtitle: document.getElementById("subtitle"),
       playUrl: document.getElementById("playUrl"),
@@ -2869,8 +2910,8 @@
           };
         case "ended":
           return {
-            badge: state.revealedWord ? `The word was ${state.revealedWord.toUpperCase()}` : "Round ended",
-            subtitle: "Waiting for the next round.",
+            badge: "Round ended",
+            subtitle: state.revealedWord ? "" : "Waiting for the next round.",
             timerLabel: "Next round starts in",
           };
         default:
@@ -2884,65 +2925,56 @@
 
     function renderSubtitle(state) {
       const phase = state.phase || "idle";
-      if (phase === "idle") {
+      if (phase === "idle" || phase === "guessing") {
+        els.subtitle.hidden = true;
+        els.subtitle.textContent = "";
+        return;
+      }
+
+      const copy = phaseCopy(phase, state);
+      if (!copy.subtitle) {
         els.subtitle.hidden = true;
         els.subtitle.textContent = "";
         return;
       }
 
       els.subtitle.hidden = false;
-
-      if (phase === "guessing") {
-        const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
-        const roundNum = Number(state.roundNumber || 0);
-        const balls = Number(state.ballsRemaining || 0);
-        const parts = [];
-
-        if (roundNum > 0) {
-          parts.push(`<span class="subtitle-round">Round ${roundNum} is live</span>`);
-        }
-
-        if (letter && letter !== ".") {
-          parts.push(`<span class="subtitle-hint">Guess the 5-letter word: <span class="word-hint-letter">${letter}····</span></span>`);
-        } else {
-          parts.push('<span class="subtitle-hint">Submit your guess on the player page.</span>');
-        }
-
-        if (balls > 0) {
-          parts.push(`<span class="subtitle-worth">Worth ${balls} ball${balls === 1 ? "" : "s"} this guess</span>`);
-        }
-
-        els.subtitle.innerHTML = parts.join("");
-        return;
-      }
-
-      const copy = phaseCopy(phase, state);
       els.subtitle.textContent = copy.subtitle;
     }
 
     function renderWordTiles(state) {
       const phase = state.phase || "idle";
 
-      if (phase === "guessing" || phase === "results") {
-        const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
-        if (letter && letter !== ".") {
-          els.wordTiles.hidden = false;
-          els.wordTiles.replaceChildren();
-          for (let index = 0; index < 5; index += 1) {
-            const tile = document.createElement("div");
-            tile.className = "word-tile";
-            tile.style.setProperty("--tile-index", String(index));
-            if (index === 0) {
-              tile.classList.add("is-letter");
-              tile.textContent = letter;
-            } else {
-              tile.classList.add("is-hidden");
-              tile.textContent = "·";
-            }
-            els.wordTiles.appendChild(tile);
+      if (phase !== "guessing") {
+        els.wordTiles.hidden = true;
+        els.wordTiles.replaceChildren();
+        return;
+      }
+
+      const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
+      const roundNum = Number(state.roundNumber || 0);
+      const balls = Number(state.ballsRemaining || 0);
+      if (letter && letter !== ".") {
+        els.wordTiles.hidden = false;
+        els.wordTiles.setAttribute(
+          "aria-label",
+          `Round ${roundNum || "?"}, ${balls} ball${balls === 1 ? "" : "s"} remaining, five-letter word starting with ${letter}`,
+        );
+        els.wordTiles.replaceChildren();
+        for (let index = 0; index < 5; index += 1) {
+          const tile = document.createElement("div");
+          tile.className = "word-tile";
+          tile.style.setProperty("--tile-index", String(index));
+          if (index === 0) {
+            tile.classList.add("is-letter");
+            tile.textContent = letter;
+          } else {
+            tile.classList.add("is-hidden");
+            tile.textContent = "·";
           }
-          return;
+          els.wordTiles.appendChild(tile);
         }
+        return;
       }
 
       els.wordTiles.hidden = true;
