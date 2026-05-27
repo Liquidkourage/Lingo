@@ -548,17 +548,27 @@
       height: 100%;
       min-height: 0;
       align-self: stretch;
-    }
-
-    .stage[data-phase="idle"] .player-board-body {
-      min-height: 0;
-      padding: 0.55em 0.65em 0.65em;
+      border-color: rgba(100, 200, 255, 0.62);
+      box-shadow:
+        0 0 40px rgba(0, 130, 255, 0.28),
+        inset 0 0 36px rgba(0, 40, 100, 0.38),
+        inset 0 2px 0 rgba(120, 210, 255, 0.14);
     }
 
     .stage[data-phase="idle"] .player-board-header {
       font-size: 0.88em;
       letter-spacing: 0.14em;
       padding: 0.45em 0.75em;
+      text-shadow:
+        0 0 14px rgba(255, 210, 60, 0.55),
+        0 0 28px rgba(255, 170, 30, 0.22);
+    }
+
+    .stage[data-phase="idle"] .player-board-body {
+      min-height: 0;
+      padding: 0.6em 0.65em 0.65em;
+      background:
+        radial-gradient(ellipse 90% 80% at 50% 0%, rgba(0, 80, 170, 0.12) 0%, transparent 70%);
     }
 
     .stage[data-phase="idle"] .player-board-empty {
@@ -693,8 +703,9 @@
     .stage[data-phase="idle"] .player-grid {
       grid-template-columns: repeat(var(--lobby-cols, 5), minmax(0, 1fr));
       grid-template-rows: repeat(var(--lobby-rows, 1), minmax(0, 1fr));
-      gap: 0.42em;
+      gap: 0.48em;
       align-content: stretch;
+      padding: 0.05em;
     }
 
     .stage[data-phase="idle"] .player-grid.is-rotating {
@@ -702,8 +713,41 @@
     }
 
     @keyframes lobby-page-in {
-      from { opacity: 0.35; }
-      to { opacity: 1; }
+      from { opacity: 0.35; transform: scale(0.985); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes chip-glow {
+      0%, 100% {
+        border-color: rgba(110, 210, 255, 0.55);
+        box-shadow:
+          0 0 14px rgba(0, 130, 255, 0.28),
+          0 0 28px rgba(0, 90, 220, 0.12),
+          inset 0 1px 0 rgba(170, 235, 255, 0.2),
+          inset 0 -5px 14px rgba(0, 18, 55, 0.45);
+      }
+      50% {
+        border-color: rgba(150, 230, 255, 0.82);
+        box-shadow:
+          0 0 22px rgba(60, 190, 255, 0.48),
+          0 0 44px rgba(0, 120, 255, 0.22),
+          inset 0 1px 0 rgba(210, 245, 255, 0.32),
+          inset 0 -5px 14px rgba(0, 18, 55, 0.45);
+      }
+    }
+
+    @keyframes chip-sheen {
+      0%, 72%, 100% {
+        transform: translateX(-120%) rotate(22deg);
+        opacity: 0;
+      }
+      78% {
+        opacity: 0.85;
+      }
+      88% {
+        transform: translateX(120%) rotate(22deg);
+        opacity: 0;
+      }
     }
 
     .player-card {
@@ -717,21 +761,76 @@
     }
 
     .stage[data-phase="idle"] .player-card {
-      padding: 0.32em 0.55em;
+      position: relative;
+      isolation: isolate;
+      padding: 0.34em 0.68em;
       border-radius: 999px;
       text-align: center;
       min-height: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 46, 98, 0.62);
-      border-color: rgba(110, 205, 255, 0.42);
-      box-shadow: 0 0 10px rgba(0, 120, 255, 0.14);
+      border: 1.5px solid rgba(110, 210, 255, 0.55);
+      background:
+        linear-gradient(180deg, rgba(0, 58, 128, 0.94) 0%, rgba(0, 18, 52, 0.97) 55%, rgba(0, 8, 32, 0.98) 100%);
+      box-shadow:
+        0 0 14px rgba(0, 130, 255, 0.28),
+        0 0 28px rgba(0, 90, 220, 0.12),
+        inset 0 1px 0 rgba(170, 235, 255, 0.2),
+        inset 0 -5px 14px rgba(0, 18, 55, 0.45);
+      animation: chip-glow 3.4s ease-in-out infinite;
+      overflow: hidden;
     }
 
+    .stage[data-phase="idle"] .player-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.5px;
+      background: linear-gradient(
+        125deg,
+        rgba(255, 215, 80, 0.62) 0%,
+        rgba(90, 215, 255, 0.5) 42%,
+        rgba(255, 215, 80, 0.38) 100%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    .stage[data-phase="idle"] .player-card::after {
+      content: "";
+      position: absolute;
+      inset: -20% -40%;
+      background: linear-gradient(
+        105deg,
+        transparent 42%,
+        rgba(255, 255, 255, 0.16) 50%,
+        transparent 58%
+      );
+      pointer-events: none;
+      animation: chip-sheen 4.8s ease-in-out infinite;
+    }
+
+    .stage[data-phase="idle"] .player-card:nth-child(5n+1) { animation-delay: 0s; }
+    .stage[data-phase="idle"] .player-card:nth-child(5n+2) { animation-delay: 0.35s; }
+    .stage[data-phase="idle"] .player-card:nth-child(5n+3) { animation-delay: 0.7s; }
+    .stage[data-phase="idle"] .player-card:nth-child(5n+4) { animation-delay: 1.05s; }
+    .stage[data-phase="idle"] .player-card:nth-child(5n+5) { animation-delay: 1.4s; }
+
+    .stage[data-phase="idle"] .player-card:nth-child(5n+1)::after { animation-delay: 0.2s; }
+    .stage[data-phase="idle"] .player-card:nth-child(5n+2)::after { animation-delay: 0.9s; }
+    .stage[data-phase="idle"] .player-card:nth-child(5n+3)::after { animation-delay: 1.6s; }
+    .stage[data-phase="idle"] .player-card:nth-child(5n+4)::after { animation-delay: 2.3s; }
+    .stage[data-phase="idle"] .player-card:nth-child(5n+5)::after { animation-delay: 3s; }
+
     .stage[data-phase="idle"] .player-card[data-status="waiting"] {
-      border-color: rgba(120, 215, 255, 0.48);
-      background: rgba(0, 54, 112, 0.68);
+      border-color: rgba(130, 225, 255, 0.62);
+      background:
+        linear-gradient(180deg, rgba(0, 64, 140, 0.96) 0%, rgba(0, 22, 58, 0.98) 55%, rgba(0, 10, 36, 0.99) 100%);
     }
 
     .stage[data-phase="idle"] .player-status {
@@ -739,9 +838,17 @@
     }
 
     .stage[data-phase="idle"] .player-name {
+      position: relative;
+      z-index: 1;
       font-size: 0.76em;
-      letter-spacing: 0.02em;
+      font-weight: 800;
+      letter-spacing: 0.04em;
       width: 100%;
+      color: #f2f9ff;
+      text-shadow:
+        0 0 10px rgba(120, 220, 255, 0.75),
+        0 0 22px rgba(60, 170, 255, 0.4),
+        0 1px 0 rgba(0, 30, 70, 0.85);
     }
 
     .player-card[data-status="locked"] {
