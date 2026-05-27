@@ -1340,13 +1340,8 @@
     }
 
     @keyframes eclipse-sovereign-gleam {
-      0%, 100% { opacity: 0.78; transform: translate(-50%, -50%) scale(0.99); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    }
-
-    @keyframes eclipse-sovereign-halo {
-      0%, 100% { opacity: 0.42; }
-      50% { opacity: 0.68; }
+      0%, 100% { opacity: 0.72; }
+      50% { opacity: 1; }
     }
 
     /* Shared eclipse stack — corona layers sit above fill, text above corona */
@@ -1634,23 +1629,16 @@
     .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-sovereign"]::before {
       content: "";
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 126%;
-      aspect-ratio: 1;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      background: conic-gradient(
-        from -90deg,
-        rgba(255, 228, 160, 0.62) 0deg 6deg, transparent 6deg 42deg,
-        rgba(255, 210, 120, 0.5) 42deg 48deg, transparent 48deg 132deg,
-        rgba(255, 225, 155, 0.58) 132deg 138deg, transparent 138deg 222deg,
-        rgba(255, 205, 110, 0.52) 222deg 228deg, transparent 228deg 312deg,
-        rgba(255, 218, 140, 0.56) 312deg 318deg, transparent 318deg 360deg
+      inset: 0.12em;
+      border-radius: calc(0.48em - 0.12em);
+      background: radial-gradient(
+        circle at 50% 50%,
+        transparent 56%,
+        rgba(255, 212, 115, 0.1) 60%,
+        rgba(255, 205, 95, 0.24) 66%,
+        rgba(255, 195, 80, 0.14) 72%,
+        transparent 78%
       );
-      mask: radial-gradient(circle, transparent 48.5%, #000 50% 56.5%, transparent 58%);
-      -webkit-mask: radial-gradient(circle, transparent 48.5%, #000 50% 56.5%, transparent 58%);
-      filter: blur(0.25px);
       animation: eclipse-sovereign-gleam 5.2s ease-in-out infinite;
       pointer-events: none;
     }
@@ -1658,21 +1646,7 @@
     .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-sovereign"]::after,
     .stage[data-phase="results"] .player-card[data-card-skin="eclipse-sovereign"]::after,
     .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-sovereign"]::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 118%;
-      aspect-ratio: 1;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      border: 1px solid rgba(255, 218, 130, 0.28);
-      box-shadow:
-        0 0 18px rgba(255, 205, 100, 0.22),
-        0 0 36px rgba(255, 185, 70, 0.12),
-        inset 0 0 20px rgba(255, 210, 120, 0.06);
-      animation: eclipse-sovereign-halo 5.2s ease-in-out infinite;
-      pointer-events: none;
+      content: none;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-sovereign"] .player-name,
