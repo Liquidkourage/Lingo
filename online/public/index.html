@@ -881,15 +881,7 @@
       border-top: 1px solid rgba(0, 212, 255, 0.18);
     }
 
-    .round-history:not(:has(.guess-history-row)) {
-      display: none;
-      margin: 0;
-      padding: 0;
-      border: none;
-    }
-
     .history-heading {
-      display: none;
       margin: 0 0 0.45rem;
       text-align: center;
       font-size: 0.62rem;
@@ -899,8 +891,11 @@
       color: rgba(200, 220, 245, 0.78);
     }
 
-    .round-history:has(.guess-history-row) .history-heading {
-      display: block;
+    .history-empty {
+      margin: 0;
+      text-align: center;
+      font-size: 0.82rem;
+      color: rgba(200, 220, 245, 0.62);
     }
 
     .guess-history {
@@ -2007,6 +2002,7 @@
       const history = Array.isArray(viewer.guessHistory) ? viewer.guessHistory : [];
       const officialIndex = officialHistoryIndex(history, viewer, phase);
       let guessIndex = 0;
+      let rowCount = 0;
 
       history.forEach((entry, index) => {
         const ballStake = Number(entry.ballStake || 0) || historyBallStake(entry, state, guessIndex, history);
@@ -2023,6 +2019,7 @@
             },
           ));
           guessIndex += 1;
+          rowCount += 1;
           return;
         }
 
@@ -2032,6 +2029,7 @@
         const marks = historyMarksForEntry(entry, guess, pattern, phase);
         const isInvalid = entry.status === 'invalid' || entry.resultLabel === 'Not a word…';
         guessIndex += 1;
+        rowCount += 1;
         els.guessHistory.appendChild(makeHistoryRow(guess.split(''), marks, {
           isOfficial,
           ballStake,
@@ -2039,6 +2037,13 @@
           itemClass: isInvalid ? 'is-invalid' : '',
         }));
       });
+
+      if (rowCount === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'history-empty';
+        empty.textContent = 'No guesses to show';
+        els.guessHistory.appendChild(empty);
+      }
     }
 
     function officialHistoryEntry(viewer, phase) {
@@ -2346,10 +2351,10 @@
         }
         if (painted) {
           saveKeyboardStates();
-          paintKeyboardStates();
         }
       }
 
+      paintKeyboardStates();
       updateKeyboardEnabled(phase);
     }
 
