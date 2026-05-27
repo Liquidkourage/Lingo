@@ -78,6 +78,7 @@ Included:
 
 Still to migrate:
 
-- scoring parity with the VB app
-- Twitch integration
 - bingo flows
+- player signup before rounds (lobby registration)
+- auto timer phase transitions
+- host tools for champion, award-all-balls, and host note

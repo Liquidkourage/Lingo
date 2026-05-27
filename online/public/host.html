@@ -162,7 +162,7 @@
       list-style: none;
       margin: 12px 0 0;
       padding: 0;
-      max-height: 360px;
+      max-height: min(70vh, 640px);
       overflow-y: auto;
       border-radius: 14px;
       background: rgba(0, 0, 0, 0.28);
@@ -196,6 +196,59 @@
       font-weight: 600;
       letter-spacing: normal;
       color: var(--muted);
+    }
+
+    .roster-table-wrap {
+      overflow-x: auto;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .roster-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    .roster-table th,
+    .roster-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      vertical-align: middle;
+    }
+
+    .roster-table th {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .roster-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .roster-table .guess-cell {
+      font-weight: 800;
+      letter-spacing: 0.12em;
+    }
+
+    .roster-table input[type="number"] {
+      width: 72px;
+      padding: 8px;
+    }
+
+    .roster-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .roster-actions button {
+      padding: 8px 12px;
+      font-size: 0.82rem;
     }
 
     @media (max-width: 900px) {
@@ -288,19 +341,54 @@
       </section>
 
       <section class="panel cols-5">
+        <h2>Show Tools</h2>
+        <p class="muted">Idle display note, champion crown, and bonus balls.</p>
+        <div class="field" style="margin-top:10px;">
+          <label for="hostNoteInput">Display note (idle screen)</label>
+          <input id="hostNoteInput" type="text" maxlength="160" placeholder="Optional message on the venue display" />
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button id="saveHostNoteBtn" class="secondary" type="button">Save display note</button>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label for="championInput">Champion display name</label>
+          <input id="championInput" type="text" maxlength="40" placeholder="Player name to crown" />
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button id="setChampionBtn" type="button">Set champion</button>
+          <button id="awardAllBallsBtn" class="good" type="button">Award all +1 ball</button>
+        </div>
+        <div id="showToolsStatus" class="status"></div>
+      </section>
+
+      <section class="panel cols-5">
         <h2>Backend State</h2>
         <p class="muted">Raw server state stored in Postgres. Later, the public display and scoring engine can read from the same backend model.</p>
         <pre id="stateJson">{}</pre>
       </section>
 
       <section class="panel cols-12">
-        <h2>Current Player Guesses</h2>
-        <p class="muted">Accepted submissions for the active session.</p>
+        <h2>Player Roster</h2>
+        <p class="muted">Edit ball totals or remove a player from the session.</p>
         <div class="summary" style="margin: 14px 0 12px;">
           <div class="summary-card"><div class="label">Players in session</div><div class="value" id="playerCountValue">0</div></div>
           <div class="summary-card"><div class="label">Submitted this round</div><div class="value" id="submittedCountValue">0</div></div>
         </div>
-        <pre id="playersJson">[]</pre>
+        <div class="roster-table-wrap">
+          <table class="roster-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Balls</th>
+                <th>Guess</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="playerRosterBody">
+              <tr><td colspan="4" class="muted">Connect to load players.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   </div>
@@ -323,9 +411,15 @@
       wordValue: document.getElementById('wordValue'),
       updatedValue: document.getElementById('updatedValue'),
       stateJson: document.getElementById('stateJson'),
-      playersJson: document.getElementById('playersJson'),
+      playerRosterBody: document.getElementById('playerRosterBody'),
       playerCountValue: document.getElementById('playerCountValue'),
       submittedCountValue: document.getElementById('submittedCountValue'),
+      hostNoteInput: document.getElementById('hostNoteInput'),
+      saveHostNoteBtn: document.getElementById('saveHostNoteBtn'),
+      championInput: document.getElementById('championInput'),
+      setChampionBtn: document.getElementById('setChampionBtn'),
+      awardAllBallsBtn: document.getElementById('awardAllBallsBtn'),
+      showToolsStatus: document.getElementById('showToolsStatus'),
       newSessionBtn: document.getElementById('newSessionBtn'),
       setWordBtn: document.getElementById('setWordBtn'),
       startRoundBtn: document.getElementById('startRoundBtn'),
@@ -342,6 +436,7 @@
     };
 
     let currentState = null;
+    let rosterPlayers = [];
     let pollHandle = null;
 
     function storedKey() {
@@ -390,12 +485,93 @@
       }
       const state = payload.state || {};
       const players = state.players || [];
+      rosterPlayers = players;
       const currentRound = Number((state.session && state.session.roundNumber) || (currentState && currentState.roundNumber) || 0);
       const submittedThisRound = players.filter((player) => Number(player.roundNumber || 0) === currentRound && !!player.currentGuess);
 
       els.playerCountValue.textContent = String(players.length);
       els.submittedCountValue.textContent = String(submittedThisRound.length);
-      els.playersJson.textContent = JSON.stringify(players, null, 2);
+      renderPlayerRoster(players, currentRound);
+    }
+
+    function renderPlayerRoster(players, currentRound) {
+      els.playerRosterBody.innerHTML = '';
+      if (!players.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.className = 'muted';
+        cell.textContent = 'No players in the session yet.';
+        row.appendChild(cell);
+        els.playerRosterBody.appendChild(row);
+        return;
+      }
+
+      players.forEach((player) => {
+        const row = document.createElement('tr');
+
+        const nameCell = document.createElement('td');
+        nameCell.textContent = player.displayName || 'Player';
+        row.appendChild(nameCell);
+
+        const ballsCell = document.createElement('td');
+        const ballsInput = document.createElement('input');
+        ballsInput.type = 'number';
+        ballsInput.min = '0';
+        ballsInput.step = '1';
+        ballsInput.value = String(player.balls ?? 0);
+        ballsCell.appendChild(ballsInput);
+        row.appendChild(ballsCell);
+
+        const guessCell = document.createElement('td');
+        guessCell.className = 'guess-cell';
+        const submitted = Number(player.roundNumber || 0) === currentRound && !!player.currentGuess;
+        guessCell.textContent = submitted ? String(player.currentGuess || '').toUpperCase() : '—';
+        row.appendChild(guessCell);
+
+        const actionsCell = document.createElement('td');
+        const actions = document.createElement('div');
+        actions.className = 'roster-actions';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.type = 'button';
+        saveBtn.textContent = 'Save balls';
+        saveBtn.addEventListener('click', () => {
+          savePlayerBalls(player.id, Number(ballsInput.value));
+        });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'danger';
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', () => {
+          removePlayer(player.id, player.displayName);
+        });
+
+        actions.appendChild(saveBtn);
+        actions.appendChild(removeBtn);
+        actionsCell.appendChild(actions);
+        row.appendChild(actionsCell);
+
+        els.playerRosterBody.appendChild(row);
+      });
+    }
+
+    async function savePlayerBalls(playerId, balls) {
+      try {
+        await runAction('set-player-balls', { playerId, balls }, 'Player balls updated.');
+      } catch (error) {
+        setStatus(els.actionStatus, error.message || 'Could not update player balls.', 'error');
+      }
+    }
+
+    async function removePlayer(playerId, displayName) {
+      if (!window.confirm(`Remove ${displayName} from the session?`)) return;
+      try {
+        await runAction('remove-player', { playerId }, `${displayName} removed.`);
+      } catch (error) {
+        setStatus(els.actionStatus, error.message || 'Could not remove player.', 'error');
+      }
     }
 
     function renderState() {
@@ -410,6 +586,8 @@
       els.guessSecondsInput.value = String(state.guessWindowSeconds || 90);
       els.resultsSecondsInput.value = String(state.resultsWindowSeconds || 45);
       els.ballsInput.value = String(state.ballsRemaining ?? 0);
+      els.hostNoteInput.value = state.hostNote || '';
+      els.championInput.value = state.championDisplayName || '';
       els.stateJson.textContent = JSON.stringify(state, null, 2);
       renderWordPool();
     }
@@ -549,6 +727,33 @@
     els.resetSessionBtn.addEventListener('click', async () => {
       if (!window.confirm('Hard reset the backend session?')) return;
       await runAction('reset-session', {}, 'Session reset.');
+    });
+    els.saveHostNoteBtn.addEventListener('click', async () => {
+      setStatus(els.showToolsStatus, '');
+      try {
+        await runAction('set-host-note', { hostNote: els.hostNoteInput.value }, 'Display note saved.');
+        setStatus(els.showToolsStatus, 'Display note saved.', 'success');
+      } catch (error) {
+        setStatus(els.showToolsStatus, error.message || 'Could not save display note.', 'error');
+      }
+    });
+    els.setChampionBtn.addEventListener('click', async () => {
+      setStatus(els.showToolsStatus, '');
+      try {
+        await runAction('set-champion', { championDisplayName: els.championInput.value }, 'Champion updated.');
+        setStatus(els.showToolsStatus, 'Champion updated.', 'success');
+      } catch (error) {
+        setStatus(els.showToolsStatus, error.message || 'Could not set champion.', 'error');
+      }
+    });
+    els.awardAllBallsBtn.addEventListener('click', async () => {
+      setStatus(els.showToolsStatus, '');
+      try {
+        await runAction('award-all-balls', {}, 'Every player received +1 ball.');
+        setStatus(els.showToolsStatus, 'Every player received +1 ball.', 'success');
+      } catch (error) {
+        setStatus(els.showToolsStatus, error.message || 'Could not award balls.', 'error');
+      }
     });
 
     els.adminKey.value = storedKey();

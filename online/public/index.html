@@ -154,7 +154,7 @@
 
     .meta-rail {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 0;
       margin-bottom: 1rem;
       border: var(--contrast-stroke) solid var(--show-gold);
@@ -198,13 +198,60 @@
     }
 
     .meta-value.balls {
+      color: var(--show-green);
+      text-shadow: 0 0 20px rgba(0, 255, 85, 0.65);
+    }
+
+    .meta-value.stake {
       color: var(--show-cyan);
       text-shadow: 0 0 20px rgba(0, 212, 255, 0.85);
     }
 
     .meta-value.mult {
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 20px rgba(255, 204, 0, 0.85);
+    }
+
+    .result-feedback {
+      display: none;
+      margin-bottom: 0.85rem;
+      padding: 0.75rem 0.85rem;
+      border: var(--contrast-stroke) solid var(--show-orange);
+      border-radius: 0.2em;
+      background: rgba(255, 136, 0, 0.08);
+      text-align: center;
+    }
+
+    .result-feedback.is-visible {
+      display: block;
+    }
+
+    .result-feedback-label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(220, 235, 255, 0.78);
+    }
+
+    .result-feedback-value {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      color: var(--show-white);
+      text-shadow: 0 0 16px rgba(255, 136, 0, 0.35);
+    }
+
+    .result-feedback-value.is-solved {
       color: var(--show-green);
-      text-shadow: 0 0 20px rgba(0, 255, 85, 0.65);
+      text-shadow: 0 0 16px rgba(0, 255, 85, 0.55);
+    }
+
+    .result-feedback-value.is-invalid {
+      color: var(--show-red);
+      text-shadow: 0 0 16px rgba(255, 34, 68, 0.45);
     }
 
     .prompt {
@@ -375,6 +422,7 @@
 
     @media (max-width: 420px) {
       .play-card { padding: 1rem 0.85rem 0.9rem; }
+      .meta-rail { grid-template-columns: repeat(2, 1fr); }
       .word-tiles { gap: 0.35rem; }
       .button-row { grid-template-columns: 1fr; }
     }
@@ -394,8 +442,12 @@
           <span class="meta-value round" id="metaRound">0</span>
         </div>
         <div class="meta-slot">
-          <span class="meta-label">Balls</span>
-          <span class="meta-value balls" id="metaBalls">0</span>
+          <span class="meta-label">Yours</span>
+          <span class="meta-value balls" id="metaYours">0</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Stake</span>
+          <span class="meta-value stake" id="metaStake">0</span>
         </div>
         <div class="meta-slot">
           <span class="meta-label">Mult</span>
@@ -403,11 +455,16 @@
         </div>
       </div>
 
+      <div class="result-feedback" id="resultFeedback" aria-live="polite">
+        <span class="result-feedback-label">Your last result</span>
+        <span class="result-feedback-value" id="resultFeedbackValue"></span>
+      </div>
+
       <h1 class="prompt" id="promptLine">Enter your guess!</h1>
 
       <label class="field-label" for="playerName">Your display name</label>
       <div class="name-row">
-        <input id="playerName" type="text" maxlength="40" autocomplete="username" placeholder="Exact Twitch / display name" />
+        <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="Your display name" />
       </div>
 
       <div class="word-tiles" aria-label="Five-letter guess">
@@ -434,8 +491,11 @@
       phaseBadge: document.getElementById('phaseBadge'),
       phaseLine: document.getElementById('phaseLine'),
       metaRound: document.getElementById('metaRound'),
-      metaBalls: document.getElementById('metaBalls'),
+      metaYours: document.getElementById('metaYours'),
+      metaStake: document.getElementById('metaStake'),
       metaMult: document.getElementById('metaMult'),
+      resultFeedback: document.getElementById('resultFeedback'),
+      resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
       playerName: document.getElementById('playerName'),
       message: document.getElementById('message'),
@@ -460,13 +520,39 @@
         revealedWord: 'STARK',
       };
       if (DEMO_PHASE === 'guessing') {
-        return { ...base, phase: 'guessing' };
+        return {
+          ...base,
+          phase: 'guessing',
+          viewer: { found: true, displayName: 'NightOwl', balls: 12, lockedIn: false },
+        };
       }
       if (DEMO_PHASE === 'results') {
-        return { ...base, phase: 'results', publicFirstLetter: '' };
+        return {
+          ...base,
+          phase: 'results',
+          publicFirstLetter: '',
+          viewer: {
+            found: true,
+            displayName: 'NightOwl',
+            balls: 12,
+            resultPattern: '!?///',
+            resultLabel: '▪○✕✕✕',
+          },
+        };
       }
       if (DEMO_PHASE === 'ended') {
-        return { ...base, phase: 'ended', publicFirstLetter: '' };
+        return {
+          ...base,
+          phase: 'ended',
+          publicFirstLetter: '',
+          viewer: {
+            found: true,
+            displayName: 'NightOwl',
+            balls: 18,
+            resultPattern: '!!!!!',
+            resultLabel: 'Perfect solve!',
+          },
+        };
       }
       return { phase: 'idle', roundNumber: 0, ballsRemaining: 0, ballMultiplier: 1 };
     }
@@ -539,7 +625,8 @@
 
     function updateSubmitEnabled() {
       const canGuess = currentState && currentState.phase === 'guessing';
-      els.submit.disabled = !canGuess;
+      const lockedIn = Boolean(currentState && currentState.viewer && currentState.viewer.lockedIn);
+      els.submit.disabled = !canGuess || lockedIn;
       els.inputs.forEach((input, index) => {
         if (index === 0 && input.classList.contains('is-revealed')) {
           input.disabled = true;
@@ -565,11 +652,33 @@
       els.promptLine.textContent = 'Enter your guess!';
     }
 
+    function renderViewerFeedback(state) {
+      const viewer = state.viewer;
+      const phase = state.phase || 'idle';
+
+      if (!viewer || (phase !== 'results' && phase !== 'ended') || !viewer.resultLabel) {
+        els.resultFeedback.classList.remove('is-visible');
+        els.resultFeedbackValue.textContent = '';
+        els.resultFeedbackValue.className = 'result-feedback-value';
+        return;
+      }
+
+      els.resultFeedback.classList.add('is-visible');
+      els.resultFeedbackValue.textContent = viewer.resultLabel;
+      els.resultFeedbackValue.className = 'result-feedback-value';
+      if (viewer.resultPattern === '!!!!!') {
+        els.resultFeedbackValue.classList.add('is-solved');
+      } else if (viewer.resultLabel === 'Not a word…') {
+        els.resultFeedbackValue.classList.add('is-invalid');
+      }
+    }
+
     function renderPublicState(state) {
       currentState = state;
       const phase = state.phase || 'idle';
       const firstLetter = state.publicFirstLetter ? state.publicFirstLetter.charAt(0) : '';
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
+      const viewer = state.viewer;
 
       els.stage.dataset.phase = phase;
       els.phaseBadge.textContent = copy.badge;
@@ -580,16 +689,26 @@
           : copy.line;
 
       els.metaRound.textContent = String(state.roundNumber || 0);
-      els.metaBalls.textContent = String(Number.isFinite(state.ballsRemaining) ? state.ballsRemaining : 0);
+      els.metaStake.textContent = String(Number.isFinite(state.ballsRemaining) ? state.ballsRemaining : 0);
       els.metaMult.textContent = `${state.ballMultiplier || 1}x`;
+      els.metaYours.textContent = !els.playerName.value.trim()
+        ? '—'
+        : String(viewer && viewer.found ? viewer.balls : 0);
 
       renderPrompt(phase, firstLetter);
+      renderViewerFeedback(state);
       applyFirstLetter(phase === 'guessing' ? firstLetter : '');
       updateSubmitEnabled();
     }
 
+    function publicStateUrl() {
+      const displayName = els.playerName.value.trim();
+      if (!displayName) return '/api/public-state';
+      return `/api/public-state?displayName=${encodeURIComponent(displayName)}`;
+    }
+
     async function fetchPublicState() {
-      const response = await fetch('/api/public-state');
+      const response = await fetch(publicStateUrl());
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
         throw new Error(payload.error || 'Could not load game state.');
@@ -602,7 +721,7 @@
       const guess = currentGuess();
 
       if (!displayName) {
-        setMessage('Enter your exact display name first.', 'error');
+        setMessage('Enter your display name first.', 'error');
         els.playerName.focus();
         return;
       }
@@ -694,6 +813,9 @@
     });
 
     els.playerName.value = getStoredDisplayName();
+    els.playerName.addEventListener('change', () => {
+      fetchPublicState().catch(() => {});
+    });
     wireInputBehavior();
     clearInputs(false);
 
