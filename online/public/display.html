@@ -1012,21 +1012,26 @@
     .stage[data-phase="guessing"] .word-tiles,
     .stage[data-phase="results"] .word-tiles {
       margin: 0;
-      gap: 0.42em;
+      gap: 0.63em;
       flex: 0 1 auto;
     }
 
     .stage[data-phase="guessing"] .word-tile,
     .stage[data-phase="results"] .word-tile {
-      width: 2.15em;
-      height: 2.15em;
-      font-size: 1.32em;
+      width: 3.23em;
+      height: 3.23em;
+      font-size: 1.98em;
+    }
+
+    .stage[data-phase="guessing"] .word-tile.is-hidden,
+    .stage[data-phase="results"] .word-tile.is-hidden {
+      font-size: 2.7em;
     }
 
     .stage[data-phase="results"] .word-tile {
-      width: 2em;
-      height: 2em;
-      font-size: 1.2em;
+      width: 3em;
+      height: 3em;
+      font-size: 1.8em;
     }
 
     .stage[data-phase="ended"] .word-clue:not([hidden]) {
@@ -1054,7 +1059,7 @@
       padding: 0.12em 0;
       overflow: hidden;
       display: grid;
-      grid-template-columns: 1.35fr 0.75fr 0.75fr;
+      grid-template-columns: 1fr 1fr 2fr;
       background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
       box-shadow: 0 0 16px rgba(0, 120, 255, 0.18);
     }
@@ -1093,23 +1098,44 @@
       min-width: 0;
     }
 
+    .stage[data-phase="guessing"] .stat-cell--unsubmitted,
+    .stage[data-phase="results"] .stat-cell--unsubmitted,
+    .stage[data-phase="ended"] .stat-cell--unsubmitted {
+      padding: 0.16em 0.12em;
+      gap: 0.05em;
+      min-height: 2em;
+    }
+
+    .stage[data-phase="guessing"] .stat-cell--unsubmitted .stat-icon,
+    .stage[data-phase="results"] .stat-cell--unsubmitted .stat-icon,
+    .stage[data-phase="ended"] .stat-cell--unsubmitted .stat-icon {
+      width: 1.1em;
+      height: 1.1em;
+    }
+
+    .stage[data-phase="guessing"] .stat-cell--unsubmitted .stat-label,
+    .stage[data-phase="results"] .stat-cell--unsubmitted .stat-label,
+    .stage[data-phase="ended"] .stat-cell--unsubmitted .stat-label {
+      font-size: 0.52em;
+    }
+
     .unsubmitted-chips {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
-      gap: 0.16em;
+      gap: 0.22em;
       width: 100%;
       max-width: 100%;
-      padding: 0.04em 0.1em 0.08em;
-      min-height: 1.05em;
+      padding: 0.06em 0.12em 0.1em;
+      min-height: 1.4em;
     }
 
     .unsubmitted-chip {
-      font-size: var(--chip-name-size, 0.38em);
+      font-size: var(--chip-name-size, 0.52em);
       font-weight: 800;
       letter-spacing: 0.02em;
-      padding: 0.2em 0.44em;
+      padding: 0.24em 0.52em;
       border-radius: 999px;
       border: 1px solid rgba(240, 168, 48, 0.58);
       background: linear-gradient(180deg, rgba(48, 28, 0, 0.72) 0%, rgba(24, 14, 0, 0.88) 100%);
@@ -2585,11 +2611,6 @@
           </div>
 
           <div class="stats-row" aria-label="Game stats">
-            <div class="stat-cell stat-cell--unsubmitted">
-              <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="#f0a830" stroke-width="2" stroke-dasharray="3.5 2.5"/><path d="M8.5 12h7M12 8.5v7" stroke="#f0a830" stroke-width="2" stroke-linecap="round"/></svg>
-              <span class="stat-label">Unsubmitted</span>
-              <div class="unsubmitted-chips is-empty" id="statUnsubmitted" aria-live="polite"></div>
-            </div>
             <div class="stat-cell">
               <svg class="stat-icon" viewBox="0 0 24 24" fill="#9828a8" aria-hidden="true"><circle cx="9" cy="10" r="3" fill="#9828a8"/><circle cx="16" cy="11" r="2.5" fill="#9828a8"/><path d="M4 18c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#9828a8" stroke-width="2" fill="none"/><path d="M13 17c0-1.8 1.5-3.2 3.2-3.2" stroke="#9828a8" stroke-width="2" fill="none"/></svg>
               <span class="stat-label">Players</span>
@@ -2599,6 +2620,11 @@
               <svg class="stat-icon" viewBox="0 0 24 24" fill="#18a8d8" aria-hidden="true"><path d="M3 12l18-7-7 18-2-7-7-4z" fill="#18a8d8"/></svg>
               <span class="stat-label">Submitted</span>
               <span class="stat-value submitted" id="statSubmitted">0</span>
+            </div>
+            <div class="stat-cell stat-cell--unsubmitted">
+              <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="#f0a830" stroke-width="2" stroke-dasharray="3.5 2.5"/><path d="M8.5 12h7M12 8.5v7" stroke="#f0a830" stroke-width="2" stroke-linecap="round"/></svg>
+              <span class="stat-label">Unsubmitted</span>
+              <div class="unsubmitted-chips is-empty" id="statUnsubmitted" aria-live="polite"></div>
             </div>
           </div>
         </div>
@@ -3169,10 +3195,10 @@
 
     function unsubmittedChipSize(name) {
       const len = (name || "").length;
-      if (len <= 9) return "0.42em";
-      if (len <= 13) return "0.38em";
-      if (len <= 17) return "0.34em";
-      return "0.3em";
+      if (len <= 9) return "0.56em";
+      if (len <= 13) return "0.5em";
+      if (len <= 17) return "0.44em";
+      return "0.38em";
     }
 
     function renderUnsubmittedStat(state) {
