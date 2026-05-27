@@ -1309,66 +1309,67 @@
     }
 
     .stage[data-phase="guessing"] .player-board-body {
-      padding: 0.36em 0.32em 0.32em;
+      padding: var(--live-board-pad, 0.42em);
       min-height: 0;
       flex: 1 1 auto;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: stretch;
+      justify-content: stretch;
     }
 
     .stage[data-phase="results"] .player-board-body,
     .stage[data-phase="ended"] .player-board-body {
-      padding: 0.36em 0.32em 0.32em;
+      padding: var(--live-board-pad, 0.42em);
       min-height: 0;
       flex: 1 1 auto;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: stretch;
+      justify-content: stretch;
     }
 
     .stage[data-phase="guessing"] .player-grid {
-      flex: 0 1 auto;
-      width: var(--live-grid-width, 100%);
-      height: var(--live-grid-height, auto);
+      flex: 1 1 auto;
+      width: 100%;
+      height: 100%;
       max-width: 100%;
       max-height: 100%;
       min-height: 0;
-      grid-template-columns: repeat(var(--live-cols, 4), var(--live-chip-width, minmax(0, 1fr)));
-      grid-template-rows: repeat(var(--live-rows, 2), var(--live-chip-height, auto));
-      place-content: center;
-      place-items: center;
-      gap: var(--live-gap, 0.42em);
+      grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
+      grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
+      place-content: stretch;
+      place-items: stretch;
+      gap: var(--live-gap, 0.55em);
       overflow: hidden;
-      margin: auto;
+      margin: 0;
     }
 
     .stage[data-phase="results"] .player-grid,
     .stage[data-phase="ended"] .player-grid {
-      flex: 0 1 auto;
-      width: var(--live-grid-width, 100%);
-      height: var(--live-grid-height, auto);
+      flex: 1 1 auto;
+      width: 100%;
+      height: 100%;
       max-width: 100%;
       max-height: 100%;
       min-height: 0;
-      grid-template-columns: repeat(var(--live-cols, 4), var(--live-chip-width, minmax(0, 1fr)));
-      grid-template-rows: repeat(var(--live-rows, 2), var(--live-chip-height, auto));
-      place-content: center;
-      place-items: center;
-      gap: var(--live-gap, 0.42em);
+      grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
+      grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
+      place-content: stretch;
+      place-items: stretch;
+      gap: var(--live-gap, 0.55em);
       overflow: hidden;
-      margin: auto;
+      margin: 0;
     }
 
     .stage[data-phase="guessing"] .player-card {
-      width: var(--live-chip-width, 100%);
-      max-width: var(--live-chip-width, 100%);
-      min-height: var(--live-chip-height, auto);
-      height: var(--live-chip-height, auto);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
       padding: 0.24em 0.36em;
       box-sizing: border-box;
       display: flex;
@@ -1382,10 +1383,11 @@
 
     .stage[data-phase="results"] .player-card,
     .stage[data-phase="ended"] .player-card {
-      width: var(--live-chip-width, 100%);
-      max-width: var(--live-chip-width, 100%);
-      min-height: var(--live-chip-height, auto);
-      height: var(--live-chip-height, auto);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
       padding: 0.22em 0.32em 0.26em;
       box-sizing: border-box;
       display: flex;
@@ -1766,28 +1768,9 @@
       display: none !important;
     }
 
-    .stage[data-live-density="md"] .player-grid,
-    .stage[data-live-density="lg"] .player-grid,
-    .stage[data-live-density="xl"] .player-grid {
-      gap: var(--live-gap, 0.38em);
-    }
-
-    .stage[data-live-density="lg"] .player-card {
-      padding: 0.22em 0.34em;
-    }
-
+    .stage[data-live-density="lg"] .player-card,
     .stage[data-live-density="xl"] .player-card {
-      padding: 0.18em 0.28em;
-    }
-
-    .stage[data-live-density="lg"] .player-name,
-    .stage[data-live-density="xl"] .player-name {
-      font-size: 0.62em;
-    }
-
-    .stage[data-live-density="lg"] .player-status,
-    .stage[data-live-density="xl"] .player-status {
-      font-size: 0.4em;
+      padding: 0.2em 0.3em;
     }
 
     .pending-row {
@@ -3531,14 +3514,23 @@
       return Math.max(1, Math.ceil(Math.sqrt(playerCount * 1.15)));
     }
 
-    const LIVE_CHIP_ASPECT = 2.35;
-
     function estimateLiveChipMinimums(phase) {
       const isReveal = phase === "results" || phase === "ended";
       return {
-        width: isReveal ? 108 : 96,
-        height: isReveal ? 58 : 50,
+        width: isReveal ? 88 : 72,
+        height: isReveal ? 52 : 44,
       };
+    }
+
+    function liveBoardGap(width, height, playerCount) {
+      const base = Math.round(Math.min(width, height) * 0.024);
+      if (playerCount >= 40) {
+        return Math.max(6, Math.min(10, base));
+      }
+      if (playerCount >= 20) {
+        return Math.max(7, Math.min(12, base));
+      }
+      return Math.max(8, Math.min(14, base));
     }
 
     function measureLiveChipContentBounds() {
@@ -3550,25 +3542,23 @@
       let maxHeight = 0;
       let maxWidth = 0;
       cards.forEach((card) => {
-        const saved = {
-          width: card.style.width,
-          height: card.style.height,
-          minHeight: card.style.minHeight,
-        };
-        card.style.width = getComputedStyle(card).width;
-        card.style.height = "auto";
-        card.style.minHeight = "0";
-        const rect = card.getBoundingClientRect();
-        maxHeight = Math.max(maxHeight, rect.height);
-        maxWidth = Math.max(maxWidth, rect.width);
-        card.style.width = saved.width;
-        card.style.height = saved.height;
-        card.style.minHeight = saved.minHeight;
+        let contentH = 0;
+        let contentW = 0;
+        card.querySelectorAll(".player-name, .player-balls, .player-status, .pending-row").forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          contentH += rect.height;
+          contentW = Math.max(contentW, rect.width);
+        });
+        const style = getComputedStyle(card);
+        const padV = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
+        const padH = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
+        maxHeight = Math.max(maxHeight, contentH + padV + 4);
+        maxWidth = Math.max(maxWidth, contentW + padH + 8);
       });
 
       return {
-        height: Math.ceil(maxHeight) + 2,
-        width: Math.ceil(maxWidth) + 2,
+        height: Math.ceil(maxHeight),
+        width: Math.ceil(maxWidth),
       };
     }
 
@@ -3583,88 +3573,59 @@
       const boardBody = els.playerBoardBody;
       const width = boardBody.clientWidth;
       const height = boardBody.clientHeight || Math.max(240, Math.floor(window.innerHeight * 0.38));
-      if (width <= 0) {
+      if (width <= 0 || height <= 0) {
         return;
       }
 
       const isReveal = phase === "results" || phase === "ended";
       const estimated = estimateLiveChipMinimums(phase);
-      const minChipH = Math.max(estimated.height, Number(contentBounds?.height || 0));
-      const minChipW = Math.max(estimated.width, Number(contentBounds?.width || 0));
-      const maxChipW = isReveal ? 196 : 172;
-      const gap = playerCount >= 24 ? 4 : playerCount >= 12 ? 5 : 6;
+      const minCellH = Math.max(estimated.height, Number(contentBounds?.height || 0));
+      const minCellW = Math.max(estimated.width, Number(contentBounds?.width || 0));
+      const gap = liveBoardGap(width, height, playerCount);
 
       let best = null;
-      const maxCols = Math.min(playerCount, Math.max(1, Math.floor(width / minChipW)));
+      const maxCols = Math.min(
+        playerCount,
+        Math.max(1, Math.floor((width + gap) / (minCellW + gap))),
+      );
 
       for (let cols = maxCols; cols >= 1; cols -= 1) {
         const rows = Math.ceil(playerCount / cols);
-        const maxW = (width - gap * (cols - 1)) / cols;
-        const maxH = (height - gap * (rows - 1)) / rows;
-
-        let chipW = Math.min(maxW, maxH * LIVE_CHIP_ASPECT, maxChipW);
-        let chipH = chipW / LIVE_CHIP_ASPECT;
-        if (chipH > maxH) {
-          chipH = maxH;
-          chipW = chipH * LIVE_CHIP_ASPECT;
-        }
-        if (chipH < minChipH) {
-          chipH = Math.min(maxH, minChipH);
-          chipW = Math.min(maxW, chipH * LIVE_CHIP_ASPECT);
-        }
-        if (chipW < minChipW) {
-          chipW = Math.min(maxW, minChipW);
-          chipH = chipW / LIVE_CHIP_ASPECT;
-        }
-        if (chipW < minChipW || chipH < minChipH) {
+        const cellW = (width - gap * (cols - 1)) / cols;
+        const cellH = (height - gap * (rows - 1)) / rows;
+        if (cellW < minCellW || cellH < minCellH) {
           continue;
         }
 
-        const gridW = cols * chipW + gap * (cols - 1);
-        const gridH = rows * chipH + gap * (rows - 1);
-        if (gridW > width + 0.5 || gridH > height + 0.5) {
-          continue;
-        }
-
-        const score = chipW * chipH;
+        const score = Math.min(cellW, cellH);
         if (!best || score > best.score) {
-          best = { cols, rows, chipW, chipH, gridW, gridH, score };
+          best = { cols, rows, gap, cellW, cellH, score };
         }
       }
 
       if (!best) {
         const cols = Math.max(1, computeLiveGridColumns(playerCount));
         const rows = Math.ceil(playerCount / cols);
-        const maxW = (width - gap * (cols - 1)) / cols;
-        const maxH = (height - gap * (rows - 1)) / rows;
-        let chipW = Math.min(maxW, minChipW);
-        let chipH = Math.min(maxH, Math.max(minChipH, chipW / LIVE_CHIP_ASPECT));
-        chipW = Math.max(minChipW, chipH * LIVE_CHIP_ASPECT);
-        if (chipW > maxW) {
-          chipW = maxW;
-          chipH = chipW / LIVE_CHIP_ASPECT;
-        }
         best = {
           cols,
           rows,
-          chipW,
-          chipH,
-          gridW: cols * chipW + gap * (cols - 1),
-          gridH: rows * chipH + gap * (rows - 1),
+          gap,
+          cellW: (width - gap * (cols - 1)) / cols,
+          cellH: (height - gap * (rows - 1)) / rows,
           score: 0,
         };
       }
 
-      const contentRef = Math.max(minChipH, isReveal ? 56 : 48);
-      const scale = Math.min(1, Math.max(0.72, best.chipH / contentRef));
+      const contentRef = Math.max(minCellH, isReveal ? 56 : 48);
+      const scale = Math.min(1.4, Math.max(0.68, Math.min(best.cellW / 118, best.cellH / contentRef)));
 
       els.stage.style.setProperty("--live-cols", String(best.cols));
       els.stage.style.setProperty("--live-rows", String(best.rows));
-      els.stage.style.setProperty("--live-gap", `${gap}px`);
-      els.stage.style.setProperty("--live-chip-width", `${Math.floor(best.chipW)}px`);
-      els.stage.style.setProperty("--live-chip-height", `${Math.floor(best.chipH)}px`);
-      els.stage.style.setProperty("--live-grid-width", `${Math.ceil(best.gridW)}px`);
-      els.stage.style.setProperty("--live-grid-height", `${Math.ceil(best.gridH)}px`);
+      els.stage.style.setProperty("--live-gap", `${best.gap}px`);
+      els.stage.style.removeProperty("--live-chip-width");
+      els.stage.style.removeProperty("--live-chip-height");
+      els.stage.style.removeProperty("--live-grid-width");
+      els.stage.style.removeProperty("--live-grid-height");
       els.stage.style.setProperty("--live-card-scale", scale.toFixed(3));
 
       if (playerCount >= 50) {
@@ -3698,9 +3659,14 @@
           if (!bounds) {
             return;
           }
-          const currentH = Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-chip-height"));
-          const currentW = Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-chip-width"));
-          if (bounds.height > currentH + 1 || bounds.width > currentW + 1) {
+          const cols = Number.parseInt(getComputedStyle(els.stage).getPropertyValue("--live-cols"), 10) || 1;
+          const rows = Number.parseInt(getComputedStyle(els.stage).getPropertyValue("--live-rows"), 10) || 1;
+          const gap = Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-gap")) || 8;
+          const boardW = els.playerBoardBody.clientWidth;
+          const boardH = els.playerBoardBody.clientHeight;
+          const cellW = (boardW - gap * (cols - 1)) / cols;
+          const cellH = (boardH - gap * (rows - 1)) / rows;
+          if (bounds.height > cellH + 1 || bounds.width > cellW + 1) {
             fitLivePlayerGrid(playerCount, phase, bounds);
           }
         });
