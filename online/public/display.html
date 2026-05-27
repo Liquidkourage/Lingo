@@ -1787,6 +1787,62 @@
       padding: 0.2em 0.3em;
     }
 
+    .stage[data-phase="guessing"] .pending-row.is-sealed-guess {
+      margin-top: 0.04em;
+      gap: 0.1em;
+      flex: 0 0 auto;
+    }
+
+    .stage[data-phase="guessing"] .pending-row.is-sealed-guess .pending-dot {
+      width: clamp(0.34em, 6.5cqmin, 0.72em);
+      height: clamp(0.34em, 6.5cqmin, 0.72em);
+    }
+
+    .stage[data-phase="guessing"] .pending-row.is-sealed-guess.is-urgent .pending-dot {
+      animation: sealed-dot-urgency 0.45s ease-in-out infinite;
+    }
+
+    @keyframes sealed-dot-urgency {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 10px rgba(255, 204, 0, 0.65);
+      }
+      50% {
+        transform: scale(1.14);
+        box-shadow: 0 0 18px rgba(255, 204, 0, 0.95);
+      }
+    }
+
+    .pattern-row.reveal-letter-row.is-revealing .pattern-cell {
+      animation: guess-slot-reveal 0.58s cubic-bezier(0.22, 1.12, 0.36, 1) both;
+      animation-delay: calc(var(--reveal-index, 0) * 0.07s);
+    }
+
+    @keyframes guess-slot-reveal {
+      0% {
+        transform: scale(0.42);
+        border-radius: 999px;
+        background: rgba(255, 204, 0, 0.58);
+        border-color: var(--show-gold);
+        box-shadow: 0 0 14px rgba(255, 204, 0, 0.8);
+      }
+      55% {
+        transform: scale(1.06);
+      }
+      100% {
+        transform: scale(1);
+        border-radius: 0.14em;
+        box-shadow: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stage[data-phase="guessing"] .pending-row.is-sealed-guess.is-urgent .pending-dot,
+      .pattern-row.reveal-letter-row.is-revealing .pattern-cell {
+        animation: none;
+      }
+    }
+
     .pending-row {
       display: flex;
       justify-content: center;
@@ -3295,6 +3351,7 @@
     const LOBBY_ROTATE_MS = 4000;
     const LIVE_DENSE_THRESHOLD = 12;
     const ALL_SUBMITTED_GRACE_SECONDS = 10;
+    const SEALED_GUESS_DOTS_SECONDS = 10;
 
     const urlParams = new URLSearchParams(window.location.search);
     const DEMO_PLAYER_COUNT = Math.max(0, parseInt(urlParams.get("demo") || "0", 10) || 0);
@@ -3583,7 +3640,7 @@
           contentH += rect.height;
           contentW = Math.max(contentW, rect.width);
         });
-        card.querySelectorAll(".player-status, .pattern-row").forEach((el) => {
+        card.querySelectorAll(".player-status, .pending-row, .pattern-row").forEach((el) => {
           const rect = el.getBoundingClientRect();
           contentH += rect.height;
           contentW = Math.max(contentW, rect.width);
@@ -4337,9 +4394,63 @@
       }
     }
 
+    function shouldShowSealedGuessDots(state) {
+      const phase = state.phase || "idle";
+      if (phase !== "guessing" || state.timerPaused) {
+        return false;
+      }
+      const remaining = phaseSecondsRemaining(state);
+      return remaining != null && remaining <= SEALED_GUESS_DOTS_SECONDS;
+    }
+
+    function playerNeedsSealedDots(player) {
+      return player.status === "locked" && !player.solvedCurrentWord;
+    }
+
+    function syncSealedGuessDots(state) {
+      const phase = state.phase || "idle";
+      if (phase !== "guessing") {
+        return;
+      }
+
+      const show = shouldShowSealedGuessDots(state);
+      const remaining = phaseSecondsRemaining(state);
+      const urgent = remaining != null && remaining <= 3;
+      const players = Array.isArray(state.players) ? state.players : [];
+      const lockedNames = new Set(
+        players.filter(playerNeedsSealedDots).map((player) => String(player.displayName || "").toLowerCase()),
+      );
+
+      let changed = false;
+      els.playerBoardBody.querySelectorAll('.player-card[data-status="locked"]').forEach((card) => {
+        const name = String(card.querySelector(".player-name")?.textContent || "").toLowerCase();
+        if (!lockedNames.has(name)) {
+          return;
+        }
+
+        let row = card.querySelector(".pending-row.is-sealed-guess");
+        if (show && !row) {
+          card.appendChild(renderPendingRow());
+          changed = true;
+          row = card.querySelector(".pending-row.is-sealed-guess");
+        } else if (!show && row) {
+          row.remove();
+          changed = true;
+        }
+
+        if (row) {
+          row.classList.toggle("is-urgent", urgent);
+        }
+      });
+
+      if (changed) {
+        scheduleLiveBoardFit();
+      }
+    }
+
     function renderPendingRow() {
       const row = document.createElement("div");
-      row.className = "pending-row";
+      row.className = "pending-row is-sealed-guess";
       row.setAttribute("aria-hidden", "true");
       for (let index = 0; index < 5; index += 1) {
         const dot = document.createElement("span");
@@ -4475,15 +4586,16 @@
       });
     }
 
-    function renderRevealLetterBoxes(guess, pattern) {
+    function renderRevealLetterBoxes(guess, pattern, options = {}) {
       const row = document.createElement("div");
-      row.className = "pattern-row reveal-letter-row";
+      row.className = `pattern-row reveal-letter-row${options.animate ? " is-revealing" : ""}`;
       const letters = String(guess || "").toUpperCase().padEnd(5, " ").slice(0, 5).split("");
       const marks = (pattern || "").padEnd(5, "/").slice(0, 5).split("");
       letters.forEach((letter, index) => {
         const cell = document.createElement("div");
         cell.className = "pattern-cell";
         cell.dataset.mark = marks[index] || "/";
+        cell.style.setProperty("--reveal-index", String(index));
         const letterEl = document.createElement("span");
         letterEl.className = "pattern-letter";
         letterEl.textContent = letter.trim() || "·";
@@ -4602,7 +4714,9 @@
         card.appendChild(status);
 
         if (showRevealBoxes && (revealGuess || revealPattern)) {
-          card.appendChild(renderRevealLetterBoxes(revealGuess, revealPattern));
+          card.appendChild(renderRevealLetterBoxes(revealGuess, revealPattern, {
+            animate: Boolean(options.animateGuessReveal),
+          }));
         }
 
         fragment.appendChild(card);
@@ -4658,6 +4772,8 @@
       } else {
         delete els.timerPanel.dataset.urgency;
       }
+
+      syncSealedGuessDots(state);
     }
 
     function renderState(state) {
@@ -4676,6 +4792,7 @@
         lastWordTilesSignature = "";
         lastWordClueSignature = "";
       }
+      const previousPhase = lastPhase;
       lastPhase = phase;
 
       els.stage.dataset.phase = phase;
@@ -4734,7 +4851,11 @@
       renderAnswerFanfare(currentState);
       renderWordTiles(currentState);
       renderWordClue(currentState);
-      renderPlayerBoard(currentState);
+      renderPlayerBoard(currentState, {
+        animateGuessReveal: previousPhase === "guessing"
+          && (phase === "results" || phase === "ended"),
+      });
+      syncSealedGuessDots(currentState);
       syncLobbyRotation(currentState);
     }
 
@@ -4746,6 +4867,8 @@
           const phase = currentState.phase || "idle";
           if (phase === "guessing" || phase === "results") {
             renderTimer(currentState);
+          } else if (phase === "idle" || phase === "ended") {
+            syncSealedGuessDots(currentState);
           }
         }
         scheduleTimerTick();
