@@ -69,11 +69,39 @@
       overflow: hidden;
     }
 
+    .play-header {
+      margin-bottom: 0.65rem;
+      text-align: center;
+    }
+
     .play-logo {
       display: block;
       width: min(72%, 280px);
       height: auto;
       margin: 0 auto 0.65rem;
+    }
+
+    .play-stage[data-phase="idle"] .play-logo {
+      width: min(88%, 300px);
+      margin-bottom: 0.8rem;
+    }
+
+    .player-chip {
+      display: none;
+      margin: 0 0 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: rgba(200, 220, 245, 0.82);
+    }
+
+    .player-chip.is-visible {
+      display: block;
+    }
+
+    .player-chip strong {
+      color: var(--show-cyan);
+      font-weight: 800;
     }
 
     .phase-badge {
@@ -438,8 +466,128 @@
       filter: grayscale(0.35);
     }
 
-    .play-stage:not([data-phase="guessing"]) .word-tiles {
-      opacity: 0.55;
+    .play-lobby {
+      display: block;
+    }
+
+    .play-stage:not([data-phase="idle"]) .play-lobby {
+      display: none;
+    }
+
+    .play-guess {
+      display: none;
+    }
+
+    .play-stage[data-phase="guessing"] .play-guess {
+      display: block;
+    }
+
+    .play-outcome {
+      display: none;
+    }
+
+    .play-stage[data-phase="results"] .play-outcome,
+    .play-stage[data-phase="ended"] .play-outcome {
+      display: block;
+    }
+
+    .locked-banner {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      margin-bottom: 0.85rem;
+      padding: 0.7rem 0.85rem;
+      border: var(--contrast-stroke) solid var(--show-green);
+      border-radius: 0.2em;
+      background: rgba(0, 255, 85, 0.08);
+      text-align: center;
+    }
+
+    .play-stage[data-phase="guessing"][data-locked="true"] .locked-banner {
+      display: flex;
+    }
+
+    .play-stage[data-phase="guessing"][data-locked="true"] .word-tiles,
+    .play-stage[data-phase="guessing"][data-locked="true"] .button-row--guess {
+      display: none;
+    }
+
+    .play-stage[data-phase="guessing"][data-locked="true"] .play-keyboard {
+      display: none !important;
+    }
+
+    .locked-label {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--show-green);
+    }
+
+    .locked-guess {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      color: var(--show-white);
+      text-shadow: 0 0 14px rgba(0, 255, 85, 0.45);
+    }
+
+    .result-tiles {
+      display: none;
+      justify-content: center;
+      gap: 0.45rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .result-tiles.is-visible {
+      display: flex;
+    }
+
+    .result-tile {
+      width: clamp(52px, 14vw, 68px);
+      height: clamp(52px, 14vw, 68px);
+      display: grid;
+      place-items: center;
+      border: var(--contrast-stroke) solid var(--show-cyan);
+      border-radius: 0.15em;
+      background: var(--show-black);
+      font-size: clamp(1.6rem, 6vw, 2.2rem);
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .result-tile[data-mark="!"] {
+      border-color: var(--show-green);
+      background: var(--show-green);
+      color: #001808;
+      box-shadow: 0 0 18px rgba(0, 255, 85, 0.55);
+    }
+
+    .result-tile[data-mark="?"] {
+      border-color: var(--show-gold);
+      background: var(--show-gold);
+      color: #1a1000;
+      box-shadow: 0 0 18px rgba(255, 204, 0, 0.55);
+    }
+
+    .result-tile[data-mark="/"] {
+      border-color: #3a3040;
+      background: #2a2030;
+      color: rgba(200, 190, 195, 0.88);
+    }
+
+    .outcome-empty {
+      display: none;
+      margin-bottom: 0.75rem;
+      text-align: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: rgba(200, 220, 245, 0.78);
+    }
+
+    .outcome-empty.is-visible {
+      display: block;
     }
 
     .play-keyboard {
@@ -533,43 +681,56 @@
 <body>
   <div class="play-stage" id="playStage" data-phase="idle">
     <main class="play-card">
-      <img class="play-logo" src="/assets/lingo-logo-extracted.svg" width="280" height="80" alt="Lingo" />
+      <header class="play-header">
+        <img class="play-logo" src="/assets/lingo-logo-extracted.svg" width="280" height="80" alt="Lingo" />
+        <div class="phase-badge" id="phaseBadge">Sign up open</div>
+        <p class="player-chip" id="playerChip"></p>
+        <p class="phase-line" id="phaseLine">Join the lobby so you appear on the venue display before the host starts a round.</p>
+      </header>
 
-      <div class="phase-badge" id="phaseBadge">Stand by</div>
-      <p class="phase-line" id="phaseLine">Waiting for the host to start the online game…</p>
-
-      <div class="meta-rail" aria-label="Game stats">
-        <div class="meta-slot">
-          <span class="meta-label">Round</span>
-          <span class="meta-value round" id="metaRound">0</span>
+      <section class="play-stats" aria-label="Live stats">
+        <div class="meta-rail" aria-label="Game stats">
+          <div class="meta-slot">
+            <span class="meta-label">Round</span>
+            <span class="meta-value round" id="metaRound">0</span>
+          </div>
+          <div class="meta-slot">
+            <span class="meta-label">Balls</span>
+            <span class="meta-value balls" id="metaYours">0</span>
+          </div>
         </div>
-        <div class="meta-slot">
-          <span class="meta-label">Balls</span>
-          <span class="meta-value balls" id="metaYours">0</span>
+        <p class="guess-worth" id="guessWorth" aria-live="polite"></p>
+      </section>
+
+      <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
+        <label class="field-label" for="playerName">Your display name</label>
+        <div class="name-row">
+          <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="Your display name" />
         </div>
-      </div>
+        <div class="button-row button-row--lobby">
+          <button id="joinButton" class="good" type="button">Join lobby</button>
+          <button id="leaveButton" class="secondary" type="button">Leave lobby</button>
+        </div>
+      </section>
 
-      <p class="guess-worth" id="guessWorth" aria-live="polite"></p>
-
-      <div class="result-feedback" id="resultFeedback" aria-live="polite">
-        <span class="result-feedback-label">Your last result</span>
-        <span class="result-feedback-value" id="resultFeedbackValue"></span>
-      </div>
-
-      <h1 class="prompt" id="promptLine">Enter your guess!</h1>
-
-      <label class="field-label" for="playerName">Your display name</label>
-      <div class="name-row">
-        <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="Your display name" />
-      </div>
-
-      <div class="word-tiles" aria-label="Five-letter guess">
-        <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" />
-        <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" />
-        <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 3" />
-        <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 4" />
-        <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" />
-      </div>
+      <section class="play-guess" id="playGuess" aria-label="Guess entry">
+        <h1 class="prompt" id="promptLine">Enter your guess!</h1>
+        <div class="locked-banner" id="lockedBanner" aria-live="polite">
+          <span class="locked-label">Locked in</span>
+          <span class="locked-guess" id="lockedGuess"></span>
+        </div>
+        <div class="word-tiles" aria-label="Five-letter guess">
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 3" />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 4" />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" />
+        </div>
+        <div class="button-row button-row--guess">
+          <button id="submitButton" class="btn-primary" type="button">Submit guess</button>
+          <button id="clearButton" class="secondary" type="button">Clear</button>
+        </div>
+      </section>
 
       <div class="play-keyboard" id="playKeyboard" aria-label="On-screen keyboard">
         <div class="keyboard-row" data-row="top"></div>
@@ -577,18 +738,16 @@
         <div class="keyboard-row" data-row="bottom"></div>
       </div>
 
-      <div id="message" class="message" aria-live="polite"></div>
+      <section class="play-outcome" id="playOutcome" aria-label="Round outcome">
+        <div class="result-tiles" id="resultTiles" aria-label="Your guess result"></div>
+        <p class="outcome-empty" id="outcomeEmpty">You did not lock in a guess this round.</p>
+        <div class="result-feedback" id="resultFeedback" aria-live="polite">
+          <span class="result-feedback-label">Your result</span>
+          <span class="result-feedback-value" id="resultFeedbackValue"></span>
+        </div>
+      </section>
 
-      <div class="button-row button-row--lobby">
-        <button id="joinButton" class="good" type="button">Join lobby</button>
-        <button id="leaveButton" class="secondary" type="button">Leave lobby</button>
-      </div>
-
-      <div class="button-row">
-        <button id="submitButton" class="btn-primary" type="button">Submit guess</button>
-        <button id="clearButton" class="secondary" type="button">Clear</button>
-        <button id="renameButton" class="ghost" type="button">Save name</button>
-      </div>
+      <p id="message" class="message" aria-live="polite"></p>
     </main>
   </div>
 
@@ -597,9 +756,13 @@
       stage: document.getElementById('playStage'),
       phaseBadge: document.getElementById('phaseBadge'),
       phaseLine: document.getElementById('phaseLine'),
+      playerChip: document.getElementById('playerChip'),
       metaRound: document.getElementById('metaRound'),
       metaYours: document.getElementById('metaYours'),
       guessWorth: document.getElementById('guessWorth'),
+      lockedGuess: document.getElementById('lockedGuess'),
+      resultTiles: document.getElementById('resultTiles'),
+      outcomeEmpty: document.getElementById('outcomeEmpty'),
       resultFeedback: document.getElementById('resultFeedback'),
       resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
@@ -609,7 +772,6 @@
       leave: document.getElementById('leaveButton'),
       submit: document.getElementById('submitButton'),
       clear: document.getElementById('clearButton'),
-      rename: document.getElementById('renameButton'),
       inputs: [...document.querySelectorAll('.letter-input')],
       keyboard: document.getElementById('playKeyboard'),
       keyboardRows: {
@@ -620,6 +782,7 @@
     };
 
     let currentState = null;
+    let pollTimer = null;
     let keyboardWordKey = '';
     const keyboardLetterStates = new Map();
 
@@ -636,6 +799,7 @@
     const IS_DEMO = ['guessing', 'results', 'ended'].includes(DEMO_PHASE);
 
     function buildDemoState() {
+      const openedAt = new Date(Date.now() - 12_000).toISOString();
       const base = {
         sessionId: 1,
         roundNumber: 3,
@@ -643,12 +807,17 @@
         ballMultiplier: 2,
         publicFirstLetter: 'S',
         revealedWord: 'STARK',
+        guessWindowSeconds: 90,
+        resultsWindowSeconds: 45,
+        guessWindowOpenedAtIso: openedAt,
+        resultsWindowOpenedAtIso: openedAt,
+        timerPaused: false,
       };
       if (DEMO_PHASE === 'guessing') {
         return {
           ...base,
           phase: 'guessing',
-          viewer: { found: true, displayName: 'NightOwl', balls: 12, lockedIn: false },
+          viewer: { found: true, displayName: 'NightOwl', balls: 12, lockedIn: false, roundGuess: '' },
         };
       }
       if (DEMO_PHASE === 'results') {
@@ -750,12 +919,100 @@
       first.classList.add('is-revealed');
     }
 
+    function secondsRemaining(openedAtIso, windowSeconds) {
+      if (!openedAtIso || !windowSeconds) return null;
+      const end = new Date(openedAtIso).getTime() + Number(windowSeconds) * 1000;
+      return Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    }
+
+    function formatPhaseBadge(state) {
+      const phase = state.phase || 'idle';
+      const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
+      if (phase === 'idle') return copy.badge;
+
+      let remaining = null;
+      if (state.timerPaused && state.timerPausedRemainingSeconds != null) {
+        remaining = Number(state.timerPausedRemainingSeconds);
+      } else if (phase === 'guessing') {
+        remaining = secondsRemaining(state.guessWindowOpenedAtIso, state.guessWindowSeconds);
+      } else if (phase === 'results') {
+        remaining = secondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
+      }
+
+      if (remaining == null) return copy.badge;
+      const suffix = state.timerPaused ? 'paused' : `${remaining}s`;
+      return `${copy.badge} · ${suffix}`;
+    }
+
+    function renderPlayerChip(state) {
+      const phase = state.phase || 'idle';
+      const name = els.playerName.value.trim();
+      if (phase === 'idle' || !name) {
+        els.playerChip.classList.remove('is-visible');
+        els.playerChip.textContent = '';
+        return;
+      }
+      els.playerChip.innerHTML = `Playing as <strong>${name}</strong>`;
+      els.playerChip.classList.add('is-visible');
+    }
+
+    function renderLockedIn(state) {
+      const viewer = state.viewer;
+      const lockedIn = Boolean(viewer && viewer.lockedIn);
+      els.stage.dataset.locked = lockedIn ? 'true' : 'false';
+      if (!lockedIn) {
+        els.lockedGuess.textContent = '';
+        return;
+      }
+      const guess = String(viewer.roundGuess || '').toUpperCase();
+      els.lockedGuess.textContent = guess || '·····';
+    }
+
+    function renderResultTiles(state) {
+      const viewer = state.viewer;
+      const phase = state.phase || 'idle';
+      const inOutcome = phase === 'results' || phase === 'ended';
+
+      els.resultTiles.classList.remove('is-visible');
+      els.resultTiles.replaceChildren();
+      els.outcomeEmpty.classList.remove('is-visible');
+
+      if (!inOutcome || !viewer || !viewer.found) {
+        return;
+      }
+
+      const guess = String(viewer.roundGuess || '').toUpperCase();
+      if (guess.length !== 5) {
+        els.outcomeEmpty.classList.add('is-visible');
+        return;
+      }
+
+      const pattern = String(viewer.resultPattern || '').padEnd(5, '/').slice(0, 5);
+      guess.split('').forEach((letter, index) => {
+        const tile = document.createElement('div');
+        tile.className = 'result-tile';
+        tile.textContent = letter;
+        tile.dataset.mark = pattern[index] || '/';
+        els.resultTiles.appendChild(tile);
+      });
+      els.resultTiles.classList.add('is-visible');
+    }
+
     function updateLobbyButtons() {
       const phase = currentState && currentState.phase;
       const joined = Boolean(currentState && currentState.viewer && currentState.viewer.found);
       const canLobby = phase === 'idle';
       els.join.disabled = !canLobby || joined;
       els.leave.disabled = !canLobby || !joined;
+    }
+
+    function schedulePolling() {
+      if (pollTimer) window.clearInterval(pollTimer);
+      if (IS_DEMO) return;
+      const ms = currentState && currentState.phase === 'guessing' ? 2000 : 5000;
+      pollTimer = window.setInterval(() => {
+        fetchPublicState().catch(() => {});
+      }, ms);
     }
 
     function updateSubmitEnabled() {
@@ -1003,6 +1260,17 @@
         return;
       }
 
+      const guess = String(viewer.roundGuess || '').toUpperCase();
+      const showTiles = guess.length === 5 && Boolean(viewer.resultPattern);
+      const highlightOnly = viewer.resultLabel === 'Not a word…' || viewer.resultPattern === '!!!!!';
+
+      if (showTiles && !highlightOnly) {
+        els.resultFeedback.classList.remove('is-visible');
+        els.resultFeedbackValue.textContent = '';
+        els.resultFeedbackValue.className = 'result-feedback-value';
+        return;
+      }
+
       els.resultFeedback.classList.add('is-visible');
       els.resultFeedbackValue.textContent = viewer.resultLabel;
       els.resultFeedbackValue.className = 'result-feedback-value';
@@ -1021,25 +1289,32 @@
       const viewer = state.viewer;
 
       els.stage.dataset.phase = phase;
-      els.phaseBadge.textContent = copy.badge;
+      els.phaseBadge.textContent = formatPhaseBadge(state);
       els.phaseLine.textContent = phase === 'ended' && state.revealedWord
         ? `The word was ${state.revealedWord.toUpperCase()}.`
-        : phase === 'guessing'
-          ? `Round ${state.roundNumber || 0} is live.`
-          : copy.line;
+        : copy.line;
 
       els.metaRound.textContent = String(state.roundNumber || 0);
       els.metaYours.textContent = !els.playerName.value.trim()
         ? '—'
         : String(viewer && viewer.found ? viewer.balls : 0);
 
+      renderPlayerChip(state);
       renderGuessWorth(state);
       renderPrompt(phase, firstLetter);
+      renderLockedIn(state);
+      renderResultTiles(state);
       renderViewerFeedback(state);
       applyFirstLetter(phase === 'guessing' ? firstLetter : '');
       syncKeyboardFromState(state);
       updateLobbyButtons();
       updateSubmitEnabled();
+      schedulePolling();
+    }
+
+    function refreshTimerBadge() {
+      if (!currentState || currentState.phase === 'idle') return;
+      els.phaseBadge.textContent = formatPhaseBadge(currentState);
     }
 
     async function joinLobby() {
@@ -1200,19 +1475,15 @@
       clearInputs(true);
       setMessage('');
     });
-    els.rename.addEventListener('click', () => {
-      const displayName = els.playerName.value.trim();
-      if (!displayName) {
-        setMessage('Enter a display name to save it.', 'error');
-        return;
-      }
-      storeDisplayName(displayName);
-      setMessage('Display name saved on this device.', 'success');
-    });
-
     els.playerName.value = getStoredDisplayName();
     els.playerName.addEventListener('change', () => {
+      const displayName = els.playerName.value.trim();
+      if (displayName) storeDisplayName(displayName);
       fetchPublicState().catch(() => {});
+    });
+    els.playerName.addEventListener('blur', () => {
+      const displayName = els.playerName.value.trim();
+      if (displayName) storeDisplayName(displayName);
     });
     wireInputBehavior();
     buildKeyboard();
@@ -1220,11 +1491,10 @@
 
     if (IS_DEMO) {
       renderPublicState(buildDemoState());
+      window.setInterval(refreshTimerBadge, 1000);
     } else {
       fetchPublicState().catch((error) => setMessage(error.message || 'Could not load game state.', 'error'));
-      window.setInterval(() => {
-        fetchPublicState().catch(() => {});
-      }, 5000);
+      window.setInterval(refreshTimerBadge, 1000);
     }
   </script>
 </body>

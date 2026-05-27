@@ -356,7 +356,7 @@ async function buildViewerContext(displayName, state, client = pool) {
     balls: Number(player.balls || 0),
     lockedIn: phase === "guessing" && submitted,
     resultPattern: phase === "results" || phase === "ended" ? resultPattern : "",
-    roundGuess: (phase === "results" || phase === "ended") && submitted ? guess : "",
+    roundGuess: submitted ? guess : "",
     resultLabel,
     isSolved: Boolean(player.solvedCurrentWord),
   };
