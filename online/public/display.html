@@ -401,66 +401,36 @@
       }
     }
 
-    /* Idle: stack below logo — top padding ≈ logo footprint, no min-height overflow */
+    /* Idle welcome: badge + join/lobby deck */
+    .idle-deck {
+      display: contents;
+    }
+
     .stage[data-phase="idle"] .stage-ui {
       display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
       align-content: start;
       justify-items: center;
       height: 100%;
       min-height: 0;
       overflow: hidden;
-      padding: 22% 4.5% 1.25%;
-      gap: 0.65em;
+      padding: 20.5% 3.5% 1.5%;
+      gap: 0.55em;
     }
 
-    .stage[data-phase="idle"][data-lobby-size="full"] .stage-ui {
-      padding-top: 20%;
-      gap: 0.45em;
+    .stage[data-phase="idle"] .idle-deck {
+      display: grid;
+      width: 100%;
+      min-height: 0;
+      height: 100%;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 0.6em;
     }
 
-    .stage[data-phase="idle"][data-lobby-size="full"] .idle-info {
-      width: 88%;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="full"] .idle-callout {
-      padding: 0.65em 1em;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="full"] .idle-qr {
-      width: 4.5em;
-      height: 4.5em;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="full"] .idle-url {
-      font-size: 1.2em;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="crowded"] .stage-ui {
-      padding-top: 19%;
-      gap: 0.4em;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="crowded"] .idle-info {
-      width: 86%;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="crowded"] .idle-callout {
-      padding: 0.55em 0.85em;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="crowded"] .idle-qr {
-      width: 4em;
-      height: 4em;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="crowded"] .idle-url {
-      font-size: 1.05em;
-    }
-
-    .stage[data-phase="idle"][data-lobby-size="crowded"] .status-badge {
-      font-size: 1em;
-      padding: 0.55em 1.2em;
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-deck {
+      grid-template-columns: minmax(0, 28%) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0.75em;
     }
 
     .stage[data-phase="idle"] .subtitle {
@@ -469,6 +439,7 @@
 
     .stage[data-phase="idle"] .status-badge,
     .stage[data-phase="idle"] .subtitle,
+    .stage[data-phase="idle"] .idle-deck,
     .stage[data-phase="idle"] .idle-info,
     .stage[data-phase="idle"] .player-board {
       position: static;
@@ -478,17 +449,47 @@
     }
 
     .stage[data-phase="idle"] .status-badge {
-      font-size: 1.1em;
-    }
-
-    .stage[data-phase="idle"] .subtitle {
-      width: 92%;
-      font-size: 0.95em;
-      margin: 0;
+      font-size: 1.05em;
     }
 
     .stage[data-phase="idle"] .idle-info {
-      width: 90%;
+      width: 68%;
+      justify-self: center;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-info {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .stage[data-phase="idle"] .idle-callout {
+      height: 100%;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-callout {
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0.8em 0.6em;
+      gap: 0.7em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-qr {
+      width: 4.6em;
+      height: 4.6em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-url {
+      font-size: 0.78em;
+      line-height: 1.35;
+      word-break: break-all;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-host-note {
+      font-size: 0.72em;
+      margin: 0;
     }
 
     .stage[data-phase="idle"] .player-board {
@@ -500,16 +501,21 @@
 
     .stage[data-phase="idle"] .player-board-body {
       min-height: 0;
+      padding: 0.55em 0.65em 0.65em;
     }
 
     .stage[data-phase="idle"] .player-board-header {
-      font-size: 1em;
+      font-size: 0.92em;
       letter-spacing: 0.14em;
-      padding: 0.65em 0.85em;
+      padding: 0.55em 0.85em;
     }
 
     .stage[data-phase="idle"] .player-board-empty {
-      font-size: 1.15em;
+      font-size: 1em;
+    }
+
+    .stage:not([data-phase="idle"]) .idle-deck {
+      display: contents;
     }
 
     .stats-row {
@@ -655,13 +661,16 @@
     }
 
     .stage[data-phase="idle"] .player-card {
-      padding: calc(0.34em * var(--lobby-chip-scale, 1)) calc(0.4em * var(--lobby-chip-scale, 1));
-      border-radius: 0.3em;
+      padding: calc(0.28em * var(--lobby-chip-scale, 1)) calc(0.55em * var(--lobby-chip-scale, 1));
+      border-radius: 999px;
       text-align: center;
       min-height: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: rgba(0, 46, 98, 0.62);
+      border-color: rgba(110, 205, 255, 0.42);
+      box-shadow: 0 0 10px rgba(0, 120, 255, 0.14);
     }
 
     .stage[data-phase="idle"] .player-card[data-status="overflow"] {
@@ -672,11 +681,8 @@
     }
 
     .stage[data-phase="idle"] .player-card[data-status="waiting"] {
-      border-color: rgba(100, 210, 255, 0.55);
-      background: linear-gradient(180deg, rgba(0, 36, 78, 0.94) 0%, rgba(0, 14, 40, 0.97) 100%);
-      box-shadow:
-        0 0 16px rgba(60, 180, 255, 0.28),
-        inset 0 1px 0 rgba(140, 220, 255, 0.18);
+      border-color: rgba(120, 215, 255, 0.48);
+      background: rgba(0, 54, 112, 0.68);
     }
 
     .stage[data-phase="idle"] .player-status {
@@ -783,14 +789,21 @@
 
         <p class="subtitle" id="subtitle" hidden></p>
 
-        <div class="idle-info" id="idleInfo" aria-live="polite">
-          <div class="idle-callout">
-            <img class="idle-qr" id="playQr" width="400" height="400" alt="" />
-            <div class="idle-join-details">
-              <p class="idle-host-note" id="idleHostNote" hidden></p>
-              <p class="idle-url" id="playUrl"></p>
+        <div class="idle-deck" id="idleDeck">
+          <div class="idle-info" id="idleInfo" aria-live="polite">
+            <div class="idle-callout">
+              <img class="idle-qr" id="playQr" width="400" height="400" alt="" />
+              <div class="idle-join-details">
+                <p class="idle-host-note" id="idleHostNote" hidden></p>
+                <p class="idle-url" id="playUrl"></p>
+              </div>
             </div>
           </div>
+
+          <section class="player-board" aria-label="Player board">
+            <div class="player-board-header" id="playerBoardHeader">Player board</div>
+            <div class="player-board-body" id="playerBoardBody"></div>
+          </section>
         </div>
 
         <div class="word-clue" id="wordClue" hidden aria-live="polite">
@@ -826,10 +839,6 @@
           </div>
         </div>
 
-        <section class="player-board" aria-label="Player board">
-          <div class="player-board-header" id="playerBoardHeader">Player board</div>
-          <div class="player-board-body" id="playerBoardBody"></div>
-        </section>
       </div>
     </div>
   </div>
@@ -921,19 +930,19 @@
 
     function idleLobbyLayout(count) {
       const n = Math.max(0, Number(count || 0));
-      if (n <= 12) {
-        return { size: "", cols: 4, chipScale: 1, maxVisible: n };
+      if (n <= 8) {
+        return { size: "", cols: 3, chipScale: 1, maxVisible: n };
       }
-      if (n <= 24) {
-        return { size: "full", cols: 5, chipScale: 0.88, maxVisible: n };
+      if (n <= 20) {
+        return { size: "full", cols: 4, chipScale: 0.92, maxVisible: n };
       }
-      if (n <= 48) {
-        return { size: "full", cols: 6, chipScale: 0.76, maxVisible: n };
+      if (n <= 40) {
+        return { size: "full", cols: 5, chipScale: 0.82, maxVisible: n };
       }
       if (n <= LOBBY_MAX_VISIBLE) {
-        return { size: "crowded", cols: 8, chipScale: 0.64, maxVisible: n };
+        return { size: "crowded", cols: 6, chipScale: 0.72, maxVisible: n };
       }
-      return { size: "crowded", cols: 8, chipScale: 0.64, maxVisible: LOBBY_MAX_VISIBLE - 1 };
+      return { size: "crowded", cols: 7, chipScale: 0.66, maxVisible: LOBBY_MAX_VISIBLE - 1 };
     }
 
     function applyIdleLobbyLayout(count) {
@@ -1147,6 +1156,12 @@
       els.stage.dataset.phase = phase;
 
       const playerCount = Number(currentState.playerCount || 0);
+      if (phase === "idle" && playerCount > 0) {
+        els.stage.dataset.lobbyHasPlayers = "true";
+      } else {
+        delete els.stage.dataset.lobbyHasPlayers;
+      }
+
       if (phase !== "idle") {
         delete els.stage.dataset.lobbySize;
         els.stage.style.removeProperty("--lobby-cols");
