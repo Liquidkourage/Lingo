@@ -650,22 +650,16 @@
       display: none;
     }
 
-    /* Live round: compact head + large player board; timer pinned top-right */
+    /* Live round: compact HUD + modest player strip at bottom; timer pinned top-right */
     .stage[data-phase="guessing"] .stage-ui,
     .stage[data-phase="results"] .stage-ui,
     .stage[data-phase="ended"] .stage-ui {
-      display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto auto auto minmax(0, 1fr);
-      grid-template-areas:
-        "badge"
-        "subtitle"
-        "clue"
-        "stats"
-        "board";
-      align-content: stretch;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
       gap: 0.12em;
-      padding: 3% 2% 0.75%;
+      padding: 3% 2% 1.25%;
       overflow: hidden;
       font-size: clamp(12px, 2.05cqh, 28px);
     }
@@ -927,11 +921,14 @@
       grid-area: board;
       display: flex;
       flex-direction: column;
-      width: 100%;
+      align-self: center;
+      width: 92%;
       min-height: 0;
-      height: 100%;
+      height: auto;
+      max-height: var(--live-board-max, 8.5em);
+      margin-top: auto;
+      flex-shrink: 0;
       z-index: 5;
-      margin: 0;
       overflow: hidden;
       background: linear-gradient(180deg, rgba(0, 18, 48, 0.98) 0%, rgba(0, 4, 16, 0.99) 100%);
     }
@@ -945,7 +942,7 @@
       align-items: baseline;
       justify-content: center;
       gap: 0.35em;
-      padding: 0.28em 0.5em;
+      padding: 0.2em 0.45em;
       flex-shrink: 0;
     }
 
@@ -964,32 +961,28 @@
     .stage[data-phase="guessing"] .player-board-body,
     .stage[data-phase="results"] .player-board-body,
     .stage[data-phase="ended"] .player-board-body {
-      padding: 0.32em;
+      padding: 0.22em 0.28em 0.28em;
       min-height: 0;
-      flex: 1 1 auto;
+      flex: 0 1 auto;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
     }
 
     .stage[data-phase="guessing"] .player-grid,
     .stage[data-phase="results"] .player-grid,
     .stage[data-phase="ended"] .player-grid {
-      flex: 1 1 auto;
-      min-height: 0;
-      height: 100%;
+      height: auto;
       grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
-      grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
-      align-content: stretch;
-      gap: var(--live-gap, 0.4em);
+      grid-template-rows: repeat(var(--live-rows, 2), auto);
+      align-content: start;
+      gap: var(--live-gap, 0.32em);
     }
 
     .stage[data-phase="guessing"] .player-card,
     .stage[data-phase="results"] .player-card,
     .stage[data-phase="ended"] .player-card {
+      height: auto;
       min-height: 0;
-      height: 100%;
-      padding: 0.28em 0.32em;
+      padding: 0.18em 0.28em;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -2551,12 +2544,20 @@
       return computeLiveGridColumns(playerCount);
     }
 
+    function computeLiveBoardMax(rows, playerCount) {
+      const chipRow = playerCount <= 8 ? 2.15 : playerCount <= 12 ? 1.95 : playerCount <= 24 ? 1.75 : 1.55;
+      const header = 1.35;
+      const rowGap = playerCount <= 8 ? 0.32 : 0.28;
+      return header + rows * chipRow + Math.max(0, rows - 1) * rowGap + 0.5;
+    }
+
     function applyLiveBoardLayout(playerCount, phase) {
       if (phase !== "guessing" && phase !== "results" && phase !== "ended") {
         delete els.stage.dataset.liveDensity;
         els.stage.style.removeProperty("--live-cols");
         els.stage.style.removeProperty("--live-rows");
         els.stage.style.removeProperty("--live-gap");
+        els.stage.style.removeProperty("--live-board-max");
         return;
       }
 
@@ -2564,6 +2565,7 @@
       const rows = Math.max(1, Math.ceil(playerCount / cols));
       els.stage.style.setProperty("--live-cols", String(cols));
       els.stage.style.setProperty("--live-rows", String(rows));
+      els.stage.style.setProperty("--live-board-max", `${computeLiveBoardMax(rows, playerCount)}em`);
 
       if (playerCount < LIVE_DENSE_THRESHOLD) {
         delete els.stage.dataset.liveDensity;
@@ -3065,7 +3067,7 @@
         const cols = computeComfortableLiveColumns(players.length);
         const rows = Math.max(1, Math.ceil(players.length / cols));
         grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-        grid.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+        grid.style.gridTemplateRows = `repeat(${rows}, auto)`;
       }
       const fragment = document.createDocumentFragment();
       const newArrivals = phase === "idle" ? detectNewLobbyArrivals(players, phase) : new Set();
@@ -3189,6 +3191,7 @@
         els.stage.style.removeProperty("--live-cols");
         els.stage.style.removeProperty("--live-rows");
         els.stage.style.removeProperty("--live-gap");
+        els.stage.style.removeProperty("--live-board-max");
       }
 
       updateLobbyHeader(currentState);
