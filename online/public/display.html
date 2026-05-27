@@ -3231,6 +3231,7 @@
     let lobbyPageIndex = 0;
     let lobbyRotateTimer = null;
     let lobbyRotateSignature = "";
+    let lastPlayerBoardSignature = "";
     let knownLobbyPlayerIds = null;
     let apiConnected = false;
 
@@ -3700,6 +3701,7 @@
         }
 
         lobbyPageIndex = (lobbyPageIndex + 1) % pageCount;
+        lastPlayerBoardSignature = "";
         renderPlayerBoard(currentState);
         updateLobbyHeader(currentState);
       }, LOBBY_ROTATE_MS);
@@ -3993,6 +3995,46 @@
       els.wordClueValue.textContent = "";
     }
 
+    function buildPlayerBoardSignature(state) {
+      const phase = state.phase || "idle";
+      const players = Array.isArray(state.players) ? state.players : [];
+
+      if (phase === "idle") {
+        const sortedPlayers = prepareLobbyPlayers(players);
+        const pageInfo = getLobbyPageInfo(sortedPlayers);
+        return JSON.stringify({
+          phase,
+          pageIndex: pageInfo.pageIndex,
+          players: pageInfo.slice.map((player) => ({
+            key: playerLobbyKey(player),
+            balls: player.balls,
+            isChampion: Boolean(player.isChampion),
+          })),
+        });
+      }
+
+      return JSON.stringify({
+        phase,
+        playerCount: players.length,
+        players: players.map((player) => ({
+          id: player.id,
+          displayName: player.displayName,
+          balls: player.balls,
+          status: player.status,
+          statusText: player.statusText,
+          cardTone: player.cardTone,
+          hasSubmitted: Boolean(player.hasSubmitted),
+          resultPattern: player.resultPattern || "",
+          roundGuess: player.roundGuess || "",
+          guessIsLegal: player.guessIsLegal !== false,
+          isWinner: Boolean(player.isWinner),
+          isFirstSolver: Boolean(player.isFirstSolver),
+          isChampion: Boolean(player.isChampion),
+          solvedCurrentWord: Boolean(player.solvedCurrentWord),
+        })),
+      });
+    }
+
     function renderRevealLetterBoxes(guess, pattern) {
       const row = document.createElement("div");
       row.className = "pattern-row reveal-letter-row";
@@ -4011,7 +4053,13 @@
       return row;
     }
 
-    function renderPlayerBoard(state) {
+    function renderPlayerBoard(state, options = {}) {
+      const signature = buildPlayerBoardSignature(state);
+      if (!options.force && signature === lastPlayerBoardSignature) {
+        return;
+      }
+      lastPlayerBoardSignature = signature;
+
       const phase = state.phase || "idle";
       const players = Array.isArray(state.players) ? state.players : [];
       els.playerBoardBody.innerHTML = "";
@@ -4212,6 +4260,7 @@
       if (lastPhase && lastPhase !== phase) {
         els.stage.classList.add("is-phase-flash");
         window.setTimeout(() => els.stage.classList.remove("is-phase-flash"), 700);
+        lastPlayerBoardSignature = "";
       }
       lastPhase = phase;
 
