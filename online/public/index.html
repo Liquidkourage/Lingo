@@ -3,208 +3,414 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LINGO by Liquid Kourage</title>
+  <title>LINGO — Play</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #05070a;
-      --panel: #0d6efd;
-      --panel-dark: #0849a6;
-      --panel-light: #3a8cff;
-      --text: #ffffff;
-      --muted: #d9e7ff;
-      --border: rgba(255,255,255,0.18);
-      --shadow: rgba(0,0,0,0.45);
-      --good: #d8ffea;
-      --bad: #ffe0e0;
+      --show-gold: #ffcc00;
+      --show-gold-hot: #ffe566;
+      --show-cyan: #00d4ff;
+      --show-green: #00ff55;
+      --show-red: #ff2244;
+      --show-orange: #ff8800;
+      --show-magenta: #bb44ff;
+      --show-white: #ffffff;
+      --show-black: #000008;
+      --show-panel: #020818;
+      --contrast-stroke: 3px;
     }
 
     * { box-sizing: border-box; }
 
-    body {
+    html, body {
       margin: 0;
+      min-height: 100%;
+      color: var(--show-white);
+      font-family: Montserrat, Arial, sans-serif;
+      background: var(--show-black);
+    }
+
+    body {
       min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 24px;
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-      background-color: var(--bg);
-      background-image: radial-gradient(circle at top, rgba(58,140,255,0.14), transparent 35%);
+      padding: 20px 16px 28px;
     }
 
-    .shell {
-      width: min(92vw, 860px);
+    .play-stage {
       position: relative;
+      width: min(100%, 480px);
     }
 
-    .shell::before {
+    .play-stage::before {
       content: "";
       position: absolute;
-      inset: -12px;
-      border-radius: 42px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03));
-      box-shadow: 0 0 28px rgba(0,0,0,0.5);
+      inset: -40px -24px;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0, 130, 255, 0.28) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255, 204, 0, 0.1) 0%, transparent 70%);
       z-index: 0;
     }
 
-    .card {
+    .play-card {
       position: relative;
       z-index: 1;
-      width: 100%;
-      border-radius: 32px;
-      padding: 26px 22px 22px;
-      background: linear-gradient(180deg, var(--panel-light), var(--panel));
-      border: 1px solid var(--border);
-      box-shadow: 0 18px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.18);
+      border: var(--contrast-stroke) solid var(--show-gold);
+      border-radius: 0.35em;
+      background: var(--show-panel);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 36px rgba(255, 204, 0, 0.28),
+        0 0 48px rgba(0, 212, 255, 0.12);
+      padding: 1.25rem 1.1rem 1.1rem;
       overflow: hidden;
     }
 
-    .card::after {
+    .play-logo {
+      display: block;
+      width: min(72%, 280px);
+      height: auto;
+      margin: 0 auto 0.65rem;
+    }
+
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45em;
+      width: 100%;
+      margin-bottom: 0.55rem;
+      padding: 0.45em 0.75em;
+      border: var(--contrast-stroke) solid var(--show-gold);
+      border-radius: 999px;
+      background: var(--show-black);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 14px rgba(255, 204, 0, 0.55);
+    }
+
+    .phase-badge::before {
       content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(180deg, rgba(255,255,255,0.10), transparent 30%);
+      width: 0.55em;
+      height: 0.55em;
+      border-radius: 999px;
+      background: var(--show-gold);
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
     }
 
-    h1, h2, p {
-      margin: 0;
+    .play-stage[data-phase="guessing"] .phase-badge {
+      border-color: var(--show-green);
+      color: var(--show-green);
+      text-shadow: 0 0 14px rgba(0, 255, 85, 0.55);
+    }
+
+    .play-stage[data-phase="guessing"] .phase-badge::before {
+      background: var(--show-green);
+      box-shadow: 0 0 10px rgba(0, 255, 85, 0.85);
+      animation: live-dot 1.2s ease-in-out infinite;
+    }
+
+    .play-stage[data-phase="results"] .phase-badge {
+      border-color: var(--show-orange);
+      color: var(--show-orange);
+      text-shadow: 0 0 14px rgba(255, 136, 0, 0.55);
+    }
+
+    .play-stage[data-phase="results"] .phase-badge::before {
+      background: var(--show-orange);
+      box-shadow: 0 0 10px rgba(255, 136, 0, 0.85);
+    }
+
+    .play-stage[data-phase="ended"] .phase-badge {
+      border-color: var(--show-cyan);
+      color: var(--show-cyan);
+      text-shadow: 0 0 14px rgba(0, 212, 255, 0.55);
+    }
+
+    .play-stage[data-phase="ended"] .phase-badge::before {
+      background: var(--show-cyan);
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.85);
+    }
+
+    @keyframes live-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(0.85); }
+    }
+
+    .phase-line {
+      margin: 0 0 0.75rem;
       text-align: center;
-      position: relative;
-      z-index: 1;
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.35;
+      color: rgba(220, 235, 255, 0.88);
     }
 
-    h2 {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
+    .meta-rail {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      margin-bottom: 1rem;
+      border: var(--contrast-stroke) solid var(--show-gold);
+      border-radius: 0.2em;
+      background: var(--show-black);
+      overflow: hidden;
+    }
+
+    .meta-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.12em;
+      padding: 0.45em 0.25em;
+      text-align: center;
+    }
+
+    .meta-slot + .meta-slot {
+      border-left: 2px solid rgba(255, 204, 0, 0.35);
+    }
+
+    .meta-label {
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--show-white);
+    }
+
+    .meta-value {
+      font-size: 1.55rem;
+      font-weight: 900;
       line-height: 1;
-      margin-bottom: 8px;
-      text-shadow: 3px 3px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000;
-      letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
     }
 
-    .status-line,
-    .meta-line {
-      font-size: clamp(1rem, 2vw, 1.1rem);
-      margin-bottom: 8px;
-      color: var(--muted);
-      min-height: 1.4em;
+    .meta-value.round {
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 20px rgba(255, 204, 0, 0.85);
+    }
+
+    .meta-value.balls {
+      color: var(--show-cyan);
+      text-shadow: 0 0 20px rgba(0, 212, 255, 0.85);
+    }
+
+    .meta-value.mult {
+      color: var(--show-green);
+      text-shadow: 0 0 20px rgba(0, 255, 85, 0.65);
     }
 
     .prompt {
-      font-size: clamp(1.05rem, 2.1vw, 1.4rem);
+      margin: 0 0 0.85rem;
+      text-align: center;
+      font-size: clamp(0.95rem, 3.5vw, 1.15rem);
+      font-weight: 800;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      text-shadow: 1px 1px 0 #000;
-      margin-bottom: 18px;
+      color: var(--show-white);
+      text-shadow: 0 0 12px rgba(0, 212, 255, 0.35);
     }
 
-    .name-row,
-    .button-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      position: relative;
-      z-index: 1;
+    .prompt .hint-letter {
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 16px rgba(255, 204, 0, 0.75);
     }
 
-    .name-row { margin-bottom: 14px; }
+    .field-label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.78);
+      text-align: center;
+    }
 
-    input[type="text"] {
-      border: 2px solid rgba(0,0,0,0.55);
-      border-radius: 14px;
-      background: rgba(9, 55, 129, 0.65);
-      color: var(--text);
-      font-size: 1rem;
-      font-weight: 700;
-      outline: none;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 12px rgba(0,0,0,0.22);
+    .name-row {
+      margin-bottom: 1rem;
     }
 
     #playerName {
-      width: min(100%, 360px);
-      padding: 12px 14px;
+      display: block;
+      width: 100%;
+      padding: 0.7rem 0.85rem;
+      border: var(--contrast-stroke) solid var(--show-cyan);
+      border-radius: 0.2em;
+      background: var(--show-black);
+      color: var(--show-white);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      box-shadow: 0 0 18px rgba(0, 212, 255, 0.25);
     }
 
-    .response-container {
+    #playerName:focus {
+      border-color: var(--show-gold);
+      box-shadow: 0 0 22px rgba(255, 204, 0, 0.35);
+    }
+
+    #playerName::placeholder {
+      color: rgba(180, 200, 230, 0.45);
+      font-weight: 600;
+    }
+
+    .word-tiles {
       display: flex;
       justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin: 8px auto 18px;
-      position: relative;
-      z-index: 1;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
     }
 
     .letter-input {
-      width: clamp(54px, 11vw, 86px);
-      height: clamp(54px, 11vw, 86px);
-      font-size: clamp(1.8rem, 5vw, 3rem);
-      font-weight: 700;
+      width: clamp(52px, 14vw, 68px);
+      height: clamp(52px, 14vw, 68px);
+      padding: 0;
+      border: var(--contrast-stroke) solid var(--show-cyan);
+      border-radius: 0.15em;
+      background: var(--show-black);
+      color: var(--show-white);
+      font-family: inherit;
+      font-size: clamp(1.6rem, 6vw, 2.2rem);
+      font-weight: 900;
       text-transform: uppercase;
       text-align: center;
+      outline: none;
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+    }
+
+    .letter-input:focus {
+      border-color: var(--show-gold);
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.45);
+    }
+
+    .letter-input.is-revealed {
+      border-color: var(--show-gold);
+      color: var(--show-gold-hot);
+      background: #1a1000;
+      text-shadow: 0 0 18px rgba(255, 204, 0, 0.85);
+      cursor: default;
+    }
+
+    .letter-input:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
     }
 
     .message {
-      min-height: 1.2em;
+      min-height: 1.35em;
+      margin-bottom: 0.75rem;
       text-align: center;
+      font-size: 0.82rem;
       font-weight: 700;
-      margin-bottom: 8px;
-      position: relative;
-      z-index: 1;
+      letter-spacing: 0.02em;
     }
 
-    .message.success { color: var(--good); }
-    .message.error { color: var(--bad); }
+    .message.success { color: var(--show-green); text-shadow: 0 0 12px rgba(0, 255, 85, 0.45); }
+    .message.error { color: var(--show-red); text-shadow: 0 0 12px rgba(255, 34, 68, 0.45); }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+    }
+
+    .button-row .btn-primary {
+      grid-column: 1 / -1;
+    }
 
     button {
       appearance: none;
-      border: none;
-      border-radius: 999px;
-      padding: 12px 20px;
-      font-size: 1rem;
-      font-weight: 700;
+      border: var(--contrast-stroke) solid transparent;
+      border-radius: 0.2em;
+      padding: 0.75rem 1rem;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       cursor: pointer;
-      color: white;
-      background: linear-gradient(180deg, #0850bb, var(--panel-dark));
-      box-shadow: 0 6px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.16);
+      color: var(--show-black);
+      background: var(--show-gold);
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.35);
     }
 
-    button.secondary { background: linear-gradient(180deg, #4c78b8, #32598f); }
-    button.ghost { background: linear-gradient(180deg, #5c6f8a, #40536f); }
-    button:disabled { cursor: not-allowed; opacity: 0.75; }
-
-    .pill {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.25);
-      font-weight: 700;
-      margin: 2px 4px;
+    button:hover:not(:disabled) {
+      filter: brightness(1.08);
     }
 
-    @media (max-width: 560px) {
-      .card { padding: 22px 14px 18px; }
-      .response-container { gap: 8px; }
-      .button-row { gap: 8px; }
-      button { width: 100%; }
-      #playerName { width: 100%; }
+    button.secondary {
+      color: var(--show-white);
+      background: var(--show-black);
+      border-color: var(--show-cyan);
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.25);
+    }
+
+    button.ghost {
+      color: rgba(220, 235, 255, 0.85);
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.28);
+      border-style: dashed;
+      box-shadow: none;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      filter: grayscale(0.35);
+    }
+
+    .play-stage:not([data-phase="guessing"]) .word-tiles {
+      opacity: 0.55;
+    }
+
+    @media (max-width: 420px) {
+      .play-card { padding: 1rem 0.85rem 0.9rem; }
+      .word-tiles { gap: 0.35rem; }
+      .button-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <div class="card">
-      <h2>LINGO</h2>
-      <p id="phaseLine" class="status-line">Waiting for the host to start the online game...</p>
-      <p id="metaLine" class="meta-line"></p>
+  <div class="play-stage" id="playStage" data-phase="idle">
+    <main class="play-card">
+      <img class="play-logo" src="/assets/lingo-logo-extracted.svg" width="280" height="80" alt="Lingo" />
+
+      <div class="phase-badge" id="phaseBadge">Stand by</div>
+      <p class="phase-line" id="phaseLine">Waiting for the host to start the online game…</p>
+
+      <div class="meta-rail" aria-label="Game stats">
+        <div class="meta-slot">
+          <span class="meta-label">Round</span>
+          <span class="meta-value round" id="metaRound">0</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Balls</span>
+          <span class="meta-value balls" id="metaBalls">0</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Mult</span>
+          <span class="meta-value mult" id="metaMult">1x</span>
+        </div>
+      </div>
+
       <h1 class="prompt" id="promptLine">Enter your guess!</h1>
 
+      <label class="field-label" for="playerName">Your display name</label>
       <div class="name-row">
         <input id="playerName" type="text" maxlength="40" autocomplete="username" placeholder="Exact Twitch / display name" />
       </div>
 
-      <div class="response-container">
+      <div class="word-tiles" aria-label="Five-letter guess">
         <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" />
         <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" />
         <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 3" />
@@ -215,17 +421,21 @@
       <div id="message" class="message" aria-live="polite"></div>
 
       <div class="button-row">
-        <button id="submitButton" type="button">Submit Guess</button>
+        <button id="submitButton" class="btn-primary" type="button">Submit guess</button>
         <button id="clearButton" class="secondary" type="button">Clear</button>
-        <button id="renameButton" class="ghost" type="button">Save Name</button>
+        <button id="renameButton" class="ghost" type="button">Save name</button>
       </div>
-    </div>
+    </main>
   </div>
 
   <script>
     const els = {
+      stage: document.getElementById('playStage'),
+      phaseBadge: document.getElementById('phaseBadge'),
       phaseLine: document.getElementById('phaseLine'),
-      metaLine: document.getElementById('metaLine'),
+      metaRound: document.getElementById('metaRound'),
+      metaBalls: document.getElementById('metaBalls'),
+      metaMult: document.getElementById('metaMult'),
       promptLine: document.getElementById('promptLine'),
       playerName: document.getElementById('playerName'),
       message: document.getElementById('message'),
@@ -237,9 +447,40 @@
 
     let currentState = null;
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const DEMO_PHASE = (urlParams.get('phase') || '').toLowerCase();
+    const IS_DEMO = ['guessing', 'results', 'ended'].includes(DEMO_PHASE);
+
+    function buildDemoState() {
+      const base = {
+        roundNumber: 3,
+        ballsRemaining: 47,
+        ballMultiplier: 2,
+        publicFirstLetter: 'S',
+        revealedWord: 'STARK',
+      };
+      if (DEMO_PHASE === 'guessing') {
+        return { ...base, phase: 'guessing' };
+      }
+      if (DEMO_PHASE === 'results') {
+        return { ...base, phase: 'results', publicFirstLetter: '' };
+      }
+      if (DEMO_PHASE === 'ended') {
+        return { ...base, phase: 'ended', publicFirstLetter: '' };
+      }
+      return { phase: 'idle', roundNumber: 0, ballsRemaining: 0, ballMultiplier: 1 };
+    }
+
+    const PHASE_COPY = {
+      idle: { badge: 'Sign up open', line: 'Waiting for the host to start the online game…' },
+      guessing: { badge: 'Guessing open', line: 'Round is live — lock in your five-letter word.' },
+      results: { badge: 'Results', line: 'Results are on the venue display. Do not guess now.' },
+      ended: { badge: 'Round ended', line: 'The word has been revealed. Next round soon.' },
+    };
+
     function setMessage(text, type = '') {
       els.message.textContent = text || '';
-      els.message.className = 'message' + (type ? ' ' + type : '');
+      els.message.className = 'message' + (type ? ` ${type}` : '');
     }
 
     function storeDisplayName(name) {
@@ -258,53 +499,92 @@
       return els.inputs.map((input) => input.value.trim().toUpperCase()).join('');
     }
 
+    function firstEditableIndex() {
+      return els.inputs.findIndex((input) => !input.classList.contains('is-revealed'));
+    }
+
     function clearInputs(focusFirst = true) {
-      els.inputs.forEach((input) => { input.value = ''; });
-      if (focusFirst) els.inputs[0].focus();
+      els.inputs.forEach((input, index) => {
+        if (input.classList.contains('is-revealed')) return;
+        input.value = '';
+      });
+      if (focusFirst) {
+        const target = els.inputs[firstEditableIndex()] || els.inputs[els.inputs.length - 1];
+        target.focus();
+      }
     }
 
     function populateInputs(text) {
       const chars = (text || '').replace(/[^a-z]/gi, '').toUpperCase().slice(0, 5).split('');
       els.inputs.forEach((input, index) => {
+        if (input.classList.contains('is-revealed')) return;
         input.value = chars[index] || '';
       });
-      const nextEmpty = els.inputs.find((input) => !input.value);
+      const nextEmpty = els.inputs.find((input) => !input.classList.contains('is-revealed') && !input.value);
       (nextEmpty || els.inputs[els.inputs.length - 1]).focus();
+    }
+
+    function applyFirstLetter(letter) {
+      const first = els.inputs[0];
+      if (!letter || letter === '.') {
+        first.value = '';
+        first.readOnly = false;
+        first.classList.remove('is-revealed');
+        return;
+      }
+      first.value = letter.toUpperCase();
+      first.readOnly = true;
+      first.classList.add('is-revealed');
     }
 
     function updateSubmitEnabled() {
       const canGuess = currentState && currentState.phase === 'guessing';
       els.submit.disabled = !canGuess;
-      els.inputs.forEach((input) => { input.disabled = !canGuess; });
+      els.inputs.forEach((input, index) => {
+        if (index === 0 && input.classList.contains('is-revealed')) {
+          input.disabled = true;
+          return;
+        }
+        input.disabled = !canGuess;
+      });
+    }
+
+    function renderPrompt(phase, firstLetter) {
+      if (phase === 'guessing' && firstLetter && firstLetter !== '.') {
+        els.promptLine.innerHTML = `Guess the word — starts with <span class="hint-letter">${firstLetter.toUpperCase()}</span>`;
+        return;
+      }
+      if (phase === 'results') {
+        els.promptLine.textContent = 'Hold tight for the next guess window.';
+        return;
+      }
+      if (phase === 'ended') {
+        els.promptLine.textContent = 'Waiting for the next round.';
+        return;
+      }
+      els.promptLine.textContent = 'Enter your guess!';
     }
 
     function renderPublicState(state) {
       currentState = state;
-      const firstLetter = state.publicFirstLetter ? state.publicFirstLetter.charAt(0) : '?';
       const phase = state.phase || 'idle';
-      const balls = Number.isFinite(state.ballsRemaining) ? state.ballsRemaining : 0;
-      const multiplier = `${state.ballMultiplier || 1}x`;
+      const firstLetter = state.publicFirstLetter ? state.publicFirstLetter.charAt(0) : '';
+      const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
 
-      if (phase === 'guessing') {
-        els.phaseLine.textContent = `Round ${state.roundNumber || 0} is live.`;
-        els.promptLine.textContent = `Guess the 5-letter word (${firstLetter}....)`;
-      } else if (phase === 'results') {
-        els.phaseLine.textContent = `Round ${state.roundNumber || 0} results are on screen.`;
-        els.promptLine.textContent = 'Hold tight for the next guess window.';
-      } else if (phase === 'ended' && state.revealedWord) {
-        els.phaseLine.textContent = `The word was ${state.revealedWord}.`;
-        els.promptLine.textContent = 'Waiting for the next round.';
-      } else {
-        els.phaseLine.textContent = 'Waiting for the host to start the online game...';
-        els.promptLine.textContent = 'Enter your guess!';
-      }
+      els.stage.dataset.phase = phase;
+      els.phaseBadge.textContent = copy.badge;
+      els.phaseLine.textContent = phase === 'ended' && state.revealedWord
+        ? `The word was ${state.revealedWord.toUpperCase()}.`
+        : phase === 'guessing'
+          ? `Round ${state.roundNumber || 0} is live.`
+          : copy.line;
 
-      els.metaLine.innerHTML = `
-        <span class="pill">Balls: ${balls}</span>
-        <span class="pill">Multiplier: ${multiplier}</span>
-        <span class="pill">Phase: ${phase}</span>
-      `;
+      els.metaRound.textContent = String(state.roundNumber || 0);
+      els.metaBalls.textContent = String(Number.isFinite(state.ballsRemaining) ? state.ballsRemaining : 0);
+      els.metaMult.textContent = `${state.ballMultiplier || 1}x`;
 
+      renderPrompt(phase, firstLetter);
+      applyFirstLetter(phase === 'guessing' ? firstLetter : '');
       updateSubmitEnabled();
     }
 
@@ -332,7 +612,7 @@
       }
 
       els.submit.disabled = true;
-      els.submit.textContent = 'Sending...';
+      els.submit.textContent = 'Sending…';
 
       try {
         const response = await fetch('/api/public/submit-guess', {
@@ -345,13 +625,13 @@
           throw new Error(payload.error || 'Could not submit guess.');
         }
         storeDisplayName(displayName);
-        setMessage(`Guess sent: ${payload.player.currentGuess}`, 'success');
+        setMessage(`Locked in: ${payload.player.currentGuess}`, 'success');
         clearInputs(true);
         renderPublicState(payload.publicState);
       } catch (error) {
         setMessage(error.message || 'Error processing submission.', 'error');
       } finally {
-        els.submit.textContent = 'Submit Guess';
+        els.submit.textContent = 'Submit guess';
         updateSubmitEnabled();
       }
     }
@@ -359,17 +639,29 @@
     function wireInputBehavior() {
       els.inputs.forEach((input, index) => {
         input.addEventListener('input', (event) => {
+          if (input.classList.contains('is-revealed')) return;
           const raw = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
           event.target.value = raw.slice(0, 1);
           if (event.target.value && index < els.inputs.length - 1) {
-            els.inputs[index + 1].focus();
+            let next = index + 1;
+            while (next < els.inputs.length && els.inputs[next].classList.contains('is-revealed')) {
+              next += 1;
+            }
+            if (next < els.inputs.length) els.inputs[next].focus();
           }
         });
 
         input.addEventListener('keydown', (event) => {
+          if (input.classList.contains('is-revealed')) return;
           if (event.key === 'Backspace' && !input.value && index > 0) {
-            els.inputs[index - 1].focus();
-            els.inputs[index - 1].value = '';
+            let prev = index - 1;
+            while (prev > 0 && els.inputs[prev].classList.contains('is-revealed')) {
+              prev -= 1;
+            }
+            els.inputs[prev].focus();
+            if (!els.inputs[prev].classList.contains('is-revealed')) {
+              els.inputs[prev].value = '';
+            }
             event.preventDefault();
           }
           if (event.key === 'Enter') {
@@ -403,11 +695,16 @@
 
     els.playerName.value = getStoredDisplayName();
     wireInputBehavior();
-    clearInputs(true);
-    fetchPublicState().catch((error) => setMessage(error.message || 'Could not load game state.', 'error'));
-    window.setInterval(() => {
-      fetchPublicState().catch(() => {});
-    }, 5000);
+    clearInputs(false);
+
+    if (IS_DEMO) {
+      renderPublicState(buildDemoState());
+    } else {
+      fetchPublicState().catch((error) => setMessage(error.message || 'Could not load game state.', 'error'));
+      window.setInterval(() => {
+        fetchPublicState().catch(() => {});
+      }, 5000);
+    }
   </script>
 </body>
 </html>
