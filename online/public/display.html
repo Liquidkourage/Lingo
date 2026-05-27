@@ -2794,29 +2794,71 @@
 
     .pattern-row {
       display: flex;
-      gap: 0.18em;
-      margin-top: 0.35em;
+      gap: 0.22em;
+      margin-top: 0.4em;
+      width: 100%;
+      max-width: 12em;
+      justify-content: center;
+    }
+
+    .pattern-row.reveal-letter-row {
+      flex-shrink: 0;
     }
 
     .pattern-cell {
       flex: 1 1 0;
+      min-width: 1.5em;
+      min-height: 1.5em;
       aspect-ratio: 1;
-      border-radius: 0.1em;
-      border: 1px solid rgba(0, 0, 0, 0.65);
-      background: #223344;
+      border-radius: 0.14em;
+      border: 2px solid rgba(0, 0, 0, 0.7);
+      background: #1a2838;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pattern-letter {
+      font-size: clamp(0.62em, 2.8cqw, 0.88em);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      color: var(--show-white);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
     }
 
     .pattern-cell[data-mark="!"] {
       background: var(--show-green);
-      box-shadow: 0 0 12px rgba(0, 255, 85, 0.9);
+      border-color: rgba(0, 120, 50, 0.9);
+      box-shadow: 0 0 14px rgba(0, 255, 85, 0.85);
     }
+
     .pattern-cell[data-mark="?"] {
       background: var(--show-gold);
-      box-shadow: 0 0 12px rgba(255, 204, 0, 0.9);
+      border-color: rgba(140, 90, 0, 0.85);
+      box-shadow: 0 0 14px rgba(255, 204, 0, 0.85);
     }
+
     .pattern-cell[data-mark="/"] {
-      background: #445566;
-      box-shadow: inset 0 0 0 1px rgba(255, 34, 68, 0.45);
+      background: #3a2030;
+      border-color: rgba(255, 34, 68, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(255, 34, 68, 0.35);
+    }
+
+    .pattern-cell[data-mark="/"] .pattern-letter {
+      color: rgba(255, 220, 220, 0.95);
+    }
+
+    .stage[data-live-density="lg"] .pattern-cell,
+    .stage[data-live-density="xl"] .pattern-cell {
+      min-width: 1.2em;
+      min-height: 1.2em;
+    }
+
+    .stage[data-phase="results"] .player-card[data-card-tone="invalid"] .pattern-cell,
+    .stage[data-phase="ended"] .player-card[data-card-tone="invalid"] .pattern-cell {
+      background: #3a1828;
+      border-color: rgba(255, 34, 68, 0.65);
     }
 
     /* Live phases: neutralize legacy absolute mockup coordinates */
@@ -3184,7 +3226,9 @@
 
     function buildDemoLivePlayers(count, phase) {
       const patterns = ["!/?//", "/!???", "!!?//", "!!!!!", "/!///", "?!!//", "!!///", "/?!!/"];
+      const demoGuesses = ["CRANE", "PLANT", "STONE", "ZZZZZ", "FLAME", "BRICK", "GLOBE", "TRACK", "WORLD", "SMILE"];
       return buildDemoPlayers(count).map((player, index) => {
+        const roundGuess = demoGuesses[index % demoGuesses.length];
         const base = {
           ...player,
           cardTone: "default",
@@ -3232,6 +3276,7 @@
               cardTone: "invalid",
               hasSubmitted: true,
               resultPattern: "",
+              roundGuess,
               guessIsLegal: false,
             };
           }
@@ -3244,6 +3289,7 @@
               cardTone: "solved",
               hasSubmitted: true,
               resultPattern: "!!!!!",
+              roundGuess,
               isWinner: true,
               isFirstSolver: true,
               solvedCurrentWord: true,
@@ -3260,6 +3306,7 @@
             cardTone: solved ? "solved" : "default",
             hasSubmitted: true,
             resultPattern: pattern,
+            roundGuess,
             isWinner: solved,
             isFirstSolver: false,
             solvedCurrentWord: solved,
@@ -3872,14 +3919,19 @@
       els.wordClueValue.textContent = "";
     }
 
-    function renderPatternRow(pattern) {
+    function renderRevealLetterBoxes(guess, pattern) {
       const row = document.createElement("div");
-      row.className = "pattern-row";
+      row.className = "pattern-row reveal-letter-row";
+      const letters = String(guess || "").toUpperCase().padEnd(5, " ").slice(0, 5).split("");
       const marks = (pattern || "").padEnd(5, "/").slice(0, 5).split("");
-      marks.forEach((mark) => {
+      letters.forEach((letter, index) => {
         const cell = document.createElement("div");
         cell.className = "pattern-cell";
-        cell.dataset.mark = mark;
+        cell.dataset.mark = marks[index] || "/";
+        const letterEl = document.createElement("span");
+        letterEl.className = "pattern-letter";
+        letterEl.textContent = letter.trim() || "·";
+        cell.appendChild(letterEl);
         row.appendChild(cell);
       });
       return row;
@@ -3991,8 +4043,13 @@
           card.appendChild(renderPendingRow());
         }
 
-        if ((phase === "results" || phase === "ended") && player.resultPattern) {
-          card.appendChild(renderPatternRow(player.resultPattern));
+        if ((phase === "results" || phase === "ended") && player.hasSubmitted) {
+          const revealPattern = player.resultPattern
+            || (player.guessIsLegal === false ? "/////" : "");
+          const revealGuess = player.roundGuess || "";
+          if (revealGuess || revealPattern) {
+            card.appendChild(renderRevealLetterBoxes(revealGuess, revealPattern));
+          }
         }
 
         fragment.appendChild(card);
