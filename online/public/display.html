@@ -579,6 +579,224 @@
         0 4px 0 rgba(80, 40, 0, 0.4);
     }
 
+    .word-tiles {
+      position: absolute;
+      left: 50%;
+      top: 38.5%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.42em;
+    }
+
+    .word-tiles[hidden] {
+      display: none !important;
+    }
+
+    .word-tile {
+      width: 2.05em;
+      height: 2.05em;
+      display: grid;
+      place-items: center;
+      border-radius: 0.22em;
+      border: 2px solid rgba(90, 200, 255, 0.72);
+      background: linear-gradient(180deg, rgba(0, 28, 68, 0.96) 0%, rgba(0, 8, 28, 0.99) 100%);
+      box-shadow:
+        0 0 18px rgba(0, 130, 255, 0.35),
+        inset 0 0 14px rgba(0, 60, 140, 0.35),
+        inset 0 1px 0 rgba(140, 220, 255, 0.18);
+      font-size: 1.35em;
+      font-weight: 900;
+      line-height: 1;
+      color: #ffffff;
+      text-shadow: 0 0 16px rgba(100, 190, 255, 0.75);
+    }
+
+    .word-tile.is-letter {
+      color: var(--show-gold-hot);
+      text-shadow:
+        0 0 20px rgba(255, 210, 60, 0.85),
+        0 0 36px rgba(255, 160, 30, 0.45);
+    }
+
+    .word-tile.is-hidden {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: rgba(190, 220, 255, 0.55);
+      text-shadow: none;
+    }
+
+    .word-tiles:not([hidden]) .word-tile {
+      animation: tile-enter 0.55s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+      animation-delay: calc(var(--tile-index, 0) * 70ms);
+    }
+
+    @keyframes tile-enter {
+      from { opacity: 0; transform: scale(0.55) translateY(0.35em); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .subtitle .word-hint-letter {
+      color: var(--show-gold-hot);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 14px rgba(255, 200, 60, 0.65);
+    }
+
+    .stage[data-phase="guessing"] .status-badge svg.status-icon-live {
+      display: none;
+    }
+
+    .stage[data-phase="guessing"] .status-badge .status-icon-dot {
+      display: block;
+      width: 0.65em;
+      height: 0.65em;
+      border-radius: 999px;
+      background: #6cff98;
+      box-shadow: 0 0 12px rgba(80, 255, 140, 0.85);
+      flex-shrink: 0;
+    }
+
+    .status-badge .status-icon-dot {
+      display: none;
+    }
+
+    .stage[data-phase="guessing"] .player-board-header,
+    .stage[data-phase="results"] .player-board-header,
+    .stage[data-phase="ended"] .player-board-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.12em;
+    }
+
+    .board-header-kicker {
+      font-size: 0.92em;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+    }
+
+    .board-header-summary {
+      font-size: 0.52em;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: none;
+      color: rgba(200, 225, 255, 0.82);
+      text-shadow: none;
+    }
+
+    .board-header-summary[hidden] {
+      display: none !important;
+    }
+
+    .stage[data-phase="guessing"] .player-grid,
+    .stage[data-phase="results"] .player-grid,
+    .stage[data-phase="ended"] .player-grid {
+      grid-template-columns: repeat(var(--live-cols, auto-fill), minmax(0, 1fr));
+      gap: var(--live-gap, 0.55em);
+      align-content: start;
+    }
+
+    .stage[data-phase="guessing"]:not([data-live-density]) .player-grid {
+      grid-template-columns: repeat(auto-fill, minmax(10.5em, 1fr));
+    }
+
+    .stage[data-live-density="md"] .player-grid,
+    .stage[data-live-density="lg"] .player-grid,
+    .stage[data-live-density="xl"] .player-grid {
+      gap: var(--live-gap, 0.38em);
+    }
+
+    .stage[data-live-density="lg"] .player-card {
+      padding: 0.42em 0.48em;
+    }
+
+    .stage[data-live-density="xl"] .player-card {
+      padding: 0.32em 0.38em;
+    }
+
+    .stage[data-live-density="lg"] .player-name,
+    .stage[data-live-density="xl"] .player-name {
+      font-size: 0.78em;
+    }
+
+    .stage[data-live-density="lg"] .player-status,
+    .stage[data-live-density="xl"] .player-status {
+      font-size: 0.58em;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="locked"] {
+      border: 2px solid rgba(255, 210, 60, 0.95);
+      background: linear-gradient(180deg, rgba(72, 52, 8, 0.96) 0%, rgba(36, 24, 4, 0.98) 100%);
+      box-shadow:
+        0 0 22px rgba(255, 190, 40, 0.45),
+        0 0 40px rgba(255, 150, 20, 0.18),
+        inset 0 1px 0 rgba(255, 230, 140, 0.22);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="locked"] .player-name {
+      color: #fff4c8;
+      text-shadow: 0 0 10px rgba(255, 210, 60, 0.45);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="locked"] .player-status {
+      color: rgba(255, 220, 130, 0.92);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="waiting"] {
+      opacity: 0.78;
+      border-color: rgba(100, 140, 180, 0.35);
+      background: linear-gradient(180deg, rgba(0, 18, 42, 0.88) 0%, rgba(0, 8, 22, 0.94) 100%);
+    }
+
+    .pending-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.16em;
+      margin-top: 0.32em;
+    }
+
+    .pending-dot {
+      width: 0.42em;
+      height: 0.42em;
+      border-radius: 999px;
+      border: 1.5px solid rgba(255, 210, 80, 0.75);
+      background: rgba(255, 200, 60, 0.18);
+      box-shadow: 0 0 6px rgba(255, 190, 50, 0.35);
+    }
+
+    .stage[data-live-density="lg"] .pending-dot,
+    .stage[data-live-density="xl"] .pending-dot {
+      width: 0.34em;
+      height: 0.34em;
+    }
+
+    .stage[data-phase="guessing"] .subtitle {
+      top: 32.2%;
+    }
+
+    .stage[data-phase="guessing"] .word-tiles {
+      top: 41%;
+      z-index: 21;
+    }
+
+    .stage[data-phase="guessing"] .word-tile {
+      width: 2.2em;
+      height: 2.2em;
+      font-size: 1.45em;
+    }
+
+    .stage[data-phase="guessing"] .stats-row {
+      top: 48.5%;
+      height: 12%;
+    }
+
+    .stage[data-phase="guessing"] .player-board {
+      top: 73%;
+      height: 38%;
+    }
+
     .stage[data-phase="idle"] .timer-panel,
     .stage[data-phase="idle"] .stats-row {
       display: none;
@@ -1284,6 +1502,10 @@
       font-size: 1em;
     }
 
+    .stage:not([data-phase="idle"]) .idle-info {
+      display: none !important;
+    }
+
     .stage:not([data-phase="idle"]) .idle-deck {
       display: contents;
     }
@@ -1657,6 +1879,8 @@
       .status-badge,
       .ui-topline,
       .timer-panel,
+      .word-tiles,
+      .word-tile,
       .stage[data-phase="idle"] .player-board,
       .stage[data-phase="idle"] .player-card,
       .stage[data-phase="idle"] .player-card.is-new-arrival {
@@ -1716,14 +1940,17 @@
         </aside>
 
         <div class="status-badge" id="statusBadge">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg class="status-icon-live" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
             <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
+          <span class="status-icon-dot" aria-hidden="true"></span>
           <span id="statusText">Sign up — game starts soon</span>
         </div>
 
         <p class="subtitle" id="subtitle" hidden></p>
+
+        <div class="word-tiles" id="wordTiles" hidden aria-label="Word progress"></div>
 
         <div class="idle-deck" id="idleDeck">
           <div class="idle-info" id="idleInfo" aria-live="polite">
@@ -1751,7 +1978,10 @@
                   <span class="lobby-pager-label" id="lobbyPagerLabel"></span>
                 </div>
               </div>
-              <span class="board-header-game" id="playerBoardGameTitle" hidden>Player board</span>
+              <span class="board-header-game" id="playerBoardGameTitle" hidden>
+                <span class="board-header-kicker">Players</span>
+                <span class="board-header-summary" id="playerBoardSummary" hidden></span>
+              </span>
             </div>
             <div class="player-board-body" id="playerBoardBody"></div>
           </section>
@@ -1811,6 +2041,7 @@
       playerBoardHeader: document.getElementById("playerBoardHeader"),
       lobbyHeaderIdle: document.getElementById("lobbyHeaderIdle"),
       playerBoardGameTitle: document.getElementById("playerBoardGameTitle"),
+      playerBoardSummary: document.getElementById("playerBoardSummary"),
       playerBoardRange: document.getElementById("playerBoardRange"),
       lobbyEncourage: document.getElementById("lobbyEncourage"),
       lobbyPager: document.getElementById("lobbyPager"),
@@ -1821,6 +2052,7 @@
       kioskHint: document.getElementById("kioskHint"),
       viewport: document.querySelector(".viewport"),
       wordClue: document.getElementById("wordClue"),
+      wordTiles: document.getElementById("wordTiles"),
       wordClueLabel: document.getElementById("wordClueLabel"),
       wordClueValue: document.getElementById("wordClueValue"),
       statRound: document.getElementById("statRound"),
@@ -1844,11 +2076,15 @@
     const LOBBY_PAGE_ROWS = 5;
     const LOBBY_PAGE_SIZE = LOBBY_PAGE_COLS * LOBBY_PAGE_ROWS;
     const LOBBY_ROTATE_MS = 4000;
+    const LIVE_DENSE_THRESHOLD = 12;
 
-    const DEMO_PLAYER_COUNT = Math.max(0, parseInt(new URLSearchParams(window.location.search).get("demo") || "0", 10) || 0);
-    const LOBBY_SORT = (new URLSearchParams(window.location.search).get("lobbySort") || "newest").toLowerCase();
-    const KIOSK_MODE = ["1", "true", "yes"].includes((new URLSearchParams(window.location.search).get("kiosk") || "").toLowerCase())
-      || ["1", "true", "yes"].includes((new URLSearchParams(window.location.search).get("fs") || "").toLowerCase());
+    const urlParams = new URLSearchParams(window.location.search);
+    const DEMO_PLAYER_COUNT = Math.max(0, parseInt(urlParams.get("demo") || "0", 10) || 0);
+    const DEMO_PHASE = (urlParams.get("phase") || "idle").toLowerCase();
+    const IS_DEMO = DEMO_PLAYER_COUNT > 0 || ["guessing", "results", "ended"].includes(DEMO_PHASE);
+    const LOBBY_SORT = (urlParams.get("lobbySort") || "newest").toLowerCase();
+    const KIOSK_MODE = ["1", "true", "yes"].includes((urlParams.get("kiosk") || "").toLowerCase())
+      || ["1", "true", "yes"].includes((urlParams.get("fs") || "").toLowerCase());
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
       "BlueJay", "CryptoKat", "NeonWave", "TurboTurtle", "Glitch",
@@ -1867,6 +2103,78 @@
         status: "waiting",
         statusText: "In lobby",
       }));
+    }
+
+    function buildDemoLivePlayers(count, phase) {
+      const patterns = ["!/?//", "/!???", "!!?//", "!!!!!", "/!///", "?!!//", "!!///", "/?!!/"];
+      return buildDemoPlayers(count).map((player, index) => {
+        if (phase === "guessing") {
+          const locked = index % 3 !== 1;
+          return {
+            ...player,
+            status: locked ? "locked" : "waiting",
+            statusText: locked ? "Locked in" : "Waiting for guess",
+            hasSubmitted: locked,
+          };
+        }
+
+        if (phase === "results" || phase === "ended") {
+          if (index % 5 === 4) {
+            return {
+              ...player,
+              status: "waiting",
+              statusText: "No guess this round",
+              hasSubmitted: false,
+              resultPattern: "",
+            };
+          }
+          const pattern = patterns[index % patterns.length];
+          const solved = pattern === "!!!!!";
+          return {
+            ...player,
+            status: solved ? "solved" : "resolved",
+            statusText: solved ? "Solved it" : "Round result",
+            hasSubmitted: true,
+            resultPattern: pattern,
+            isWinner: solved,
+          };
+        }
+
+        return player;
+      });
+    }
+
+    function buildDemoState() {
+      const count = DEMO_PLAYER_COUNT || 8;
+      const phase = DEMO_PHASE === "idle" ? "idle" : DEMO_PHASE;
+      const base = {
+        phase,
+        roundNumber: phase === "idle" ? 0 : 3,
+        ballsRemaining: phase === "idle" ? 0 : 4,
+        ballMultiplier: 1,
+        playerCount: count,
+        submittedThisRound: phase === "guessing"
+          ? buildDemoLivePlayers(count, "guessing").filter((player) => player.hasSubmitted).length
+          : phase === "idle"
+            ? 0
+            : count - 1,
+        hostNote: "",
+        publicFirstLetter: phase === "idle" ? "" : "L....",
+        guessWindowSeconds: 90,
+        resultsWindowSeconds: 30,
+        guessWindowOpenedAtIso: phase === "guessing"
+          ? new Date(Date.now() - 18000).toISOString()
+          : null,
+        resultsWindowOpenedAtIso: phase === "results"
+          ? new Date(Date.now() - 1000).toISOString()
+          : null,
+        revealedWord: phase === "ended" ? "LINGO" : "",
+        answerRevealed: phase === "ended",
+        players: phase === "idle"
+          ? buildDemoPlayers(count)
+          : buildDemoLivePlayers(count, phase),
+      };
+      return base;
     }
 
     function playerLobbyKey(player) {
@@ -1903,6 +2211,8 @@
     }
 
     function applyDemoState(state) {
+      if (!IS_DEMO) return state;
+      if (DEMO_PHASE !== "idle") return buildDemoState();
       if (!DEMO_PLAYER_COUNT) return state;
       return {
         ...state,
@@ -1910,6 +2220,40 @@
         playerCount: DEMO_PLAYER_COUNT,
         players: buildDemoPlayers(DEMO_PLAYER_COUNT),
       };
+    }
+
+    function computeLiveGridColumns(playerCount) {
+      if (playerCount <= LIVE_DENSE_THRESHOLD) return Math.min(5, Math.max(1, playerCount));
+      return Math.max(1, Math.ceil(Math.sqrt(playerCount * 0.8)));
+    }
+
+    function applyLiveBoardLayout(playerCount, phase) {
+      if (phase !== "guessing" && phase !== "results" && phase !== "ended") {
+        delete els.stage.dataset.liveDensity;
+        els.stage.style.removeProperty("--live-cols");
+        els.stage.style.removeProperty("--live-gap");
+        return;
+      }
+
+      if (playerCount < LIVE_DENSE_THRESHOLD) {
+        delete els.stage.dataset.liveDensity;
+        els.stage.style.removeProperty("--live-cols");
+        els.stage.style.removeProperty("--live-gap");
+        return;
+      }
+
+      const cols = computeLiveGridColumns(playerCount);
+      els.stage.style.setProperty("--live-cols", String(cols));
+      if (playerCount >= 50) {
+        els.stage.dataset.liveDensity = "xl";
+        els.stage.style.setProperty("--live-gap", "0.28em");
+      } else if (playerCount >= 24) {
+        els.stage.dataset.liveDensity = "lg";
+        els.stage.style.setProperty("--live-gap", "0.34em");
+      } else {
+        els.stage.dataset.liveDensity = "md";
+        els.stage.style.setProperty("--live-gap", "0.38em");
+      }
     }
 
     function secondsRemaining(openedAtIso, windowSeconds) {
@@ -2124,6 +2468,9 @@
 
     function updateLobbyHeader(state) {
       const phase = state.phase || "idle";
+      const players = Array.isArray(state.players) ? state.players : [];
+      const submitted = Math.max(Number(state.submittedThisRound || 0), players.filter((player) => player.hasSubmitted).length);
+
       if (phase !== "idle") {
         els.lobbyHeaderIdle.hidden = true;
         els.playerBoardGameTitle.hidden = false;
@@ -2134,16 +2481,31 @@
         els.lobbyPagerLabel.textContent = "";
         els.playerBoardRange.hidden = true;
         els.playerBoardRange.textContent = "";
+
+        if (phase === "guessing") {
+          els.playerBoardSummary.hidden = false;
+          els.playerBoardSummary.textContent = players.length
+            ? `${submitted} of ${players.length} locked in`
+            : "";
+        } else if (phase === "results" || phase === "ended") {
+          els.playerBoardSummary.hidden = false;
+          els.playerBoardSummary.textContent = players.length
+            ? `${submitted} of ${players.length} submitted this round`
+            : "";
+        } else {
+          els.playerBoardSummary.hidden = true;
+          els.playerBoardSummary.textContent = "";
+        }
         return;
       }
 
       els.lobbyHeaderIdle.hidden = false;
       els.playerBoardGameTitle.hidden = true;
+      els.playerBoardSummary.hidden = true;
+      els.playerBoardSummary.textContent = "";
 
-      const players = phase === "idle"
-        ? prepareLobbyPlayers(Array.isArray(state.players) ? state.players : [])
-        : (Array.isArray(state.players) ? state.players : []);
-      const pageInfo = getLobbyPageInfo(players);
+      const sortedPlayers = prepareLobbyPlayers(players);
+      const pageInfo = getLobbyPageInfo(sortedPlayers);
       const parts = lobbyHeaderParts(pageInfo.pageCount > 1 ? pageInfo : null);
       if (parts.range) {
         els.playerBoardRange.hidden = false;
@@ -2155,8 +2517,8 @@
 
       updateLobbyPager(pageInfo);
 
-      const encourage = players.length <= 3 && pageInfo.pageCount === 1
-        ? lobbyEncouragement(players.length)
+      const encourage = sortedPlayers.length <= 3 && pageInfo.pageCount === 1
+        ? lobbyEncouragement(sortedPlayers.length)
         : "";
       if (encourage) {
         els.lobbyEncourage.hidden = false;
@@ -2179,10 +2541,8 @@
       switch (phase) {
         case "guessing":
           return {
-            badge: "Round live",
-            subtitle: state.roundNumber > 0
-              ? `Word #${state.roundNumber} · submit your guess on the player page`
-              : "Submit your guess on the player page.",
+            badge: "Guessing open",
+            subtitle: "",
             timerLabel: "Time left",
           };
         case "results":
@@ -2204,6 +2564,74 @@
             timerLabel: "Next round starts in",
           };
       }
+    }
+
+    function renderSubtitle(state) {
+      const phase = state.phase || "idle";
+      if (phase === "idle") {
+        els.subtitle.hidden = true;
+        els.subtitle.textContent = "";
+        return;
+      }
+
+      els.subtitle.hidden = false;
+
+      if (phase === "guessing") {
+        const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
+        const roundLine = Number(state.roundNumber || 0) > 0
+          ? `Round ${state.roundNumber} is live · `
+          : "";
+        if (letter && letter !== ".") {
+          els.subtitle.innerHTML = `${roundLine}Guess the 5-letter word: <span class="word-hint-letter">${letter}····</span>`;
+          return;
+        }
+        els.subtitle.textContent = `${roundLine}Submit your guess on the player page.`;
+        return;
+      }
+
+      const copy = phaseCopy(phase, state);
+      els.subtitle.textContent = copy.subtitle;
+    }
+
+    function renderWordTiles(state) {
+      const phase = state.phase || "idle";
+
+      if (phase === "guessing" || phase === "results") {
+        const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
+        if (letter && letter !== ".") {
+          els.wordTiles.hidden = false;
+          els.wordTiles.replaceChildren();
+          for (let index = 0; index < 5; index += 1) {
+            const tile = document.createElement("div");
+            tile.className = "word-tile";
+            tile.style.setProperty("--tile-index", String(index));
+            if (index === 0) {
+              tile.classList.add("is-letter");
+              tile.textContent = letter;
+            } else {
+              tile.classList.add("is-hidden");
+              tile.textContent = "·";
+            }
+            els.wordTiles.appendChild(tile);
+          }
+          return;
+        }
+      }
+
+      els.wordTiles.hidden = true;
+      els.wordTiles.replaceChildren();
+    }
+
+    function renderPendingRow() {
+      const row = document.createElement("div");
+      row.className = "pending-row";
+      row.setAttribute("aria-hidden", "true");
+      for (let index = 0; index < 5; index += 1) {
+        const dot = document.createElement("span");
+        dot.className = "pending-dot";
+        row.appendChild(dot);
+      }
+      return row;
     }
 
     function renderIdleInfo(state = {}) {
@@ -2233,14 +2661,11 @@
       }
 
       if (phase === "guessing" || phase === "results") {
-        const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
-        if (letter && letter !== ".") {
-          els.wordClue.hidden = false;
-          els.wordClue.dataset.mode = "letter";
-          els.wordClueLabel.textContent = "First letter";
-          els.wordClueValue.textContent = letter;
-          return;
-        }
+        els.wordClue.hidden = true;
+        delete els.wordClue.dataset.mode;
+        els.wordClueLabel.textContent = "";
+        els.wordClueValue.textContent = "";
+        return;
       }
 
       els.wordClue.hidden = true;
@@ -2290,7 +2715,7 @@
         visiblePlayers = pageInfo.slice;
         applyIdleLobbyLayout(visiblePlayers.length, sortedPlayers.length);
       } else {
-        els.stage.style.setProperty("--lobby-rows", String(Math.max(1, Math.ceil(players.length / 5))));
+        applyLiveBoardLayout(players.length, phase);
       }
 
       const grid = document.createElement("div");
@@ -2335,6 +2760,10 @@
           status.textContent = player.statusText || "";
         }
         card.appendChild(status);
+
+        if (phase === "guessing" && player.status === "locked") {
+          card.appendChild(renderPendingRow());
+        }
 
         if ((phase === "results" || phase === "ended") && player.resultPattern) {
           card.appendChild(renderPatternRow(player.resultPattern));
@@ -2387,6 +2816,10 @@
       currentState = applyDemoState(state);
       const phase = currentState.phase || "idle";
 
+      if (IS_DEMO || apiConnected) {
+        setStandby(false);
+      }
+
       if (lastPhase && lastPhase !== phase) {
         els.stage.classList.add("is-phase-flash");
         window.setTimeout(() => els.stage.classList.remove("is-phase-flash"), 700);
@@ -2411,6 +2844,10 @@
         delete els.stage.dataset.lobbyRotating;
         els.stage.style.removeProperty("--lobby-cols");
         els.stage.style.removeProperty("--lobby-rows");
+      } else {
+        delete els.stage.dataset.liveDensity;
+        els.stage.style.removeProperty("--live-cols");
+        els.stage.style.removeProperty("--live-gap");
       }
 
       updateLobbyHeader(currentState);
@@ -2423,9 +2860,10 @@
 
       if (phase === "idle") {
         renderIdleInfo(currentState);
+        els.subtitle.hidden = true;
+        els.subtitle.textContent = "";
       } else {
-        els.subtitle.hidden = false;
-        els.subtitle.textContent = copy.subtitle;
+        renderSubtitle(currentState);
       }
 
       els.statRound.textContent = String(currentState.roundNumber || 0);
@@ -2436,6 +2874,7 @@
 
       renderTopLine(currentState);
       renderTimer(currentState);
+      renderWordTiles(currentState);
       renderWordClue(currentState);
       renderPlayerBoard(currentState);
       syncLobbyRotation(currentState);
@@ -2483,7 +2922,7 @@
     }
 
     async function fetchPublicState() {
-      if (DEMO_PLAYER_COUNT > 0) return;
+      if (IS_DEMO) return;
 
       const response = await fetch("/api/public-state");
       const payload = await response.json();
@@ -2509,12 +2948,9 @@
         players: [],
       };
 
-      if (DEMO_PLAYER_COUNT > 0) {
-        renderState({
-          ...emptyIdleState,
-          playerCount: DEMO_PLAYER_COUNT,
-          players: buildDemoPlayers(DEMO_PLAYER_COUNT),
-        });
+      if (IS_DEMO) {
+        renderState(buildDemoState());
+        initKioskMode();
         return;
       }
 
