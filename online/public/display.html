@@ -3232,6 +3232,8 @@
     let lobbyRotateTimer = null;
     let lobbyRotateSignature = "";
     let lastPlayerBoardSignature = "";
+    let lastWordTilesSignature = "";
+    let lastWordClueSignature = "";
     let knownLobbyPlayerIds = null;
     let apiConnected = false;
 
@@ -3895,8 +3897,11 @@
       const phase = state.phase || "idle";
 
       if (phase !== "guessing") {
-        els.wordTiles.hidden = true;
-        els.wordTiles.replaceChildren();
+        if (lastWordTilesSignature !== "hidden") {
+          lastWordTilesSignature = "hidden";
+          els.wordTiles.hidden = true;
+          els.wordTiles.replaceChildren();
+        }
         return;
       }
 
@@ -3904,11 +3909,18 @@
       const roundNum = Number(state.roundNumber || 0);
       const balls = Number(state.ballsRemaining || 0);
       if (letter && letter !== ".") {
+        const tilesSignature = `${phase}:${roundNum}:${letter}`;
         els.wordTiles.hidden = false;
         els.wordTiles.setAttribute(
           "aria-label",
           `Round ${roundNum || "?"}, ${balls} ball${balls === 1 ? "" : "s"} remaining, five-letter word starting with ${letter}`,
         );
+
+        if (tilesSignature === lastWordTilesSignature && els.wordTiles.childElementCount === 5) {
+          return;
+        }
+
+        lastWordTilesSignature = tilesSignature;
         els.wordTiles.replaceChildren();
         for (let index = 0; index < 5; index += 1) {
           const tile = document.createElement("div");
@@ -3926,8 +3938,11 @@
         return;
       }
 
-      els.wordTiles.hidden = true;
-      els.wordTiles.replaceChildren();
+      if (lastWordTilesSignature !== "empty") {
+        lastWordTilesSignature = "empty";
+        els.wordTiles.hidden = true;
+        els.wordTiles.replaceChildren();
+      }
     }
 
     function renderPendingRow() {
@@ -3974,6 +3989,11 @@
       const phase = state.phase || "idle";
 
       if (phase === "ended" && state.revealedWord) {
+        const clueSignature = `ended:${state.revealedWord.toUpperCase()}`;
+        if (clueSignature === lastWordClueSignature) {
+          return;
+        }
+        lastWordClueSignature = clueSignature;
         els.wordClue.hidden = false;
         els.wordClue.dataset.mode = "word";
         els.wordClueLabel.textContent = "The word was";
@@ -3982,17 +4002,23 @@
       }
 
       if (phase === "guessing" || phase === "results") {
+        if (lastWordClueSignature !== "live-hidden") {
+          lastWordClueSignature = "live-hidden";
+          els.wordClue.hidden = true;
+          delete els.wordClue.dataset.mode;
+          els.wordClueLabel.textContent = "";
+          els.wordClueValue.textContent = "";
+        }
+        return;
+      }
+
+      if (lastWordClueSignature !== "hidden") {
+        lastWordClueSignature = "hidden";
         els.wordClue.hidden = true;
         delete els.wordClue.dataset.mode;
         els.wordClueLabel.textContent = "";
         els.wordClueValue.textContent = "";
-        return;
       }
-
-      els.wordClue.hidden = true;
-      delete els.wordClue.dataset.mode;
-      els.wordClueLabel.textContent = "";
-      els.wordClueValue.textContent = "";
     }
 
     function buildPlayerBoardSignature(state) {
@@ -4261,6 +4287,8 @@
         els.stage.classList.add("is-phase-flash");
         window.setTimeout(() => els.stage.classList.remove("is-phase-flash"), 700);
         lastPlayerBoardSignature = "";
+        lastWordTilesSignature = "";
+        lastWordClueSignature = "";
       }
       lastPhase = phase;
 
