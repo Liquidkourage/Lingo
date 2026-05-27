@@ -349,24 +349,28 @@
         0 0 48px rgba(80, 200, 255, 0.35);
     }
 
-    .idle-callout-text {
+    .idle-join-details {
       position: relative;
       z-index: 1;
       flex: 1 1 auto;
       min-width: 0;
     }
 
-    .idle-kicker {
-      margin: 0 0 0.25em;
-      font-size: 0.88em;
-      font-weight: 700;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
+    .idle-host-note {
+      margin: 0 0 0.35em;
+      font-size: 0.82em;
+      font-weight: 600;
+      line-height: 1.35;
       color: rgba(235, 245, 255, 0.92);
-      text-shadow: 0 0 12px rgba(120, 200, 255, 0.4);
+    }
+
+    .idle-host-note[hidden] {
+      display: none !important;
     }
 
     .idle-url {
+      position: relative;
+      z-index: 1;
       margin: 0;
       font-size: 1.45em;
       font-weight: 900;
@@ -400,14 +404,14 @@
     /* Idle: stack below logo — top padding ≈ logo footprint, no min-height overflow */
     .stage[data-phase="idle"] .stage-ui {
       display: grid;
-      grid-template-rows: auto auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
       align-content: start;
       justify-items: center;
       height: 100%;
       min-height: 0;
       overflow: hidden;
       padding: 22% 4.5% 1.25%;
-      gap: 0.55em;
+      gap: 0.65em;
     }
 
     .stage[data-phase="idle"][data-lobby-size="full"] .stage-ui {
@@ -430,6 +434,10 @@
 
     .stage[data-phase="idle"][data-lobby-size="full"] .idle-url {
       font-size: 1.2em;
+    }
+
+    .stage[data-phase="idle"] .subtitle {
+      display: none !important;
     }
 
     .stage[data-phase="idle"] .status-badge,
@@ -728,15 +736,13 @@
           <span id="statusText">Sign up — game starts soon</span>
         </div>
 
-        <p class="subtitle" id="subtitle">
-          Scan the code or visit the link below to join.
-        </p>
+        <p class="subtitle" id="subtitle" hidden></p>
 
         <div class="idle-info" id="idleInfo" aria-live="polite">
           <div class="idle-callout">
-            <img class="idle-qr" id="playQr" width="400" height="400" alt="QR code — scan to open the player page" />
-            <div class="idle-callout-text">
-              <p class="idle-kicker">Scan or visit</p>
+            <img class="idle-qr" id="playQr" width="400" height="400" alt="" />
+            <div class="idle-join-details">
+              <p class="idle-host-note" id="idleHostNote" hidden></p>
               <p class="idle-url" id="playUrl"></p>
             </div>
           </div>
@@ -793,6 +799,7 @@
       subtitle: document.getElementById("subtitle"),
       playUrl: document.getElementById("playUrl"),
       playQr: document.getElementById("playQr"),
+      idleHostNote: document.getElementById("idleHostNote"),
       playerBoardHeader: document.getElementById("playerBoardHeader"),
       wordClue: document.getElementById("wordClue"),
       wordClueLabel: document.getElementById("wordClueLabel"),
@@ -888,8 +895,7 @@
         default:
           return {
             badge: "Sign up — game starts soon",
-            subtitle: state.hostNote?.trim()
-              || "Scan the code or visit the link below to join.",
+            subtitle: state.hostNote?.trim() || "",
             timerLabel: "Next round starts in",
           };
       }
@@ -898,6 +904,16 @@
     function renderIdleInfo(state) {
       els.playUrl.textContent = playSiteUrlDisplay();
       els.playQr.src = `${playSiteUrl()}/api/play-qr`;
+      els.playQr.alt = `QR code for ${playSiteUrlDisplay()}`;
+
+      const hostNote = state.hostNote?.trim();
+      if (hostNote) {
+        els.idleHostNote.hidden = false;
+        els.idleHostNote.textContent = hostNote;
+      } else {
+        els.idleHostNote.hidden = true;
+        els.idleHostNote.textContent = "";
+      }
     }
 
     function renderWordClue(state) {
@@ -1034,10 +1050,12 @@
 
       const copy = phaseCopy(phase, currentState);
       els.statusText.textContent = copy.badge;
-      els.subtitle.textContent = copy.subtitle;
 
       if (phase === "idle") {
         renderIdleInfo(currentState);
+      } else {
+        els.subtitle.hidden = false;
+        els.subtitle.textContent = copy.subtitle;
       }
 
       els.statRound.textContent = String(currentState.roundNumber || 0);
