@@ -4321,6 +4321,12 @@
         return;
       }
 
+      if (phase === "ended" && state.answerRevealed) {
+        els.subtitle.hidden = true;
+        els.subtitle.textContent = "";
+        return;
+      }
+
       const copy = phaseCopy(phase, state);
       if (!copy.subtitle) {
         els.subtitle.hidden = true;
@@ -4492,20 +4498,7 @@
     function renderWordClue(state) {
       const phase = state.phase || "idle";
 
-      if (phase === "ended" && state.revealedWord) {
-        const clueSignature = `ended:${state.revealedWord.toUpperCase()}`;
-        if (clueSignature === lastWordClueSignature) {
-          return;
-        }
-        lastWordClueSignature = clueSignature;
-        els.wordClue.hidden = false;
-        els.wordClue.dataset.mode = "word";
-        els.wordClueLabel.textContent = "The word was";
-        els.wordClueValue.textContent = state.revealedWord.toUpperCase();
-        return;
-      }
-
-      if (phase === "guessing" || phase === "results") {
+      if (phase === "guessing" || phase === "results" || phase === "ended") {
         if (lastWordClueSignature !== "live-hidden") {
           lastWordClueSignature = "live-hidden";
           els.wordClue.hidden = true;
