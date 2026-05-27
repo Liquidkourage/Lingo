@@ -11,11 +11,19 @@
     * { box-sizing: border-box; }
 
     :root {
-      --show-gold: #ffd040;
-      --show-gold-hot: #ffe880;
-      --show-cyan: #48d4ff;
-      --show-cyan-dim: rgba(72, 212, 255, 0.55);
-      --show-navy: rgba(0, 12, 36, 0.96);
+      --show-gold: #ffcc00;
+      --show-gold-hot: #ffe566;
+      --show-cyan: #00d4ff;
+      --show-cyan-dim: rgba(0, 212, 255, 0.72);
+      --show-green: #00ff55;
+      --show-red: #ff2244;
+      --show-orange: #ff8800;
+      --show-magenta: #bb44ff;
+      --show-white: #ffffff;
+      --show-black: #000008;
+      --show-panel: #020818;
+      --show-navy: #010818;
+      --contrast-stroke: 3px;
       /* Live UI starts just under visible logo foot (PNG has bottom transparency) */
       --live-logo-reserve: 11.5%;
       --live-chrome-top: 0.8%;
@@ -42,7 +50,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #010408;
+      background: #000008;
       font-family: Montserrat, Arial, sans-serif;
     }
 
@@ -51,7 +59,7 @@
       inset: 0;
       display: grid;
       place-items: center;
-      background: #010408;
+      background: #000008;
     }
 
     .stage {
@@ -59,7 +67,7 @@
       width: min(100vw, 100vh * (1024 / 575));
       height: min(100vh, 100vw * (575 / 1024));
       container-type: size;
-      color: #e8f4ff;
+      color: #ffffff;
     }
 
     .stage-bg-wrap {
@@ -80,17 +88,17 @@
       pointer-events: none;
       z-index: 1;
       background:
-        radial-gradient(ellipse 92% 42% at 50% 0%, rgba(0, 100, 220, 0.38) 0%, rgba(0, 40, 110, 0.18) 42%, transparent 72%),
-        radial-gradient(ellipse 55% 35% at 50% 38%, rgba(255, 190, 50, 0.12) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 25% at 12% 60%, rgba(255, 160, 30, 0.08) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 25% at 88% 60%, rgba(60, 180, 255, 0.1) 0%, transparent 70%);
+        radial-gradient(ellipse 92% 42% at 50% 0%, rgba(0, 130, 255, 0.5) 0%, rgba(0, 60, 180, 0.22) 42%, transparent 72%),
+        radial-gradient(ellipse 55% 35% at 50% 38%, rgba(255, 204, 0, 0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 25% at 12% 60%, rgba(255, 140, 0, 0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 25% at 88% 60%, rgba(0, 212, 255, 0.14) 0%, transparent 70%);
       mix-blend-mode: screen;
       animation: atmosphere-pulse 5s ease-in-out infinite;
     }
 
     @keyframes atmosphere-pulse {
-      0%, 100% { opacity: 0.82; filter: brightness(1); }
-      50% { opacity: 1; filter: brightness(1.12); }
+      0%, 100% { opacity: 0.88; filter: brightness(1) saturate(1.15); }
+      50% { opacity: 1; filter: brightness(1.18) saturate(1.35); }
     }
 
     .stage-vignette {
@@ -99,8 +107,8 @@
       pointer-events: none;
       z-index: 2;
       background:
-        radial-gradient(ellipse 78% 68% at 50% 44%, transparent 32%, rgba(0, 0, 0, 0.58) 100%),
-        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, transparent 16%, transparent 84%, rgba(0, 0, 0, 0.55) 100%);
+        radial-gradient(ellipse 82% 72% at 50% 44%, transparent 48%, rgba(0, 0, 0, 0.38) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, transparent 14%, transparent 86%, rgba(0, 0, 0, 0.32) 100%);
     }
 
     .stage-fx {
@@ -333,13 +341,13 @@
       width: 17%;
       min-width: 140px;
       padding: 0.7em 0.55em 0.8em;
-      border-radius: 0.45em;
-      border: 2px solid rgba(90, 190, 255, 0.65);
-      background: linear-gradient(180deg, rgba(0, 18, 48, 0.94) 0%, rgba(0, 8, 28, 0.98) 100%);
+      border-radius: 0.2em;
+      border: var(--contrast-stroke) solid var(--show-cyan);
+      background: var(--show-panel);
       box-shadow:
-        0 0 24px rgba(0, 120, 255, 0.35),
-        0 0 48px rgba(255, 190, 50, 0.08),
-        inset 0 0 16px rgba(0, 80, 180, 0.2);
+        0 0 0 1px #000,
+        0 0 28px rgba(0, 212, 255, 0.45),
+        inset 0 0 0 1px rgba(0, 212, 255, 0.15);
       text-align: center;
       overflow: hidden;
     }
@@ -350,7 +358,7 @@
       inset: 0;
       border-radius: inherit;
       padding: 2px;
-      background: linear-gradient(135deg, rgba(255, 210, 70, 0.5) 0%, rgba(80, 200, 255, 0.45) 50%, rgba(255, 210, 70, 0.35) 100%);
+      background: linear-gradient(135deg, rgba(255, 204, 0, 0.85) 0%, rgba(0, 212, 255, 0.75) 50%, rgba(255, 204, 0, 0.65) 100%);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -359,12 +367,13 @@
     }
 
     .timer-panel[data-urgency="low"] {
-      border-color: rgba(255, 180, 60, 0.95);
+      border-color: var(--show-orange);
       animation: timer-urgency 1s ease-in-out infinite;
     }
 
     .timer-panel[data-urgency="critical"] {
-      border-color: rgba(255, 70, 50, 0.98);
+      border-color: var(--show-red);
+      background: #180008;
       animation: timer-critical 0.45s ease-in-out infinite;
     }
 
@@ -384,7 +393,7 @@
       font-weight: 700;
       letter-spacing: 0.08em;
       line-height: 1.25;
-      color: rgba(210, 230, 255, 0.88);
+      color: #ffffff;
       text-transform: uppercase;
     }
 
@@ -394,29 +403,29 @@
       font-weight: 900;
       line-height: 1;
       letter-spacing: 0.04em;
-      color: #ffffff;
+      color: var(--show-white);
       font-variant-numeric: tabular-nums;
       text-shadow:
-        0 0 20px rgba(100, 190, 255, 0.75),
-        0 0 40px rgba(255, 200, 60, 0.2);
+        0 2px 0 #000,
+        0 0 24px rgba(0, 212, 255, 0.85);
     }
 
     .timer-panel[data-urgency="low"] .timer-value {
-      color: #ffd060;
-      text-shadow: 0 0 24px rgba(255, 190, 60, 0.85);
+      color: var(--show-gold-hot);
+      text-shadow: 0 2px 0 #000, 0 0 28px rgba(255, 204, 0, 0.95);
     }
 
     .timer-panel[data-urgency="critical"] .timer-value {
-      color: #ff5858;
-      text-shadow: 0 0 28px rgba(255, 60, 60, 0.95);
+      color: var(--show-red);
+      text-shadow: 0 2px 0 #000, 0 0 32px rgba(255, 34, 68, 1);
     }
 
     .timer-unit {
       margin: 0.35em 0 0;
       font-size: 0.58em;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.14em;
-      color: #38a8ff;
+      color: var(--show-cyan);
       text-transform: uppercase;
     }
 
@@ -434,19 +443,18 @@
       min-width: 280px;
       padding: 0.7em 1.5em;
       border-radius: 999px;
-      border: 3px solid rgba(255, 210, 70, 0.95);
-      background: linear-gradient(180deg, rgba(0, 28, 68, 0.96) 0%, rgba(0, 8, 28, 0.98) 100%);
+      border: var(--contrast-stroke) solid var(--show-gold);
+      background: var(--show-panel);
       box-shadow:
-        0 0 32px rgba(255, 190, 40, 0.45),
-        0 0 64px rgba(255, 160, 20, 0.18),
-        inset 0 1px 0 rgba(255, 230, 140, 0.22),
-        inset 0 -8px 24px rgba(0, 40, 100, 0.35);
+        0 0 0 1px #000,
+        0 0 36px rgba(255, 204, 0, 0.45),
+        0 0 48px rgba(0, 212, 255, 0.15);
       font-size: 0.95em;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+      font-weight: 800;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #ffd850;
-      text-shadow: 0 0 14px rgba(255, 210, 60, 0.55);
+      color: var(--show-gold-hot);
+      text-shadow: 0 2px 0 #000, 0 0 18px rgba(255, 204, 0, 0.65);
       white-space: nowrap;
     }
 
@@ -478,17 +486,15 @@
     }
 
     .stage[data-phase="guessing"] .status-badge {
-      border-color: rgba(80, 210, 120, 0.95);
-      color: #6cff98;
-      box-shadow:
-        0 0 32px rgba(60, 220, 120, 0.45),
-        0 0 64px rgba(40, 180, 90, 0.2);
+      border-color: var(--show-green);
+      color: var(--show-green);
+      box-shadow: 0 0 0 1px #000, 0 0 32px rgba(0, 255, 85, 0.55);
     }
 
     .stage[data-phase="results"] .status-badge {
-      border-color: rgba(255, 140, 60, 0.95);
-      color: #ffb060;
-      box-shadow: 0 0 32px rgba(255, 120, 40, 0.45);
+      border-color: var(--show-orange);
+      color: var(--show-orange);
+      box-shadow: 0 0 0 1px #000, 0 0 32px rgba(255, 136, 0, 0.55);
       animation: results-tension 1.8s ease-in-out infinite;
     }
 
@@ -550,11 +556,11 @@
       font-weight: 900;
       line-height: 1;
       letter-spacing: 0.08em;
-      color: #ffffff;
+      color: var(--show-white);
       text-shadow:
-        0 0 24px rgba(100, 190, 255, 0.75),
-        0 0 48px rgba(255, 200, 60, 0.25),
-        0 4px 0 rgba(0, 40, 100, 0.5);
+        0 3px 0 #000,
+        0 0 32px rgba(0, 212, 255, 0.85),
+        0 0 48px rgba(255, 204, 0, 0.35);
     }
 
     .word-clue:not([hidden]) .word-clue-value {
@@ -606,32 +612,32 @@
       height: 2.05em;
       display: grid;
       place-items: center;
-      border-radius: 0.22em;
-      border: 2px solid rgba(90, 200, 255, 0.72);
-      background: linear-gradient(180deg, rgba(0, 28, 68, 0.96) 0%, rgba(0, 8, 28, 0.99) 100%);
+      border-radius: 0.15em;
+      border: var(--contrast-stroke) solid var(--show-cyan);
+      background: var(--show-black);
       box-shadow:
-        0 0 18px rgba(0, 130, 255, 0.35),
-        inset 0 0 14px rgba(0, 60, 140, 0.35),
-        inset 0 1px 0 rgba(140, 220, 255, 0.18);
+        0 0 0 1px #000,
+        0 0 22px rgba(0, 212, 255, 0.5),
+        inset 0 0 12px rgba(0, 100, 200, 0.2);
       font-size: 1.35em;
       font-weight: 900;
       line-height: 1;
-      color: #ffffff;
-      text-shadow: 0 0 16px rgba(100, 190, 255, 0.75);
+      color: var(--show-white);
+      text-shadow: 0 2px 0 #000, 0 0 18px rgba(0, 212, 255, 0.8);
     }
 
     .word-tile.is-letter {
       color: var(--show-gold-hot);
-      text-shadow:
-        0 0 20px rgba(255, 210, 60, 0.85),
-        0 0 36px rgba(255, 160, 30, 0.45);
+      border-color: var(--show-gold);
+      background: #1a1000;
+      text-shadow: 0 2px 0 #000, 0 0 24px rgba(255, 204, 0, 1);
     }
 
     .word-tile.is-hidden {
       font-size: 1.8em;
-      font-weight: 700;
-      color: rgba(190, 220, 255, 0.55);
-      text-shadow: none;
+      font-weight: 900;
+      color: var(--show-cyan);
+      text-shadow: 0 0 12px rgba(0, 212, 255, 0.65);
     }
 
     .word-tiles:not([hidden]) .word-tile {
@@ -890,13 +896,13 @@
     .live-score-rail {
       display: none;
       flex-direction: row;
-      border-radius: 0.5em;
-      border: 3px solid rgba(255, 200, 60, 0.55);
-      background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
+      border-radius: 0.2em;
+      border: var(--contrast-stroke) solid var(--show-gold);
+      background: var(--show-panel);
       box-shadow:
-        0 0 24px rgba(0, 120, 255, 0.2),
-        0 0 20px rgba(255, 190, 50, 0.12),
-        inset 0 1px 0 rgba(120, 210, 255, 0.12);
+        0 0 0 1px #000,
+        0 0 28px rgba(255, 204, 0, 0.35),
+        0 0 24px rgba(0, 212, 255, 0.2);
       overflow: hidden;
     }
 
@@ -918,20 +924,20 @@
     }
 
     .score-slot--round {
-      border-right: 3px solid rgba(255, 200, 60, 0.38);
-      background: linear-gradient(90deg, rgba(255, 200, 60, 0.12) 0%, rgba(0, 40, 100, 0.18) 100%);
+      border-right: var(--contrast-stroke) solid rgba(255, 204, 0, 0.65);
+      background: rgba(255, 204, 0, 0.08);
     }
 
     .score-slot--balls {
-      background: linear-gradient(90deg, rgba(0, 146, 224, 0.14) 0%, rgba(0, 40, 100, 0.2) 100%);
+      background: rgba(0, 212, 255, 0.08);
     }
 
     .score-label {
       font-size: 0.95em;
-      font-weight: 800;
-      letter-spacing: 0.12em;
+      font-weight: 900;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: rgba(235, 245, 255, 0.92);
+      color: var(--show-white);
       line-height: 1.1;
     }
 
@@ -943,18 +949,14 @@
 
     .score-value.round {
       font-size: clamp(2.8em, 9cqh, 4.8em);
-      color: #ffc832;
-      text-shadow:
-        0 0 24px rgba(255, 200, 50, 0.95),
-        0 0 48px rgba(255, 160, 30, 0.5);
+      color: var(--show-gold-hot);
+      text-shadow: 0 2px 0 #000, 0 0 32px rgba(255, 204, 0, 1);
     }
 
     .score-value.balls {
       font-size: clamp(2.8em, 9cqh, 4.8em);
-      color: #0092e0;
-      text-shadow:
-        0 0 24px rgba(0, 146, 224, 0.95),
-        0 0 48px rgba(0, 120, 255, 0.5);
+      color: var(--show-cyan);
+      text-shadow: 0 2px 0 #000, 0 0 32px rgba(0, 212, 255, 1);
     }
 
     .stage[data-phase="guessing"] .live-hud .subtitle {
@@ -1044,9 +1046,9 @@
 
     .stage[data-phase="guessing"] .word-tile.is-hidden,
     .stage[data-phase="results"] .word-tile.is-hidden {
-      font-weight: 700;
-      color: rgba(190, 220, 255, 0.55);
-      text-shadow: none;
+      font-weight: 900;
+      color: var(--show-cyan);
+      text-shadow: 0 0 12px rgba(0, 212, 255, 0.65);
     }
 
     .stage[data-phase="results"] .word-tile {
@@ -1087,8 +1089,10 @@
       overflow: hidden;
       display: grid;
       grid-template-columns: 1fr 1fr 2fr;
-      background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
-      box-shadow: 0 0 16px rgba(0, 120, 255, 0.18);
+      background: var(--show-panel);
+      border-top: var(--contrast-stroke) solid var(--show-gold);
+      border-bottom: var(--contrast-stroke) solid var(--show-cyan);
+      box-shadow: 0 0 24px rgba(0, 212, 255, 0.22);
     }
 
     .stage[data-phase="guessing"] .stat-cell,
@@ -1111,14 +1115,16 @@
     .stage[data-phase="ended"] .stat-label {
       font-size: var(--live-stat-label-size);
       line-height: 1.05;
+      color: var(--show-white);
+      font-weight: 900;
     }
 
     .stage[data-phase="guessing"] .stat-value,
     .stage[data-phase="results"] .stat-value,
     .stage[data-phase="ended"] .stat-value {
       font-size: 1.28em;
-      font-weight: 800;
-      text-shadow: 0 0 8px currentColor;
+      font-weight: 900;
+      text-shadow: 0 2px 0 #000, 0 0 14px currentColor;
     }
 
     .stat-cell--unsubmitted {
@@ -1160,29 +1166,27 @@
 
     .unsubmitted-chip {
       font-size: var(--chip-name-size, 0.52em);
-      font-weight: 800;
-      letter-spacing: 0.02em;
+      font-weight: 900;
+      letter-spacing: 0.03em;
       padding: 0.24em 0.52em;
-      border-radius: 999px;
-      border: 1px solid rgba(240, 168, 48, 0.58);
-      background: linear-gradient(180deg, rgba(48, 28, 0, 0.72) 0%, rgba(24, 14, 0, 0.88) 100%);
-      color: rgba(255, 232, 190, 0.96);
+      border-radius: 0.15em;
+      border: 2px solid var(--show-gold);
+      background: var(--show-black);
+      color: var(--show-gold-hot);
       white-space: nowrap;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
-      box-shadow:
-        0 0 8px rgba(240, 160, 40, 0.16),
-        inset 0 1px 0 rgba(255, 220, 140, 0.12);
-      text-shadow: 0 0 6px rgba(240, 180, 80, 0.35);
+      box-shadow: 0 0 14px rgba(255, 204, 0, 0.35);
+      text-shadow: 0 1px 0 #000;
     }
 
     .unsubmitted-chips.is-empty::after {
       content: "—";
       font-size: 0.9em;
-      font-weight: 800;
+      font-weight: 900;
       line-height: 1;
-      color: rgba(200, 220, 245, 0.42);
+      color: rgba(255, 255, 255, 0.35);
     }
 
     .stage[data-phase="guessing"] .player-board,
@@ -1202,7 +1206,8 @@
       height: 100%;
       z-index: 5;
       overflow: hidden;
-      background: linear-gradient(180deg, rgba(0, 18, 48, 0.98) 0%, rgba(0, 4, 16, 0.99) 100%);
+      background: var(--show-black);
+      border-top: var(--contrast-stroke) solid var(--show-cyan);
     }
 
     .stage[data-phase="guessing"] .player-board-header,
@@ -1291,11 +1296,12 @@
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"],
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"] {
-      background: rgba(14, 4, 36, 1);
-      border-color: rgba(158, 128, 218, 0.48);
+      background: #0a0020;
+      border-color: var(--show-magenta);
+      border-width: var(--contrast-stroke);
       box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.36),
-        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+        0 0 0 1px #000,
+        0 0 18px rgba(187, 68, 255, 0.45);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"]::before,
@@ -1307,12 +1313,12 @@
       border-radius: inherit;
       background: linear-gradient(
         125deg,
-        rgba(34, 10, 72, 0.98) 0%,
-        rgba(50, 18, 92, 0.94) 20%,
-        rgba(26, 6, 56, 0.97) 40%,
-        rgba(44, 14, 84, 0.93) 60%,
-        rgba(22, 4, 48, 0.98) 80%,
-        rgba(38, 12, 74, 0.95) 100%
+        #1a0048 0%,
+        #3a0088 20%,
+        #120030 40%,
+        #5000a8 60%,
+        #0e0028 80%,
+        #280060 100%
       );
       background-size: 240% 240%;
       animation: card-liquid-flow 18s ease-in-out infinite;
@@ -1328,8 +1334,8 @@
       inset: 0;
       border-radius: inherit;
       background:
-        radial-gradient(ellipse 85% 65% at 20% 25%, rgba(110, 65, 190, 0.2), transparent 58%),
-        radial-gradient(ellipse 75% 60% at 80% 75%, rgba(255, 210, 120, 0.07), transparent 52%);
+        radial-gradient(ellipse 85% 65% at 20% 25%, rgba(170, 80, 255, 0.35), transparent 58%),
+        radial-gradient(ellipse 75% 60% at 80% 75%, rgba(255, 204, 0, 0.12), transparent 52%);
       animation: card-liquid-bloom 22s ease-in-out infinite;
       pointer-events: none;
       z-index: 0;
@@ -1338,10 +1344,10 @@
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"] .player-name,
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"] .player-name,
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"] .player-name {
-      color: #f4efff;
-      font-weight: 700;
+      color: var(--show-white);
+      font-weight: 800;
       letter-spacing: 0.03em;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 2px 0 #000;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"] .player-status,
@@ -1372,27 +1378,24 @@
       z-index: 1;
       margin-top: 0.06em;
       font-size: 0.52em;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: rgba(120, 210, 255, 0.92);
-      text-shadow: 0 0 8px rgba(60, 180, 255, 0.35);
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: var(--show-cyan);
+      text-shadow: 0 1px 0 #000, 0 0 10px rgba(0, 212, 255, 0.65);
     }
 
     .stage[data-phase="guessing"] .player-card[data-status="locked"] .player-name,
     .stage[data-phase="results"] .player-card[data-status="locked"] .player-name,
     .stage[data-phase="ended"] .player-card[data-status="locked"] .player-name {
-      color: #ffd040;
-      text-shadow: 0 0 10px rgba(255, 208, 64, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+      color: var(--show-gold-hot);
+      text-shadow: 0 2px 0 #000, 0 0 16px rgba(255, 204, 0, 0.85);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"],
     .stage[data-phase="results"] .player-card[data-card-tone="solved"],
     .stage[data-phase="ended"] .player-card[data-card-tone="solved"] {
-      border-color: rgba(80, 255, 140, 0.72);
-      box-shadow:
-        0 4px 14px rgba(0, 0, 0, 0.34),
-        0 0 24px rgba(60, 220, 120, 0.28),
-        inset 0 1px 0 rgba(140, 255, 180, 0.16);
+      border-color: var(--show-green);
+      box-shadow: 0 0 0 1px #000, 0 0 28px rgba(0, 255, 85, 0.45);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before,
@@ -1400,43 +1403,40 @@
     .stage[data-phase="ended"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before {
       background: linear-gradient(
         125deg,
-        rgba(8, 42, 28, 0.98) 0%,
-        rgba(12, 58, 36, 0.94) 25%,
-        rgba(6, 32, 22, 0.97) 50%,
-        rgba(14, 64, 40, 0.93) 75%,
-        rgba(8, 38, 26, 0.98) 100%
+        #002818 0%,
+        #006030 25%,
+        #001810 50%,
+        #008040 75%,
+        #002010 100%
       );
-      animation: card-liquid-flow 18s ease-in-out infinite;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after,
     .stage[data-phase="results"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after,
     .stage[data-phase="ended"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after {
       background:
-        radial-gradient(ellipse 85% 65% at 20% 25%, rgba(80, 255, 140, 0.22), transparent 58%),
-        radial-gradient(ellipse 75% 60% at 80% 75%, rgba(255, 230, 120, 0.1), transparent 52%);
+        radial-gradient(ellipse 85% 65% at 20% 25%, rgba(0, 255, 85, 0.35), transparent 58%),
+        radial-gradient(ellipse 75% 60% at 80% 75%, rgba(255, 204, 0, 0.15), transparent 52%);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"] .player-name,
     .stage[data-phase="results"] .player-card[data-card-tone="solved"] .player-name,
     .stage[data-phase="ended"] .player-card[data-card-tone="solved"] .player-name {
-      color: #e8fff0;
+      color: var(--show-white);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"] .player-balls,
     .stage[data-phase="results"] .player-card[data-card-tone="solved"] .player-balls,
     .stage[data-phase="ended"] .player-card[data-card-tone="solved"] .player-balls {
-      color: rgba(160, 255, 190, 0.95);
+      color: var(--show-green);
+      text-shadow: 0 1px 0 #000, 0 0 12px rgba(0, 255, 85, 0.75);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"],
     .stage[data-phase="results"] .player-card[data-card-tone="invalid"],
     .stage[data-phase="ended"] .player-card[data-card-tone="invalid"] {
-      border-color: rgba(255, 90, 90, 0.72);
-      box-shadow:
-        0 4px 14px rgba(0, 0, 0, 0.34),
-        0 0 22px rgba(220, 60, 60, 0.28),
-        inset 0 1px 0 rgba(255, 160, 160, 0.12);
+      border-color: var(--show-red);
+      box-shadow: 0 0 0 1px #000, 0 0 28px rgba(255, 34, 68, 0.45);
       opacity: 1;
       filter: none;
     }
@@ -1446,26 +1446,27 @@
     .stage[data-phase="ended"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::before {
       background: linear-gradient(
         125deg,
-        rgba(48, 8, 12, 0.98) 0%,
-        rgba(72, 12, 18, 0.94) 25%,
-        rgba(36, 6, 10, 0.97) 50%,
-        rgba(84, 16, 22, 0.93) 75%,
-        rgba(42, 8, 14, 0.98) 100%
+        #400010 0%,
+        #880020 25%,
+        #280008 50%,
+        #aa0028 75%,
+        #300008 100%
       );
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"] .player-name,
     .stage[data-phase="results"] .player-card[data-card-tone="invalid"] .player-name,
     .stage[data-phase="ended"] .player-card[data-card-tone="invalid"] .player-name {
-      color: #ffe0e0;
+      color: #ffe0e8;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"] .player-status,
     .stage[data-phase="results"] .player-card[data-card-tone="invalid"] .player-status,
     .stage[data-phase="ended"] .player-card[data-card-tone="invalid"] .player-status {
-      color: rgba(255, 170, 170, 0.92);
+      color: var(--show-red);
       text-transform: none;
       letter-spacing: 0.02em;
+      font-weight: 800;
     }
 
     @keyframes first-solve-ring {
@@ -1519,8 +1520,9 @@
     .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="waiting"],
     .stage[data-phase="results"] .player-card[data-card-skin][data-status="waiting"],
     .stage[data-phase="ended"] .player-card[data-card-skin][data-status="waiting"] {
-      opacity: 0.72;
-      filter: saturate(0.55) brightness(0.88);
+      opacity: 0.55;
+      filter: saturate(0.4) brightness(0.75);
+      border-color: rgba(255, 255, 255, 0.35);
       border-style: dashed;
     }
 
@@ -1657,9 +1659,9 @@
       width: 0.42em;
       height: 0.42em;
       border-radius: 999px;
-      border: 1.5px solid rgba(255, 210, 80, 0.75);
-      background: rgba(255, 200, 60, 0.18);
-      box-shadow: 0 0 6px rgba(255, 190, 50, 0.35);
+      border: 2px solid var(--show-gold);
+      background: rgba(255, 204, 0, 0.55);
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.65);
     }
 
     .stage[data-live-density="lg"] .pending-dot,
@@ -2435,11 +2437,11 @@
       text-shadow: 0 0 14px currentColor;
     }
 
-    .stat-value.round { color: #ffc832; }
-    .stat-value.balls { color: #0092e0; }
-    .stat-value.mult { color: #24b04c; }
-    .stat-value.players { color: #9828a8; }
-    .stat-value.submitted { color: #18a8d8; }
+    .stat-value.round { color: var(--show-gold-hot); }
+    .stat-value.balls { color: var(--show-cyan); }
+    .stat-value.mult { color: var(--show-green); }
+    .stat-value.players { color: var(--show-magenta); }
+    .stat-value.submitted { color: var(--show-cyan); }
 
     .player-board {
       position: absolute;
@@ -2610,20 +2612,15 @@
       position: relative;
       isolation: isolate;
       padding: 0.28em 0.55em;
-      border-radius: 0.55em;
+      border-radius: 0.2em;
       text-align: center;
       min-height: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1.5px solid rgba(110, 210, 255, 0.55);
-      background:
-        linear-gradient(180deg, rgba(0, 58, 128, 0.94) 0%, rgba(0, 18, 52, 0.97) 55%, rgba(0, 8, 32, 0.98) 100%);
-      box-shadow:
-        0 0 14px rgba(0, 130, 255, 0.28),
-        0 0 28px rgba(0, 90, 220, 0.12),
-        inset 0 1px 0 rgba(170, 235, 255, 0.2),
-        inset 0 -5px 14px rgba(0, 18, 55, 0.45);
+      border: var(--contrast-stroke) solid var(--show-cyan);
+      background: var(--show-panel);
+      box-shadow: 0 0 0 1px #000, 0 0 18px rgba(0, 212, 255, 0.35);
       animation: chip-enter 0.55s cubic-bezier(0.22, 1.25, 0.36, 1) both;
       animation-delay: var(--chip-enter-delay, 0s);
       overflow: hidden;
@@ -2732,13 +2729,23 @@
     .pattern-cell {
       flex: 1 1 0;
       aspect-ratio: 1;
-      border-radius: 0.15em;
-      background: rgba(80, 90, 110, 0.55);
+      border-radius: 0.1em;
+      border: 1px solid rgba(0, 0, 0, 0.65);
+      background: #223344;
     }
 
-    .pattern-cell[data-mark="!"] { background: #24b04c; box-shadow: 0 0 10px rgba(36, 176, 76, 0.85); }
-    .pattern-cell[data-mark="?"] { background: #d0a020; box-shadow: 0 0 10px rgba(208, 160, 32, 0.75); }
-    .pattern-cell[data-mark="/"] { background: rgba(70, 80, 95, 0.75); }
+    .pattern-cell[data-mark="!"] {
+      background: var(--show-green);
+      box-shadow: 0 0 12px rgba(0, 255, 85, 0.9);
+    }
+    .pattern-cell[data-mark="?"] {
+      background: var(--show-gold);
+      box-shadow: 0 0 12px rgba(255, 204, 0, 0.9);
+    }
+    .pattern-cell[data-mark="/"] {
+      background: #445566;
+      box-shadow: inset 0 0 0 1px rgba(255, 34, 68, 0.45);
+    }
 
     /* Live phases: neutralize legacy absolute mockup coordinates */
     .stage[data-phase="guessing"] .live-hud .status-badge,
