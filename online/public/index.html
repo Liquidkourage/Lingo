@@ -491,21 +491,8 @@
       display: block;
     }
 
-    .locked-banner {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 0.55rem;
-      margin-bottom: 0.85rem;
-      padding: 0.7rem 0.85rem;
-      border: var(--contrast-stroke) solid var(--show-green);
-      border-radius: 0.2em;
-      background: rgba(0, 255, 85, 0.08);
-      text-align: center;
-    }
-
-    .play-stage[data-phase="guessing"][data-locked="true"] .locked-banner {
-      display: flex;
+    .play-stage[data-phase="guessing"] .play-outcome.has-guess {
+      display: block;
     }
 
     .play-stage[data-phase="guessing"][data-locked="true"] .word-tiles,
@@ -517,20 +504,19 @@
       display: none !important;
     }
 
-    .locked-label {
+    .outcome-heading {
+      display: none;
+      margin: 0 0 0.5rem;
+      text-align: center;
       font-size: 0.62rem;
       font-weight: 800;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--show-green);
+      color: rgba(200, 220, 245, 0.78);
     }
 
-    .locked-guess {
-      font-size: 1.5rem;
-      font-weight: 900;
-      letter-spacing: 0.22em;
-      color: var(--show-white);
-      text-shadow: 0 0 14px rgba(0, 255, 85, 0.45);
+    .play-outcome.has-guess .outcome-heading {
+      display: block;
     }
 
     .result-tiles {
@@ -575,6 +561,21 @@
       border-color: #3a3040;
       background: #2a2030;
       color: rgba(200, 190, 195, 0.88);
+    }
+
+    .result-tile[data-mark="locked"] {
+      border-color: var(--show-green);
+      color: var(--show-white);
+      background: rgba(0, 255, 85, 0.12);
+      box-shadow: 0 0 14px rgba(0, 255, 85, 0.35);
+    }
+
+    .result-feedback.is-pending .result-feedback-value {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: var(--show-green);
+      text-shadow: 0 0 12px rgba(0, 255, 85, 0.45);
     }
 
     .outcome-empty {
@@ -702,6 +703,16 @@
         <p class="guess-worth" id="guessWorth" aria-live="polite"></p>
       </section>
 
+      <section class="play-outcome" id="playOutcome" aria-label="Your guess this round">
+        <p class="outcome-heading" id="outcomeHeading">Your guess</p>
+        <div class="result-tiles" id="resultTiles" aria-label="Your guess"></div>
+        <p class="outcome-empty" id="outcomeEmpty">You did not lock in a guess this round.</p>
+        <div class="result-feedback" id="resultFeedback" aria-live="polite">
+          <span class="result-feedback-label" id="resultFeedbackLabel">Your result</span>
+          <span class="result-feedback-value" id="resultFeedbackValue"></span>
+        </div>
+      </section>
+
       <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
         <label class="field-label" for="playerName">Your display name</label>
         <div class="name-row">
@@ -715,10 +726,6 @@
 
       <section class="play-guess" id="playGuess" aria-label="Guess entry">
         <h1 class="prompt" id="promptLine">Enter your guess!</h1>
-        <div class="locked-banner" id="lockedBanner" aria-live="polite">
-          <span class="locked-label">Locked in</span>
-          <span class="locked-guess" id="lockedGuess"></span>
-        </div>
         <div class="word-tiles" aria-label="Five-letter guess">
           <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" />
           <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" />
@@ -738,15 +745,6 @@
         <div class="keyboard-row" data-row="bottom"></div>
       </div>
 
-      <section class="play-outcome" id="playOutcome" aria-label="Round outcome">
-        <div class="result-tiles" id="resultTiles" aria-label="Your guess result"></div>
-        <p class="outcome-empty" id="outcomeEmpty">You did not lock in a guess this round.</p>
-        <div class="result-feedback" id="resultFeedback" aria-live="polite">
-          <span class="result-feedback-label">Your result</span>
-          <span class="result-feedback-value" id="resultFeedbackValue"></span>
-        </div>
-      </section>
-
       <p id="message" class="message" aria-live="polite"></p>
     </main>
   </div>
@@ -760,10 +758,12 @@
       metaRound: document.getElementById('metaRound'),
       metaYours: document.getElementById('metaYours'),
       guessWorth: document.getElementById('guessWorth'),
-      lockedGuess: document.getElementById('lockedGuess'),
+      playOutcome: document.getElementById('playOutcome'),
+      outcomeHeading: document.getElementById('outcomeHeading'),
       resultTiles: document.getElementById('resultTiles'),
       outcomeEmpty: document.getElementById('outcomeEmpty'),
       resultFeedback: document.getElementById('resultFeedback'),
+      resultFeedbackLabel: document.getElementById('resultFeedbackLabel'),
       resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
       playerName: document.getElementById('playerName'),
@@ -956,46 +956,67 @@
       els.playerChip.classList.add('is-visible');
     }
 
-    function renderLockedIn(state) {
-      const viewer = state.viewer;
-      const lockedIn = Boolean(viewer && viewer.lockedIn);
-      els.stage.dataset.locked = lockedIn ? 'true' : 'false';
-      if (!lockedIn) {
-        els.lockedGuess.textContent = '';
-        return;
-      }
-      const guess = String(viewer.roundGuess || '').toUpperCase();
-      els.lockedGuess.textContent = guess || '·····';
+    function isLiveRound(phase) {
+      return phase === 'guessing' || phase === 'results' || phase === 'ended';
     }
 
-    function renderResultTiles(state) {
+    function renderLockedIn(state) {
+      const lockedIn = Boolean(state.viewer && state.viewer.lockedIn);
+      els.stage.dataset.locked = lockedIn ? 'true' : 'false';
+    }
+
+    function renderRoundOutcome(state) {
       const viewer = state.viewer;
       const phase = state.phase || 'idle';
-      const inOutcome = phase === 'results' || phase === 'ended';
+      const live = isLiveRound(phase);
 
+      els.playOutcome.classList.remove('has-guess');
       els.resultTiles.classList.remove('is-visible');
       els.resultTiles.replaceChildren();
       els.outcomeEmpty.classList.remove('is-visible');
+      els.resultFeedback.classList.remove('is-visible', 'is-pending');
+      els.resultFeedbackValue.textContent = '';
+      els.resultFeedbackValue.className = 'result-feedback-value';
 
-      if (!inOutcome || !viewer || !viewer.found) {
+      if (!live || !viewer || !viewer.found) {
         return;
       }
 
       const guess = String(viewer.roundGuess || '').toUpperCase();
-      if (guess.length !== 5) {
+      const pattern = String(viewer.resultPattern || '');
+      const hasReveal = pattern.length === 5;
+
+      if (guess.length === 5) {
+        els.playOutcome.classList.add('has-guess');
+        guess.split('').forEach((letter, index) => {
+          const tile = document.createElement('div');
+          tile.className = 'result-tile';
+          tile.textContent = letter;
+          tile.dataset.mark = hasReveal ? pattern[index] : 'locked';
+          els.resultTiles.appendChild(tile);
+        });
+        els.resultTiles.classList.add('is-visible');
+      } else if (phase === 'results' || phase === 'ended') {
         els.outcomeEmpty.classList.add('is-visible');
+      }
+
+      if (phase === 'guessing' && viewer.lockedIn && guess.length === 5) {
+        els.resultFeedbackLabel.textContent = 'Status';
+        els.resultFeedbackValue.textContent = 'Locked in — waiting for results';
+        els.resultFeedback.classList.add('is-visible', 'is-pending');
         return;
       }
 
-      const pattern = String(viewer.resultPattern || '').padEnd(5, '/').slice(0, 5);
-      guess.split('').forEach((letter, index) => {
-        const tile = document.createElement('div');
-        tile.className = 'result-tile';
-        tile.textContent = letter;
-        tile.dataset.mark = pattern[index] || '/';
-        els.resultTiles.appendChild(tile);
-      });
-      els.resultTiles.classList.add('is-visible');
+      if ((phase === 'results' || phase === 'ended') && viewer.resultLabel) {
+        els.resultFeedbackLabel.textContent = 'Your result';
+        els.resultFeedbackValue.textContent = viewer.resultLabel;
+        els.resultFeedback.classList.add('is-visible');
+        if (viewer.resultPattern === '!!!!!') {
+          els.resultFeedbackValue.classList.add('is-solved');
+        } else if (viewer.resultLabel === 'Not a word…') {
+          els.resultFeedbackValue.classList.add('is-invalid');
+        }
+      }
     }
 
     function updateLobbyButtons() {
@@ -1009,7 +1030,8 @@
     function schedulePolling() {
       if (pollTimer) window.clearInterval(pollTimer);
       if (IS_DEMO) return;
-      const ms = currentState && currentState.phase === 'guessing' ? 2000 : 5000;
+      const phase = currentState && currentState.phase;
+      const ms = phase === 'guessing' || phase === 'results' ? 2000 : 5000;
       pollTimer = window.setInterval(() => {
         fetchPublicState().catch(() => {});
       }, ms);
@@ -1249,38 +1271,6 @@
       updateKeyboardEnabled(phase);
     }
 
-    function renderViewerFeedback(state) {
-      const viewer = state.viewer;
-      const phase = state.phase || 'idle';
-
-      if (!viewer || (phase !== 'results' && phase !== 'ended') || !viewer.resultLabel) {
-        els.resultFeedback.classList.remove('is-visible');
-        els.resultFeedbackValue.textContent = '';
-        els.resultFeedbackValue.className = 'result-feedback-value';
-        return;
-      }
-
-      const guess = String(viewer.roundGuess || '').toUpperCase();
-      const showTiles = guess.length === 5 && Boolean(viewer.resultPattern);
-      const highlightOnly = viewer.resultLabel === 'Not a word…' || viewer.resultPattern === '!!!!!';
-
-      if (showTiles && !highlightOnly) {
-        els.resultFeedback.classList.remove('is-visible');
-        els.resultFeedbackValue.textContent = '';
-        els.resultFeedbackValue.className = 'result-feedback-value';
-        return;
-      }
-
-      els.resultFeedback.classList.add('is-visible');
-      els.resultFeedbackValue.textContent = viewer.resultLabel;
-      els.resultFeedbackValue.className = 'result-feedback-value';
-      if (viewer.resultPattern === '!!!!!') {
-        els.resultFeedbackValue.classList.add('is-solved');
-      } else if (viewer.resultLabel === 'Not a word…') {
-        els.resultFeedbackValue.classList.add('is-invalid');
-      }
-    }
-
     function renderPublicState(state) {
       currentState = state;
       const phase = state.phase || 'idle';
@@ -1303,8 +1293,7 @@
       renderGuessWorth(state);
       renderPrompt(phase, firstLetter);
       renderLockedIn(state);
-      renderResultTiles(state);
-      renderViewerFeedback(state);
+      renderRoundOutcome(state);
       applyFirstLetter(phase === 'guessing' ? firstLetter : '');
       syncKeyboardFromState(state);
       updateLobbyButtons();
