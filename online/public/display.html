@@ -65,7 +65,7 @@
       overflow: visible;
       pointer-events: none;
       user-select: none;
-      z-index: 12;
+      z-index: 22;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -433,6 +433,7 @@
       content: "";
       position: absolute;
       inset: -30% -50%;
+      z-index: 0;
       background: linear-gradient(
         105deg,
         transparent 44%,
@@ -441,6 +442,11 @@
       );
       pointer-events: none;
       animation: cta-sheen 3.8s ease-in-out infinite;
+    }
+
+    .idle-cta-text {
+      position: relative;
+      z-index: 1;
     }
 
     @keyframes cta-pop {
@@ -1057,6 +1063,7 @@
       playUrl: document.getElementById("playUrl"),
       playQr: document.getElementById("playQr"),
       idleCta: document.getElementById("idleCta"),
+      idleCtaText: document.querySelector("#idleCta .idle-cta-text"),
       idleHostNote: document.getElementById("idleHostNote"),
       playerBoardHeader: document.getElementById("playerBoardHeader"),
       wordClue: document.getElementById("wordClue"),
@@ -1476,7 +1483,7 @@
       const copy = phaseCopy(phase, currentState);
       els.statusText.textContent = copy.badge;
       if (phase === "idle") {
-        els.idleCta.textContent = copy.badge;
+        els.idleCtaText.textContent = copy.badge;
       }
 
       if (phase === "idle") {
