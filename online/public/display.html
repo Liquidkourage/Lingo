@@ -213,10 +213,13 @@
     }
 
     .stage-byline {
-      position: relative;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 11.8%;
       z-index: 23;
-      margin: -6.5% 0 0;
-      width: 115%;
+      width: min(52%, 36em);
+      margin: 0;
       text-align: center;
       font-size: clamp(12px, 1.75cqh, 17px);
       font-weight: 700;
@@ -266,8 +269,11 @@
     }
 
     .stage[data-lobby-has-players="true"] .stage-byline {
-      margin-top: -5%;
-      font-size: clamp(10px, 1.45cqh, 14px);
+      top: auto;
+      bottom: 1%;
+      width: min(94%, 40em);
+      font-size: clamp(9px, 1.3cqh, 13px);
+      letter-spacing: 0.14em;
     }
 
     .stage-ui {
@@ -907,7 +913,7 @@
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .stage-ui {
-      padding: 11.5% 3.5% 1.1%;
+      padding: 11.5% 3.5% 2.6%;
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-deck {
