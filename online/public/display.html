@@ -43,11 +43,17 @@
     .logo-wrap {
       position: absolute;
       left: 50%;
-      top: 2.78%;
+      top: 2.45%;
       transform: translateX(-50%);
       width: 63.28%;
+      perspective: 1400px;
       pointer-events: none;
       user-select: none;
+    }
+
+    .logo-tilt {
+      transform: rotateX(14deg);
+      transform-origin: 50% 84%;
     }
 
     .lingo-logo {
@@ -70,9 +76,10 @@
       />
 
       <div class="logo-wrap">
+        <div class="logo-tilt">
         <svg
           class="lingo-logo"
-          viewBox="0 0 648 104"
+          viewBox="0 0 648 118"
           xmlns="http://www.w3.org/2000/svg"
           role="img"
           aria-label="Lingo"
@@ -80,32 +87,33 @@
           <defs>
             <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#ffffff" />
-              <stop offset="22%" stop-color="#f7fbff" />
-              <stop offset="55%" stop-color="#c8ddf4" />
-              <stop offset="100%" stop-color="#7ea8cf" />
+              <stop offset="18%" stop-color="#f4f9ff" />
+              <stop offset="52%" stop-color="#bdd4ee" />
+              <stop offset="100%" stop-color="#78a0c8" />
             </linearGradient>
             <linearGradient id="faceShine" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
-              <stop offset="45%" stop-color="#ffffff" stop-opacity="0.18" />
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
+              <stop offset="40%" stop-color="#ffffff" stop-opacity="0.15" />
               <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
             </linearGradient>
             <linearGradient id="goldOuter" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#fff6bf" />
-              <stop offset="35%" stop-color="#f2c22a" />
-              <stop offset="78%" stop-color="#b8860b" />
-              <stop offset="100%" stop-color="#6b4e08" />
+              <stop offset="0%" stop-color="#fff8cf" />
+              <stop offset="32%" stop-color="#f4c832" />
+              <stop offset="72%" stop-color="#b07808" />
+              <stop offset="100%" stop-color="#5a4006" />
             </linearGradient>
-            <linearGradient id="goldExtrude" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#a67c00" />
-              <stop offset="100%" stop-color="#3d2c04" />
+            <linearGradient id="goldSide" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ffd96a" />
+              <stop offset="45%" stop-color="#c48a08" />
+              <stop offset="100%" stop-color="#3f2c04" />
             </linearGradient>
             <linearGradient id="blueBloom" x1="0.5" y1="0" x2="0.5" y2="1">
-              <stop offset="0%" stop-color="#7ec8ff" stop-opacity="0.15" />
-              <stop offset="55%" stop-color="#2f9cff" stop-opacity="0.85" />
-              <stop offset="100%" stop-color="#0a4fd4" stop-opacity="0.35" />
+              <stop offset="0%" stop-color="#9fd4ff" stop-opacity="0.12" />
+              <stop offset="50%" stop-color="#349dff" stop-opacity="0.9" />
+              <stop offset="100%" stop-color="#0b4fd8" stop-opacity="0.4" />
             </linearGradient>
             <filter id="blueGlowWide" x="-50%" y="-80%" width="200%" height="260%">
-              <feGaussianBlur stdDeviation="11" result="blur" />
+              <feGaussianBlur stdDeviation="12" result="blur" />
               <feColorMatrix
                 in="blur"
                 type="matrix"
@@ -116,7 +124,7 @@
               />
             </filter>
             <filter id="blueGlowTight" x="-30%" y="-50%" width="160%" height="200%">
-              <feGaussianBlur stdDeviation="4.5" result="blur" />
+              <feGaussianBlur stdDeviation="4" result="blur" />
               <feColorMatrix
                 in="blur"
                 type="matrix"
@@ -126,11 +134,11 @@
                         0 0 0 0.9 0"
               />
             </filter>
-            <filter id="dropShadow" x="-25%" y="-25%" width="150%" height="170%">
-              <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.65" />
+            <filter id="dropShadow" x="-25%" y="-25%" width="150%" height="180%">
+              <feDropShadow dx="1" dy="8" stdDeviation="5" flood-color="#000000" flood-opacity="0.7" />
             </filter>
             <clipPath id="faceShineClip">
-              <rect x="0" y="0" width="648" height="46" />
+              <rect x="0" y="0" width="648" height="44" />
             </clipPath>
           </defs>
 
@@ -141,65 +149,70 @@
             letter-spacing="3.5"
             text-anchor="middle"
           >
-            <!-- Wide blue bloom -->
-            <text x="324" y="73" fill="url(#blueBloom)" filter="url(#blueGlowWide)">LINGO</text>
-            <!-- Tight blue rim -->
-            <text x="324" y="73" fill="#45a8ff" filter="url(#blueGlowTight)">LINGO</text>
+            <!-- Blue back-light (sits behind extruded volume) -->
+            <text x="324" y="70" fill="url(#blueBloom)" filter="url(#blueGlowWide)">LINGO</text>
+            <text x="324" y="70" fill="#48a8ff" filter="url(#blueGlowTight)">LINGO</text>
 
-            <!-- Gold extrusion (depth) -->
-            <g fill="url(#goldExtrude)" aria-hidden="true">
-              <text x="324" y="81">LINGO</text>
-              <text x="324" y="80">LINGO</text>
-              <text x="324" y="79">LINGO</text>
-              <text x="324" y="78">LINGO</text>
-              <text x="324" y="77">LINGO</text>
+            <!-- Isometric gold extrusion: down + right = depth into screen -->
+            <g aria-hidden="true">
+              <text x="324" y="70" fill="#2a1e03" transform="translate(6.6, 11.55)">LINGO</text>
+              <text x="324" y="70" fill="#342607" transform="translate(6, 10.5)">LINGO</text>
+              <text x="324" y="70" fill="#3f2e08" transform="translate(5.4, 9.45)">LINGO</text>
+              <text x="324" y="70" fill="#4a3609" transform="translate(4.8, 8.4)">LINGO</text>
+              <text x="324" y="70" fill="#553f0a" transform="translate(4.2, 7.35)">LINGO</text>
+              <text x="324" y="70" fill="#60480b" transform="translate(3.6, 6.3)">LINGO</text>
+              <text x="324" y="70" fill="#6b520c" transform="translate(3, 5.25)">LINGO</text>
+              <text x="324" y="70" fill="#765c0d" transform="translate(2.4, 4.2)">LINGO</text>
+              <text x="324" y="70" fill="#81660e" transform="translate(1.8, 3.15)">LINGO</text>
+              <text x="324" y="70" fill="#8c700f" transform="translate(1.2, 2.1)">LINGO</text>
+              <text x="324" y="70" fill="url(#goldSide)" transform="translate(0.6, 1.05)">LINGO</text>
             </g>
 
-            <!-- Gold bezel: dark base + bright rim -->
+            <!-- Gold bezel on front face -->
             <text
               x="324"
-              y="73"
+              y="70"
               fill="none"
-              stroke="#3a2800"
-              stroke-width="15"
+              stroke="#2f2000"
+              stroke-width="16"
               stroke-linejoin="round"
               stroke-linecap="round"
               filter="url(#dropShadow)"
             >LINGO</text>
             <text
               x="324"
-              y="73"
+              y="70"
               fill="none"
               stroke="url(#goldOuter)"
-              stroke-width="10.5"
+              stroke-width="11"
               stroke-linejoin="round"
               stroke-linecap="round"
             >LINGO</text>
             <text
               x="324"
-              y="72.5"
+              y="69.5"
               fill="none"
-              stroke="#fff2b0"
-              stroke-width="2.2"
+              stroke="#fff3b8"
+              stroke-width="2.4"
               stroke-linejoin="round"
               stroke-linecap="round"
-              aria-hidden="true"
             >LINGO</text>
 
-            <!-- Silver letter face -->
+            <!-- Silver front face -->
             <text
               x="324"
-              y="73"
+              y="70"
               fill="url(#face)"
-              stroke="#234060"
-              stroke-width="1.4"
+              stroke="#1a3555"
+              stroke-width="1.5"
               paint-order="stroke fill"
             >LINGO</text>
 
-            <!-- Upper metallic shine -->
-            <text x="324" y="73" fill="url(#faceShine)" clip-path="url(#faceShineClip)">LINGO</text>
+            <!-- Top-edge specular on face -->
+            <text x="324" y="70" fill="url(#faceShine)" clip-path="url(#faceShineClip)">LINGO</text>
           </g>
         </svg>
+        </div>
       </div>
     </div>
   </div>
