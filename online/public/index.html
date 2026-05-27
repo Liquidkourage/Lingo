@@ -2312,35 +2312,6 @@
       keyboardLetterStates.clear();
     }
 
-    function loadKeyboardStates(wordKey) {
-      if (!wordKey) {
-        resetKeyboardStates();
-        return;
-      }
-      if (wordKey === keyboardWordKey) return;
-      keyboardWordKey = wordKey;
-      resetKeyboardStates();
-      try {
-        const raw = localStorage.getItem(keyboardStorageKey(wordKey));
-        if (!raw) return;
-        const saved = JSON.parse(raw);
-        if (!saved || typeof saved !== 'object') return;
-        Object.entries(saved).forEach(([letter, state]) => {
-          if (KEYBOARD_STATE_RANK[state]) {
-            keyboardLetterStates.set(letter, state);
-          }
-        });
-      } catch (_error) {
-        // Ignore corrupt keyboard cache.
-      }
-    }
-
-    function saveKeyboardStates() {
-      if (!keyboardWordKey) return;
-      const payload = Object.fromEntries(keyboardLetterStates.entries());
-      localStorage.setItem(keyboardStorageKey(keyboardWordKey), JSON.stringify(payload));
-    }
-
     function mergeKeyboardLetter(letter, mark) {
       const key = String(letter || '').toUpperCase();
       if (!/^[A-Z]$/.test(key)) return;
@@ -2355,8 +2326,6 @@
       const letters = String(guess || '').toUpperCase().padEnd(5, ' ').slice(0, 5).split('');
       const marks = String(pattern || '').padEnd(5, '/').slice(0, 5).split('');
       letters.forEach((letter, index) => mergeKeyboardLetter(letter, marks[index]));
-      saveKeyboardStates();
-      paintKeyboardStates();
     }
 
     function paintKeyboardStates() {
@@ -2424,23 +2393,29 @@
         return;
       }
 
-      loadKeyboardStates(wordKey);
+      if (wordKey !== keyboardWordKey) {
+        keyboardWordKey = wordKey;
+        try {
+          localStorage.removeItem(keyboardStorageKey(wordKey));
+        } catch (_error) {
+          // Ignore storage failures.
+        }
+      }
+
+      resetKeyboardStates();
 
       const viewer = state.viewer;
       if (viewer) {
         const entries = Array.isArray(viewer.guessHistory) ? viewer.guessHistory : [];
-        let painted = false;
         entries.forEach((entry) => {
           const guess = String(entry.guess || '').toUpperCase();
           const pattern = String(entry.pattern || '');
           if (guess.length === 5 && pattern.length === 5) {
             applyGuessPatternToKeyboard(guess, pattern);
-            painted = true;
             return;
           }
           if (guess.length === 5 && entry.resultLabel === 'Not a word…') {
             guess.split('').forEach((letter) => mergeKeyboardLetter(letter, '/'));
-            painted = true;
           }
         });
         if (phase === 'results' || phase === 'ended') {
@@ -2449,11 +2424,7 @@
           const pattern = String(official.pattern || viewer.resultPattern || '');
           if (guess.length === 5 && pattern.length === 5) {
             applyGuessPatternToKeyboard(guess, pattern);
-            painted = true;
           }
-        }
-        if (painted) {
-          saveKeyboardStates();
         }
       }
 
