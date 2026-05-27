@@ -459,6 +459,9 @@
     }
 
     .stage[data-phase="guessing"] .status-badge {
+      top: 27.5%;
+      padding: 0.55em 1.25em;
+      font-size: 0.88em;
       border-color: rgba(80, 210, 120, 0.95);
       color: #6cff98;
       box-shadow:
@@ -693,13 +696,9 @@
     .stage[data-phase="guessing"] .player-grid,
     .stage[data-phase="results"] .player-grid,
     .stage[data-phase="ended"] .player-grid {
-      grid-template-columns: repeat(var(--live-cols, auto-fill), minmax(0, 1fr));
+      grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
       gap: var(--live-gap, 0.55em);
       align-content: start;
-    }
-
-    .stage[data-phase="guessing"]:not([data-live-density]) .player-grid {
-      grid-template-columns: repeat(auto-fill, minmax(10.5em, 1fr));
     }
 
     .stage[data-live-density="md"] .player-grid,
@@ -773,28 +772,83 @@
     }
 
     .stage[data-phase="guessing"] .subtitle {
-      top: 32.2%;
+      top: 30.8%;
+      font-size: 0.82em;
     }
 
     .stage[data-phase="guessing"] .word-tiles {
-      top: 41%;
+      top: 38.5%;
       z-index: 21;
     }
 
     .stage[data-phase="guessing"] .word-tile {
-      width: 2.2em;
-      height: 2.2em;
-      font-size: 1.45em;
+      width: 2em;
+      height: 2em;
+      font-size: 1.32em;
     }
 
     .stage[data-phase="guessing"] .stats-row {
-      top: 48.5%;
-      height: 12%;
+      top: 45.5%;
+      height: auto;
+      min-height: 4.8em;
+      max-height: 15%;
+      overflow: visible;
+      padding: 0.15em 0;
+    }
+
+    .stage[data-phase="guessing"] .stat-cell {
+      padding: 0.2em 0.12em;
+      gap: 0.06em;
+    }
+
+    .stage[data-phase="guessing"] .stat-icon {
+      width: 1.1em;
+      height: 1.1em;
+    }
+
+    .stage[data-phase="guessing"] .stat-label {
+      font-size: 0.46em;
+      line-height: 1.1;
+    }
+
+    .stage[data-phase="guessing"] .stat-value {
+      font-size: 1.35em;
     }
 
     .stage[data-phase="guessing"] .player-board {
-      top: 73%;
-      height: 38%;
+      top: 66.5%;
+      height: 44%;
+    }
+
+    .stage[data-phase="guessing"] .player-board-header {
+      padding: 0.38em 0.6em;
+    }
+
+    .stage[data-phase="guessing"] .player-board-body {
+      padding: 0.42em;
+    }
+
+    .stage[data-phase="guessing"] .player-card {
+      padding: 0.42em 0.48em;
+    }
+
+    .stage[data-phase="guessing"] .player-name {
+      font-size: 0.82em;
+    }
+
+    .stage[data-phase="guessing"] .player-status {
+      font-size: 0.58em;
+      margin-top: 0.15em;
+    }
+
+    .stage[data-phase="guessing"] .pending-row {
+      margin-top: 0.22em;
+      gap: 0.12em;
+    }
+
+    .stage[data-phase="guessing"] .pending-dot {
+      width: 0.36em;
+      height: 0.36em;
     }
 
     .stage[data-phase="idle"] .timer-panel,
@@ -2227,6 +2281,13 @@
       return Math.max(1, Math.ceil(Math.sqrt(playerCount * 0.8)));
     }
 
+    function computeComfortableLiveColumns(playerCount) {
+      if (playerCount <= 4) return Math.max(1, playerCount);
+      if (playerCount <= 8) return 4;
+      if (playerCount <= 12) return 4;
+      return computeLiveGridColumns(playerCount);
+    }
+
     function applyLiveBoardLayout(playerCount, phase) {
       if (phase !== "guessing" && phase !== "results" && phase !== "ended") {
         delete els.stage.dataset.liveDensity;
@@ -2235,15 +2296,15 @@
         return;
       }
 
+      const cols = computeComfortableLiveColumns(playerCount);
+      els.stage.style.setProperty("--live-cols", String(cols));
+
       if (playerCount < LIVE_DENSE_THRESHOLD) {
         delete els.stage.dataset.liveDensity;
-        els.stage.style.removeProperty("--live-cols");
-        els.stage.style.removeProperty("--live-gap");
+        els.stage.style.setProperty("--live-gap", playerCount <= 8 ? "0.42em" : "0.5em");
         return;
       }
 
-      const cols = computeLiveGridColumns(playerCount);
-      els.stage.style.setProperty("--live-cols", String(cols));
       if (playerCount >= 50) {
         els.stage.dataset.liveDensity = "xl";
         els.stage.style.setProperty("--live-gap", "0.28em");
