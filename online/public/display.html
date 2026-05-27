@@ -6,7 +6,7 @@
   <title>Lingo Public Display</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
 
@@ -213,32 +213,19 @@
     }
 
     .stage-byline {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      top: 11.8%;
-      z-index: 23;
-      width: min(52%, 36em);
-      margin: 0;
+      position: relative;
+      z-index: 1;
+      margin: 0.35em 0 0;
+      width: 100%;
       text-align: center;
-      font-size: clamp(12px, 1.75cqh, 17px);
-      font-weight: 700;
-      letter-spacing: 0.18em;
+      font-size: 0.4em;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      line-height: 1.35;
       text-transform: uppercase;
-      background: linear-gradient(90deg, #a8d8ff 0%, #fff6d0 42%, var(--show-gold-hot) 50%, #fff6d0 58%, #a8d8ff 100%);
-      background-size: 220% auto;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      filter: drop-shadow(0 0 12px rgba(255, 210, 60, 0.45));
-      animation: byline-shimmer 5s linear infinite;
+      color: rgba(210, 228, 248, 0.88);
+      text-shadow: 0 0 10px rgba(80, 180, 255, 0.3);
       pointer-events: none;
-      white-space: nowrap;
-    }
-
-    @keyframes byline-shimmer {
-      0% { background-position: 0% center; }
-      100% { background-position: 220% center; }
     }
 
     /* Shrink header when lobby is active — give content room below */
@@ -268,14 +255,6 @@
       }
     }
 
-    .stage[data-lobby-has-players="true"] .stage-byline {
-      top: auto;
-      bottom: 1%;
-      width: min(94%, 40em);
-      font-size: clamp(9px, 1.3cqh, 13px);
-      letter-spacing: 0.14em;
-    }
-
     .stage-ui {
       position: absolute;
       inset: 0;
@@ -299,10 +278,9 @@
       transform: translateX(-50%);
       width: 88%;
       text-align: center;
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 1.2em;
-      font-weight: 400;
-      letter-spacing: 0.14em;
+      font-size: 1.05em;
+      font-weight: 800;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--show-gold-hot);
       text-shadow:
@@ -386,11 +364,10 @@
 
     .timer-value {
       margin: 0;
-      font-family: "Bebas Neue", Montserrat, sans-serif;
       font-size: 2.85em;
-      font-weight: 400;
+      font-weight: 900;
       line-height: 1;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
       color: #ffffff;
       font-variant-numeric: tabular-nums;
       text-shadow:
@@ -555,11 +532,10 @@
     }
 
     .word-clue-value {
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 4.4em;
-      font-weight: 400;
+      font-size: 4.2em;
+      font-weight: 900;
       line-height: 1;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.08em;
       color: #ffffff;
       text-shadow:
         0 0 24px rgba(100, 190, 255, 0.75),
@@ -587,8 +563,8 @@
     }
 
     .word-clue[data-mode="letter"] .word-clue-value {
-      font-size: 6.2em;
-      letter-spacing: 0.06em;
+      font-size: 5.8em;
+      letter-spacing: 0.04em;
       color: var(--show-gold-hot);
       text-shadow:
         0 0 32px rgba(255, 210, 60, 0.85),
@@ -711,10 +687,9 @@
       position: relative;
       z-index: 1;
       margin: 0;
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 0.62em;
-      font-weight: 400;
-      letter-spacing: 0.28em;
+      font-size: 0.58em;
+      font-weight: 800;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--show-gold-hot);
       text-shadow: 0 0 14px rgba(255, 210, 60, 0.55);
@@ -913,7 +888,7 @@
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .stage-ui {
-      padding: 11.5% 3.5% 2.6%;
+      padding: 11.5% 3.5% 1.1%;
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-deck {
@@ -963,15 +938,21 @@
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-callout {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+      grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
       height: 100%;
       padding: 0.55em 0.5em 0.6em;
       gap: 0.4em;
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-join-kicker {
-      font-size: 0.54em;
-      letter-spacing: 0.22em;
+      font-size: 0.52em;
+      letter-spacing: 0.1em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .stage-byline {
+      font-size: 0.36em;
+      letter-spacing: 0.06em;
+      margin-top: 0.25em;
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-url-wrap {
@@ -1076,9 +1057,9 @@
     }
 
     .board-header-game {
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 1.05em;
-      letter-spacing: 0.2em;
+      font-size: 0.95em;
+      font-weight: 800;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: #ffe070;
       text-shadow: 0 0 16px rgba(255, 210, 60, 0.55);
@@ -1090,12 +1071,11 @@
     }
 
     .lobby-header-kicker {
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 0.72em;
-      font-weight: 400;
-      letter-spacing: 0.32em;
+      font-size: 0.64em;
+      font-weight: 800;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: rgba(255, 230, 160, 0.88);
+      color: rgba(255, 230, 160, 0.92);
       text-shadow: 0 0 12px rgba(255, 200, 60, 0.45);
     }
 
@@ -1103,15 +1083,14 @@
       display: flex;
       align-items: baseline;
       justify-content: center;
-      gap: 0.22em;
-      line-height: 1;
+      gap: 0.28em;
+      line-height: 1.1;
     }
 
     .lobby-header-count {
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 1.65em;
-      font-weight: 400;
-      letter-spacing: 0.04em;
+      font-size: 1.35em;
+      font-weight: 900;
+      letter-spacing: 0.02em;
       color: var(--show-gold-hot);
       text-shadow:
         0 0 20px rgba(255, 210, 60, 0.75),
@@ -1121,14 +1100,13 @@
 
     @keyframes count-pulse {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.04); }
+      50% { transform: scale(1.03); }
     }
 
     .lobby-header-unit {
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 0.95em;
-      font-weight: 400;
-      letter-spacing: 0.14em;
+      font-size: 0.72em;
+      font-weight: 800;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: rgba(255, 220, 120, 0.92);
       text-shadow: 0 0 14px rgba(255, 190, 60, 0.45);
@@ -1231,9 +1209,8 @@
     }
 
     .stat-value {
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 1.9em;
-      font-weight: 400;
+      font-size: 1.85em;
+      font-weight: 900;
       line-height: 1;
       text-shadow: 0 0 14px currentColor;
     }
@@ -1389,20 +1366,6 @@
       }
     }
 
-    @keyframes chip-sheen {
-      0%, 72%, 100% {
-        transform: translateX(-120%) rotate(22deg);
-        opacity: 0;
-      }
-      78% {
-        opacity: 0.85;
-      }
-      88% {
-        transform: translateX(120%) rotate(22deg);
-        opacity: 0;
-      }
-    }
-
     .player-card {
       padding: 0.65em 0.7em;
       border-radius: 0.35em;
@@ -1457,21 +1420,6 @@
       mask-composite: exclude;
       pointer-events: none;
       opacity: 0.9;
-    }
-
-    .stage[data-phase="idle"] .player-card::after {
-      content: "";
-      position: absolute;
-      inset: -20% -40%;
-      background: linear-gradient(
-        105deg,
-        transparent 42%,
-        rgba(255, 255, 255, 0.16) 50%,
-        transparent 58%
-      );
-      pointer-events: none;
-      animation: chip-sheen var(--chip-sheen-duration, 4.8s) ease-in-out infinite;
-      animation-delay: var(--chip-sheen-delay, 0s);
     }
 
     .stage[data-phase="idle"] .player-card[data-status="waiting"] {
@@ -1616,7 +1564,6 @@
           height="365"
           alt="Lingo"
         />
-        <p class="stage-byline">Presented by Liquid Kourage Entertainment</p>
       </div>
 
       <div class="stage-ui">
@@ -1648,6 +1595,7 @@
               <p class="idle-cta" id="idleCta"><span class="idle-cta-text">Sign up — game starts soon</span></p>
               <p class="idle-host-note" id="idleHostNote" hidden></p>
               <p class="idle-url-wrap"><span class="idle-url" id="playUrl"></span></p>
+              <p class="stage-byline">Presented by Liquid Kourage Entertainment</p>
             </div>
           </div>
 
@@ -1958,11 +1906,8 @@
         hash = Math.imul(hash, 16777619);
       }
       const u = Math.abs(hash);
-      const v = Math.abs(Math.imul(hash, 2654435761));
       return {
         glowDelay: ((u % 3400) / 1000).toFixed(3),
-        sheenDelay: ((v % 4800) / 1000).toFixed(3),
-        sheenDuration: (4.2 + (u % 2300) / 1000).toFixed(3),
       };
     }
 
@@ -1971,8 +1916,6 @@
       const seed = `${player.displayName || "player"}:${index}:${lobbyPageIndex}`;
       const timing = chipAnimationTiming(seed);
       card.style.setProperty("--chip-glow-delay", `${timing.glowDelay}s`);
-      card.style.setProperty("--chip-sheen-delay", `${timing.sheenDelay}s`);
-      card.style.setProperty("--chip-sheen-duration", `${timing.sheenDuration}s`);
     }
 
     function phaseCopy(phase, state) {
