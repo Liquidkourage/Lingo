@@ -392,7 +392,7 @@ async function listViewerGuessHistory(playerId, state, client = pool) {
   if (!playerId || !round) return [];
 
   const result = await client.query(
-    `select guess, result_pattern, result_label, is_official
+    `select guess, result_pattern, result_label, is_official, ball_stake
      from guess_submissions
      where session_id = $1
        and player_id = $2
@@ -423,6 +423,7 @@ async function listViewerGuessHistory(playerId, state, client = pool) {
       pattern,
       resultLabel,
       isOfficial: Boolean(row.is_official),
+      ballStake: Number(row.ball_stake || 0),
     });
   }
 
@@ -1038,10 +1039,17 @@ app.post("/api/public/submit-guess", async (req, res) => {
            player_id,
            round_number,
            guess,
+           ball_stake,
            submitted_at
          )
-         values ($1, $2, $3, $4, now())`,
-        [state.session_id, player.id, state.round_number, guess],
+         values ($1, $2, $3, $4, $5, now())`,
+        [
+          state.session_id,
+          player.id,
+          state.round_number,
+          guess,
+          Number(state.balls_remaining || 0),
+        ],
       );
     }
 

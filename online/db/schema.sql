@@ -97,6 +97,7 @@ create table if not exists guess_submissions (
 alter table guess_submissions add column if not exists result_pattern text not null default '';
 alter table guess_submissions add column if not exists result_label text not null default '';
 alter table guess_submissions add column if not exists is_official boolean not null default false;
+alter table guess_submissions add column if not exists ball_stake integer not null default 0;
 
 create table if not exists words (
   word text primary key,
