@@ -86,24 +86,6 @@
       margin-bottom: 0.8rem;
     }
 
-    .player-chip {
-      display: none;
-      margin: 0 0 0.45rem;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: rgba(200, 220, 245, 0.82);
-    }
-
-    .player-chip.is-visible {
-      display: block;
-    }
-
-    .player-chip strong {
-      color: var(--show-cyan);
-      font-weight: 800;
-    }
-
     .phase-badge {
       display: inline-flex;
       align-items: center;
@@ -320,8 +302,22 @@
       text-align: center;
     }
 
+    .play-identity {
+      margin-bottom: 0.85rem;
+    }
+
     .name-row {
-      margin-bottom: 1rem;
+      margin-bottom: 0;
+    }
+
+    .play-stage:not([data-phase="idle"]) .play-identity .field-label {
+      margin-bottom: 0.25rem;
+      font-size: 0.58rem;
+    }
+
+    .play-stage:not([data-phase="idle"]) #playerName {
+      padding: 0.55rem 0.75rem;
+      font-size: 0.92rem;
     }
 
     #playerName {
@@ -415,7 +411,16 @@
     }
 
     .button-row--lobby {
-      margin-top: 0.45rem;
+      margin-top: 0;
+    }
+
+    .play-lobby .lobby-hint {
+      margin: 0 0 0.65rem;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.35;
+      color: rgba(200, 220, 245, 0.78);
     }
 
     button.good {
@@ -685,8 +690,13 @@
       <header class="play-header">
         <img class="play-logo" src="/assets/lingo-logo-extracted.svg" width="280" height="80" alt="Lingo" />
         <div class="phase-badge" id="phaseBadge">Sign up open</div>
-        <p class="player-chip" id="playerChip"></p>
         <p class="phase-line" id="phaseLine">Join the lobby so you appear on the venue display before the host starts a round.</p>
+        <div class="play-identity">
+          <label class="field-label" for="playerName">Your display name</label>
+          <div class="name-row">
+            <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="Your display name" />
+          </div>
+        </div>
       </header>
 
       <section class="play-stats" aria-label="Live stats">
@@ -714,10 +724,7 @@
       </section>
 
       <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
-        <label class="field-label" for="playerName">Your display name</label>
-        <div class="name-row">
-          <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="Your display name" />
-        </div>
+        <p class="lobby-hint">Join once before the host starts a round to appear on the venue display.</p>
         <div class="button-row button-row--lobby">
           <button id="joinButton" class="good" type="button">Join lobby</button>
           <button id="leaveButton" class="secondary" type="button">Leave lobby</button>
@@ -754,7 +761,6 @@
       stage: document.getElementById('playStage'),
       phaseBadge: document.getElementById('phaseBadge'),
       phaseLine: document.getElementById('phaseLine'),
-      playerChip: document.getElementById('playerChip'),
       metaRound: document.getElementById('metaRound'),
       metaYours: document.getElementById('metaYours'),
       guessWorth: document.getElementById('guessWorth'),
@@ -944,18 +950,6 @@
       return `${copy.badge} · ${suffix}`;
     }
 
-    function renderPlayerChip(state) {
-      const phase = state.phase || 'idle';
-      const name = els.playerName.value.trim();
-      if (phase === 'idle' || !name) {
-        els.playerChip.classList.remove('is-visible');
-        els.playerChip.textContent = '';
-        return;
-      }
-      els.playerChip.innerHTML = `Playing as <strong>${name}</strong>`;
-      els.playerChip.classList.add('is-visible');
-    }
-
     function isLiveRound(phase) {
       return phase === 'guessing' || phase === 'results' || phase === 'ended';
     }
@@ -1016,6 +1010,13 @@
         } else if (viewer.resultLabel === 'Not a word…') {
           els.resultFeedbackValue.classList.add('is-invalid');
         }
+        return;
+      }
+
+      if ((phase === 'results' || phase === 'ended') && !guess.length) {
+        els.resultFeedbackLabel.textContent = 'Your result';
+        els.resultFeedbackValue.textContent = 'No guess submitted';
+        els.resultFeedback.classList.add('is-visible');
       }
     }
 
@@ -1289,7 +1290,6 @@
         ? '—'
         : String(viewer && viewer.found ? viewer.balls : 0);
 
-      renderPlayerChip(state);
       renderGuessWorth(state);
       renderPrompt(phase, firstLetter);
       renderLockedIn(state);
@@ -1309,7 +1309,7 @@
     async function joinLobby() {
       const displayName = els.playerName.value.trim();
       if (!displayName) {
-        setMessage('Enter your display name first.', 'error');
+        setMessage('Enter your display name above first.', 'error');
         els.playerName.focus();
         return;
       }
@@ -1337,7 +1337,7 @@
     async function leaveLobby() {
       const displayName = els.playerName.value.trim();
       if (!displayName) {
-        setMessage('Enter your display name first.', 'error');
+        setMessage('Enter your display name above first.', 'error');
         els.playerName.focus();
         return;
       }
@@ -1381,7 +1381,7 @@
       const guess = currentGuess();
 
       if (!displayName) {
-        setMessage('Enter your display name first.', 'error');
+        setMessage('Enter your display name above first.', 'error');
         els.playerName.focus();
         return;
       }
