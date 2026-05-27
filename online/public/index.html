@@ -118,6 +118,20 @@
       text-shadow: 0 0 14px rgba(255, 204, 0, 0.55);
     }
 
+    .phase-badge-label {
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .phase-badge-timer {
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: none;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
     .phase-badge::before {
       content: "";
       width: 0.55em;
@@ -127,10 +141,23 @@
       box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
     }
 
+    .play-stage[data-phase="guessing"] .phase-badge,
+    .play-stage[data-phase="results"] .phase-badge,
+    .play-stage[data-phase="ended"] .phase-badge {
+      flex-direction: column;
+      gap: 0.28em;
+      padding: 0.6em 0.95em 0.65em;
+      font-size: 0.78rem;
+    }
+
     .play-stage[data-phase="guessing"] .phase-badge {
       border-color: var(--show-green);
       color: var(--show-green);
       text-shadow: 0 0 14px rgba(0, 255, 85, 0.55);
+    }
+
+    .play-stage[data-phase="guessing"] .phase-badge-timer {
+      text-shadow: 0 0 18px rgba(0, 255, 85, 0.65);
     }
 
     .play-stage[data-phase="guessing"] .phase-badge::before {
@@ -143,6 +170,10 @@
       border-color: var(--show-orange);
       color: var(--show-orange);
       text-shadow: 0 0 14px rgba(255, 136, 0, 0.55);
+    }
+
+    .play-stage[data-phase="results"] .phase-badge-timer {
+      text-shadow: 0 0 16px rgba(255, 136, 0, 0.55);
     }
 
     .play-stage[data-phase="results"] .phase-badge::before {
@@ -173,6 +204,11 @@
       font-weight: 600;
       line-height: 1.35;
       color: rgba(220, 235, 255, 0.88);
+    }
+
+    .play-stage[data-phase="guessing"] .phase-line,
+    .play-stage[data-phase="results"] .phase-line {
+      display: none;
     }
 
     .meta-rail {
@@ -1149,8 +1185,8 @@
 
     const PHASE_COPY = {
       idle: { badge: 'Sign up open', line: 'Join the lobby so you appear on the venue display before the host starts a round.' },
-      guessing: { badge: 'Guessing open', line: 'Round is live — submit your word, then change it anytime before time runs out.' },
-      results: { badge: 'Results', line: 'Results are on the venue display. Do not guess now.' },
+      guessing: { badge: 'Guessing open', line: '' },
+      results: { badge: 'Results', line: '' },
       ended: { badge: 'Round ended', line: 'The word has been revealed. Next round soon.' },
     };
 
@@ -1428,10 +1464,9 @@
       return Math.max(0, Math.ceil((end - Date.now()) / 1000));
     }
 
-    function formatPhaseBadge(state) {
+    function phaseTimerText(state) {
       const phase = state.phase || 'idle';
-      const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
-      if (phase === 'idle') return copy.badge;
+      if (phase === 'idle') return '';
 
       let remaining = null;
       if (state.timerPaused && state.timerPausedRemainingSeconds != null) {
@@ -1442,9 +1477,24 @@
         remaining = secondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
       }
 
-      if (remaining == null) return copy.badge;
-      const suffix = state.timerPaused ? 'paused' : `${remaining}s`;
-      return `${copy.badge} · ${suffix}`;
+      if (remaining == null) return '';
+      return state.timerPaused ? 'paused' : `${remaining}s`;
+    }
+
+    function renderPhaseBadge(state) {
+      const phase = state.phase || 'idle';
+      const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
+      const timerText = phaseTimerText(state);
+
+      if (!timerText) {
+        els.phaseBadge.textContent = copy.badge;
+        return;
+      }
+
+      els.phaseBadge.innerHTML = [
+        `<span class="phase-badge-label">${copy.badge}</span>`,
+        `<span class="phase-badge-timer">${timerText}</span>`,
+      ].join('');
     }
 
     function isLiveRound(phase) {
@@ -1849,7 +1899,7 @@
       const viewer = state.viewer;
 
       els.stage.dataset.phase = phase;
-      els.phaseBadge.textContent = formatPhaseBadge(state);
+      renderPhaseBadge(state);
       els.phaseLine.textContent = phase === 'ended' && state.revealedWord
         ? `The word was ${state.revealedWord.toUpperCase()}.`
         : copy.line;
@@ -1875,7 +1925,7 @@
 
     function refreshTimerBadge() {
       if (!currentState || currentState.phase === 'idle') return;
-      els.phaseBadge.textContent = formatPhaseBadge(currentState);
+      renderPhaseBadge(currentState);
     }
 
     async function joinLobby() {
