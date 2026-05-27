@@ -789,15 +789,10 @@
       display: block;
     }
 
-    .play-stage[data-phase="guessing"][data-solved="true"] .word-entry,
-    .play-stage[data-phase="guessing"][data-solved="true"] .guess-actions,
-    .play-stage[data-phase="guessing"][data-solved="true"] .keyboard-zone {
+    .play-stage[data-phase="guessing"][data-guess-locked="true"] .word-entry,
+    .play-stage[data-phase="guessing"][data-guess-locked="true"] .guess-actions,
+    .play-stage[data-phase="guessing"][data-guess-locked="true"] .keyboard-zone {
       display: none;
-    }
-
-    .play-stage[data-phase="guessing"][data-solved="true"] .prompt {
-      color: var(--show-green);
-      text-shadow: 0 0 16px rgba(0, 255, 85, 0.55);
     }
 
     .result-area {
@@ -2189,7 +2184,7 @@
       if (lastIndex !== -1) return lastIndex;
 
       const official = String(viewer.roundGuess || '').toUpperCase();
-      if (official) {
+      if (official && (phase === 'results' || phase === 'ended')) {
         history.forEach((entry, index) => {
           if (String(entry.guess || '').toUpperCase() === official) lastIndex = index;
         });
@@ -2392,12 +2387,16 @@
     }
 
     function renderPrompt(phase, state) {
-      if (phase === 'guessing' && state?.viewer?.isSolved) {
-        els.promptLine.textContent = 'You solved it — no more guesses this round';
-        return;
-      }
       if (phase === 'guessing') {
         const letter = String(state?.publicFirstLetter || '').charAt(0).toUpperCase();
+        if (state?.viewer?.isSolved) {
+          if (letter) {
+            els.promptLine.innerHTML = `Starts with <span class="hint-letter">${letter}</span>`;
+            return;
+          }
+          els.promptLine.textContent = 'Waiting for results';
+          return;
+        }
         if (letter) {
           els.promptLine.innerHTML = `Starts with <span class="hint-letter">${letter}</span>`;
           return;
@@ -2559,7 +2558,8 @@
       const viewer = state.viewer;
 
       els.stage.dataset.phase = phase;
-      els.stage.dataset.solved = phase === 'guessing' && viewer?.isSolved ? 'true' : 'false';
+      els.stage.dataset.guessLocked = phase === 'guessing' && viewer?.isSolved ? 'true' : 'false';
+      els.stage.dataset.solved = (phase === 'results' || phase === 'ended') && viewer?.isSolved ? 'true' : 'false';
       renderPhaseBadge(state);
       if (phase === 'idle' && state.hostNote) {
         els.phaseLine.textContent = state.hostNote;
@@ -2755,7 +2755,7 @@
         guessDraftDirty = false;
         if (payload.solvedNow) {
           setGuessText(payload.player.currentGuess || guess);
-          setMessage('Perfect solve! You are done for this round.', 'success');
+          setMessage('Guess locked in — waiting for results.', 'success');
         } else {
           setGuessText(payload.player.currentGuess || guess);
           setMessage('Guess saved — you can still change it before time runs out.', 'success');
