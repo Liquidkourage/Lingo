@@ -33,9 +33,10 @@ def chroma_key(im: Image.Image) -> Image.Image:
 
 
 def crop_large_word(im: Image.Image) -> Image.Image:
-    """Keep only the bottom LINGO (below ~40% height)."""
+    """Keep only the bottom LINGO — starts ~y237 on the 1024×682 source."""
     w, h = im.size
-    return im.crop((0, int(h * 0.40), w, h))
+    split = int(h * 0.33)  # 225px: below small logo, above large logo top
+    return im.crop((0, split, w, h))
 
 
 def trim_and_pad(im: Image.Image, pad: int = PAD) -> Image.Image:
