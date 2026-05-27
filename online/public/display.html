@@ -652,21 +652,21 @@
       display: none;
     }
 
-    /* Live round: explicit grid stack — HUD on top, board fills to bottom */
+    /* Live round: score rail left, main stack right */
     .stage[data-phase="guessing"] .stage-ui,
     .stage[data-phase="results"] .stage-ui,
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: minmax(4.8em, 6.2em) minmax(0, 1fr);
       grid-template-rows: auto auto minmax(50cqh, 1fr);
       grid-template-areas:
-        "hud"
-        "stats"
-        "board";
+        "score hud"
+        "score stats"
+        "score board";
       justify-items: stretch;
       align-content: start;
-      gap: 0.18em;
-      padding: var(--live-logo-reserve) 2.5% 0.25%;
+      gap: 0.18em 0.28em;
+      padding: var(--live-logo-reserve) 2.5% 0.25% 1%;
       overflow: hidden;
       font-size: clamp(14px, 2.4cqh, 32px);
     }
@@ -674,6 +674,9 @@
     .stage[data-phase="guessing"] .stage-ui .live-hud,
     .stage[data-phase="results"] .stage-ui .live-hud,
     .stage[data-phase="ended"] .stage-ui .live-hud,
+    .stage[data-phase="guessing"] .stage-ui .live-score-rail,
+    .stage[data-phase="results"] .stage-ui .live-score-rail,
+    .stage[data-phase="ended"] .stage-ui .live-score-rail,
     .stage[data-phase="guessing"] .live-hud .status-badge,
     .stage[data-phase="results"] .live-hud .status-badge,
     .stage[data-phase="ended"] .live-hud .status-badge,
@@ -817,6 +820,80 @@
       display: none !important;
     }
 
+    .live-score-rail {
+      display: none;
+      grid-area: score;
+      grid-row: 1 / -1;
+      flex-direction: column;
+      align-self: stretch;
+      width: 100%;
+      min-height: 0;
+      border-radius: 0.4em;
+      border: 2px solid rgba(255, 200, 60, 0.5);
+      background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
+      box-shadow:
+        0 0 24px rgba(0, 120, 255, 0.2),
+        0 0 20px rgba(255, 190, 50, 0.12),
+        inset 0 1px 0 rgba(120, 210, 255, 0.12);
+      overflow: hidden;
+    }
+
+    .stage:not([data-phase="idle"]) .live-score-rail {
+      display: flex;
+    }
+
+    .score-slot {
+      flex: 1 1 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.06em;
+      min-height: 0;
+      padding: 0.15em 0.12em;
+      text-align: center;
+    }
+
+    .score-slot--round {
+      border-bottom: 2px solid rgba(255, 200, 60, 0.38);
+      background: linear-gradient(180deg, rgba(255, 200, 60, 0.12) 0%, rgba(0, 40, 100, 0.18) 100%);
+    }
+
+    .score-slot--balls {
+      background: linear-gradient(180deg, rgba(0, 146, 224, 0.14) 0%, rgba(0, 40, 100, 0.2) 100%);
+    }
+
+    .score-label {
+      font-size: 0.38em;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: rgba(220, 235, 255, 0.88);
+      line-height: 1.1;
+    }
+
+    .score-value {
+      font-weight: 900;
+      line-height: 0.95;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-value.round {
+      font-size: clamp(1.6em, 14cqh, 3.4em);
+      color: #ffc832;
+      text-shadow:
+        0 0 20px rgba(255, 200, 50, 0.95),
+        0 0 40px rgba(255, 160, 30, 0.45);
+    }
+
+    .score-value.balls {
+      font-size: clamp(1.6em, 14cqh, 3.4em);
+      color: #0092e0;
+      text-shadow:
+        0 0 20px rgba(0, 146, 224, 0.95),
+        0 0 40px rgba(0, 120, 255, 0.45);
+    }
+
     .stage[data-phase="guessing"] .live-hud .subtitle {
       display: none !important;
     }
@@ -921,14 +998,14 @@
       grid-area: stats;
       width: 100%;
       height: auto;
-      min-height: 2.85em;
+      min-height: 2.4em;
       flex-shrink: 0;
       z-index: 4;
       margin: 0.06em 0 0.12em;
       padding: 0.12em 9.5em 0.12em 0;
       overflow: hidden;
       display: grid;
-      grid-template-columns: 1.5fr 1.5fr 0.82fr 0.82fr 0.82fr;
+      grid-template-columns: repeat(3, 1fr);
       background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
       box-shadow: 0 0 16px rgba(0, 120, 255, 0.18);
     }
@@ -940,38 +1017,6 @@
       gap: 0.02em;
     }
 
-    .stage[data-phase="guessing"] .stat-cell:nth-child(1),
-    .stage[data-phase="guessing"] .stat-cell:nth-child(2),
-    .stage[data-phase="results"] .stat-cell:nth-child(1),
-    .stage[data-phase="results"] .stat-cell:nth-child(2),
-    .stage[data-phase="ended"] .stat-cell:nth-child(1),
-    .stage[data-phase="ended"] .stat-cell:nth-child(2) {
-      padding: 0.14em 0.12em;
-      gap: 0.04em;
-      background: linear-gradient(180deg, rgba(255, 200, 60, 0.1) 0%, rgba(0, 40, 100, 0.22) 100%);
-      box-shadow: inset 0 0 20px rgba(255, 190, 50, 0.08);
-    }
-
-    .stage[data-phase="guessing"] .stat-cell:nth-child(2),
-    .stage[data-phase="results"] .stat-cell:nth-child(2),
-    .stage[data-phase="ended"] .stat-cell:nth-child(2) {
-      background: linear-gradient(180deg, rgba(0, 146, 224, 0.14) 0%, rgba(0, 40, 100, 0.22) 100%);
-      box-shadow: inset 0 0 20px rgba(0, 146, 224, 0.1);
-      border-right: 2px solid rgba(255, 200, 60, 0.28);
-    }
-
-    .stage[data-phase="guessing"] .stat-cell:nth-child(3),
-    .stage[data-phase="results"] .stat-cell:nth-child(3),
-    .stage[data-phase="ended"] .stat-cell:nth-child(3) {
-      border-left: 1px solid rgba(255, 200, 60, 0.12);
-    }
-
-    .stage[data-phase="guessing"] .stat-cell:nth-child(n + 3),
-    .stage[data-phase="results"] .stat-cell:nth-child(n + 3),
-    .stage[data-phase="ended"] .stat-cell:nth-child(n + 3) {
-      opacity: 0.82;
-    }
-
     .stage[data-phase="guessing"] .stat-icon,
     .stage[data-phase="results"] .stat-icon,
     .stage[data-phase="ended"] .stat-icon {
@@ -980,71 +1025,17 @@
       height: 0.88em;
     }
 
-    .stage[data-phase="guessing"] .stat-cell:nth-child(1) .stat-icon,
-    .stage[data-phase="guessing"] .stat-cell:nth-child(2) .stat-icon,
-    .stage[data-phase="results"] .stat-cell:nth-child(1) .stat-icon,
-    .stage[data-phase="results"] .stat-cell:nth-child(2) .stat-icon,
-    .stage[data-phase="ended"] .stat-cell:nth-child(1) .stat-icon,
-    .stage[data-phase="ended"] .stat-cell:nth-child(2) .stat-icon {
-      width: 1.15em;
-      height: 1.15em;
-      filter: drop-shadow(0 0 8px currentColor);
-    }
-
     .stage[data-phase="guessing"] .stat-label,
     .stage[data-phase="results"] .stat-label,
     .stage[data-phase="ended"] .stat-label {
-      font-size: 0.44em;
+      font-size: 0.42em;
       line-height: 1.05;
-    }
-
-    .stage[data-phase="guessing"] .stat-cell:nth-child(1) .stat-label,
-    .stage[data-phase="guessing"] .stat-cell:nth-child(2) .stat-label,
-    .stage[data-phase="results"] .stat-cell:nth-child(1) .stat-label,
-    .stage[data-phase="results"] .stat-cell:nth-child(2) .stat-label,
-    .stage[data-phase="ended"] .stat-cell:nth-child(1) .stat-label,
-    .stage[data-phase="ended"] .stat-cell:nth-child(2) .stat-label {
-      font-size: 0.52em;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      color: rgba(235, 245, 255, 0.95);
-    }
-
-    .stage[data-phase="guessing"] .stat-cell:nth-child(n + 3) .stat-label,
-    .stage[data-phase="results"] .stat-cell:nth-child(n + 3) .stat-label,
-    .stage[data-phase="ended"] .stat-cell:nth-child(n + 3) .stat-label {
-      font-size: 0.38em;
-      color: rgba(200, 220, 245, 0.62);
     }
 
     .stage[data-phase="guessing"] .stat-value,
     .stage[data-phase="results"] .stat-value,
     .stage[data-phase="ended"] .stat-value {
-      font-size: 1.15em;
-    }
-
-    .stage[data-phase="guessing"] .stat-value.round,
-    .stage[data-phase="results"] .stat-value.round,
-    .stage[data-phase="ended"] .stat-value.round {
-      font-size: 1.85em;
-      text-shadow:
-        0 0 18px rgba(255, 200, 50, 0.95),
-        0 0 36px rgba(255, 160, 30, 0.45);
-    }
-
-    .stage[data-phase="guessing"] .stat-value.balls,
-    .stage[data-phase="results"] .stat-value.balls,
-    .stage[data-phase="ended"] .stat-value.balls {
-      font-size: 1.85em;
-      text-shadow:
-        0 0 18px rgba(0, 146, 224, 0.95),
-        0 0 36px rgba(0, 120, 255, 0.45);
-    }
-
-    .stage[data-phase="guessing"] .stat-cell:nth-child(n + 3) .stat-value,
-    .stage[data-phase="results"] .stat-cell:nth-child(n + 3) .stat-value,
-    .stage[data-phase="ended"] .stat-cell:nth-child(n + 3) .stat-value {
-      font-size: 0.92em;
+      font-size: 1.05em;
       font-weight: 800;
       text-shadow: 0 0 8px currentColor;
     }
@@ -1236,7 +1227,8 @@
     }
 
     .stage[data-phase="idle"] .timer-panel,
-    .stage[data-phase="idle"] .stats-row {
+    .stage[data-phase="idle"] .stats-row,
+    .stage[data-phase="idle"] .live-score-rail {
       display: none;
     }
 
@@ -2317,6 +2309,9 @@
     .stage[data-phase="ended"] .live-hud .subtitle,
     .stage[data-phase="ended"] .live-hud .word-tiles,
     .stage[data-phase="ended"] .live-hud .word-clue,
+    .stage[data-phase="guessing"] .stage-ui .live-score-rail,
+    .stage[data-phase="results"] .stage-ui .live-score-rail,
+    .stage[data-phase="ended"] .stage-ui .live-score-rail,
     .stage[data-phase="guessing"] .stage-ui .stats-row,
     .stage[data-phase="results"] .stage-ui .stats-row,
     .stage[data-phase="ended"] .stage-ui .stats-row {
@@ -2402,6 +2397,17 @@
           <p class="timer-unit">seconds</p>
         </aside>
 
+        <aside class="live-score-rail" id="liveScoreRail" aria-label="Round and balls">
+          <div class="score-slot score-slot--round">
+            <span class="score-label">Round</span>
+            <span class="score-value round" id="statRound">0</span>
+          </div>
+          <div class="score-slot score-slot--balls">
+            <span class="score-label">Balls</span>
+            <span class="score-value balls" id="statBalls">0</span>
+          </div>
+        </aside>
+
         <div class="live-hud" id="liveHud">
           <div class="status-badge" id="statusBadge">
             <svg class="status-icon-live" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -2423,16 +2429,6 @@
         </div>
 
         <div class="stats-row" aria-label="Game stats">
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="#ffc832" aria-hidden="true"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7L12 3z"/></svg>
-            <span class="stat-label">Round</span>
-            <span class="stat-value round" id="statRound">0</span>
-          </div>
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="#0092e0" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#0092e0" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" fill="#0092e0" font-family="Montserrat,sans-serif" font-weight="700">7</text></svg>
-            <span class="stat-label">Balls</span>
-            <span class="stat-value balls" id="statBalls">0</span>
-          </div>
           <div class="stat-cell">
             <svg class="stat-icon" viewBox="0 0 24 24" fill="#24b04c" aria-hidden="true"><path d="M4 18h16M7 14l3-4 3 3 4-6" stroke="#24b04c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span class="stat-label">Multiplier</span>
