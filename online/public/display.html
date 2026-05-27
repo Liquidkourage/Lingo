@@ -1276,39 +1276,7 @@
       border-style: solid;
     }
 
-    .stage[data-phase="guessing"] .player-card[data-status="locked"]:not([data-card-skin]),
-    .stage[data-phase="results"] .player-card[data-status="locked"]:not([data-card-skin]),
-    .stage[data-phase="ended"] .player-card[data-status="locked"]:not([data-card-skin]) {
-      border: 2px solid rgba(255, 210, 60, 0.95);
-      background: linear-gradient(180deg, rgba(72, 52, 8, 0.96) 0%, rgba(36, 24, 4, 0.98) 100%);
-      box-shadow:
-        0 0 22px rgba(255, 190, 40, 0.45),
-        0 0 40px rgba(255, 150, 20, 0.18),
-        inset 0 1px 0 rgba(255, 230, 140, 0.22);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-status="locked"]:not([data-card-skin]) .player-name,
-    .stage[data-phase="results"] .player-card[data-status="locked"]:not([data-card-skin]) .player-name,
-    .stage[data-phase="ended"] .player-card[data-status="locked"]:not([data-card-skin]) .player-name {
-      color: #fff4c8;
-      text-shadow: 0 0 10px rgba(255, 210, 60, 0.45);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-status="locked"]:not([data-card-skin]) .player-status,
-    .stage[data-phase="results"] .player-card[data-status="locked"]:not([data-card-skin]) .player-status,
-    .stage[data-phase="ended"] .player-card[data-status="locked"]:not([data-card-skin]) .player-status {
-      color: rgba(255, 220, 130, 0.92);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-status="waiting"]:not([data-card-skin]),
-    .stage[data-phase="results"] .player-card[data-status="waiting"]:not([data-card-skin]),
-    .stage[data-phase="ended"] .player-card[data-status="waiting"]:not([data-card-skin]) {
-      opacity: 0.78;
-      border-color: rgba(100, 140, 180, 0.35);
-      background: linear-gradient(180deg, rgba(0, 18, 42, 0.88) 0%, rgba(0, 8, 22, 0.94) 100%);
-    }
-
-    /* Live player card — subtle liquid gradient background */
+    /* Production live player card — liquid gradient (locked) */
     @keyframes card-liquid-flow {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
@@ -1320,9 +1288,9 @@
       50% { opacity: 0.78; transform: scale(1.03); }
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"],
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"],
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"] {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"] {
       background: rgba(14, 4, 36, 1);
       border-color: rgba(158, 128, 218, 0.48);
       box-shadow:
@@ -1330,9 +1298,9 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.07);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"]::before {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"]::before {
       content: "";
       position: absolute;
       inset: 0;
@@ -1352,9 +1320,9 @@
       z-index: 0;
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"]::after,
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"]::after,
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"]::after {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"]::after {
       content: "";
       position: absolute;
       inset: 0;
@@ -1367,33 +1335,33 @@
       z-index: 0;
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"] .player-name {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"] .player-name {
       color: #f4efff;
       font-weight: 700;
       letter-spacing: 0.03em;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"] .player-status,
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"] .player-status,
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"] .player-status {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"] .player-status,
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"] .player-status,
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"] .player-status {
       color: rgba(210, 195, 235, 0.82);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"][data-status="locked"],
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"][data-status="locked"],
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"][data-status="locked"],
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"][data-status="solved"],
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"][data-status="solved"],
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"][data-status="solved"],
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"][data-status="winner"],
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"][data-status="winner"],
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"][data-status="winner"],
-    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"][data-status="resolved"],
-    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"][data-status="resolved"],
-    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"][data-status="resolved"] {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="locked"],
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="solved"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="solved"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="solved"],
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="winner"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="winner"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="winner"],
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="resolved"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="resolved"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="resolved"] {
       border-color: rgba(190, 165, 255, 0.62);
       box-shadow:
         0 4px 14px rgba(0, 0, 0, 0.34),
@@ -1450,12 +1418,12 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"]::before,
-      .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"]::before,
-      .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"]::before,
-      .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"]::after,
-      .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"]::after,
-      .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"]::after {
+      .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"]::before,
+      .stage[data-phase="results"] .player-card[data-card-skin="liquid"]::before,
+      .stage[data-phase="ended"] .player-card[data-card-skin="liquid"]::before,
+      .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"]::after,
+      .stage[data-phase="results"] .player-card[data-card-skin="liquid"]::after,
+      .stage[data-phase="ended"] .player-card[data-card-skin="liquid"]::after {
         animation: none;
       }
     }
@@ -2936,9 +2904,7 @@
     const KIOSK_MODE = ["1", "true", "yes"].includes((urlParams.get("kiosk") || "").toLowerCase())
       || ["1", "true", "yes"].includes((urlParams.get("fs") || "").toLowerCase());
     const LAYOUT_DEBUG = ["borders", "layout", "1", "true", "yes"].includes((urlParams.get("debug") || "").toLowerCase());
-    const LIVE_CARD_SKIN = "eclipse-sovereign";
-    const LIVE_CARD_SKINS = Array.from({ length: 8 }, () => LIVE_CARD_SKIN);
-    const DEMO_CARD_SKINS = LIVE_CARD_SKINS;
+    const LIVE_PLAYER_CARD_SKIN = "liquid";
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
       "BlueJay", "CryptoKat", "NeonWave", "TurboTurtle", "Glitch",
@@ -2956,9 +2922,7 @@
         joinedAtIso: new Date(now - (count - index) * 60000).toISOString(),
         status: "waiting",
         statusText: "In lobby",
-        cardSkin: (IS_DEMO && index < DEMO_CARD_SKINS.length)
-          ? DEMO_CARD_SKINS[index]
-          : LIVE_CARD_SKINS[index % LIVE_CARD_SKINS.length],
+        cardSkin: LIVE_PLAYER_CARD_SKIN,
       }));
     }
 
@@ -3639,7 +3603,7 @@
         card.dataset.status = player.isWinner ? "winner" : (player.status || (phase === "idle" ? "waiting" : "waiting"));
 
         if (phase !== "idle") {
-          card.dataset.cardSkin = player.cardSkin || LIVE_CARD_SKINS[index % LIVE_CARD_SKINS.length];
+          card.dataset.cardSkin = LIVE_PLAYER_CARD_SKIN;
         }
 
         if (phase === "idle") {
