@@ -5,7 +5,10 @@ const { Pool } = require("pg");
 const { countWords, isFiveLetterWord, isLegalWord, normalizeWordInput, seedWordsTable } = require("./words");
 require("dotenv").config();
 
+const QRCode = require("qrcode");
+
 const app = express();
+app.set("trust proxy", 1);
 const port = Number(process.env.PORT || 3000);
 const adminKey = String(process.env.LINGO_ADMIN_KEY || "").trim();
 const databaseUrl = String(process.env.DATABASE_URL || "").trim();
@@ -278,6 +281,33 @@ async function clearSessionGuesses(sessionId, client = pool) {
     [sessionId]
   );
 }
+
+function playPageUrl(req) {
+  const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https")
+    .split(",")[0]
+    .trim();
+  const host = req.headers["x-forwarded-host"] || req.get("host");
+  return `${proto}://${host}/`;
+}
+
+app.get("/api/play-qr", async (req, res) => {
+  try {
+    const url = playPageUrl(req);
+    const png = await QRCode.toBuffer(url, {
+      type: "png",
+      width: 400,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#001a40", light: "#ffffff" },
+    });
+    res.type("png");
+    res.set("Cache-Control", "public, max-age=3600");
+    res.send(png);
+  } catch (error) {
+    console.error("play-qr", error);
+    res.status(500).end();
+  }
+});
 
 app.get("/health", async (_req, res) => {
   try {

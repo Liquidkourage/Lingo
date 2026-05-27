@@ -273,6 +273,9 @@
     }
 
     .idle-callout {
+      display: flex;
+      align-items: center;
+      gap: 1.1em;
       padding: 0.75em 1em;
       border-radius: 0.55em;
       border: 2px solid rgba(90, 190, 255, 0.55);
@@ -280,6 +283,22 @@
       box-shadow:
         0 0 36px rgba(0, 120, 255, 0.28),
         inset 0 0 24px rgba(0, 80, 180, 0.12);
+      text-align: left;
+    }
+
+    .idle-qr {
+      flex: 0 0 auto;
+      width: 5.5em;
+      height: 5.5em;
+      border-radius: 0.4em;
+      background: #fff;
+      padding: 0.2em;
+      box-sizing: border-box;
+    }
+
+    .idle-callout-text {
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
     .idle-kicker {
@@ -587,8 +606,11 @@
 
         <div class="idle-info" id="idleInfo" aria-live="polite">
           <div class="idle-callout">
-            <p class="idle-kicker">Play at</p>
-            <p class="idle-url" id="playUrl"></p>
+            <img class="idle-qr" id="playQr" width="400" height="400" alt="QR code — scan to open the player page" />
+            <div class="idle-callout-text">
+              <p class="idle-kicker">Scan or visit</p>
+              <p class="idle-url" id="playUrl"></p>
+            </div>
           </div>
         </div>
 
@@ -642,6 +664,7 @@
       statusText: document.getElementById("statusText"),
       subtitle: document.getElementById("subtitle"),
       playUrl: document.getElementById("playUrl"),
+      playQr: document.getElementById("playQr"),
       playerBoardHeader: document.getElementById("playerBoardHeader"),
       wordClue: document.getElementById("wordClue"),
       wordClueLabel: document.getElementById("wordClueLabel"),
@@ -720,6 +743,7 @@
 
     function renderIdleInfo(state) {
       els.playUrl.textContent = playSiteUrlDisplay();
+      els.playQr.src = `${playSiteUrl()}/api/play-qr`;
     }
 
     function renderWordClue(state) {
@@ -888,7 +912,7 @@
     }
 
     async function boot() {
-      els.playUrl.textContent = playSiteUrlDisplay();
+      renderIdleInfo();
       startTickTimer();
       try {
         await fetchPublicState();
