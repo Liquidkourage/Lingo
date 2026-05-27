@@ -330,17 +330,18 @@ async function buildViewerContext(displayName, state, client = pool) {
       balls: 0,
       lockedIn: false,
       resultPattern: "",
+      roundGuess: "",
       resultLabel: "",
       isSolved: false,
     };
   }
 
   const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
+  const guess = submitted ? normalizeWordInput(player.currentGuess) : "";
   let resultPattern = "";
   let resultLabel = "";
 
   if ((phase === "results" || phase === "ended") && submitted) {
-    const guess = normalizeWordInput(player.currentGuess);
     if (!(await isLegalWord(client, guess))) {
       resultLabel = "Not a word…";
     } else {
@@ -355,6 +356,7 @@ async function buildViewerContext(displayName, state, client = pool) {
     balls: Number(player.balls || 0),
     lockedIn: phase === "guessing" && submitted,
     resultPattern: phase === "results" || phase === "ended" ? resultPattern : "",
+    roundGuess: (phase === "results" || phase === "ended") && submitted ? guess : "",
     resultLabel,
     isSolved: Boolean(player.solvedCurrentWord),
   };

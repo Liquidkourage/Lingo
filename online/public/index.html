@@ -41,7 +41,7 @@
 
     .play-stage {
       position: relative;
-      width: min(100%, 480px);
+      width: min(100%, 520px);
     }
 
     .play-stage::before {
@@ -431,6 +431,87 @@
       opacity: 0.55;
     }
 
+    .play-keyboard {
+      display: none;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 0.85rem;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .play-stage[data-phase="guessing"] .play-keyboard,
+    .play-stage[data-phase="results"] .play-keyboard,
+    .play-stage[data-phase="ended"] .play-keyboard {
+      display: flex;
+    }
+
+    .keyboard-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.28rem;
+    }
+
+    .keyboard-row--mid {
+      padding: 0 0.65rem;
+    }
+
+    .keyboard-key {
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 2.15rem;
+      height: 2.65rem;
+      padding: 0;
+      border: 2px solid rgba(0, 0, 0, 0.85);
+      border-radius: 0.18em;
+      background: #1a2838;
+      color: var(--show-white);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
+    }
+
+    .keyboard-key:active:not(:disabled) {
+      transform: translateY(1px);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+    }
+
+    .keyboard-key:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    .keyboard-key[data-state="correct"] {
+      background: var(--show-green);
+      border-color: rgba(0, 120, 50, 0.9);
+      color: #001808;
+      box-shadow: 0 0 12px rgba(0, 255, 85, 0.55);
+    }
+
+    .keyboard-key[data-state="present"] {
+      background: var(--show-gold);
+      border-color: rgba(140, 90, 0, 0.85);
+      color: #1a1000;
+      box-shadow: 0 0 12px rgba(255, 204, 0, 0.55);
+    }
+
+    .keyboard-key[data-state="absent"] {
+      background: #2a2030;
+      border-color: rgba(80, 60, 70, 0.9);
+      color: rgba(200, 190, 195, 0.72);
+    }
+
+    .keyboard-key--wide {
+      flex: 1.4 1 0;
+      max-width: 3.4rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.08em;
+    }
+
     @media (max-width: 420px) {
       .play-card { padding: 1rem 0.85rem 0.9rem; }
       .meta-rail { grid-template-columns: repeat(2, 1fr); }
@@ -486,6 +567,12 @@
         <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" />
       </div>
 
+      <div class="play-keyboard" id="playKeyboard" aria-label="On-screen keyboard">
+        <div class="keyboard-row" data-row="top"></div>
+        <div class="keyboard-row keyboard-row--mid" data-row="mid"></div>
+        <div class="keyboard-row" data-row="bottom"></div>
+      </div>
+
       <div id="message" class="message" aria-live="polite"></div>
 
       <div class="button-row button-row--lobby">
@@ -521,9 +608,25 @@
       clear: document.getElementById('clearButton'),
       rename: document.getElementById('renameButton'),
       inputs: [...document.querySelectorAll('.letter-input')],
+      keyboard: document.getElementById('playKeyboard'),
+      keyboardRows: {
+        top: document.querySelector('.keyboard-row[data-row="top"]'),
+        mid: document.querySelector('.keyboard-row[data-row="mid"]'),
+        bottom: document.querySelector('.keyboard-row[data-row="bottom"]'),
+      },
     };
 
     let currentState = null;
+    let keyboardWordKey = '';
+    const keyboardLetterStates = new Map();
+
+    const KEYBOARD_LAYOUT = {
+      top: 'QWERTYUIOP'.split(''),
+      mid: 'ASDFGHJKL'.split(''),
+      bottom: ['ENTER', ...'ZXCVBNM'.split(''), 'BACK'],
+    };
+
+    const KEYBOARD_STATE_RANK = { absent: 1, present: 2, correct: 3 };
 
     const urlParams = new URLSearchParams(window.location.search);
     const DEMO_PHASE = (urlParams.get('phase') || '').toLowerCase();
@@ -531,6 +634,7 @@
 
     function buildDemoState() {
       const base = {
+        sessionId: 1,
         roundNumber: 3,
         ballsRemaining: 47,
         ballMultiplier: 2,
@@ -553,6 +657,7 @@
             found: true,
             displayName: 'NightOwl',
             balls: 12,
+            roundGuess: 'STARE',
             resultPattern: '!?///',
             resultLabel: '▪○✕✕✕',
           },
@@ -567,6 +672,7 @@
             found: true,
             displayName: 'NightOwl',
             balls: 18,
+            roundGuess: 'STARK',
             resultPattern: '!!!!!',
             resultLabel: 'Perfect solve!',
           },
@@ -678,6 +784,192 @@
       els.promptLine.textContent = 'Enter your guess!';
     }
 
+    function keyboardStorageKey(wordKey) {
+      return `lingo_keyboard_${wordKey}`;
+    }
+
+    function currentKeyboardWordKey(state) {
+      const letter = (state.publicFirstLetter || '').charAt(0).toUpperCase();
+      if (!letter || letter === '.') return '';
+      return `${state.sessionId || 0}:${letter}`;
+    }
+
+    function resetKeyboardStates() {
+      keyboardLetterStates.clear();
+    }
+
+    function loadKeyboardStates(wordKey) {
+      if (!wordKey) {
+        resetKeyboardStates();
+        return;
+      }
+      if (wordKey === keyboardWordKey) return;
+      keyboardWordKey = wordKey;
+      resetKeyboardStates();
+      try {
+        const raw = localStorage.getItem(keyboardStorageKey(wordKey));
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (!saved || typeof saved !== 'object') return;
+        Object.entries(saved).forEach(([letter, state]) => {
+          if (KEYBOARD_STATE_RANK[state]) {
+            keyboardLetterStates.set(letter, state);
+          }
+        });
+      } catch (_error) {
+        // Ignore corrupt keyboard cache.
+      }
+    }
+
+    function saveKeyboardStates() {
+      if (!keyboardWordKey) return;
+      const payload = Object.fromEntries(keyboardLetterStates.entries());
+      localStorage.setItem(keyboardStorageKey(keyboardWordKey), JSON.stringify(payload));
+    }
+
+    function mergeKeyboardLetter(letter, mark) {
+      const key = String(letter || '').toUpperCase();
+      if (!/^[A-Z]$/.test(key)) return;
+      const next = mark === '!' ? 'correct' : mark === '?' ? 'present' : 'absent';
+      const current = keyboardLetterStates.get(key) || '';
+      if (!current || KEYBOARD_STATE_RANK[next] > KEYBOARD_STATE_RANK[current]) {
+        keyboardLetterStates.set(key, next);
+      }
+    }
+
+    function applyGuessPatternToKeyboard(guess, pattern) {
+      const letters = String(guess || '').toUpperCase().padEnd(5, ' ').slice(0, 5).split('');
+      const marks = String(pattern || '').padEnd(5, '/').slice(0, 5).split('');
+      letters.forEach((letter, index) => mergeKeyboardLetter(letter, marks[index]));
+      saveKeyboardStates();
+      paintKeyboardStates();
+    }
+
+    function applyKnownFirstLetter(letter) {
+      const key = String(letter || '').toUpperCase();
+      if (!/^[A-Z]$/.test(key)) return;
+      mergeKeyboardLetter(key, '!');
+      saveKeyboardStates();
+      paintKeyboardStates();
+    }
+
+    function paintKeyboardStates() {
+      els.keyboard.querySelectorAll('.keyboard-key[data-letter]').forEach((button) => {
+        const letter = button.dataset.letter;
+        const state = keyboardLetterStates.get(letter) || '';
+        if (state) {
+          button.dataset.state = state;
+        } else {
+          delete button.dataset.state;
+        }
+      });
+    }
+
+    function focusedEditableInput() {
+      const active = document.activeElement;
+      if (active && els.inputs.includes(active) && !active.classList.contains('is-revealed') && !active.disabled) {
+        return active;
+      }
+      const index = firstEditableIndex();
+      return index >= 0 ? els.inputs[index] : null;
+    }
+
+    function insertKeyboardLetter(letter) {
+      const input = focusedEditableInput();
+      if (!input) return;
+      input.value = letter;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function handleKeyboardPress(action) {
+      if (action === 'ENTER') {
+        submitGuess();
+        return;
+      }
+      if (action === 'BACK') {
+        const input = focusedEditableInput();
+        if (!input) return;
+        if (input.value) {
+          input.value = '';
+          return;
+        }
+        const index = els.inputs.indexOf(input);
+        if (index > 0) {
+          let prev = index - 1;
+          while (prev > 0 && els.inputs[prev].classList.contains('is-revealed')) {
+            prev -= 1;
+          }
+          if (!els.inputs[prev].classList.contains('is-revealed')) {
+            els.inputs[prev].value = '';
+            els.inputs[prev].focus();
+          }
+        }
+        return;
+      }
+      insertKeyboardLetter(action);
+    }
+
+    function buildKeyboard() {
+      const makeKey = (label) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        const isWide = label === 'ENTER' || label === 'BACK';
+        button.className = `keyboard-key${isWide ? ' keyboard-key--wide' : ''}`;
+        button.textContent = label === 'BACK' ? '⌫' : label;
+        button.dataset.action = label;
+        if (/^[A-Z]$/.test(label)) {
+          button.dataset.letter = label;
+        }
+        button.addEventListener('click', () => handleKeyboardPress(label));
+        return button;
+      };
+
+      els.keyboardRows.top.replaceChildren(...KEYBOARD_LAYOUT.top.map(makeKey));
+      els.keyboardRows.mid.replaceChildren(...KEYBOARD_LAYOUT.mid.map(makeKey));
+      els.keyboardRows.bottom.replaceChildren(...KEYBOARD_LAYOUT.bottom.map(makeKey));
+    }
+
+    function updateKeyboardEnabled(phase) {
+      const enabled = phase === 'guessing';
+      els.keyboard.querySelectorAll('.keyboard-key').forEach((button) => {
+        button.disabled = !enabled;
+      });
+    }
+
+    function syncKeyboardFromState(state) {
+      const phase = state.phase || 'idle';
+      const wordKey = currentKeyboardWordKey(state);
+
+      if (!wordKey || phase === 'idle') {
+        keyboardWordKey = '';
+        resetKeyboardStates();
+        paintKeyboardStates();
+        updateKeyboardEnabled(phase);
+        return;
+      }
+
+      loadKeyboardStates(wordKey);
+      const firstLetter = state.publicFirstLetter ? state.publicFirstLetter.charAt(0) : '';
+      if (firstLetter && firstLetter !== '.') {
+        applyKnownFirstLetter(firstLetter);
+      }
+
+      const viewer = state.viewer;
+      if (viewer && (phase === 'results' || phase === 'ended')) {
+        const guess = String(viewer.roundGuess || '').toUpperCase();
+        const pattern = String(viewer.resultPattern || '');
+        if (guess.length === 5 && pattern) {
+          applyGuessPatternToKeyboard(guess, pattern);
+        } else if (guess.length === 5 && viewer.resultLabel === 'Not a word…') {
+          guess.split('').forEach((letter) => mergeKeyboardLetter(letter, '/'));
+          saveKeyboardStates();
+          paintKeyboardStates();
+        }
+      }
+
+      updateKeyboardEnabled(phase);
+    }
+
     function renderViewerFeedback(state) {
       const viewer = state.viewer;
       const phase = state.phase || 'idle';
@@ -724,6 +1016,7 @@
       renderPrompt(phase, firstLetter);
       renderViewerFeedback(state);
       applyFirstLetter(phase === 'guessing' ? firstLetter : '');
+      syncKeyboardFromState(state);
       updateLobbyButtons();
       updateSubmitEnabled();
     }
@@ -901,6 +1194,7 @@
       fetchPublicState().catch(() => {});
     });
     wireInputBehavior();
+    buildKeyboard();
     clearInputs(false);
 
     if (IS_DEMO) {
