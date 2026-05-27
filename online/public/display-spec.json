@@ -1,5 +1,6 @@
 {
   "referenceImage": "/assets/lingo-display-waiting-v2.png",
   "stageBackground": "/assets/lingo-display-waiting-v2-bg.png",
-  "note": "Background-only layer extracted from waiting v2 graphic. UI to be added incrementally."
+  "logo": "/assets/lingo-display-waiting-v2-logo.png",
+  "note": "Background + logo only. Further UI layers to be added incrementally."
 }

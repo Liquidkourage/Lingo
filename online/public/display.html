@@ -24,6 +24,7 @@
     }
 
     .stage {
+      position: relative;
       width: min(100vw, 100vh * (1024 / 575));
       height: min(100vh, 100vw * (575 / 1024));
     }
@@ -32,6 +33,16 @@
       display: block;
       width: 100%;
       height: 100%;
+    }
+
+    .stage-logo {
+      position: absolute;
+      left: 18.359375%;
+      top: 2.782608695652174%;
+      width: 63.28125%;
+      height: auto;
+      pointer-events: none;
+      user-select: none;
     }
   </style>
 </head>
@@ -44,6 +55,13 @@
         width="1024"
         height="575"
         alt=""
+      />
+      <img
+        class="stage-logo"
+        src="/assets/lingo-display-waiting-v2-logo.png"
+        width="648"
+        height="98"
+        alt="Lingo"
       />
     </div>
   </div>
