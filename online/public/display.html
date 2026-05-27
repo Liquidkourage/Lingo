@@ -1300,9 +1300,7 @@
       font-size: 0.48em;
     }
 
-    .stage[data-phase="guessing"] .player-board-body,
-    .stage[data-phase="results"] .player-board-body,
-    .stage[data-phase="ended"] .player-board-body {
+    .stage[data-phase="guessing"] .player-board-body {
       padding: 0.36em 0.32em 0.32em;
       min-height: 0;
       flex: 1 1 auto;
@@ -1312,9 +1310,18 @@
       justify-content: center;
     }
 
-    .stage[data-phase="guessing"] .player-grid,
-    .stage[data-phase="results"] .player-grid,
-    .stage[data-phase="ended"] .player-grid {
+    .stage[data-phase="results"] .player-board-body,
+    .stage[data-phase="ended"] .player-board-body {
+      padding: 0.36em 0.32em 0.32em;
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow: visible;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .stage[data-phase="guessing"] .player-grid {
       flex: 0 1 auto;
       min-height: 0;
       max-height: 100%;
@@ -1325,11 +1332,25 @@
       place-content: center;
       place-items: center;
       gap: var(--live-gap, 0.42em);
+      overflow: hidden;
     }
 
-    .stage[data-phase="guessing"] .player-card,
-    .stage[data-phase="results"] .player-card,
-    .stage[data-phase="ended"] .player-card {
+    .stage[data-phase="results"] .player-grid,
+    .stage[data-phase="ended"] .player-grid {
+      flex: 0 1 auto;
+      min-height: 0;
+      max-height: none;
+      height: auto;
+      width: 100%;
+      grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
+      grid-template-rows: repeat(var(--live-rows, 2), auto);
+      place-content: center;
+      place-items: start;
+      gap: var(--live-gap, 0.42em);
+      overflow: visible;
+    }
+
+    .stage[data-phase="guessing"] .player-card {
       width: var(--live-card-width);
       max-width: var(--live-card-width);
       min-height: var(--live-card-min-height);
@@ -1340,6 +1361,23 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      align-self: center;
+      justify-self: center;
+    }
+
+    .stage[data-phase="results"] .player-card,
+    .stage[data-phase="ended"] .player-card {
+      width: var(--live-card-width);
+      max-width: var(--live-card-width);
+      min-height: var(--live-card-min-height);
+      height: auto;
+      padding: 0.3em 0.38em 0.36em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.1em;
+      overflow: visible;
       align-self: center;
       justify-self: center;
     }
@@ -2795,20 +2833,30 @@
     .pattern-row {
       display: flex;
       gap: 0.22em;
-      margin-top: 0.4em;
+      margin-top: 0.15em;
       width: 100%;
-      max-width: 12em;
+      max-width: 100%;
       justify-content: center;
+      flex-shrink: 0;
     }
 
     .pattern-row.reveal-letter-row {
       flex-shrink: 0;
+      z-index: 2;
+    }
+
+    .stage[data-phase="results"] .pattern-row.reveal-letter-row,
+    .stage[data-phase="ended"] .pattern-row.reveal-letter-row {
+      margin-top: 0.2em;
+      gap: 0.14em;
     }
 
     .pattern-cell {
-      flex: 1 1 0;
-      min-width: 1.5em;
-      min-height: 1.5em;
+      flex: 0 0 auto;
+      width: 1.35em;
+      height: 1.35em;
+      min-width: 1.35em;
+      min-height: 1.35em;
       aspect-ratio: 1;
       border-radius: 0.14em;
       border: 2px solid rgba(0, 0, 0, 0.7);
@@ -2851,8 +2899,27 @@
 
     .stage[data-live-density="lg"] .pattern-cell,
     .stage[data-live-density="xl"] .pattern-cell {
-      min-width: 1.2em;
-      min-height: 1.2em;
+      width: 1.15em;
+      height: 1.15em;
+      min-width: 1.15em;
+      min-height: 1.15em;
+    }
+
+    .stage[data-phase="results"] .player-card .player-status.is-redundant,
+    .stage[data-phase="ended"] .player-card .player-status.is-redundant {
+      display: none;
+    }
+
+    .stage[data-phase="results"] .player-card .player-balls,
+    .stage[data-phase="ended"] .player-card .player-balls {
+      margin-top: 0;
+      font-size: 0.46em;
+    }
+
+    .stage[data-phase="results"] .player-card .player-name,
+    .stage[data-phase="ended"] .player-card .player-name {
+      font-size: 0.62em;
+      line-height: 1.1;
     }
 
     .stage[data-phase="results"] .player-card[data-card-tone="invalid"] .pattern-cell,
@@ -3426,6 +3493,13 @@
       const rows = Math.max(1, Math.ceil(playerCount / cols));
       els.stage.style.setProperty("--live-cols", String(cols));
       els.stage.style.setProperty("--live-rows", String(rows));
+
+      if (phase === "results" || phase === "ended") {
+        const revealMinHeight = playerCount >= 20 ? "4.75em" : playerCount >= 12 ? "5.1em" : "5.5em";
+        els.stage.style.setProperty("--live-card-min-height", revealMinHeight);
+      } else {
+        els.stage.style.removeProperty("--live-card-min-height");
+      }
 
       if (playerCount < LIVE_DENSE_THRESHOLD) {
         delete els.stage.dataset.liveDensity;
@@ -4030,10 +4104,20 @@
           card.appendChild(balls);
         }
 
+        const showRevealBoxes = (phase === "results" || phase === "ended")
+          && player.hasSubmitted
+          && (player.resultPattern || player.roundGuess || player.guessIsLegal === false);
+        const revealPattern = player.resultPattern
+          || (player.guessIsLegal === false ? "/////" : "");
+        const revealGuess = String(player.roundGuess || "").toUpperCase();
+
         const status = document.createElement("div");
         status.className = "player-status";
         if (phase === "idle") {
           status.textContent = "In lobby";
+        } else if (showRevealBoxes && player.statusText === "Round result") {
+          status.classList.add("is-redundant");
+          status.textContent = "";
         } else {
           status.textContent = player.statusText || "";
         }
@@ -4043,13 +4127,8 @@
           card.appendChild(renderPendingRow());
         }
 
-        if ((phase === "results" || phase === "ended") && player.hasSubmitted) {
-          const revealPattern = player.resultPattern
-            || (player.guessIsLegal === false ? "/////" : "");
-          const revealGuess = player.roundGuess || "";
-          if (revealGuess || revealPattern) {
-            card.appendChild(renderRevealLetterBoxes(revealGuess, revealPattern));
-          }
+        if (showRevealBoxes && (revealGuess || revealPattern)) {
+          card.appendChild(renderRevealLetterBoxes(revealGuess, revealPattern));
         }
 
         fragment.appendChild(card);
