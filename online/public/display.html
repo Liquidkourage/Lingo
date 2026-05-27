@@ -6,7 +6,7 @@
   <title>Lingo Public Display</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@900&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
 
@@ -45,14 +45,14 @@
       left: 50%;
       top: 2.45%;
       transform: translateX(-50%);
-      width: 63.28%;
+      width: 68%;
       perspective: 1400px;
       pointer-events: none;
       user-select: none;
     }
 
     .logo-tilt {
-      transform: rotateX(14deg);
+      transform: rotateX(16deg);
       transform-origin: 50% 84%;
     }
 
@@ -79,7 +79,7 @@
         <div class="logo-tilt">
         <svg
           class="lingo-logo"
-          viewBox="0 0 648 118"
+          viewBox="0 0 720 118"
           xmlns="http://www.w3.org/2000/svg"
           role="img"
           aria-label="Lingo"
@@ -87,9 +87,9 @@
           <defs>
             <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#ffffff" />
-              <stop offset="18%" stop-color="#f4f9ff" />
-              <stop offset="52%" stop-color="#bdd4ee" />
-              <stop offset="100%" stop-color="#78a0c8" />
+              <stop offset="12%" stop-color="#eef4ff" />
+              <stop offset="48%" stop-color="#9eb8d4" />
+              <stop offset="100%" stop-color="#4a7098" />
             </linearGradient>
             <linearGradient id="faceShine" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
@@ -113,7 +113,7 @@
               <stop offset="100%" stop-color="#0b4fd8" stop-opacity="0.4" />
             </linearGradient>
             <filter id="blueGlowWide" x="-50%" y="-80%" width="200%" height="260%">
-              <feGaussianBlur stdDeviation="12" result="blur" />
+              <feGaussianBlur stdDeviation="7" result="blur" />
               <feColorMatrix
                 in="blur"
                 type="matrix"
@@ -124,7 +124,7 @@
               />
             </filter>
             <filter id="blueGlowTight" x="-30%" y="-50%" width="160%" height="200%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
               <feColorMatrix
                 in="blur"
                 type="matrix"
@@ -138,78 +138,75 @@
               <feDropShadow dx="1" dy="8" stdDeviation="5" flood-color="#000000" flood-opacity="0.7" />
             </filter>
             <clipPath id="faceShineClip">
-              <rect x="0" y="0" width="648" height="44" />
+              <rect x="0" y="0" width="720" height="38" />
             </clipPath>
           </defs>
 
           <g
-            font-family="Montserrat, Arial Black, Impact, sans-serif"
-            font-weight="900"
-            font-size="86"
-            letter-spacing="3.5"
+            font-family="'Bebas Neue', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif"
+            font-weight="400"
+            font-size="94"
+            letter-spacing="14"
             text-anchor="middle"
+            stroke-linejoin="miter"
+            stroke-miterlimit="2"
+            stroke-linecap="butt"
           >
             <!-- Blue back-light (sits behind extruded volume) -->
-            <text x="324" y="70" fill="url(#blueBloom)" filter="url(#blueGlowWide)">LINGO</text>
-            <text x="324" y="70" fill="#48a8ff" filter="url(#blueGlowTight)">LINGO</text>
+            <text x="360" y="72" fill="url(#blueBloom)" filter="url(#blueGlowWide)">LINGO</text>
+            <text x="360" y="72" fill="#5cb8ff" filter="url(#blueGlowTight)">LINGO</text>
 
             <!-- Isometric gold extrusion: down + right = depth into screen -->
             <g aria-hidden="true">
-              <text x="324" y="70" fill="#2a1e03" transform="translate(6.6, 11.55)">LINGO</text>
-              <text x="324" y="70" fill="#342607" transform="translate(6, 10.5)">LINGO</text>
-              <text x="324" y="70" fill="#3f2e08" transform="translate(5.4, 9.45)">LINGO</text>
-              <text x="324" y="70" fill="#4a3609" transform="translate(4.8, 8.4)">LINGO</text>
-              <text x="324" y="70" fill="#553f0a" transform="translate(4.2, 7.35)">LINGO</text>
-              <text x="324" y="70" fill="#60480b" transform="translate(3.6, 6.3)">LINGO</text>
-              <text x="324" y="70" fill="#6b520c" transform="translate(3, 5.25)">LINGO</text>
-              <text x="324" y="70" fill="#765c0d" transform="translate(2.4, 4.2)">LINGO</text>
-              <text x="324" y="70" fill="#81660e" transform="translate(1.8, 3.15)">LINGO</text>
-              <text x="324" y="70" fill="#8c700f" transform="translate(1.2, 2.1)">LINGO</text>
-              <text x="324" y="70" fill="url(#goldSide)" transform="translate(0.6, 1.05)">LINGO</text>
+              <text x="360" y="72" fill="#1a1202" transform="translate(7.2, 12.6)">LINGO</text>
+              <text x="360" y="72" fill="#261903" transform="translate(6.5, 11.4)">LINGO</text>
+              <text x="360" y="72" fill="#322004" transform="translate(5.8, 10.2)">LINGO</text>
+              <text x="360" y="72" fill="#3e2705" transform="translate(5.1, 9)">LINGO</text>
+              <text x="360" y="72" fill="#4a2e06" transform="translate(4.4, 7.8)">LINGO</text>
+              <text x="360" y="72" fill="#563507" transform="translate(3.7, 6.6)">LINGO</text>
+              <text x="360" y="72" fill="#623c08" transform="translate(3, 5.4)">LINGO</text>
+              <text x="360" y="72" fill="#6e4309" transform="translate(2.3, 4.2)">LINGO</text>
+              <text x="360" y="72" fill="#7a4a0a" transform="translate(1.6, 3)">LINGO</text>
+              <text x="360" y="72" fill="#86510b" transform="translate(0.9, 1.8)">LINGO</text>
+              <text x="360" y="72" fill="url(#goldSide)" transform="translate(0.45, 0.9)">LINGO</text>
             </g>
 
             <!-- Gold bezel on front face -->
             <text
-              x="324"
-              y="70"
+              x="360"
+              y="72"
               fill="none"
-              stroke="#2f2000"
-              stroke-width="16"
-              stroke-linejoin="round"
-              stroke-linecap="round"
+              stroke="#1a1000"
+              stroke-width="14"
               filter="url(#dropShadow)"
             >LINGO</text>
             <text
-              x="324"
-              y="70"
+              x="360"
+              y="72"
               fill="none"
               stroke="url(#goldOuter)"
-              stroke-width="11"
-              stroke-linejoin="round"
-              stroke-linecap="round"
+              stroke-width="9"
             >LINGO</text>
             <text
-              x="324"
-              y="69.5"
+              x="360"
+              y="71.5"
               fill="none"
-              stroke="#fff3b8"
-              stroke-width="2.4"
-              stroke-linejoin="round"
-              stroke-linecap="round"
+              stroke="#ffe680"
+              stroke-width="1.8"
             >LINGO</text>
 
             <!-- Silver front face -->
             <text
-              x="324"
-              y="70"
+              x="360"
+              y="72"
               fill="url(#face)"
-              stroke="#1a3555"
-              stroke-width="1.5"
+              stroke="#0f2840"
+              stroke-width="1.2"
               paint-order="stroke fill"
             >LINGO</text>
 
             <!-- Top-edge specular on face -->
-            <text x="324" y="70" fill="url(#faceShine)" clip-path="url(#faceShineClip)">LINGO</text>
+            <text x="360" y="72" fill="url(#faceShine)" clip-path="url(#faceShineClip)">LINGO</text>
           </g>
         </svg>
         </div>
