@@ -768,7 +768,7 @@
       </section>
 
       <section class="play-guess" id="playGuess" aria-label="Guess entry">
-        <h1 class="prompt" id="promptLine">Enter your guess!</h1>
+        <h1 class="prompt" id="promptLine">Enter your five-letter word</h1>
         <div class="word-tiles" aria-label="Five-letter guess">
           <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" />
           <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" />
@@ -1000,17 +1000,11 @@
       (nextEmpty || els.inputs[els.inputs.length - 1]).focus();
     }
 
-    function applyFirstLetter(letter) {
-      const first = els.inputs[0];
-      if (!letter || letter === '.') {
-        first.value = '';
-        first.readOnly = false;
-        first.classList.remove('is-revealed');
-        return;
-      }
-      first.value = letter.toUpperCase();
-      first.readOnly = true;
-      first.classList.add('is-revealed');
+    function clearLockedFirstTile() {
+      els.inputs.forEach((input) => {
+        input.readOnly = false;
+        input.classList.remove('is-revealed');
+      });
     }
 
     function secondsRemaining(openedAtIso, windowSeconds) {
@@ -1130,11 +1124,7 @@
       const canGuess = currentState && currentState.phase === 'guessing';
       const lockedIn = Boolean(currentState && currentState.viewer && currentState.viewer.lockedIn);
       els.submit.disabled = !canGuess || lockedIn;
-      els.inputs.forEach((input, index) => {
-        if (index === 0 && input.classList.contains('is-revealed')) {
-          input.disabled = true;
-          return;
-        }
+      els.inputs.forEach((input) => {
         input.disabled = !canGuess;
       });
     }
@@ -1158,9 +1148,9 @@
       els.guessWorth.classList.add('is-visible');
     }
 
-    function renderPrompt(phase, firstLetter) {
-      if (phase === 'guessing' && firstLetter && firstLetter !== '.') {
-        els.promptLine.innerHTML = `Guess the word — starts with <span class="hint-letter">${firstLetter.toUpperCase()}</span>`;
+    function renderPrompt(phase) {
+      if (phase === 'guessing') {
+        els.promptLine.textContent = 'Enter your five-letter word';
         return;
       }
       if (phase === 'results') {
@@ -1179,9 +1169,9 @@
     }
 
     function currentKeyboardWordKey(state) {
-      const letter = (state.publicFirstLetter || '').charAt(0).toUpperCase();
-      if (!letter || letter === '.') return '';
-      return `${state.sessionId || 0}:${letter}`;
+      const round = Number(state.roundNumber || 0);
+      if (!round) return '';
+      return `${state.sessionId || 0}:${round}`;
     }
 
     function resetKeyboardStates() {
@@ -1231,14 +1221,6 @@
       const letters = String(guess || '').toUpperCase().padEnd(5, ' ').slice(0, 5).split('');
       const marks = String(pattern || '').padEnd(5, '/').slice(0, 5).split('');
       letters.forEach((letter, index) => mergeKeyboardLetter(letter, marks[index]));
-      saveKeyboardStates();
-      paintKeyboardStates();
-    }
-
-    function applyKnownFirstLetter(letter) {
-      const key = String(letter || '').toUpperCase();
-      if (!/^[A-Z]$/.test(key)) return;
-      mergeKeyboardLetter(key, '!');
       saveKeyboardStates();
       paintKeyboardStates();
     }
@@ -1339,10 +1321,6 @@
       }
 
       loadKeyboardStates(wordKey);
-      const firstLetter = state.publicFirstLetter ? state.publicFirstLetter.charAt(0) : '';
-      if (firstLetter && firstLetter !== '.') {
-        applyKnownFirstLetter(firstLetter);
-      }
 
       const viewer = state.viewer;
       if (viewer && (phase === 'results' || phase === 'ended')) {
@@ -1363,7 +1341,6 @@
     function renderPublicState(state) {
       currentState = state;
       const phase = state.phase || 'idle';
-      const firstLetter = state.publicFirstLetter ? state.publicFirstLetter.charAt(0) : '';
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
       const viewer = state.viewer;
 
@@ -1379,10 +1356,10 @@
         : String(viewer && viewer.found ? viewer.balls : 0);
 
       renderGuessWorth(state);
-      renderPrompt(phase, firstLetter);
+      renderPrompt(phase);
       renderLockedIn(state);
       renderRoundOutcome(state);
-      applyFirstLetter(phase === 'guessing' ? firstLetter : '');
+      clearLockedFirstTile();
       syncKeyboardFromState(state);
       updateLobbyButtons();
       updateSubmitEnabled();

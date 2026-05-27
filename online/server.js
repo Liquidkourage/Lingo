@@ -915,7 +915,7 @@ app.post("/api/public/submit-guess", async (req, res) => {
         normalizePlayerKey(displayName),
         guess,
         state.round_number,
-        state.current_word.charAt(0).toUpperCase(),
+        guess.charAt(0).toUpperCase(),
       ]
     );
 

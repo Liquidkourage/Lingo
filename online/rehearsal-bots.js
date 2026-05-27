@@ -9,26 +9,11 @@ function isRehearsalBotName(displayName) {
   return String(displayName || "").startsWith(REHEARSAL_NAME_PREFIX);
 }
 
-async function pickBotGuess(client, state) {
-  const letter = String(state.current_word || "").charAt(0).toUpperCase();
-  if (letter && /^[A-Z]$/.test(letter)) {
-    const result = await client.query(
-      `select word
-       from words
-       where word like $1
-       order by random()
-       limit 1`,
-      [`${letter}%`],
-    );
-    if (result.rows[0]?.word) {
-      return result.rows[0].word;
-    }
-  }
-
-  const fallback = await client.query(
+async function pickBotGuess(client) {
+  const result = await client.query(
     `select word from words order by random() limit 1`,
   );
-  return fallback.rows[0]?.word || "LINGO";
+  return result.rows[0]?.word || "LINGO";
 }
 
 async function clearRehearsalBots(sessionId, client) {
@@ -84,7 +69,7 @@ async function submitRehearsalBotGuesses({
       continue;
     }
 
-    const guess = await pickBotGuess(client, state);
+    const guess = await pickBotGuess(client);
     if (!(await isLegalWord(client, guess))) {
       skipped += 1;
       continue;
@@ -117,7 +102,7 @@ async function submitRehearsalBotGuesses({
         normalizePlayerKey(displayName),
         guess,
         round,
-        state.current_word.charAt(0).toUpperCase(),
+        guess.charAt(0).toUpperCase(),
       ],
     );
 
