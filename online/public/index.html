@@ -1007,6 +1007,54 @@
       });
     }
 
+    function hasUserName() {
+      return Boolean(els.playerName.value.trim());
+    }
+
+    function canTypeGuess() {
+      return Boolean(
+        currentState
+        && currentState.phase === 'guessing'
+        && !(currentState.viewer && currentState.viewer.lockedIn),
+      );
+    }
+
+    function scheduleTypingFocus() {
+      window.requestAnimationFrame(() => {
+        if (!hasUserName()) {
+          els.playerName.focus();
+          return;
+        }
+        if (!canTypeGuess()) return;
+        if (document.activeElement === els.playerName) return;
+        const target = els.inputs[firstEditableIndex()] || els.inputs[0];
+        target.focus();
+      });
+    }
+
+    function routeLetterKeyToGuess(event) {
+      const key = event.key;
+      if (!/^[a-zA-Z]$/.test(key)) return false;
+      if (!canTypeGuess()) {
+        if (!hasUserName()) els.playerName.focus();
+        return false;
+      }
+      if (!hasUserName()) {
+        els.playerName.focus();
+        return false;
+      }
+      const active = document.activeElement;
+      if (active === els.playerName) return false;
+      if (els.inputs.includes(active)) return false;
+
+      event.preventDefault();
+      const input = els.inputs[firstEditableIndex()] || els.inputs[0];
+      input.value = key.toUpperCase();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+      return true;
+    }
+
     function secondsRemaining(openedAtIso, windowSeconds) {
       if (!openedAtIso || !windowSeconds) return null;
       const end = new Date(openedAtIso).getTime() + Number(windowSeconds) * 1000;
@@ -1364,6 +1412,7 @@
       updateLobbyButtons();
       updateSubmitEnabled();
       schedulePolling();
+      scheduleTypingFocus();
     }
 
     function refreshTimerBadge() {
