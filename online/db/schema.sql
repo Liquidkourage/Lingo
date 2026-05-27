@@ -12,11 +12,16 @@ create table if not exists app_state (
   guess_window_seconds integer not null default 90,
   results_window_seconds integer not null default 45,
   host_note text not null default '',
+  champion_display_name text not null default '',
+  first_solver_player_id bigint,
   guess_window_opened_at timestamptz,
   results_window_opened_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table app_state add column if not exists champion_display_name text not null default '';
+alter table app_state add column if not exists first_solver_player_id bigint;
 
 insert into app_state (
   id,
@@ -59,10 +64,15 @@ create table if not exists players (
   round_number integer not null default 0,
   first_letter text not null default '',
   submitted_at timestamptz,
+  balls integer not null default 0,
+  solved_current_word boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (session_id, normalized_display_name)
 );
+
+alter table players add column if not exists balls integer not null default 0;
+alter table players add column if not exists solved_current_word boolean not null default false;
 
 create table if not exists guess_submissions (
   id bigserial primary key,

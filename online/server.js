@@ -12,6 +12,7 @@ app.set("trust proxy", 1);
 const port = Number(process.env.PORT || 3000);
 const adminKey = String(process.env.LINGO_ADMIN_KEY || "").trim();
 const databaseUrl = String(process.env.DATABASE_URL || "").trim();
+const defaultChampion = String(process.env.LINGO_CHAMPION || "").trim();
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required.");
@@ -78,6 +79,18 @@ function getLingoResultPattern(targetWord, guess) {
   return result.join("");
 }
 
+function getEffectiveChampion(state) {
+  const fromState = String(state.champion_display_name || "").trim();
+  if (fromState) return fromState;
+  return defaultChampion;
+}
+
+function isChampionPlayer(displayName, state) {
+  const champion = getEffectiveChampion(state);
+  if (!champion || !displayName) return false;
+  return String(displayName).trim().toLowerCase() === champion.toLowerCase();
+}
+
 function requireAdmin(req, res, next) {
   const provided = String(req.get("x-lingo-admin-key") || "").trim();
   if (!adminKey || provided !== adminKey) {
@@ -108,6 +121,8 @@ function serializeState(row) {
     guessWindowSeconds: row.guess_window_seconds,
     resultsWindowSeconds: row.results_window_seconds,
     hostNote: row.host_note,
+    championDisplayName: getEffectiveChampion(row),
+    firstSolverPlayerId: row.first_solver_player_id ? Number(row.first_solver_player_id) : null,
     guessWindowOpenedAtIso: row.guess_window_opened_at ? new Date(row.guess_window_opened_at).toISOString() : null,
     resultsWindowOpenedAtIso: row.results_window_opened_at ? new Date(row.results_window_opened_at).toISOString() : null,
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
@@ -153,6 +168,8 @@ async function updateState(patch, client = pool) {
     next.host_note,
     next.guess_window_opened_at || null,
     next.results_window_opened_at || null,
+    next.champion_display_name ?? state.champion_display_name ?? "",
+    next.first_solver_player_id ?? state.first_solver_player_id ?? null,
   ];
 
   const result = await client.query(
@@ -171,6 +188,8 @@ async function updateState(patch, client = pool) {
          host_note = $12,
          guess_window_opened_at = $13,
          results_window_opened_at = $14,
+         champion_display_name = $15,
+         first_solver_player_id = $16,
          updated_at = now()
      where id = 1
      returning *`,
@@ -205,6 +224,8 @@ async function listPlayers(sessionId, client = pool) {
     createdAtIso: row.created_at ? new Date(row.created_at).toISOString() : null,
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
     submissionCount: Number(row.submission_count || 0),
+    balls: Number(row.balls || 0),
+    solvedCurrentWord: Boolean(row.solved_current_word),
   }));
 }
 
@@ -214,7 +235,10 @@ async function getPublicMetrics(sessionId, roundNumber, client = pool) {
        count(*)::int as player_count,
        count(*) filter (
          where round_number = $2
-           and current_guess <> ''
+           and (
+             current_guess <> ''
+             or solved_current_word = true
+           )
        )::int as submitted_this_round
      from players
      where session_id = $1`,
@@ -227,17 +251,112 @@ async function getPublicMetrics(sessionId, roundNumber, client = pool) {
   };
 }
 
-function serializePublicDisplayPlayer(player, state) {
+async function resetWordProgress(sessionId, client = pool) {
+  await client.query(
+    `update players
+     set solved_current_word = false,
+         updated_at = now()
+     where session_id = $1`,
+    [sessionId]
+  );
+}
+
+async function applyRevealResultsScoring(state, client) {
+  const multiplier = Number(state.ball_multiplier || 1);
+  let ballsRemaining = Number(state.balls_remaining || 0);
+  const stakeAtReveal = ballsRemaining;
+  const lastGuessWasTwoBall = ballsRemaining === 2 * multiplier;
+
+  const players = await listPlayers(state.session_id, client);
+  const submittedPlayers = players
+    .filter((player) => Number(player.roundNumber) === Number(state.round_number) && player.currentGuess)
+    .sort((left, right) => new Date(left.submittedAtIso || 0) - new Date(right.submittedAtIso || 0));
+
+  let someoneNewlySolved = false;
+  let firstSolverId = null;
+
+  for (const player of submittedPlayers) {
+    const guess = normalizeWordInput(player.currentGuess);
+    if (!(await isLegalWord(client, guess))) {
+      continue;
+    }
+
+    const pattern = getLingoResultPattern(state.current_word, guess);
+    if (pattern !== "!!!!!") {
+      continue;
+    }
+    if (player.solvedCurrentWord) {
+      continue;
+    }
+
+    someoneNewlySolved = true;
+    await client.query(
+      `update players
+       set balls = balls + $1,
+           solved_current_word = true,
+           updated_at = now()
+       where id = $2`,
+      [stakeAtReveal, player.id]
+    );
+
+    if (!firstSolverId) {
+      firstSolverId = player.id;
+    }
+  }
+
+  if (ballsRemaining === 6 * multiplier) {
+    ballsRemaining = 5 * multiplier;
+  }
+  if (someoneNewlySolved) {
+    ballsRemaining -= multiplier;
+  }
+
+  const patch = {
+    balls_remaining: Math.max(0, ballsRemaining),
+    results_window_opened_at: nowIso(),
+    first_solver_player_id: firstSolverId,
+  };
+
+  if (lastGuessWasTwoBall) {
+    patch.phase = "ended";
+    patch.answer_revealed = true;
+  } else {
+    patch.phase = "results";
+  }
+
+  return patch;
+}
+
+async function serializePublicDisplayPlayer(player, state, client = pool) {
   const currentRound = Number(state.round_number || 0);
   const submittedThisRound = Number(player.roundNumber || 0) === currentRound && !!player.currentGuess;
   const phase = String(state.phase || "idle");
   const guess = submittedThisRound ? normalizeWordInput(player.currentGuess) : "";
-  const resultPattern = guess ? getLingoResultPattern(state.current_word, guess) : "";
+  const balls = Number(player.balls || 0);
+  const solvedCurrentWord = Boolean(player.solvedCurrentWord);
+  const isChampion = isChampionPlayer(player.displayName, state);
+  const isFirstSolver = Number(state.first_solver_player_id || 0) === Number(player.id)
+    && (phase === "results" || phase === "ended");
+
+  let guessIsLegal = true;
+  if (guess) {
+    guessIsLegal = await isLegalWord(client, guess);
+  }
+
+  let resultPattern = "";
+  if (guess && guessIsLegal) {
+    resultPattern = getLingoResultPattern(state.current_word, guess);
+  }
 
   let status = "waiting";
   let statusText = "Waiting for guess";
+  let cardTone = "default";
 
-  if (phase === "guessing") {
+  if (solvedCurrentWord && phase !== "idle") {
+    status = "solved";
+    statusText = "Congratulations!";
+    cardTone = "solved";
+  } else if (phase === "guessing") {
     if (submittedThisRound) {
       status = "locked";
       statusText = "Locked in";
@@ -245,9 +364,14 @@ function serializePublicDisplayPlayer(player, state) {
   } else if (phase === "results" || phase === "ended") {
     if (!submittedThisRound) {
       statusText = "No guess this round";
+    } else if (!guessIsLegal) {
+      status = "invalid";
+      statusText = "Not a word…";
+      cardTone = "invalid";
     } else if (resultPattern === "!!!!!") {
       status = "solved";
-      statusText = "Solved it";
+      statusText = "Congratulations!";
+      cardTone = "solved";
     } else if (resultPattern) {
       status = "resolved";
       statusText = "Round result";
@@ -257,10 +381,16 @@ function serializePublicDisplayPlayer(player, state) {
   return {
     id: player.id,
     displayName: player.displayName,
+    balls,
+    isChampion,
+    solvedCurrentWord,
+    isFirstSolver,
     hasSubmitted: submittedThisRound,
+    guessIsLegal,
     status,
     statusText,
-    resultPattern,
+    cardTone,
+    resultPattern: (phase === "results" || phase === "ended") && guessIsLegal ? resultPattern : "",
     isWinner: resultPattern === "!!!!!",
     submissionCount: Number(player.submissionCount || 0),
     submittedAtIso: player.submittedAtIso,
@@ -270,7 +400,7 @@ function serializePublicDisplayPlayer(player, state) {
 
 async function getPublicDisplayPlayers(state, client = pool) {
   const players = await listPlayers(state.session_id, client);
-  return players.map((player) => serializePublicDisplayPlayer(player, state));
+  return Promise.all(players.map((player) => serializePublicDisplayPlayer(player, state, client)));
 }
 
 async function clearSessionGuesses(sessionId, client = pool) {
@@ -510,8 +640,10 @@ async function handleAdminAction(action, body) {
           guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
           results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
           guess_window_opened_at: nowIso(),
+          first_solver_player_id: null,
         }, client);
         await clearSessionGuesses(nextState.session_id, client);
+        await resetWordProgress(nextState.session_id, client);
         await client.query("commit");
         return serializeState(nextState);
       } catch (error) {
@@ -521,11 +653,25 @@ async function handleAdminAction(action, body) {
         client.release();
       }
     }
-    case "reveal-results":
-      return serializeState(await updateState({
-        phase: "results",
-        results_window_opened_at: nowIso(),
-      }));
+    case "reveal-results": {
+      const client = await pool.connect();
+      try {
+        await client.query("begin");
+        const currentState = await getState(client);
+        if (currentState.phase !== "guessing") {
+          throw new Error("Results can only be revealed during the guessing phase.");
+        }
+        const scoringPatch = await applyRevealResultsScoring(currentState, client);
+        const nextState = await updateState(scoringPatch, client);
+        await client.query("commit");
+        return serializeState(nextState);
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
     case "continue-round":
       {
         const client = await pool.connect();
@@ -535,6 +681,7 @@ async function handleAdminAction(action, body) {
             phase: "guessing",
             guess_window_opened_at: nowIso(),
             guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
+            first_solver_player_id: null,
           }, client);
           await clearSessionGuesses(nextState.session_id, client);
           await client.query("commit");
@@ -559,12 +706,35 @@ async function handleAdminAction(action, body) {
         balls_remaining: balls,
       }));
     }
+    case "set-champion":
+      return serializeState(await updateState({
+        champion_display_name: normalizeDisplayName(body.championDisplayName),
+      }));
+    case "award-all-balls":
+      await pool.query(
+        `update players
+         set balls = balls + 1,
+             updated_at = now()
+         where session_id = $1`,
+        [state.session_id]
+      );
+      return serializeState(state);
     case "reveal-answer":
       return serializeState(await updateState({
         answer_revealed: true,
         phase: "ended",
       }));
     case "reset-session":
+      await pool.query(
+        `update players
+         set balls = 0,
+             solved_current_word = false,
+             current_guess = '',
+             submitted_at = null,
+             updated_at = now()
+         where session_id = $1`,
+        [state.session_id]
+      );
       return serializeState(await updateState({
         phase: "idle",
         round_number: 0,
@@ -577,6 +747,7 @@ async function handleAdminAction(action, body) {
         host_note: "",
         guess_window_opened_at: null,
         results_window_opened_at: null,
+        first_solver_player_id: null,
       }));
     default:
       throw new Error(`Unknown admin action: ${action}`);

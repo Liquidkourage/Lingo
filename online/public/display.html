@@ -1350,6 +1350,153 @@
       color: rgba(210, 195, 235, 0.82);
     }
 
+    .player-crown {
+      position: absolute;
+      top: 0.12em;
+      left: 0.16em;
+      width: 0.95em;
+      height: 0.95em;
+      z-index: 2;
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+      pointer-events: none;
+    }
+
+    .player-crown svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .player-balls {
+      position: relative;
+      z-index: 1;
+      margin-top: 0.06em;
+      font-size: 0.52em;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(120, 210, 255, 0.92);
+      text-shadow: 0 0 8px rgba(60, 180, 255, 0.35);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="locked"] .player-name,
+    .stage[data-phase="results"] .player-card[data-status="locked"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-status="locked"] .player-name {
+      color: #ffd040;
+      text-shadow: 0 0 10px rgba(255, 208, 64, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="solved"],
+    .stage[data-phase="results"] .player-card[data-card-tone="solved"],
+    .stage[data-phase="ended"] .player-card[data-card-tone="solved"] {
+      border-color: rgba(80, 255, 140, 0.72);
+      box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.34),
+        0 0 24px rgba(60, 220, 120, 0.28),
+        inset 0 1px 0 rgba(140, 255, 180, 0.16);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before,
+    .stage[data-phase="results"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before {
+      background: linear-gradient(
+        125deg,
+        rgba(8, 42, 28, 0.98) 0%,
+        rgba(12, 58, 36, 0.94) 25%,
+        rgba(6, 32, 22, 0.97) 50%,
+        rgba(14, 64, 40, 0.93) 75%,
+        rgba(8, 38, 26, 0.98) 100%
+      );
+      animation: card-liquid-flow 18s ease-in-out infinite;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after,
+    .stage[data-phase="results"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after {
+      background:
+        radial-gradient(ellipse 85% 65% at 20% 25%, rgba(80, 255, 140, 0.22), transparent 58%),
+        radial-gradient(ellipse 75% 60% at 80% 75%, rgba(255, 230, 120, 0.1), transparent 52%);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="solved"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-tone="solved"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-tone="solved"] .player-name {
+      color: #e8fff0;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="solved"] .player-balls,
+    .stage[data-phase="results"] .player-card[data-card-tone="solved"] .player-balls,
+    .stage[data-phase="ended"] .player-card[data-card-tone="solved"] .player-balls {
+      color: rgba(160, 255, 190, 0.95);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"],
+    .stage[data-phase="results"] .player-card[data-card-tone="invalid"],
+    .stage[data-phase="ended"] .player-card[data-card-tone="invalid"] {
+      border-color: rgba(255, 90, 90, 0.72);
+      box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.34),
+        0 0 22px rgba(220, 60, 60, 0.28),
+        inset 0 1px 0 rgba(255, 160, 160, 0.12);
+      opacity: 1;
+      filter: none;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::before,
+    .stage[data-phase="results"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::before {
+      background: linear-gradient(
+        125deg,
+        rgba(48, 8, 12, 0.98) 0%,
+        rgba(72, 12, 18, 0.94) 25%,
+        rgba(36, 6, 10, 0.97) 50%,
+        rgba(84, 16, 22, 0.93) 75%,
+        rgba(42, 8, 14, 0.98) 100%
+      );
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-tone="invalid"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-tone="invalid"] .player-name {
+      color: #ffe0e0;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"] .player-status,
+    .stage[data-phase="results"] .player-card[data-card-tone="invalid"] .player-status,
+    .stage[data-phase="ended"] .player-card[data-card-tone="invalid"] .player-status {
+      color: rgba(255, 170, 170, 0.92);
+      text-transform: none;
+      letter-spacing: 0.02em;
+    }
+
+    @keyframes first-solve-ring {
+      0%, 100% {
+        box-shadow:
+          0 4px 14px rgba(0, 0, 0, 0.34),
+          0 0 0 2px rgba(255, 220, 80, 0.55),
+          0 0 24px rgba(255, 210, 60, 0.35);
+      }
+      50% {
+        box-shadow:
+          0 4px 16px rgba(0, 0, 0, 0.34),
+          0 0 0 4px rgba(255, 235, 120, 0.9),
+          0 0 42px rgba(255, 210, 60, 0.58);
+      }
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-first-solve="true"],
+    .stage[data-phase="results"] .player-card[data-first-solve="true"],
+    .stage[data-phase="ended"] .player-card[data-first-solve="true"] {
+      animation: first-solve-ring 1.6s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stage[data-phase="guessing"] .player-card[data-first-solve="true"],
+      .stage[data-phase="results"] .player-card[data-first-solve="true"],
+      .stage[data-phase="ended"] .player-card[data-first-solve="true"] {
+        animation: none;
+      }
+    }
+
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"],
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="locked"],
@@ -2449,6 +2596,7 @@
     }
 
     .player-card {
+      position: relative;
       padding: 0.65em 0.7em;
       border-radius: 0.35em;
       border: 1px solid rgba(80, 180, 255, 0.45);
@@ -2905,6 +3053,8 @@
       || ["1", "true", "yes"].includes((urlParams.get("fs") || "").toLowerCase());
     const LAYOUT_DEBUG = ["borders", "layout", "1", "true", "yes"].includes((urlParams.get("debug") || "").toLowerCase());
     const LIVE_PLAYER_CARD_SKIN = "liquid";
+    const DEMO_CHAMPION = "NightOwl";
+    const DEMO_BALL_TOTALS = [18, 12, 24, 6, 30, 9, 15, 21, 14, 27, 11, 19, 8, 22, 16, 13, 25, 10, 20, 7];
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
       "BlueJay", "CryptoKat", "NeonWave", "TurboTurtle", "Glitch",
@@ -2912,27 +3062,64 @@
       "HyperBeam", "CosmicRay", "DramaQueen", "SnackAttack", "BigBrain",
     ];
 
+    function demoPlayerExtras(index) {
+      const displayName = index < DEMO_PLAYER_NAMES.length
+        ? DEMO_PLAYER_NAMES[index]
+        : `${DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length]}${Math.floor(index / DEMO_PLAYER_NAMES.length) + 1}`;
+      return {
+        balls: DEMO_BALL_TOTALS[index % DEMO_BALL_TOTALS.length],
+        isChampion: displayName === DEMO_CHAMPION,
+      };
+    }
+
     function buildDemoPlayers(count) {
       const now = Date.now();
-      return Array.from({ length: count }, (_value, index) => ({
-        id: `demo-${index + 1}`,
-        displayName: count > DEMO_PLAYER_NAMES.length
+      return Array.from({ length: count }, (_value, index) => {
+        const displayName = count > DEMO_PLAYER_NAMES.length
           ? `${DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length]}${Math.floor(index / DEMO_PLAYER_NAMES.length) + 1}`
-          : DEMO_PLAYER_NAMES[index],
-        joinedAtIso: new Date(now - (count - index) * 60000).toISOString(),
-        status: "waiting",
-        statusText: "In lobby",
-        cardSkin: LIVE_PLAYER_CARD_SKIN,
-      }));
+          : DEMO_PLAYER_NAMES[index];
+        const extras = demoPlayerExtras(index);
+        return {
+          id: `demo-${index + 1}`,
+          displayName,
+          joinedAtIso: new Date(now - (count - index) * 60000).toISOString(),
+          status: "waiting",
+          statusText: "In lobby",
+          cardSkin: LIVE_PLAYER_CARD_SKIN,
+          balls: extras.balls,
+          isChampion: extras.isChampion,
+          cardTone: "default",
+          solvedCurrentWord: false,
+          isFirstSolver: false,
+        };
+      });
     }
 
     function buildDemoLivePlayers(count, phase) {
       const patterns = ["!/?//", "/!???", "!!?//", "!!!!!", "/!///", "?!!//", "!!///", "/?!!/"];
       return buildDemoPlayers(count).map((player, index) => {
+        const base = {
+          ...player,
+          cardTone: "default",
+          solvedCurrentWord: false,
+          isFirstSolver: false,
+        };
+
         if (phase === "guessing") {
+          if (index === 0) {
+            return {
+              ...base,
+              status: "solved",
+              statusText: "Congratulations!",
+              cardTone: "solved",
+              solvedCurrentWord: true,
+              hasSubmitted: false,
+            };
+          }
+
           const locked = index % 3 !== 1;
           return {
-            ...player,
+            ...base,
             status: locked ? "locked" : "waiting",
             statusText: locked ? "Locked in" : "Waiting for guess",
             hasSubmitted: locked,
@@ -2942,26 +3129,58 @@
         if (phase === "results" || phase === "ended") {
           if (index % 5 === 4) {
             return {
-              ...player,
+              ...base,
               status: "waiting",
               statusText: "No guess this round",
               hasSubmitted: false,
               resultPattern: "",
             };
           }
+
+          if (index === 3) {
+            return {
+              ...base,
+              status: "invalid",
+              statusText: "Not a word…",
+              cardTone: "invalid",
+              hasSubmitted: true,
+              resultPattern: "",
+              guessIsLegal: false,
+            };
+          }
+
+          if (index === 4) {
+            return {
+              ...base,
+              status: "solved",
+              statusText: "Congratulations!",
+              cardTone: "solved",
+              hasSubmitted: true,
+              resultPattern: "!!!!!",
+              isWinner: true,
+              isFirstSolver: true,
+              solvedCurrentWord: true,
+              balls: base.balls + 4,
+            };
+          }
+
           const pattern = patterns[index % patterns.length];
           const solved = pattern === "!!!!!";
           return {
-            ...player,
+            ...base,
             status: solved ? "solved" : "resolved",
-            statusText: solved ? "Solved it" : "Round result",
+            statusText: solved ? "Congratulations!" : "Round result",
+            cardTone: solved ? "solved" : "default",
             hasSubmitted: true,
             resultPattern: pattern,
             isWinner: solved,
+            isFirstSolver: false,
+            solvedCurrentWord: solved,
+            balls: solved ? base.balls + 4 : base.balls,
           };
         }
 
-        return player;
+        return base;
       });
     }
 
@@ -2975,10 +3194,11 @@
         ballMultiplier: 1,
         playerCount: count,
         submittedThisRound: phase === "guessing"
-          ? buildDemoLivePlayers(count, "guessing").filter((player) => player.hasSubmitted).length
+          ? buildDemoLivePlayers(count, "guessing").filter((player) => playerLockedIn(player)).length
           : phase === "idle"
             ? 0
             : count - 1,
+        championDisplayName: DEMO_CHAMPION,
         hostNote: "",
         publicFirstLetter: phase === "idle" ? "" : "L....",
         guessWindowSeconds: 90,
@@ -2996,6 +3216,10 @@
           : buildDemoLivePlayers(count, phase),
       };
       return base;
+    }
+
+    function playerLockedIn(player) {
+      return Boolean(player.hasSubmitted || player.solvedCurrentWord);
     }
 
     function playerLobbyKey(player) {
@@ -3300,7 +3524,10 @@
     function updateLobbyHeader(state) {
       const phase = state.phase || "idle";
       const players = Array.isArray(state.players) ? state.players : [];
-      const submitted = Math.max(Number(state.submittedThisRound || 0), players.filter((player) => player.hasSubmitted).length);
+      const submitted = Math.max(
+        Number(state.submittedThisRound || 0),
+        players.filter((player) => playerLockedIn(player)).length,
+      );
 
       if (phase !== "idle") {
         els.lobbyHeaderIdle.hidden = true;
@@ -3384,7 +3611,7 @@
       if (phase === "idle") return;
 
       const players = Array.isArray(state.players) ? state.players : [];
-      const waiting = players.filter((player) => !player.hasSubmitted);
+      const waiting = players.filter((player) => !playerLockedIn(player));
 
       if (!waiting.length) return;
 
@@ -3499,6 +3726,19 @@
       return row;
     }
 
+    function renderPlayerCrown() {
+      const crown = document.createElement("span");
+      crown.className = "player-crown";
+      crown.setAttribute("aria-hidden", "true");
+      crown.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16v2H4v-2zm2.2-7.8 2.8 3.6 2.8-6.4 2.8 6.4 2.8-3.6L18 16H6l.2-5.8z" fill="#ffd040" stroke="#b8860b" stroke-width="0.6" stroke-linejoin="round"/></svg>`;
+      return crown;
+    }
+
+    function formatPlayerBalls(balls) {
+      const total = Math.max(0, Number(balls || 0));
+      return `${total} Ball${total === 1 ? "" : "s"}`;
+    }
+
     function renderIdleInfo(state = {}) {
       els.playUrl.textContent = playSiteUrlDisplay();
       els.playQr.src = `${playSiteUrl()}/api/play-qr`;
@@ -3604,6 +3844,13 @@
 
         if (phase !== "idle") {
           card.dataset.cardSkin = LIVE_PLAYER_CARD_SKIN;
+          card.dataset.cardTone = player.cardTone || "default";
+          if (player.isFirstSolver) {
+            card.dataset.firstSolve = "true";
+          }
+          if (player.isChampion) {
+            card.dataset.isChampion = "true";
+          }
         }
 
         if (phase === "idle") {
@@ -3627,6 +3874,17 @@
         }
         card.appendChild(name);
 
+        if (player.isChampion) {
+          card.appendChild(renderPlayerCrown());
+        }
+
+        if (phase !== "idle") {
+          const balls = document.createElement("div");
+          balls.className = "player-balls";
+          balls.textContent = formatPlayerBalls(player.balls);
+          card.appendChild(balls);
+        }
+
         const status = document.createElement("div");
         status.className = "player-status";
         if (phase === "idle") {
@@ -3636,7 +3894,7 @@
         }
         card.appendChild(status);
 
-        if (phase === "guessing" && player.status === "locked") {
+        if (phase === "guessing" && player.status === "locked" && !player.solvedCurrentWord) {
           card.appendChild(renderPendingRow());
         }
 
