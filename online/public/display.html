@@ -3095,7 +3095,7 @@
       <p class="kiosk-hint" id="kioskHint" hidden>Fullscreen venue display · press F11 or tap to expand</p>
 
       <div class="stage-ui">
-        <div class="ui-topline" id="topLine"></div>
+        <div class="ui-topline" id="topLine" hidden aria-hidden="true"></div>
 
         <div class="answer-fanfare" id="answerFanfare" hidden aria-live="polite">
           <p class="answer-fanfare-kicker">The word was</p>
@@ -4342,21 +4342,6 @@
       els.playerBoardBody.appendChild(grid);
     }
 
-    function renderTopLine(state) {
-      const phase = state.phase || "idle";
-      els.topLine.classList.remove("is-visible");
-      els.topLine.textContent = "";
-
-      if (phase === "guessing" && Number(state.roundNumber || 0) > 0) {
-        const balls = Number(state.ballsRemaining || 0);
-        const mult = Number(state.ballMultiplier || 1);
-        els.topLine.textContent = mult > 1
-          ? `This guess worth ${balls} balls`
-          : `This guess worth ${balls} ball${balls === 1 ? "" : "s"}`;
-        els.topLine.classList.add("is-visible");
-      }
-    }
-
     function renderAnswerFanfare(state) {
       const phase = state.phase || "idle";
       const word = String(state.revealedWord || "").trim().toUpperCase();
@@ -4389,10 +4374,10 @@
 
       els.timerValue.textContent = formatTimerValue(remaining);
 
-      if (phase === "guessing" && remaining !== null && remaining >= 0) {
-        if (remaining <= 5) {
+      if ((phase === "guessing" || phase === "results") && remaining !== null && remaining >= 0) {
+        if (remaining <= 10) {
           els.timerPanel.dataset.urgency = "critical";
-        } else if (remaining <= 10) {
+        } else if (remaining <= 30) {
           els.timerPanel.dataset.urgency = "low";
         } else {
           delete els.timerPanel.dataset.urgency;
@@ -4467,7 +4452,6 @@
       els.statSubmitted.textContent = String(currentState.submittedThisRound || 0);
       renderUnsubmittedStat(currentState);
 
-      renderTopLine(currentState);
       renderTimer(currentState);
       renderAnswerFanfare(currentState);
       renderWordTiles(currentState);
