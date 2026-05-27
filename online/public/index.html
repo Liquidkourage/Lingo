@@ -542,10 +542,6 @@
       gap: 0.55rem;
     }
 
-    .button-row--lobby .btn-primary {
-      grid-column: 1 / -1;
-    }
-
     .button-row--guess {
       grid-template-columns: 1.4fr 1fr;
     }
@@ -554,17 +550,27 @@
       grid-column: auto;
     }
 
-    .button-row--lobby {
+    .play-lobby {
+      display: block;
       margin-top: 0;
+      padding: 0.55rem 0.65rem 0.65rem;
+      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.35);
+      border-radius: 0.2em;
+      background: rgba(0, 0, 0, 0.35);
     }
 
     .play-lobby .lobby-hint {
-      margin: 0 0 0.65rem;
+      margin: 0 0 0.5rem;
       text-align: center;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 600;
       line-height: 1.35;
-      color: rgba(200, 220, 245, 0.78);
+      color: rgba(200, 220, 245, 0.72);
+    }
+
+    .lobby-toggle {
+      display: block;
+      width: 100%;
     }
 
     button.good {
@@ -613,11 +619,6 @@
       cursor: not-allowed;
       opacity: 0.5;
       filter: grayscale(0.35);
-    }
-
-    .play-lobby {
-      display: block;
-      margin-top: 0;
     }
 
     .play-stats {
@@ -928,7 +929,6 @@
     @media (max-width: 420px) {
       .play-card { padding: 1rem 0.85rem 0.9rem; }
       .word-tiles { gap: 0.35rem; }
-      .button-row--lobby { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -961,12 +961,9 @@
           </div>
         </section>
 
-        <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
-          <p class="lobby-hint">Join to appear on the venue display. Leave anytime.</p>
-          <div class="button-row button-row--lobby">
-            <button id="joinButton" class="good" type="button">Join game</button>
-            <button id="leaveButton" class="secondary" type="button">Leave game</button>
-          </div>
+        <section class="play-lobby" id="playLobby" aria-label="Venue display">
+          <p class="lobby-hint">Appear on the venue display while joined.</p>
+          <button id="lobbyToggle" class="good lobby-toggle" type="button">Join game</button>
         </section>
       </div>
 
@@ -1060,8 +1057,7 @@
       changeName: document.getElementById('changeNameBtn'),
       nameHint: document.getElementById('nameHint'),
       message: document.getElementById('message'),
-      join: document.getElementById('joinButton'),
-      leave: document.getElementById('leaveButton'),
+      lobbyToggle: document.getElementById('lobbyToggle'),
       submit: document.getElementById('submitButton'),
       clear: document.getElementById('clearButton'),
       playHistory: document.getElementById('playHistory'),
@@ -1632,8 +1628,23 @@
     function updateLobbyButtons() {
       const joined = Boolean(currentState && currentState.viewer && currentState.viewer.found);
       const ready = hasUserName() && isNameLocked();
-      els.join.disabled = !ready || joined;
-      els.leave.disabled = !ready || !joined;
+      els.lobbyToggle.disabled = !ready;
+      if (joined) {
+        els.lobbyToggle.textContent = 'Leave game';
+        els.lobbyToggle.className = 'secondary lobby-toggle';
+      } else {
+        els.lobbyToggle.textContent = 'Join game';
+        els.lobbyToggle.className = 'good lobby-toggle';
+      }
+    }
+
+    async function toggleLobby() {
+      const joined = Boolean(currentState && currentState.viewer && currentState.viewer.found);
+      if (joined) {
+        await leaveLobby();
+      } else {
+        await joinLobby();
+      }
     }
 
     function schedulePolling() {
@@ -1894,7 +1905,7 @@
         return;
       }
 
-      els.join.disabled = true;
+      els.lobbyToggle.disabled = true;
       try {
         const payload = await joinGame(displayName);
         setMessage('You joined the game and appear on the venue display.', 'success');
@@ -1913,7 +1924,7 @@
         return;
       }
 
-      els.leave.disabled = true;
+      els.lobbyToggle.disabled = true;
       try {
         const response = await fetch('/api/public/leave', {
           method: 'POST',
@@ -2027,8 +2038,7 @@
       });
     }
 
-    els.join.addEventListener('click', joinLobby);
-    els.leave.addEventListener('click', leaveLobby);
+    els.lobbyToggle.addEventListener('click', toggleLobby);
     els.submit.addEventListener('click', submitGuess);
     els.clear.addEventListener('click', () => {
       guessDraftDirty = true;
