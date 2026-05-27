@@ -6,7 +6,7 @@
   <title>Lingo Public Display</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
 
@@ -16,6 +16,7 @@
       height: 100%;
       overflow: hidden;
       background: #010408;
+      font-family: Montserrat, Arial, sans-serif;
     }
 
     .viewport {
@@ -31,6 +32,7 @@
       width: min(100vw, 100vh * (1024 / 575));
       height: min(100vh, 100vw * (575 / 1024));
       container-type: inline-size;
+      color: #e8f4ff;
     }
 
     .stage-bg-wrap {
@@ -44,7 +46,6 @@
       height: 100%;
     }
 
-    /* Extra top spotlight pulled from reference atmosphere */
     .stage-atmosphere {
       position: absolute;
       inset: 0;
@@ -54,7 +55,6 @@
       mix-blend-mode: screen;
     }
 
-    /* Mockup slot: 16/575 top; PNG letter faces start ~25% below canvas top */
     .logo-wrap {
       position: absolute;
       left: 50%;
@@ -64,20 +64,364 @@
       overflow: visible;
       pointer-events: none;
       user-select: none;
+      z-index: 20;
     }
 
     .lingo-logo {
       display: block;
       width: 100%;
       height: auto;
-      overflow: visible;
       transform: translateY(-25.21%);
     }
+
+    .stage-ui {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      font-size: clamp(8px, 1.45cqw, 15px);
+    }
+
+    .ui-topline {
+      position: absolute;
+      left: 50%;
+      top: 18%;
+      transform: translateX(-50%);
+      width: 88%;
+      text-align: center;
+      font-size: 1.05em;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #f0f6ff;
+      text-shadow: 0 0 12px rgba(80, 170, 255, 0.45);
+      display: none;
+    }
+
+    .stage[data-phase="guessing"] .ui-topline.is-visible {
+      display: block;
+    }
+
+    .timer-panel {
+      position: absolute;
+      left: 90.33%;
+      top: 11.83%;
+      transform: translate(-50%, -50%);
+      width: 14.5%;
+      min-width: 96px;
+      padding: 0.55em 0.45em 0.65em;
+      border-radius: 0.45em;
+      border: 1px solid rgba(90, 190, 255, 0.55);
+      background: linear-gradient(180deg, rgba(0, 18, 48, 0.92) 0%, rgba(0, 8, 28, 0.96) 100%);
+      box-shadow: 0 0 18px rgba(0, 120, 255, 0.25), inset 0 0 12px rgba(0, 80, 180, 0.15);
+      text-align: center;
+    }
+
+    .timer-label {
+      margin: 0 0 0.35em;
+      font-size: 0.52em;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      line-height: 1.25;
+      color: rgba(210, 230, 255, 0.88);
+      text-transform: uppercase;
+    }
+
+    .timer-value {
+      margin: 0;
+      font-size: 2.1em;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      color: #ffffff;
+      text-shadow: 0 0 16px rgba(100, 190, 255, 0.65);
+    }
+
+    .timer-unit {
+      margin: 0.35em 0 0;
+      font-size: 0.58em;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: #38a8ff;
+      text-transform: uppercase;
+    }
+
+    .status-badge {
+      position: absolute;
+      left: 50%;
+      top: 20.52%;
+      transform: translate(-50%, -50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55em;
+      width: 28%;
+      min-width: 220px;
+      padding: 0.55em 1.1em;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 210, 70, 0.85);
+      background: linear-gradient(180deg, rgba(0, 20, 55, 0.95) 0%, rgba(0, 10, 35, 0.98) 100%);
+      box-shadow: 0 0 20px rgba(255, 190, 40, 0.18);
+      font-size: 0.78em;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #ffd040;
+      white-space: nowrap;
+    }
+
+    .status-badge svg {
+      width: 1.1em;
+      height: 1.1em;
+      flex-shrink: 0;
+    }
+
+    .stage[data-phase="guessing"] .status-badge {
+      border-color: rgba(80, 210, 120, 0.85);
+      color: #6cff98;
+      box-shadow: 0 0 20px rgba(60, 220, 120, 0.18);
+    }
+
+    .stage[data-phase="results"] .status-badge {
+      border-color: rgba(255, 120, 80, 0.85);
+      color: #ff9860;
+    }
+
+    .stage[data-phase="ended"] .status-badge {
+      border-color: rgba(120, 180, 255, 0.85);
+      color: #a8d8ff;
+      width: auto;
+      max-width: 72%;
+      white-space: normal;
+      text-align: center;
+    }
+
+    .subtitle {
+      position: absolute;
+      left: 50%;
+      top: 24.7%;
+      transform: translate(-50%, -50%);
+      width: 62%;
+      margin: 0;
+      text-align: center;
+      font-size: 0.62em;
+      font-weight: 600;
+      line-height: 1.45;
+      color: rgba(190, 215, 245, 0.82);
+    }
+
+    .word-row {
+      position: absolute;
+      left: 50%;
+      top: 36.17%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55em;
+      width: 39.06%;
+      height: 13.91%;
+    }
+
+    .word-tile {
+      flex: 1 1 0;
+      aspect-ratio: 1;
+      max-height: 100%;
+      display: grid;
+      place-items: center;
+      border-radius: 0.45em;
+      border: 2px solid rgba(70, 170, 255, 0.75);
+      background: linear-gradient(180deg, rgba(0, 28, 68, 0.95) 0%, rgba(0, 12, 36, 0.98) 100%);
+      box-shadow: 0 0 14px rgba(0, 120, 255, 0.22), inset 0 0 10px rgba(0, 60, 140, 0.2);
+      font-size: 2.4em;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 0 12px rgba(100, 190, 255, 0.55);
+    }
+
+    .word-tile.is-dot {
+      font-size: 0.55em;
+      color: #2898ff;
+      text-shadow: 0 0 10px rgba(40, 152, 255, 0.8);
+    }
+
+    .stats-row {
+      position: absolute;
+      left: 50%;
+      top: 49.57%;
+      transform: translate(-50%, -50%);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      width: 90%;
+      height: 12%;
+      border-radius: 0.35em;
+      border: 1px solid rgba(60, 150, 230, 0.45);
+      background: linear-gradient(180deg, rgba(0, 16, 42, 0.88) 0%, rgba(0, 8, 24, 0.94) 100%);
+      overflow: hidden;
+    }
+
+    .stat-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15em;
+      padding: 0.35em 0.2em;
+      border-right: 1px solid rgba(60, 130, 200, 0.25);
+    }
+
+    .stat-cell:last-child { border-right: none; }
+
+    .stat-icon {
+      width: 1.15em;
+      height: 1.15em;
+      opacity: 0.95;
+    }
+
+    .stat-label {
+      font-size: 0.48em;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.75);
+    }
+
+    .stat-value {
+      font-size: 1.35em;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .stat-value.round { color: #ffc832; }
+    .stat-value.balls { color: #0092e0; }
+    .stat-value.mult { color: #24b04c; }
+    .stat-value.players { color: #9828a8; }
+    .stat-value.submitted { color: #18a8d8; }
+
+    .player-board {
+      position: absolute;
+      left: 50%;
+      top: 75.65%;
+      transform: translate(-50%, -50%);
+      width: 90.62%;
+      height: 41.74%;
+      border-radius: 0.35em;
+      border: 1px solid rgba(60, 150, 230, 0.5);
+      background: linear-gradient(180deg, rgba(0, 14, 38, 0.92) 0%, rgba(0, 6, 20, 0.96) 100%);
+      box-shadow: inset 0 0 24px rgba(0, 40, 100, 0.25);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .player-board-header {
+      flex: 0 0 auto;
+      padding: 0.45em 0.75em;
+      text-align: center;
+      font-size: 0.62em;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(210, 230, 255, 0.9);
+      border-bottom: 1px solid rgba(60, 130, 200, 0.28);
+      background: linear-gradient(180deg, rgba(0, 24, 58, 0.75) 0%, rgba(0, 12, 34, 0.4) 100%);
+    }
+
+    .player-board-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 0.65em;
+      overflow: hidden;
+    }
+
+    .player-board-empty {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55em;
+      color: rgba(150, 175, 205, 0.65);
+      font-size: 0.72em;
+      font-weight: 600;
+    }
+
+    .player-board-empty svg {
+      width: 2.2em;
+      height: 2.2em;
+      opacity: 0.45;
+    }
+
+    .player-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
+      gap: 0.55em;
+      height: 100%;
+      overflow: hidden;
+      align-content: start;
+    }
+
+    .player-card {
+      padding: 0.5em 0.55em;
+      border-radius: 0.35em;
+      border: 1px solid rgba(60, 140, 210, 0.35);
+      background: rgba(0, 18, 44, 0.82);
+    }
+
+    .player-card[data-status="locked"] {
+      border-color: rgba(80, 180, 255, 0.55);
+      box-shadow: inset 0 0 10px rgba(0, 100, 200, 0.15);
+    }
+
+    .player-card[data-status="solved"],
+    .player-card[data-status="winner"] {
+      border-color: rgba(80, 220, 120, 0.65);
+      background: rgba(0, 36, 24, 0.82);
+    }
+
+    .player-card[data-status="resolved"] {
+      border-color: rgba(255, 180, 80, 0.45);
+    }
+
+    .player-name {
+      font-size: 0.72em;
+      font-weight: 700;
+      color: #f0f6ff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-status {
+      margin-top: 0.2em;
+      font-size: 0.55em;
+      font-weight: 600;
+      color: rgba(180, 205, 235, 0.78);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .pattern-row {
+      display: flex;
+      gap: 0.18em;
+      margin-top: 0.35em;
+    }
+
+    .pattern-cell {
+      flex: 1 1 0;
+      aspect-ratio: 1;
+      border-radius: 0.15em;
+      background: rgba(80, 90, 110, 0.55);
+    }
+
+    .pattern-cell[data-mark="!"] { background: #24b04c; box-shadow: 0 0 6px rgba(36, 176, 76, 0.65); }
+    .pattern-cell[data-mark="?"] { background: #d0a020; box-shadow: 0 0 6px rgba(208, 160, 32, 0.55); }
+    .pattern-cell[data-mark="/"] { background: rgba(70, 80, 95, 0.75); }
   </style>
 </head>
 <body>
   <div class="viewport">
-    <div class="stage">
+    <div class="stage" id="stage" data-phase="idle">
       <div class="stage-bg-wrap">
         <img
           class="stage-bg"
@@ -98,7 +442,296 @@
           alt="Lingo"
         />
       </div>
+
+      <div class="stage-ui">
+        <div class="ui-topline" id="topLine"></div>
+
+        <aside class="timer-panel" aria-live="polite">
+          <p class="timer-label" id="timerLabel">Next round starts in</p>
+          <p class="timer-value" id="timerValue">--</p>
+          <p class="timer-unit">seconds</p>
+        </aside>
+
+        <div class="status-badge" id="statusBadge">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span id="statusText">Waiting for the host</span>
+        </div>
+
+        <p class="subtitle" id="subtitle">
+          The public display will update automatically when the next online round starts.
+        </p>
+
+        <div class="word-row" id="wordRow" aria-label="Current word"></div>
+
+        <div class="stats-row" aria-label="Game stats">
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="#ffc832" aria-hidden="true"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7L12 3z"/></svg>
+            <span class="stat-label">Round</span>
+            <span class="stat-value round" id="statRound">0</span>
+          </div>
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="#0092e0" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#0092e0" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" fill="#0092e0" font-family="Montserrat,sans-serif" font-weight="700">7</text></svg>
+            <span class="stat-label">Balls</span>
+            <span class="stat-value balls" id="statBalls">0</span>
+          </div>
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="#24b04c" aria-hidden="true"><path d="M4 18h16M7 14l3-4 3 3 4-6" stroke="#24b04c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="stat-label">Multiplier</span>
+            <span class="stat-value mult" id="statMult">1x</span>
+          </div>
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="#9828a8" aria-hidden="true"><circle cx="9" cy="10" r="3" fill="#9828a8"/><circle cx="16" cy="11" r="2.5" fill="#9828a8"/><path d="M4 18c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#9828a8" stroke-width="2" fill="none"/><path d="M13 17c0-1.8 1.5-3.2 3.2-3.2" stroke="#9828a8" stroke-width="2" fill="none"/></svg>
+            <span class="stat-label">Players</span>
+            <span class="stat-value players" id="statPlayers">0</span>
+          </div>
+          <div class="stat-cell">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="#18a8d8" aria-hidden="true"><path d="M3 12l18-7-7 18-2-7-7-4z" fill="#18a8d8"/></svg>
+            <span class="stat-label">Submitted</span>
+            <span class="stat-value submitted" id="statSubmitted">0</span>
+          </div>
+        </div>
+
+        <section class="player-board" aria-label="Player board">
+          <div class="player-board-header">Player board</div>
+          <div class="player-board-body" id="playerBoardBody"></div>
+        </section>
+      </div>
     </div>
   </div>
+
+  <script>
+    const els = {
+      stage: document.getElementById("stage"),
+      topLine: document.getElementById("topLine"),
+      timerLabel: document.getElementById("timerLabel"),
+      timerValue: document.getElementById("timerValue"),
+      statusText: document.getElementById("statusText"),
+      subtitle: document.getElementById("subtitle"),
+      wordRow: document.getElementById("wordRow"),
+      statRound: document.getElementById("statRound"),
+      statBalls: document.getElementById("statBalls"),
+      statMult: document.getElementById("statMult"),
+      statPlayers: document.getElementById("statPlayers"),
+      statSubmitted: document.getElementById("statSubmitted"),
+      playerBoardBody: document.getElementById("playerBoardBody"),
+    };
+
+    let currentState = null;
+    let tickTimer = null;
+
+    function secondsRemaining(openedAtIso, windowSeconds) {
+      if (!openedAtIso || !windowSeconds) return null;
+      const end = new Date(openedAtIso).getTime() + Number(windowSeconds) * 1000;
+      return Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    }
+
+    function formatTimerValue(value) {
+      if (value == null) return "--";
+      return String(value);
+    }
+
+    function phaseCopy(phase, state) {
+      switch (phase) {
+        case "guessing":
+          return {
+            badge: "Round live",
+            subtitle: state.roundNumber > 0
+              ? `Word #${state.roundNumber} · first letter ${state.publicFirstLetter?.charAt(0) || "?"}`
+              : "Submit your guess on the player page.",
+            timerLabel: "Time left",
+          };
+        case "results":
+          return {
+            badge: "Results",
+            subtitle: "Do not guess now — results are on screen.",
+            timerLabel: "Next guess in",
+          };
+        case "ended":
+          return {
+            badge: state.revealedWord ? `The word was ${state.revealedWord.toUpperCase()}` : "Round ended",
+            subtitle: "Waiting for the next round.",
+            timerLabel: "Next round starts in",
+          };
+        default:
+          return {
+            badge: "Waiting for the host",
+            subtitle: state.hostNote?.trim()
+              || "The public display will update automatically when the next online round starts.",
+            timerLabel: "Next round starts in",
+          };
+      }
+    }
+
+    function renderWordRow(state) {
+      const phase = state.phase || "idle";
+      els.wordRow.innerHTML = "";
+
+      let letters = ["", "", "", "", ""];
+
+      if (phase === "ended" && state.revealedWord) {
+        letters = state.revealedWord.toUpperCase().padEnd(5, " ").slice(0, 5).split("");
+      } else if (phase === "guessing" || phase === "results") {
+        const hint = (state.publicFirstLetter || ".....").toUpperCase().padEnd(5, ".").slice(0, 5);
+        letters = hint.split("").map((ch) => (ch === "." ? "" : ch));
+      }
+
+      for (let i = 0; i < 5; i += 1) {
+        const tile = document.createElement("div");
+        tile.className = "word-tile";
+        if (letters[i]) {
+          tile.textContent = letters[i];
+        } else {
+          tile.classList.add("is-dot");
+          tile.textContent = "●";
+        }
+        els.wordRow.appendChild(tile);
+      }
+    }
+
+    function renderPatternRow(pattern) {
+      const row = document.createElement("div");
+      row.className = "pattern-row";
+      const marks = (pattern || "").padEnd(5, "/").slice(0, 5).split("");
+      marks.forEach((mark) => {
+        const cell = document.createElement("div");
+        cell.className = "pattern-cell";
+        cell.dataset.mark = mark;
+        row.appendChild(cell);
+      });
+      return row;
+    }
+
+    function renderPlayerBoard(state) {
+      const phase = state.phase || "idle";
+      const players = Array.isArray(state.players) ? state.players : [];
+      els.playerBoardBody.innerHTML = "";
+
+      if (!players.length) {
+        els.playerBoardBody.innerHTML = `
+          <div class="player-board-empty">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="9" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="16" cy="11" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M4 18c0-2.8 2.2-5 5-5s5 2.2 5 5M13 17c0-1.8 1.5-3.2 3.2-3.2" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <span>No player cards yet</span>
+          </div>`;
+        return;
+      }
+
+      const grid = document.createElement("div");
+      grid.className = "player-grid";
+
+      players.forEach((player) => {
+        const card = document.createElement("article");
+        card.className = "player-card";
+        card.dataset.status = player.isWinner ? "winner" : (player.status || "waiting");
+
+        const name = document.createElement("div");
+        name.className = "player-name";
+        name.textContent = player.displayName || "Player";
+        card.appendChild(name);
+
+        const status = document.createElement("div");
+        status.className = "player-status";
+        status.textContent = player.statusText || "";
+        card.appendChild(status);
+
+        if ((phase === "results" || phase === "ended") && player.resultPattern) {
+          card.appendChild(renderPatternRow(player.resultPattern));
+        }
+
+        grid.appendChild(card);
+      });
+
+      els.playerBoardBody.appendChild(grid);
+    }
+
+    function renderTopLine(state) {
+      const phase = state.phase || "idle";
+      const show = phase === "guessing" && Number(state.roundNumber || 0) > 0;
+      els.topLine.classList.toggle("is-visible", show);
+      els.topLine.textContent = show
+        ? `This guess worth ${Number(state.ballsRemaining || 0)} balls`
+        : "";
+    }
+
+    function renderTimer(state) {
+      const phase = state.phase || "idle";
+      const copy = phaseCopy(phase, state);
+      els.timerLabel.textContent = copy.timerLabel;
+
+      let remaining = null;
+      if (phase === "guessing") {
+        remaining = secondsRemaining(state.guessWindowOpenedAtIso, state.guessWindowSeconds);
+      } else if (phase === "results") {
+        remaining = secondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
+      }
+
+      els.timerValue.textContent = formatTimerValue(remaining);
+    }
+
+    function renderState(state) {
+      currentState = state;
+      const phase = state.phase || "idle";
+      els.stage.dataset.phase = phase;
+
+      const copy = phaseCopy(phase, state);
+      els.statusText.textContent = copy.badge;
+      els.subtitle.textContent = copy.subtitle;
+
+      els.statRound.textContent = String(state.roundNumber || 0);
+      els.statBalls.textContent = String(state.ballsRemaining || 0);
+      els.statMult.textContent = `${state.ballMultiplier || 1}x`;
+      els.statPlayers.textContent = String(state.playerCount || 0);
+      els.statSubmitted.textContent = String(state.submittedThisRound || 0);
+
+      renderTopLine(state);
+      renderTimer(state);
+      renderWordRow(state);
+      renderPlayerBoard(state);
+    }
+
+    function startTickTimer() {
+      if (tickTimer) return;
+      tickTimer = window.setInterval(() => {
+        if (!currentState) return;
+        const phase = currentState.phase || "idle";
+        if (phase === "guessing" || phase === "results") {
+          renderTimer(currentState);
+        }
+      }, 1000);
+    }
+
+    async function fetchPublicState() {
+      const response = await fetch("/api/public-state");
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Could not load public state.");
+      }
+      renderState(payload.state);
+    }
+
+    async function boot() {
+      startTickTimer();
+      try {
+        await fetchPublicState();
+      } catch (error) {
+        els.subtitle.textContent = error.message;
+      }
+      window.setInterval(async () => {
+        try {
+          await fetchPublicState();
+        } catch (_error) {
+          // Keep last good frame for OBS stability.
+        }
+      }, 1500);
+    }
+
+    boot();
+  </script>
 </body>
 </html>
