@@ -1,6 +1,6 @@
 """Extract LINGO logo -> tight transparent PNG + minimal SVG.
 
-Supports green-screen or baked checkerboard 'fake transparency' backgrounds.
+Source priority: black background > checkerboard > green screen.
 """
 from __future__ import annotations
 
@@ -12,9 +12,25 @@ ROOT = Path(__file__).resolve().parents[1] / "assets"
 PNG_OUT = ROOT / "lingo-logo-extracted.png"
 SVG_OUT = ROOT / "lingo-logo-extracted.svg"
 
-# Prefer checkerboard source if present, else green-screen source.
+SRC_BLACK = ROOT / "lingo-logo-source-black.png"
 SRC_CHECKER = ROOT / "lingo-logo-source-checkerboard.png"
 SRC_GREEN = ROOT / "lingo-logo-source.png"
+
+# Darkest navy in logo stays above this (sum of RGB channels).
+BLACK_LUM_THRESHOLD = 42
+
+
+def is_black_bg(r: int, g: int, b: int) -> bool:
+    return (r + g + b) <= BLACK_LUM_THRESHOLD and b <= 28
+
+
+def source_is_black(im: Image.Image) -> bool:
+    """Skip misnamed sources that are still checkerboard."""
+    px = im.convert("RGB").load()
+    w, h = im.size
+    samples = [px[8, 8], px[w - 9, 8], px[w // 2, h // 2]]
+    checker = sum(1 for r, g, b in samples if is_checkerboard_bg(r, g, b))
+    return checker < 2
 
 
 def is_screen_green(r: int, g: int, b: int) -> bool:
@@ -22,29 +38,33 @@ def is_screen_green(r: int, g: int, b: int) -> bool:
 
 
 def is_checkerboard_bg(r: int, g: int, b: int) -> bool:
-    """Neutral gray/white squares used as fake transparency in AI exports."""
     if abs(r - g) > 10 or abs(g - b) > 10:
         return False
-    return r >= 148  # light gray ~#CCC and white ~#FFF
+    return r >= 148
 
 
-def key_background(im: Image.Image) -> Image.Image:
+def key_background(im: Image.Image, mode: str) -> Image.Image:
     out = im.convert("RGBA")
     px = out.load()
     w, h = out.size
     for y in range(h):
         for x in range(w):
             r, g, b, a = px[x, y]
-            if is_screen_green(r, g, b) or is_checkerboard_bg(r, g, b):
+            remove = False
+            if mode == "black":
+                remove = is_black_bg(r, g, b)
+            elif mode == "checker":
+                remove = is_checkerboard_bg(r, g, b)
+            else:
+                remove = is_screen_green(r, g, b)
+            if remove:
                 px[x, y] = (0, 0, 0, 0)
     return out
 
 
 def crop_large_word(im: Image.Image) -> Image.Image:
-    """For dual-logo green-screen source: keep bottom wordmark only."""
     w, h = im.size
-    split = int(h * 0.33)
-    return im.crop((0, split, w, h))
+    return im.crop((0, int(h * 0.33), w, h))
 
 
 def trim_to_logo(im: Image.Image) -> Image.Image:
@@ -66,25 +86,28 @@ def write_svg(svg_path: Path, png_name: str, w: int, h: int) -> None:
     )
 
 
-def pick_source() -> tuple[Path, bool]:
-    if SRC_CHECKER.exists():
-        return SRC_CHECKER, False
+def pick_source() -> tuple[Path, str, bool]:
+    if SRC_BLACK.exists():
+        probe = Image.open(SRC_BLACK)
+        if source_is_black(probe):
+            return SRC_BLACK, "black", False
     if SRC_GREEN.exists():
-        return SRC_GREEN, True
+        return SRC_GREEN, "green", True
+    if SRC_CHECKER.exists():
+        return SRC_CHECKER, "checker", False
     raise SystemExit(f"No source image in {ROOT}")
 
 
 def main() -> None:
-    src, is_green_dual = pick_source()
-    keyed = key_background(Image.open(src))
-    region = crop_large_word(keyed) if is_green_dual else keyed
+    src, mode, dual = pick_source()
+    keyed = key_background(Image.open(src), mode)
+    region = crop_large_word(keyed) if dual else keyed
     final = trim_to_logo(region)
     final.save(PNG_OUT, optimize=True)
 
     w, h = final.size
     write_svg(SVG_OUT, PNG_OUT.name, w, h)
-    alpha = final.split()[3].getextrema()
-    print(f"OK  source={src.name}  png={w}x{h}  alpha={alpha}")
+    print(f"OK  source={src.name}  mode={mode}  png={w}x{h}  alpha={final.split()[3].getextrema()}")
 
 
 if __name__ == "__main__":
