@@ -921,12 +921,14 @@
       grid-area: stats;
       width: 100%;
       height: auto;
-      min-height: 2.4em;
+      min-height: 2.85em;
       flex-shrink: 0;
       z-index: 4;
       margin: 0.06em 0 0.12em;
       padding: 0.12em 9.5em 0.12em 0;
       overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.5fr 1.5fr 0.82fr 0.82fr 0.82fr;
       background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
       box-shadow: 0 0 16px rgba(0, 120, 255, 0.18);
     }
@@ -938,12 +940,55 @@
       gap: 0.02em;
     }
 
+    .stage[data-phase="guessing"] .stat-cell:nth-child(1),
+    .stage[data-phase="guessing"] .stat-cell:nth-child(2),
+    .stage[data-phase="results"] .stat-cell:nth-child(1),
+    .stage[data-phase="results"] .stat-cell:nth-child(2),
+    .stage[data-phase="ended"] .stat-cell:nth-child(1),
+    .stage[data-phase="ended"] .stat-cell:nth-child(2) {
+      padding: 0.14em 0.12em;
+      gap: 0.04em;
+      background: linear-gradient(180deg, rgba(255, 200, 60, 0.1) 0%, rgba(0, 40, 100, 0.22) 100%);
+      box-shadow: inset 0 0 20px rgba(255, 190, 50, 0.08);
+    }
+
+    .stage[data-phase="guessing"] .stat-cell:nth-child(2),
+    .stage[data-phase="results"] .stat-cell:nth-child(2),
+    .stage[data-phase="ended"] .stat-cell:nth-child(2) {
+      background: linear-gradient(180deg, rgba(0, 146, 224, 0.14) 0%, rgba(0, 40, 100, 0.22) 100%);
+      box-shadow: inset 0 0 20px rgba(0, 146, 224, 0.1);
+      border-right: 2px solid rgba(255, 200, 60, 0.28);
+    }
+
+    .stage[data-phase="guessing"] .stat-cell:nth-child(3),
+    .stage[data-phase="results"] .stat-cell:nth-child(3),
+    .stage[data-phase="ended"] .stat-cell:nth-child(3) {
+      border-left: 1px solid rgba(255, 200, 60, 0.12);
+    }
+
+    .stage[data-phase="guessing"] .stat-cell:nth-child(n + 3),
+    .stage[data-phase="results"] .stat-cell:nth-child(n + 3),
+    .stage[data-phase="ended"] .stat-cell:nth-child(n + 3) {
+      opacity: 0.82;
+    }
+
     .stage[data-phase="guessing"] .stat-icon,
     .stage[data-phase="results"] .stat-icon,
     .stage[data-phase="ended"] .stat-icon {
       display: block;
       width: 0.88em;
       height: 0.88em;
+    }
+
+    .stage[data-phase="guessing"] .stat-cell:nth-child(1) .stat-icon,
+    .stage[data-phase="guessing"] .stat-cell:nth-child(2) .stat-icon,
+    .stage[data-phase="results"] .stat-cell:nth-child(1) .stat-icon,
+    .stage[data-phase="results"] .stat-cell:nth-child(2) .stat-icon,
+    .stage[data-phase="ended"] .stat-cell:nth-child(1) .stat-icon,
+    .stage[data-phase="ended"] .stat-cell:nth-child(2) .stat-icon {
+      width: 1.15em;
+      height: 1.15em;
+      filter: drop-shadow(0 0 8px currentColor);
     }
 
     .stage[data-phase="guessing"] .stat-label,
@@ -953,10 +998,55 @@
       line-height: 1.05;
     }
 
+    .stage[data-phase="guessing"] .stat-cell:nth-child(1) .stat-label,
+    .stage[data-phase="guessing"] .stat-cell:nth-child(2) .stat-label,
+    .stage[data-phase="results"] .stat-cell:nth-child(1) .stat-label,
+    .stage[data-phase="results"] .stat-cell:nth-child(2) .stat-label,
+    .stage[data-phase="ended"] .stat-cell:nth-child(1) .stat-label,
+    .stage[data-phase="ended"] .stat-cell:nth-child(2) .stat-label {
+      font-size: 0.52em;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: rgba(235, 245, 255, 0.95);
+    }
+
+    .stage[data-phase="guessing"] .stat-cell:nth-child(n + 3) .stat-label,
+    .stage[data-phase="results"] .stat-cell:nth-child(n + 3) .stat-label,
+    .stage[data-phase="ended"] .stat-cell:nth-child(n + 3) .stat-label {
+      font-size: 0.38em;
+      color: rgba(200, 220, 245, 0.62);
+    }
+
     .stage[data-phase="guessing"] .stat-value,
     .stage[data-phase="results"] .stat-value,
     .stage[data-phase="ended"] .stat-value {
       font-size: 1.15em;
+    }
+
+    .stage[data-phase="guessing"] .stat-value.round,
+    .stage[data-phase="results"] .stat-value.round,
+    .stage[data-phase="ended"] .stat-value.round {
+      font-size: 1.85em;
+      text-shadow:
+        0 0 18px rgba(255, 200, 50, 0.95),
+        0 0 36px rgba(255, 160, 30, 0.45);
+    }
+
+    .stage[data-phase="guessing"] .stat-value.balls,
+    .stage[data-phase="results"] .stat-value.balls,
+    .stage[data-phase="ended"] .stat-value.balls {
+      font-size: 1.85em;
+      text-shadow:
+        0 0 18px rgba(0, 146, 224, 0.95),
+        0 0 36px rgba(0, 120, 255, 0.45);
+    }
+
+    .stage[data-phase="guessing"] .stat-cell:nth-child(n + 3) .stat-value,
+    .stage[data-phase="results"] .stat-cell:nth-child(n + 3) .stat-value,
+    .stage[data-phase="ended"] .stat-cell:nth-child(n + 3) .stat-value {
+      font-size: 0.92em;
+      font-weight: 800;
+      text-shadow: 0 0 8px currentColor;
     }
 
     .stage[data-phase="guessing"] .player-board,
