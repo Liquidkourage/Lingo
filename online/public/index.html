@@ -1298,12 +1298,14 @@
 
     let currentState = null;
     let pollTimer = null;
+    let tickTimer = null;
     let guessDraftDirty = false;
     let lastGuessWindowKey = '';
     let lastTimerToastWindowKey = '';
     let timerToastLastRemaining = null;
     let timerToastFired = { warn30: false, warn10: false };
     const TIMER_FLASH_MS = 750;
+    const ALL_SUBMITTED_GRACE_SECONDS = 10;
     let timerDisplay = {
       windowKey: '',
       baseRemaining: null,
@@ -1723,12 +1725,44 @@
         return `paused:${phase}:${state.roundNumber || 0}:${state.timerPausedRemainingSeconds}`;
       }
       if (phase === 'guessing') {
-        return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ''}:${state.guessWindowSeconds || ''}`;
+        return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ''}:${state.guessWindowSeconds || ''}:${state.allPlayersSubmittedAtIso || ''}`;
       }
       if (phase === 'results') {
         return `r:${state.roundNumber || 0}:${state.resultsWindowOpenedAtIso || ''}:${state.resultsWindowSeconds || ''}`;
       }
       return '';
+    }
+
+    function phaseDeadlineMs(state) {
+      const phase = state.phase || 'idle';
+      if (phase === 'guessing') {
+        const openedMs = Date.parse(state.guessWindowOpenedAtIso || '');
+        const totalSec = Number(state.guessWindowSeconds || 0);
+        if (Number.isNaN(openedMs) || !totalSec) return null;
+        let deadlineMs = openedMs + totalSec * 1000;
+        const graceStartMs = Date.parse(state.allPlayersSubmittedAtIso || '');
+        if (!Number.isNaN(graceStartMs)) {
+          deadlineMs = Math.min(deadlineMs, graceStartMs + ALL_SUBMITTED_GRACE_SECONDS * 1000);
+        }
+        return deadlineMs;
+      }
+      if (phase === 'results') {
+        const openedMs = Date.parse(state.resultsWindowOpenedAtIso || '');
+        const totalSec = Number(state.resultsWindowSeconds || 0);
+        if (Number.isNaN(openedMs) || !totalSec) return null;
+        return openedMs + totalSec * 1000;
+      }
+      return null;
+    }
+
+    function secondsRemainingUntil(deadlineMs, maxSeconds) {
+      if (deadlineMs == null || Number.isNaN(deadlineMs)) return null;
+      const remaining = Math.floor((deadlineMs - Date.now()) / 1000);
+      const capped = Math.max(0, remaining);
+      if (maxSeconds > 0) {
+        return Math.min(maxSeconds, capped);
+      }
+      return capped;
     }
 
     function localWindowSecondsRemaining(openedAtIso, windowSeconds) {
@@ -1774,24 +1808,50 @@
 
     function syncTimerDisplay(state) {
       const key = timerDisplayWindowKey(state);
-      const serverRemaining = serverPhaseSecondsRemaining(state);
-      if (!key || serverRemaining == null) {
+      if (!key) {
         timerDisplay.windowKey = '';
         timerDisplay.baseRemaining = null;
         return;
       }
+
+      const keyChanged = key !== timerDisplay.windowKey;
       timerDisplay.windowKey = key;
-      timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
-      timerDisplay.syncedAtMs = Date.now();
+
+      if (state.timerPaused) {
+        const serverRemaining = serverPhaseSecondsRemaining(state);
+        timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
+        return;
+      }
+
+      const deadlineMs = phaseDeadlineMs(state);
+      if (deadlineMs != null) {
+        timerDisplay.baseRemaining = null;
+        return;
+      }
+
+      const serverRemaining = serverPhaseSecondsRemaining(state);
+      if (keyChanged || timerDisplay.baseRemaining == null || serverRemaining == null) {
+        timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
+        timerDisplay.syncedAtMs = Date.now();
+      }
     }
 
     function phaseSecondsRemaining(state) {
       const phase = state.phase || 'idle';
       if (phase === 'idle') return null;
-      if (timerDisplay.baseRemaining == null) return null;
       if (state.timerPaused) {
         return timerDisplay.baseRemaining;
       }
+
+      const deadlineMs = phaseDeadlineMs(state);
+      if (deadlineMs != null) {
+        const maxSeconds = phase === 'guessing'
+          ? Number(state.guessWindowSeconds || 0)
+          : Number(state.resultsWindowSeconds || 0);
+        return secondsRemainingUntil(deadlineMs, maxSeconds);
+      }
+
+      if (timerDisplay.baseRemaining == null) return null;
       const elapsed = Math.floor((Date.now() - timerDisplay.syncedAtMs) / 1000);
       return capPhaseSecondsRemaining(
         state,
@@ -2157,7 +2217,7 @@
       if (pollTimer) window.clearInterval(pollTimer);
       if (IS_DEMO) return;
       const phase = currentState && currentState.phase;
-      const ms = phase === 'guessing' || phase === 'results' ? 2000 : 5000;
+      const ms = phase === 'guessing' || phase === 'results' ? 1000 : 5000;
       pollTimer = window.setInterval(() => {
         fetchPublicState().catch(() => {});
       }, ms);
@@ -2415,6 +2475,20 @@
     function refreshTimerBadge() {
       if (!currentState || currentState.phase === 'idle') return;
       renderPhaseBadge(currentState);
+    }
+
+    function scheduleTimerTick() {
+      const delay = Math.max(1, 1000 - (Date.now() % 1000));
+      tickTimer = window.setTimeout(() => {
+        tickTimer = null;
+        refreshTimerBadge();
+        scheduleTimerTick();
+      }, delay);
+    }
+
+    function startTimerTick() {
+      if (tickTimer) return;
+      scheduleTimerTick();
     }
 
     async function joinLobby() {
@@ -2683,7 +2757,7 @@
       if (IS_DEMO) {
         lockUserName();
         renderPublicState(buildDemoState());
-        window.setInterval(refreshTimerBadge, 1000);
+        startTimerTick();
         return;
       }
       fetchPublicState()
@@ -2699,7 +2773,7 @@
           }
           maybeFocusNameField(currentState?.phase);
         });
-      window.setInterval(refreshTimerBadge, 1000);
+      startTimerTick();
     }
 
     bootPlayerPage();

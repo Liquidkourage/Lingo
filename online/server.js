@@ -91,6 +91,10 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function windowOpenedAtIso() {
+  return new Date(Math.floor(Date.now() / 1000) * 1000).toISOString();
+}
+
 function normalizeDisplayName(displayName) {
   return String(displayName || "").trim();
 }
@@ -522,7 +526,7 @@ async function performContinueRound(client, guessWindowSeconds) {
 
   const nextState = await updateState({
     phase: "guessing",
-    guess_window_opened_at: nowIso(),
+    guess_window_opened_at: windowOpenedAtIso(),
     guess_window_seconds: Number(guessWindowSeconds || state.guess_window_seconds || 90),
     first_solver_player_id: null,
     guess_window_seq: nextWindowSeq,
@@ -551,7 +555,7 @@ async function syncAllSubmittedGrace(state, client) {
   }
 
   if (!state.all_players_submitted_at) {
-    return updateState({ all_players_submitted_at: nowIso() }, client);
+    return updateState({ all_players_submitted_at: windowOpenedAtIso() }, client);
   }
 
   if (allSubmittedGraceExpired(state)) {
@@ -1074,7 +1078,7 @@ async function applyRevealResultsScoring(state, client) {
 
   const patch = {
     balls_remaining: Math.max(0, ballsRemaining),
-    results_window_opened_at: nowIso(),
+    results_window_opened_at: windowOpenedAtIso(),
     first_solver_player_id: firstSolverId,
     ...clearTimerPausePatch(),
     ...clearAllSubmittedGracePatch(),
@@ -1554,7 +1558,7 @@ async function handleAdminAction(action, body) {
           round_ball_stakes: [openingStake],
           guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
           results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
-          guess_window_opened_at: nowIso(),
+          guess_window_opened_at: windowOpenedAtIso(),
           first_solver_player_id: null,
           ...clearTimerPausePatch(),
           ...clearAllSubmittedGracePatch(),
@@ -1700,13 +1704,13 @@ async function handleAdminAction(action, body) {
           return serializeState(await updateState({
             ...clearTimerPausePatch(),
             guess_window_seconds: remaining,
-            guess_window_opened_at: nowIso(),
+            guess_window_opened_at: windowOpenedAtIso(),
           }));
         }
         return serializeState(await updateState({
           ...clearTimerPausePatch(),
           results_window_seconds: remaining,
-          results_window_opened_at: nowIso(),
+          results_window_opened_at: windowOpenedAtIso(),
         }));
       }
 
@@ -1848,7 +1852,7 @@ app.post("/api/admin/rehearsal/:command", requireAdmin, async (req, res) => {
               round_ball_stakes: [openingStake],
               guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
               results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
-              guess_window_opened_at: nowIso(),
+              guess_window_opened_at: windowOpenedAtIso(),
               first_solver_player_id: null,
               ...clearTimerPausePatch(),
             }, client);
@@ -1973,7 +1977,7 @@ app.listen(port, () => {
         maybeAdvanceTimedPhase().catch((error) => {
           console.error("timer tick", error.message);
         });
-      }, 2000);
+      }, 1000);
       setInterval(() => {
         if (!rehearsalAutoSubmitEnabled) return;
         runRehearsalBotSubmissions().catch((error) => {
