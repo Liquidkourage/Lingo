@@ -23,14 +23,14 @@
       --show-black: #000008;
       --show-panel: #020818;
       --show-navy: #010818;
-      --feedback-correct: #00b826;
-      --feedback-correct-border: #007a1a;
+      --feedback-correct: var(--show-green);
+      --feedback-correct-border: #00cc44;
       --feedback-correct-text: #ffffff;
-      --feedback-correct-glow: rgba(0, 184, 38, 0.7);
-      --feedback-present: #fff200;
-      --feedback-present-border: #c4ad00;
+      --feedback-correct-glow: rgba(0, 255, 85, 0.92);
+      --feedback-present: var(--show-gold);
+      --feedback-present-border: #e6b800;
       --feedback-present-text: #141100;
-      --feedback-present-glow: rgba(255, 242, 0, 0.6);
+      --feedback-present-glow: rgba(255, 204, 0, 0.88);
       --contrast-stroke: 3px;
       /* Live UI starts just under visible logo foot (PNG has bottom transparency) */
       --live-logo-reserve: 11.5%;
@@ -2998,34 +2998,16 @@
     .pattern-cell[data-mark="!"] {
       background: var(--feedback-correct);
       border-color: var(--feedback-correct-border);
-      box-shadow: 0 0 14px var(--feedback-correct-glow);
+      box-shadow: 0 0 20px var(--feedback-correct-glow);
     }
 
     .pattern-cell[data-mark="?"] {
       background: var(--feedback-present);
       border-color: var(--feedback-present-border);
-      box-shadow: 0 0 14px var(--feedback-present-glow);
+      box-shadow: 0 0 20px var(--feedback-present-glow);
     }
 
     .pattern-cell[data-mark="/"] {
-      background: #3a2030;
-      border-color: rgba(255, 34, 68, 0.55);
-      box-shadow: inset 0 0 0 1px rgba(255, 34, 68, 0.35);
-    }
-
-    .stage[data-phase="results"] .pattern-cell[data-mark="!"] {
-      background: var(--show-green);
-      border-color: #00cc44;
-      box-shadow: 0 0 20px rgba(0, 255, 85, 0.92);
-    }
-
-    .stage[data-phase="results"] .pattern-cell[data-mark="?"] {
-      background: var(--show-gold);
-      border-color: #e6b800;
-      box-shadow: 0 0 20px rgba(255, 204, 0, 0.88);
-    }
-
-    .stage[data-phase="results"] .pattern-cell[data-mark="/"] {
       background: #6a1830;
       border-color: var(--show-red);
       box-shadow: 0 0 18px rgba(255, 34, 68, 0.82);
