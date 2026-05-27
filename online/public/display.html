@@ -684,7 +684,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.2em;
+      gap: 0.12em;
       width: 100%;
       max-width: 100%;
       justify-self: center;
@@ -699,7 +699,7 @@
       justify-content: center;
       width: 100%;
       min-width: 0;
-      min-height: var(--live-score-rail-height);
+      min-height: 0;
       padding: 0;
     }
 
@@ -2428,6 +2428,34 @@
         animation: none !important;
       }
     }
+
+    /* Layout debug: add ?debug=borders to the display URL */
+    .stage[data-layout-debug="true"] *,
+    .stage[data-layout-debug="true"] *::before,
+    .stage[data-layout-debug="true"] *::after {
+      outline: 1px solid #ffea00 !important;
+      outline-offset: -1px;
+    }
+
+    .stage[data-layout-debug="true"] .stage-ui,
+    .stage[data-layout-debug="true"] .logo-wrap,
+    .stage[data-layout-debug="true"] .live-chrome,
+    .stage[data-layout-debug="true"] .live-hud,
+    .stage[data-layout-debug="true"] .live-score-rail,
+    .stage[data-layout-debug="true"] .timer-panel,
+    .stage[data-layout-debug="true"] .stats-row,
+    .stage[data-layout-debug="true"] .player-board,
+    .stage[data-layout-debug="true"] .idle-deck {
+      outline-width: 2px !important;
+    }
+
+    .stage[data-layout-debug="true"] .word-tile,
+    .stage[data-layout-debug="true"] .stat-cell,
+    .stage[data-layout-debug="true"] .score-slot,
+    .stage[data-layout-debug="true"] .player-card {
+      outline-width: 2px !important;
+      outline-color: #ffd040 !important;
+    }
   </style>
 </head>
 <body>
@@ -2632,6 +2660,7 @@
     const LOBBY_SORT = (urlParams.get("lobbySort") || "newest").toLowerCase();
     const KIOSK_MODE = ["1", "true", "yes"].includes((urlParams.get("kiosk") || "").toLowerCase())
       || ["1", "true", "yes"].includes((urlParams.get("fs") || "").toLowerCase());
+    const LAYOUT_DEBUG = ["borders", "layout", "1", "true", "yes"].includes((urlParams.get("debug") || "").toLowerCase());
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
       "BlueJay", "CryptoKat", "NeonWave", "TurboTurtle", "Glitch",
@@ -3497,6 +3526,10 @@
     }
 
     async function boot() {
+      if (LAYOUT_DEBUG) {
+        els.stage.dataset.layoutDebug = "true";
+      }
+
       startTickTimer();
 
       const emptyIdleState = {
