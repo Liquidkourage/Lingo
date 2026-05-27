@@ -449,6 +449,7 @@ async function buildViewerContext(displayName, state, client = pool) {
       resultLabel: "",
       guessHistory: [],
       isSolved: false,
+      isChampion: false,
     };
   }
 
@@ -475,6 +476,7 @@ async function buildViewerContext(displayName, state, client = pool) {
     resultLabel,
     guessHistory,
     isSolved: Boolean(player.solvedCurrentWord),
+    isChampion: isChampionPlayer(player.displayName, state),
   };
 }
 

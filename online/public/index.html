@@ -28,6 +28,8 @@
       --feedback-present-border: #c4ad00;
       --feedback-present-text: #141100;
       --feedback-present-glow: rgba(255, 242, 0, 0.6);
+      --block-gap: 1.35rem;
+      --block-gap-inner: 0.85rem;
     }
 
     * { box-sizing: border-box; }
@@ -77,12 +79,20 @@
       overflow: visible;
     }
 
+    .play-block {
+      margin-bottom: var(--block-gap);
+    }
+
+    .play-block:last-of-type {
+      margin-bottom: 0.85rem;
+    }
+
     .play-header {
       position: sticky;
       top: 0;
       z-index: 4;
-      margin-bottom: 0.55rem;
-      padding-bottom: 0.45rem;
+      margin-bottom: var(--block-gap);
+      padding-bottom: 0.55rem;
       text-align: center;
       background: linear-gradient(180deg, var(--show-panel) 78%, rgba(2, 8, 24, 0.94) 100%);
       border-bottom: 2px solid rgba(255, 204, 0, 0.22);
@@ -234,21 +244,48 @@
     .play-stage[data-phase="results"] .meta-rail,
     .play-stage[data-phase="ended"] .meta-rail {
       display: grid;
+      grid-template-columns: repeat(4, 1fr);
     }
 
-    .guess-worth {
+    .play-context {
       display: none;
-      margin: 0 0 0.75rem;
+      margin: 0;
       text-align: center;
-      font-size: 0.9rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      color: var(--show-cyan);
-      text-shadow: 0 0 14px rgba(0, 212, 255, 0.55);
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.45;
+      color: rgba(200, 220, 245, 0.88);
     }
 
-    .guess-worth.is-visible {
+    .play-context.is-visible {
       display: block;
+    }
+
+    .play-context .hint-letter {
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 12px rgba(255, 204, 0, 0.55);
+    }
+
+    .meta-value.pot {
+      color: var(--show-cyan);
+      text-shadow: 0 0 16px rgba(0, 212, 255, 0.55);
+    }
+
+    .meta-value.mult {
+      color: var(--show-magenta);
+      text-shadow: 0 0 14px rgba(187, 68, 255, 0.45);
+    }
+
+    .champion-badge {
+      display: none;
+      margin-left: 0.2rem;
+      font-size: 0.95rem;
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 12px rgba(255, 204, 0, 0.75);
+    }
+
+    .champion-badge.is-visible {
+      display: inline;
     }
 
     .meta-slot {
@@ -377,13 +414,6 @@
 
     .play-setup {
       display: block;
-      margin-bottom: 0.85rem;
-    }
-
-    .play-stage[data-phase="guessing"] .play-setup,
-    .play-stage[data-phase="results"] .play-setup,
-    .play-stage[data-phase="ended"] .play-setup {
-      margin-bottom: 0.65rem;
     }
 
     .play-setup-panel {
@@ -576,6 +606,7 @@
 
     .message {
       min-height: 1.35em;
+      margin-top: 0.35rem;
       margin-bottom: 0.75rem;
       text-align: center;
       font-size: 0.82rem;
@@ -657,16 +688,28 @@
       filter: grayscale(0.35);
     }
 
-    .play-stats {
-      margin-bottom: 0.65rem;
-    }
-
     .play-stage[data-phase="idle"] .play-stats {
       display: none;
     }
 
+    .play-guess .prompt {
+      margin-bottom: var(--block-gap-inner);
+    }
+
+    .play-guess .word-tiles {
+      margin-bottom: var(--block-gap-inner);
+    }
+
+    .play-guess .play-keyboard {
+      margin-bottom: var(--block-gap-inner);
+    }
+
     .play-guess {
       display: none;
+      padding: 0.75rem 0.55rem 0.8rem;
+      border: 2px solid rgba(0, 255, 85, 0.28);
+      border-radius: 0.2em;
+      background: rgba(0, 16, 8, 0.45);
     }
 
     .play-stage[data-phase="guessing"] .play-guess {
@@ -756,7 +799,10 @@
 
     .play-history {
       display: none;
-      margin-bottom: 0.75rem;
+      padding: 0.65rem 0.55rem 0.7rem;
+      border: 2px solid rgba(0, 212, 255, 0.28);
+      border-radius: 0.2em;
+      background: rgba(0, 12, 28, 0.55);
     }
 
     .history-heading {
@@ -956,6 +1002,11 @@
     @media (max-width: 420px) {
       .play-card { padding: 1rem 0.85rem 0.9rem; }
       .word-tiles { gap: 0.35rem; }
+      .play-stage[data-phase="guessing"] .meta-rail,
+      .play-stage[data-phase="results"] .meta-rail,
+      .play-stage[data-phase="ended"] .meta-rail {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
   </style>
 </head>
@@ -982,6 +1033,7 @@
           <div class="setup-row" id="nameLocked">
             <div class="setup-name-group">
               <span class="name-display" id="playerNameDisplay"></span>
+              <span class="champion-badge" id="championBadge" title="Venue champion">★</span>
               <button id="changeNameBtn" class="name-change" type="button">Change</button>
             </div>
             <button id="lobbyToggle" class="good lobby-toggle" type="button">Join game</button>
@@ -989,26 +1041,34 @@
         </section>
       </div>
 
-      <section class="play-stats" aria-label="Live stats">
+      <section class="play-block play-stats" aria-label="Live stats">
         <div class="meta-rail" aria-label="Game stats">
           <div class="meta-slot">
             <span class="meta-label">Round</span>
             <span class="meta-value round" id="metaRound">0</span>
           </div>
           <div class="meta-slot">
-            <span class="meta-label">Balls</span>
+            <span class="meta-label">At stake</span>
+            <span class="meta-value pot" id="metaPot">0</span>
+          </div>
+          <div class="meta-slot">
+            <span class="meta-label">Yours</span>
             <span class="meta-value balls" id="metaYours">0</span>
           </div>
+          <div class="meta-slot">
+            <span class="meta-label">Mult</span>
+            <span class="meta-value mult" id="metaMult">1×</span>
+          </div>
         </div>
-        <p class="guess-worth" id="guessWorth" aria-live="polite"></p>
+        <p class="play-context" id="playContext" aria-live="polite"></p>
       </section>
 
-      <section class="play-history" id="playHistory" aria-label="Your guesses this round">
+      <section class="play-block play-history" id="playHistory" aria-label="Your guesses this round">
         <p class="history-heading">Your guesses this round</p>
         <div class="guess-history" id="guessHistory"></div>
       </section>
 
-      <section class="play-guess" id="playGuess" aria-label="Guess entry">
+      <section class="play-block play-guess" id="playGuess" aria-label="Guess entry">
         <h1 class="prompt" id="promptLine">Enter your five-letter word</h1>
         <div class="word-tiles" id="wordTiles" aria-label="Five-letter guess">
           <input
@@ -1058,8 +1118,11 @@
       phaseBadge: document.getElementById('phaseBadge'),
       phaseLine: document.getElementById('phaseLine'),
       metaRound: document.getElementById('metaRound'),
+      metaPot: document.getElementById('metaPot'),
       metaYours: document.getElementById('metaYours'),
-      guessWorth: document.getElementById('guessWorth'),
+      metaMult: document.getElementById('metaMult'),
+      playContext: document.getElementById('playContext'),
+      championBadge: document.getElementById('championBadge'),
       playOutcome: document.getElementById('playOutcome'),
       resultTiles: document.getElementById('resultTiles'),
       outcomeEmpty: document.getElementById('outcomeEmpty'),
@@ -1125,6 +1188,8 @@
         guessWindowOpenedAtIso: openedAt,
         resultsWindowOpenedAtIso: openedAt,
         timerPaused: false,
+        playerCount: 18,
+        submittedThisRound: 11,
       };
       if (DEMO_PHASE === 'guessing') {
         return {
@@ -1137,6 +1202,7 @@
             lockedIn: false,
             roundGuess: '',
             guessHistory: [],
+            isChampion: false,
           },
         };
       }
@@ -1711,23 +1777,42 @@
         : `This guess worth ${count} balls`;
     }
 
-    function renderGuessWorth(state) {
+    function renderPlayContext(state) {
       const phase = state.phase || 'idle';
-      if (phase !== 'guessing') {
-        els.guessWorth.classList.remove('is-visible');
-        els.guessWorth.textContent = '';
+      const parts = [];
+
+      if (phase === 'guessing') {
+        const letter = String(state.publicFirstLetter || '').charAt(0).toUpperCase();
+        if (letter) {
+          parts.push(`Word starts with <span class="hint-letter">${letter}</span>`);
+        }
+        parts.push(formatGuessWorthLine(Number(state.ballsRemaining || 0)));
+        const submitted = Number(state.submittedThisRound || 0);
+        const total = Number(state.playerCount || 0);
+        if (total > 0) {
+          parts.push(`${submitted} of ${total} players submitted`);
+        }
+      } else if (phase === 'results') {
+        parts.push('Results are on the venue display');
+      }
+
+      if (!parts.length) {
+        els.playContext.classList.remove('is-visible');
+        els.playContext.textContent = '';
         return;
       }
-      const balls = Number(state.ballsRemaining || 0);
-      els.guessWorth.textContent = formatGuessWorthLine(balls);
-      els.guessWorth.classList.add('is-visible');
+
+      els.playContext.innerHTML = parts.join(' · ');
+      els.playContext.classList.add('is-visible');
     }
 
-    function renderPrompt(phase) {
+    function renderPrompt(phase, state) {
       if (phase === 'guessing') {
+        const letter = String(state?.publicFirstLetter || '').charAt(0).toUpperCase();
+        const hint = letter ? ` (starts with ${letter})` : '';
         els.promptLine.textContent = hasSubmittedGuess()
-          ? 'Change your word below, then tap Update guess'
-          : 'Enter your five-letter word';
+          ? `Change your word below, then tap Update guess${hint}`
+          : `Enter your five-letter word${hint}`;
         return;
       }
       if (phase === 'results') {
@@ -1899,17 +1984,29 @@
 
       els.stage.dataset.phase = phase;
       renderPhaseBadge(state);
-      els.phaseLine.textContent = phase === 'ended' && state.revealedWord
-        ? `The word was ${state.revealedWord.toUpperCase()}.`
-        : copy.line;
+      if (phase === 'idle' && state.hostNote) {
+        els.phaseLine.textContent = state.hostNote;
+      } else if (phase === 'ended' && state.revealedWord) {
+        els.phaseLine.textContent = `The word was ${state.revealedWord.toUpperCase()}.`;
+      } else {
+        els.phaseLine.textContent = copy.line;
+      }
 
       els.metaRound.textContent = String(state.roundNumber || 0);
+      els.metaPot.textContent = String(state.ballsRemaining || 0);
+      els.metaMult.textContent = `${Number(state.ballMultiplier || 1)}×`;
       els.metaYours.textContent = !activeUserName()
         ? '—'
         : String(viewer && viewer.found ? viewer.balls : 0);
 
-      renderGuessWorth(state);
-      renderPrompt(phase);
+      if (viewer && viewer.isChampion) {
+        els.championBadge.classList.add('is-visible');
+      } else {
+        els.championBadge.classList.remove('is-visible');
+      }
+
+      renderPlayContext(state);
+      renderPrompt(phase, state);
       renderLockedIn(state);
       renderGuessHistory(state);
       renderRoundOutcome(state);
