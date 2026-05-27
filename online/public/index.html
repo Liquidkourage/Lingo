@@ -557,10 +557,7 @@
 
     .play-lobby {
       display: block;
-    }
-
-    .play-stage:not([data-phase="idle"]) .play-lobby {
-      display: none;
+      margin-top: 0.15rem;
     }
 
     .play-guess {
@@ -821,10 +818,10 @@
       </section>
 
       <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
-        <p class="lobby-hint">Join once before the host starts a round to appear on the venue display.</p>
+        <p class="lobby-hint">Join to appear on the venue display. Leave anytime.</p>
         <div class="button-row button-row--lobby">
-          <button id="joinButton" class="good" type="button">Join lobby</button>
-          <button id="leaveButton" class="secondary" type="button">Leave lobby</button>
+          <button id="joinButton" class="good" type="button">Join game</button>
+          <button id="leaveButton" class="secondary" type="button">Leave game</button>
         </div>
       </section>
 
@@ -1009,7 +1006,7 @@
     let skipNameBlurConfirm = false;
 
     function isNameLocked() {
-      return els.playIdentity.dataset.nameMode === 'locked';
+      return els.playIdentity.getAttribute('data-name-mode') === 'locked';
     }
 
     function activeUserName() {
@@ -1029,7 +1026,8 @@
       els.nameHint.textContent = 'Suggested name — keep it or pick another.';
     }
 
-    function lockUserName() {
+    function lockUserName(options = {}) {
+      const { showMessage = false } = options;
       const name = (
         els.playerName.value.trim()
         || els.playerNameDisplay.textContent.trim()
@@ -1038,15 +1036,33 @@
       if (!name) return false;
       els.playerNameDisplay.textContent = name;
       els.playerName.value = name;
-      els.playIdentity.dataset.nameMode = 'locked';
+      els.playIdentity.setAttribute('data-name-mode', 'locked');
       nameSuggestionSeed = name;
       storeDisplayName(name);
+      if (showMessage) {
+        setMessage(`You're ${name}.`, 'success');
+      }
       scheduleTypingFocus();
       return true;
     }
 
+    function confirmUserNameFromButton(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      skipNameBlurConfirm = true;
+      if (!lockUserName({ showMessage: true })) {
+        setMessage('Type a name or tap ↻ for a suggestion.', 'error');
+        openNameEditor();
+        els.playerName.focus();
+        return;
+      }
+      fetchPublicState().catch(() => {});
+    }
+
     function openNameEditor() {
-      els.playIdentity.dataset.nameMode = 'editing';
+      els.playIdentity.setAttribute('data-name-mode', 'editing');
       els.playerName.value = els.playerNameDisplay.textContent || els.playerName.value;
       window.requestAnimationFrame(() => els.playerName.focus());
     }
@@ -1250,11 +1266,10 @@
     }
 
     function updateLobbyButtons() {
-      const phase = currentState && currentState.phase;
       const joined = Boolean(currentState && currentState.viewer && currentState.viewer.found);
-      const canLobby = phase === 'idle';
-      els.join.disabled = !canLobby || joined;
-      els.leave.disabled = !canLobby || !joined;
+      const ready = hasUserName() && isNameLocked();
+      els.join.disabled = !ready || joined;
+      els.leave.disabled = !ready || !joined;
     }
 
     function schedulePolling() {
@@ -1521,13 +1536,13 @@
 
     async function joinLobby() {
       if (!isNameLocked() && !lockUserName()) {
-        setMessage('Choose a user name and tap Use name first.', 'error');
-        els.playerName.focus();
+        setMessage('Set your user name first.', 'error');
+        openNameEditor();
         return;
       }
       const displayName = activeUserName();
       if (!displayName) {
-        setMessage('Enter your user name above first.', 'error');
+        setMessage('Set your user name first.', 'error');
         openNameEditor();
         return;
       }
@@ -1544,7 +1559,7 @@
           throw new Error(payload.error || 'Could not join the lobby.');
         }
         storeDisplayName(displayName);
-        setMessage('You are in the lobby. You will appear on the venue display.', 'success');
+        setMessage('You joined the game and appear on the venue display.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
         setMessage(error.message || 'Could not join the lobby.', 'error');
@@ -1571,7 +1586,7 @@
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || 'Could not leave the lobby.');
         }
-        setMessage('You left the lobby.', 'success');
+        setMessage('You left the game.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
         setMessage(error.message || 'Could not leave the lobby.', 'error');
@@ -1698,16 +1713,7 @@
     els.confirmName.addEventListener('mousedown', () => {
       skipNameBlurConfirm = true;
     });
-    els.confirmName.addEventListener('click', () => {
-      if (!lockUserName()) {
-        setMessage('Enter a user name first.', 'error');
-        openNameEditor();
-        els.playerName.focus();
-        return;
-      }
-      setMessage('');
-      fetchPublicState().catch(() => {});
-    });
+    els.confirmName.addEventListener('click', confirmUserNameFromButton);
     els.changeName.addEventListener('mousedown', () => {
       skipNameBlurConfirm = true;
     });
@@ -1730,19 +1736,8 @@
     els.playerName.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        if (lockUserName()) {
-          setMessage('');
-          fetchPublicState().catch(() => {});
-        }
+        confirmUserNameFromButton();
       }
-    });
-    els.playerName.addEventListener('blur', () => {
-      if (skipNameBlurConfirm) {
-        skipNameBlurConfirm = false;
-        return;
-      }
-      if (els.playIdentity.dataset.nameMode !== 'editing') return;
-      lockUserName();
     });
 
     document.addEventListener('keydown', (event) => {

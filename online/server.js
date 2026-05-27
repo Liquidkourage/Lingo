@@ -799,10 +799,6 @@ app.post("/api/public/join", async (req, res) => {
   try {
     await client.query("begin");
     const state = await getState(client);
-    if (state.phase !== "idle") {
-      throw new Error("Sign-up is only open before the host starts a round.");
-    }
-
     const player = await upsertLobbyPlayer(state.session_id, displayName, client);
     await client.query("commit");
 
@@ -835,10 +831,6 @@ app.post("/api/public/leave", async (req, res) => {
   try {
     await client.query("begin");
     const state = await getState(client);
-    if (state.phase !== "idle") {
-      throw new Error("You can only leave the lobby before a round is in progress.");
-    }
-
     await client.query(
       `delete from players
        where session_id = $1
