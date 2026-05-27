@@ -329,6 +329,20 @@ function clearAllSubmittedGracePatch() {
   };
 }
 
+function endCurrentWordPatch() {
+  return {
+    phase: "ended",
+    answer_revealed: true,
+    ...clearTimerPausePatch(),
+    ...clearAllSubmittedGracePatch(),
+  };
+}
+
+async function hasPlayersWhoCanStillGuess(state, client = pool) {
+  const players = await listPlayers(state.session_id, client);
+  return players.some((player) => !player.solvedCurrentWord);
+}
+
 function newPlayerToken() {
   return crypto.randomUUID();
 }
@@ -540,6 +554,9 @@ async function performContinueRound(client, guessWindowSeconds) {
   if (state.answer_revealed || balls < 2 * multiplier) {
     throw new Error("The round cannot continue in the current state.");
   }
+  if (!(await hasPlayersWhoCanStillGuess(state, client))) {
+    return updateState(endCurrentWordPatch(), client);
+  }
   const continueStake = Number(state.balls_remaining || 0);
   const nextWindowSeq = Number(state.guess_window_seq || 0) + 1;
   const roundBallStakes = [...parseRoundBallStakesPreserveOrder(state), continueStake];
@@ -603,7 +620,11 @@ async function maybeAdvanceTimedPhase(client = pool) {
         state = await performRevealResults(db);
       } else if (state.phase === "guessing"
         && windowExpired(state.guess_window_opened_at, state.guess_window_seconds, state.timer_paused)) {
-        state = await performRevealResults(db);
+        if (await hasPlayersWhoCanStillGuess(state, db)) {
+          state = await performRevealResults(db);
+        } else {
+          state = await updateState(endCurrentWordPatch(), db);
+        }
       }
     } else if (state.phase === "results"
       && windowExpired(state.results_window_opened_at, state.results_window_seconds, state.timer_paused)) {
@@ -611,6 +632,8 @@ async function maybeAdvanceTimedPhase(client = pool) {
       const balls = Number(state.balls_remaining || 0);
       if (!state.answer_revealed && balls >= 2 * multiplier) {
         state = await performContinueRound(db, state.guess_window_seconds);
+      } else if (!state.answer_revealed) {
+        state = await updateState(endCurrentWordPatch(), db);
       }
     }
 
@@ -1097,6 +1120,10 @@ async function applyRevealResultsScoring(state, client) {
     ballsRemaining -= multiplier;
   }
 
+  const refreshedPlayers = await listPlayers(state.session_id, client);
+  const everyoneSolved = refreshedPlayers.length > 0
+    && refreshedPlayers.every((player) => player.solvedCurrentWord);
+
   const patch = {
     balls_remaining: Math.max(0, ballsRemaining),
     results_window_opened_at: windowOpenedAtIso(),
@@ -1105,7 +1132,7 @@ async function applyRevealResultsScoring(state, client) {
     ...clearAllSubmittedGracePatch(),
   };
 
-  if (lastGuessWasTwoBall) {
+  if (lastGuessWasTwoBall || everyoneSolved) {
     patch.phase = "ended";
     patch.answer_revealed = true;
   } else {
