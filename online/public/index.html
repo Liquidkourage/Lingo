@@ -804,9 +804,9 @@
           <div class="name-row">
             <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="SwiftTiger" />
             <button id="shuffleNameBtn" class="secondary name-shuffle" type="button" title="Another suggestion" aria-label="Another name suggestion">↻</button>
-            <button id="confirmNameBtn" class="good name-confirm" type="button">Use name</button>
+            <button id="confirmNameBtn" class="good name-confirm" type="button">Use name &amp; join</button>
           </div>
-          <p class="name-hint" id="nameHint">Suggested name — keep it or pick another.</p>
+          <p class="name-hint" id="nameHint">Sets your name and joins the game.</p>
         </div>
         <div class="name-locked" id="nameLocked">
           <span class="field-label">Your user name</span>
@@ -1015,15 +1015,11 @@
     }
 
     function setNameHintMode(mode) {
-      if (mode === 'saved') {
-        els.nameHint.textContent = 'Tap Use name when you are ready.';
-        return;
-      }
       if (mode === 'custom') {
-        els.nameHint.textContent = 'Tap Use name to lock it in.';
+        els.nameHint.textContent = 'Tap Use name & join when ready.';
         return;
       }
-      els.nameHint.textContent = 'Suggested name — keep it or pick another.';
+      els.nameHint.textContent = 'Sets your name and joins the game.';
     }
 
     function lockUserName(options = {}) {
@@ -1046,24 +1042,56 @@
       return true;
     }
 
-    function confirmUserNameFromButton(event) {
+    async function joinGame(displayName) {
+      const response = await fetch('/api/public/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'Could not join the game.');
+      }
+      storeDisplayName(displayName);
+      return payload;
+    }
+
+    async function confirmUserNameAndJoin(event) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
       }
       skipNameBlurConfirm = true;
-      if (!lockUserName({ showMessage: true })) {
+      if (!lockUserName()) {
         setMessage('Type a name or tap ↻ for a suggestion.', 'error');
         openNameEditor();
         els.playerName.focus();
         return;
       }
-      fetchPublicState().catch(() => {});
+
+      const displayName = activeUserName();
+      els.confirmName.disabled = true;
+      try {
+        if (currentState && currentState.viewer && currentState.viewer.found) {
+          setMessage(`You're ${displayName}.`, 'success');
+          await fetchPublicState();
+          return;
+        }
+        const payload = await joinGame(displayName);
+        setMessage(`You're ${displayName} — joined the game.`, 'success');
+        renderPublicState(payload.publicState);
+      } catch (error) {
+        setMessage(error.message || 'Could not join the game.', 'error');
+        updateLobbyButtons();
+      } finally {
+        els.confirmName.disabled = false;
+      }
     }
 
     function openNameEditor() {
       els.playIdentity.setAttribute('data-name-mode', 'editing');
       els.playerName.value = els.playerNameDisplay.textContent || els.playerName.value;
+      setNameHintMode('custom');
       window.requestAnimationFrame(() => els.playerName.focus());
     }
 
@@ -1080,9 +1108,6 @@
       els.playerName.value = suggestion;
       nameSuggestionSeed = suggestion;
       setNameHintMode('suggested');
-      if (!forceNew) {
-        lockUserName();
-      }
       return suggestion;
     }
 
@@ -1535,8 +1560,8 @@
     }
 
     async function joinLobby() {
-      if (!isNameLocked() && !lockUserName()) {
-        setMessage('Set your user name first.', 'error');
+      if (!isNameLocked()) {
+        setMessage('Tap Use name & join first.', 'error');
         openNameEditor();
         return;
       }
@@ -1549,20 +1574,11 @@
 
       els.join.disabled = true;
       try {
-        const response = await fetch('/api/public/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ displayName }),
-        });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || 'Could not join the lobby.');
-        }
-        storeDisplayName(displayName);
+        const payload = await joinGame(displayName);
         setMessage('You joined the game and appear on the venue display.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
-        setMessage(error.message || 'Could not join the lobby.', 'error');
+        setMessage(error.message || 'Could not join the game.', 'error');
         updateLobbyButtons();
       }
     }
@@ -1610,9 +1626,9 @@
     }
 
     async function submitGuess() {
-      if (!isNameLocked() && !lockUserName()) {
-        setMessage('Choose a user name and tap Use name first.', 'error');
-        els.playerName.focus();
+      if (!isNameLocked()) {
+        setMessage('Tap Use name & join first.', 'error');
+        openNameEditor();
         return;
       }
       const displayName = activeUserName();
@@ -1713,7 +1729,7 @@
     els.confirmName.addEventListener('mousedown', () => {
       skipNameBlurConfirm = true;
     });
-    els.confirmName.addEventListener('click', confirmUserNameFromButton);
+    els.confirmName.addEventListener('click', confirmUserNameAndJoin);
     els.changeName.addEventListener('mousedown', () => {
       skipNameBlurConfirm = true;
     });
@@ -1736,7 +1752,7 @@
     els.playerName.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        confirmUserNameFromButton();
+        confirmUserNameAndJoin();
       }
     });
 
@@ -1753,7 +1769,6 @@
       if (IS_DEMO) {
         els.playerName.value = 'NightOwl';
         nameSuggestionSeed = 'NightOwl';
-        lockUserName();
       } else {
         try {
           nameSuggestionSeed = await applySuggestedName(false);
@@ -1762,19 +1777,29 @@
             els.playerName.value = 'NightOwl';
             nameSuggestionSeed = 'NightOwl';
             setNameHintMode('suggested');
-            lockUserName();
           }
         }
       }
 
       if (IS_DEMO) {
+        lockUserName();
         renderPublicState(buildDemoState());
         window.setInterval(refreshTimerBadge, 1000);
         return;
       }
       fetchPublicState()
         .catch((err) => setMessage(err.message || 'Could not load game state.', 'error'))
-        .finally(() => scheduleTypingFocus());
+        .finally(async () => {
+          if (isNameLocked() && activeUserName() && !(currentState && currentState.viewer && currentState.viewer.found)) {
+            try {
+              const payload = await joinGame(activeUserName());
+              renderPublicState(payload.publicState);
+            } catch (error) {
+              setMessage(error.message || 'Could not join the game.', 'error');
+            }
+          }
+          scheduleTypingFocus();
+        });
       window.setInterval(refreshTimerBadge, 1000);
     }
 
