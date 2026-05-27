@@ -401,9 +401,6 @@ async function upsertLobbyPlayer(sessionId, displayName, playerToken, client = p
     [sessionId, displayName, normalized, newPlayerToken()],
   );
   const row = result.rows[0];
-  if (!token && row.player_token) {
-    throw new Error("That name is already in use. Re-join with your saved session or choose another name.");
-  }
   return ensurePlayerToken(row, client);
 }
 
@@ -702,6 +699,7 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
   const token = normalizePlayerToken(playerToken);
 
   let player = null;
+  let sessionValid = false;
   if (token) {
     const row = await getPlayerByToken(state.session_id, token, client);
     if (row) {
@@ -714,6 +712,7 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
         balls: Number(row.balls || 0),
         solvedCurrentWord: Boolean(row.solved_current_word),
       };
+      sessionValid = true;
     }
   }
 
@@ -729,6 +728,7 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
   if (!player) {
     return {
       found: false,
+      sessionValid: false,
       displayName: normalized,
       balls: 0,
       lockedIn: false,
@@ -776,6 +776,7 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
 
   return {
     found: true,
+    sessionValid,
     displayName: player.displayName,
     balls: Number(player.balls || 0),
     lockedIn: phase === "guessing" && submitted && !Boolean(player.solvedCurrentWord),

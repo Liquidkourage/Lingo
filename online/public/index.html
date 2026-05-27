@@ -1616,6 +1616,10 @@
       });
     }
 
+    function isViewerJoined(state = currentState) {
+      return Boolean(state?.viewer?.sessionValid);
+    }
+
     function hasUserName() {
       return Boolean(activeUserName());
     }
@@ -1628,7 +1632,7 @@
       return Boolean(
         currentState
         && currentState.phase === 'guessing'
-        && currentState.viewer?.found
+        && isViewerJoined(currentState)
         && !viewerSolvedCurrentWord(),
       );
     }
@@ -1992,8 +1996,8 @@
 
       els.guessHistory.replaceChildren();
 
-      if (!isLiveRound(phase) || !viewer || !viewer.found) {
-        els.playRound.hidden = true;
+      if (!isLiveRound(phase) || !viewer || !isViewerJoined(state)) {
+        els.playRound.hidden = !isLiveRound(phase) || !isViewerJoined(state);
         return;
       }
 
@@ -2082,7 +2086,7 @@
       els.resultFeedbackValue.textContent = '';
       els.resultFeedbackValue.className = 'result-feedback-value';
 
-      if (!live || !viewer || !viewer.found) {
+      if (!live || !viewer || !isViewerJoined(state)) {
         return;
       }
 
@@ -2125,12 +2129,15 @@
     }
 
     function updateLobbyButtons() {
-      const joined = Boolean(currentState && currentState.viewer && currentState.viewer.found);
+      const joined = isViewerJoined();
       const ready = hasUserName() && isNameLocked();
       els.lobbyToggle.disabled = !ready;
       if (joined) {
         els.lobbyToggle.textContent = 'Leave game';
         els.lobbyToggle.className = 'secondary lobby-toggle';
+      } else if (ready) {
+        els.lobbyToggle.textContent = 'Re-join game';
+        els.lobbyToggle.className = 'good lobby-toggle';
       } else {
         els.lobbyToggle.textContent = 'Join game';
         els.lobbyToggle.className = 'good lobby-toggle';
@@ -2138,7 +2145,7 @@
     }
 
     async function toggleLobby() {
-      const joined = Boolean(currentState && currentState.viewer && currentState.viewer.found);
+      const joined = isViewerJoined();
       if (joined) {
         await leaveLobby();
       } else {
@@ -2380,7 +2387,11 @@
       els.metaPot.textContent = String(state.ballsRemaining || 0);
       els.metaYours.textContent = !activeUserName()
         ? '—'
-        : String(viewer && viewer.found ? viewer.balls : 0);
+        : String(isViewerJoined(state) ? viewer.balls : 0);
+
+      if (isLiveRound(phase) && isNameLocked() && activeUserName() && !isViewerJoined(state)) {
+        setMessage('Tap Re-join game to continue playing on this device.', 'error');
+      }
 
       if (viewer && viewer.isChampion) {
         els.championBadge.classList.add('is-visible');
@@ -2482,6 +2493,18 @@
       renderPublicState(payload.state);
     }
 
+    async function ensureViewerSession(displayName) {
+      if (isViewerJoined()) {
+        return true;
+      }
+      const payload = await joinGame(displayName);
+      if (payload.player?.playerToken) {
+        storePlayerToken(payload.player.playerToken);
+      }
+      renderPublicState(payload.publicState);
+      return isViewerJoined();
+    }
+
     async function submitGuess() {
       if (!isNameLocked()) {
         setMessage('Tap Use name & join first.', 'error');
@@ -2509,6 +2532,12 @@
       els.submit.textContent = 'Sending…';
 
       try {
+        if (!isViewerJoined()) {
+          const rejoined = await ensureViewerSession(displayName);
+          if (!rejoined) {
+            throw new Error('Re-join the game before submitting a guess.');
+          }
+        }
         const playerToken = getPlayerToken();
         if (!playerToken) {
           throw new Error('Re-join the game before submitting a guess.');
@@ -2660,12 +2689,12 @@
       fetchPublicState()
         .catch((err) => setMessage(err.message || 'Could not load game state.', 'error'))
         .finally(async () => {
-          if (isNameLocked() && activeUserName() && !(currentState && currentState.viewer && currentState.viewer.found)) {
+          if (isNameLocked() && activeUserName() && !isViewerJoined(currentState)) {
             try {
               const payload = await joinGame(activeUserName());
               renderPublicState(payload.publicState);
             } catch (error) {
-              setMessage(error.message || 'Could not join the game.', 'error');
+              setMessage(error.message || 'Tap Re-join game to continue playing.', 'error');
             }
           }
           maybeFocusNameField(currentState?.phase);
