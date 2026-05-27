@@ -1309,291 +1309,507 @@
       background: linear-gradient(180deg, rgba(0, 18, 42, 0.88) 0%, rgba(0, 8, 22, 0.94) 100%);
     }
 
-    /* Live card skins — eight royal-theme variants */
-    @keyframes skin-royal-shimmer {
-      0%, 100% { opacity: 0.55; }
-      50% { opacity: 0.95; }
+    /* Live card skins — eight eclipse variants (NeonWave royal-eclipse family) */
+    @keyframes eclipse-corona-breathe {
+      0%, 100% { opacity: 0.62; transform: translate(-50%, -50%) scale(0.97); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
     }
 
-    @keyframes skin-royal-crown-pulse {
-      0%, 100% { opacity: 0.65; }
+    @keyframes eclipse-corona-spin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    @keyframes eclipse-flare-pulse {
+      0%, 100% { opacity: 0.55; filter: blur(0); }
+      50% { opacity: 0.95; filter: blur(0.5px); }
+    }
+
+    @keyframes eclipse-orbit-wobble {
+      0%, 100% { transform: translate(-50%, -50%) scaleX(1.08) scaleY(0.52) rotate(-18deg); opacity: 0.7; }
+      50% { transform: translate(-50%, -50%) scaleX(1.14) scaleY(0.56) rotate(-14deg); opacity: 1; }
+    }
+
+    @keyframes eclipse-nexus-pulse {
+      0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.94); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+    }
+
+    @keyframes eclipse-radiance-surge {
+      0%, 100% { opacity: 0.5; box-shadow: 0 0 14px rgba(255, 210, 100, 0.35), 0 0 32px rgba(255, 180, 60, 0.22); }
+      50% { opacity: 1; box-shadow: 0 0 22px rgba(255, 220, 120, 0.65), 0 0 48px rgba(255, 190, 70, 0.42), 0 0 72px rgba(160, 80, 220, 0.28); }
+    }
+
+    @keyframes eclipse-sovereign-gleam {
+      0%, 100% { opacity: 0.68; }
       50% { opacity: 1; }
     }
 
-    @keyframes skin-royal-scepter-glow {
-      0%, 100% { opacity: 0.72; transform: translateX(-50%) scale(0.96); }
-      50% { opacity: 1; transform: translateX(-50%) scale(1); }
+    @keyframes eclipse-umbra-drift {
+      0%, 100% { transform: translate(-51%, -53%); }
+      50% { transform: translate(-49%, -51%); }
     }
 
-    @keyframes skin-royal-herald-gleam {
-      0%, 100% { opacity: 0.55; }
-      50% { opacity: 0.92; }
+    /* Shared eclipse name treatment */
+    .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"] .player-name {
+      font-weight: 800;
+      letter-spacing: 0.02em;
     }
 
-    @keyframes skin-royal-jewel-twinkle {
-      0%, 100% { opacity: 0.5; }
-      50% { opacity: 0.88; }
-    }
-
-    @keyframes skin-royal-eclipse-corona {
-      0%, 100% { opacity: 0.5; transform: scale(0.98); }
-      50% { opacity: 0.95; transform: scale(1.02); }
-    }
-
-    /* Regent — classic purple vault with gold inner frame */
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-regent"],
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-regent"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-regent"] {
-      border-color: rgba(210, 170, 255, 0.82);
-      background: linear-gradient(180deg, rgba(36, 8, 68, 0.98) 0%, rgba(14, 4, 36, 0.99) 100%);
-      box-shadow: 0 0 24px rgba(140, 80, 220, 0.28), inset 0 1px 0 rgba(255, 220, 140, 0.14);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-regent"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-regent"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-regent"]::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      border: 1px solid rgba(255, 210, 90, 0.35);
-      animation: skin-royal-shimmer 3.2s ease-in-out infinite;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-regent"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-regent"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-regent"] .player-name {
-      color: #f5e8ff;
-      text-shadow: 0 0 10px rgba(180, 120, 255, 0.45), 0 0 6px rgba(255, 210, 90, 0.35);
-    }
-
-    /* Crown — gold-dominant coronation band */
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-crown"],
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-crown"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-crown"] {
-      border-color: rgba(255, 210, 80, 0.95);
-      background: linear-gradient(180deg, rgba(52, 28, 4, 0.98) 0%, rgba(28, 8, 48, 0.99) 38%, rgba(14, 4, 32, 0.99) 100%);
-      box-shadow: 0 0 28px rgba(255, 190, 50, 0.42), inset 0 2px 0 rgba(255, 235, 160, 0.28);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-crown"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-crown"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-crown"]::before {
-      content: "";
-      position: absolute;
-      inset: 0 0 auto 0;
-      height: 38%;
-      border-radius: inherit inherit 0 0;
-      background: linear-gradient(180deg, rgba(255, 220, 100, 0.42) 0%, rgba(255, 190, 60, 0.12) 70%, transparent 100%);
-      animation: skin-royal-crown-pulse 2.8s ease-in-out infinite;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-crown"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-crown"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-crown"] .player-name {
-      color: #fff0b8;
-      text-shadow: 0 0 12px rgba(255, 200, 60, 0.6), 0 0 8px rgba(180, 100, 255, 0.35);
-    }
-
-    /* Velvet — wine-plush court drapery */
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-velvet"],
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-velvet"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-velvet"] {
-      border-color: rgba(180, 60, 120, 0.78);
+    /* 0 · Void — canonical NeonWave eclipse, volumetric depth */
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-void"],
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-void"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-void"] {
+      border-color: rgba(130, 90, 200, 0.58);
       background:
-        linear-gradient(180deg, rgba(58, 8, 42, 0.98) 0%, rgba(28, 4, 28, 0.99) 100%),
-        repeating-linear-gradient(92deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 5px);
-      box-shadow: 0 0 20px rgba(160, 40, 100, 0.32), inset 0 0 24px rgba(80, 0, 48, 0.22);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-velvet"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-velvet"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-velvet"] .player-name {
-      color: #ffd8ec;
-      text-shadow: 0 0 10px rgba(220, 100, 180, 0.45);
-    }
-
-    /* Scepter — signet seal stamped in gold wax */
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-scepter"],
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-scepter"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-scepter"] {
-      border-color: rgba(200, 160, 90, 0.82);
-      background: linear-gradient(180deg, rgba(32, 8, 62, 0.98) 0%, rgba(16, 4, 36, 0.99) 100%);
-      box-shadow: 0 0 20px rgba(130, 70, 200, 0.26), inset 0 1px 0 rgba(255, 220, 150, 0.12);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-scepter"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-scepter"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-scepter"]::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      bottom: -28%;
-      width: 72%;
-      aspect-ratio: 1;
-      transform: translateX(-50%);
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 50% 42%, rgba(255, 235, 170, 0.95) 0 18%, rgba(210, 150, 50, 0.85) 19% 28%, rgba(160, 100, 30, 0.75) 29% 38%, transparent 39%),
-        radial-gradient(circle at 50% 50%, rgba(255, 200, 80, 0.55) 0 55%, rgba(180, 120, 40, 0.35) 56% 72%, transparent 73%);
-      box-shadow: inset 0 0 12px rgba(120, 60, 10, 0.35);
-      animation: skin-royal-scepter-glow 3.4s ease-in-out infinite;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-scepter"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-scepter"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-scepter"] .player-name {
-      color: #f2e6ff;
-      text-shadow: 0 0 8px rgba(170, 120, 255, 0.45), 0 1px 0 rgba(255, 210, 100, 0.25);
-    }
-
-    /* Herald — ermine mantle with gold hem bands */
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-herald"],
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-herald"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-herald"] {
-      border-color: rgba(190, 150, 255, 0.78);
-      background: linear-gradient(180deg, rgba(30, 6, 58, 0.99) 0%, rgba(20, 4, 42, 0.99) 100%);
-      box-shadow: 0 0 22px rgba(120, 60, 200, 0.24);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-herald"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-herald"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-herald"]::before {
-      content: "";
-      position: absolute;
-      inset: 0 0 auto 0;
-      height: 24%;
-      border-radius: inherit inherit 0 0;
-      background:
-        linear-gradient(180deg, rgba(255, 220, 120, 0.55) 0%, rgba(255, 190, 60, 0.22) 100%),
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0 3px, transparent 3px 7px);
-      animation: skin-royal-herald-gleam 3.6s ease-in-out infinite;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-herald"]::after,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-herald"]::after,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-herald"]::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0 0;
-      height: 18%;
-      border-radius: 0 0 inherit inherit;
-      background: linear-gradient(0deg, rgba(255, 210, 90, 0.48) 0%, rgba(255, 210, 90, 0.08) 100%);
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-herald"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-herald"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-herald"] .player-name {
-      color: #f5ebff;
-      text-shadow: 0 0 10px rgba(180, 130, 255, 0.4), 0 0 6px rgba(255, 210, 100, 0.28);
-    }
-
-    /* Jewel — gilded reliquary with a single crown gem */
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-jewel"],
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-jewel"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-jewel"] {
-      border-color: rgba(255, 210, 120, 0.72);
-      background: linear-gradient(180deg, rgba(14, 2, 32, 0.99) 0%, rgba(8, 1, 22, 0.99) 100%);
+        radial-gradient(ellipse 92% 78% at 50% 40%, rgba(38, 8, 72, 0.97) 0%, rgba(10, 2, 28, 0.99) 54%, rgba(1, 0, 6, 1) 100%);
       box-shadow:
-        0 0 24px rgba(150, 80, 220, 0.28),
-        inset 0 0 0 1px rgba(255, 220, 150, 0.22),
-        inset 0 0 0 3px rgba(60, 20, 90, 0.85),
-        inset 0 0 0 4px rgba(255, 200, 90, 0.18);
+        0 8px 22px rgba(0, 0, 0, 0.58),
+        0 0 38px rgba(85, 42, 155, 0.36),
+        inset 0 1px 0 rgba(255, 225, 170, 0.11),
+        inset 0 -14px 32px rgba(0, 0, 0, 0.48);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-jewel"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-jewel"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-jewel"]::before {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-void"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-void"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-void"]::before {
       content: "";
       position: absolute;
-      top: -35%;
+      top: 50%;
       left: 50%;
-      width: 55%;
+      width: 118%;
       aspect-ratio: 1;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(220, 160, 255, 0.55) 0 32%, rgba(140, 60, 200, 0.22) 33% 58%, transparent 59%);
-      animation: skin-royal-jewel-twinkle 3.2s ease-in-out infinite;
+      border: 2.5px solid rgba(255, 212, 95, 0.52);
+      box-shadow:
+        0 0 14px rgba(255, 205, 85, 0.48),
+        0 0 32px rgba(255, 185, 55, 0.32),
+        inset 0 0 18px rgba(255, 215, 110, 0.14);
+      animation: eclipse-corona-breathe 4.2s ease-in-out infinite;
       pointer-events: none;
-      z-index: -1;
+      z-index: -2;
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-jewel"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-jewel"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-jewel"] .player-name {
-      color: #faf0ff;
-      text-shadow: 0 0 12px rgba(200, 140, 255, 0.5), 0 0 4px rgba(255, 220, 140, 0.35);
-    }
-
-    /* Imperial — platinum double-frame Byzantine court */
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-imperial"],
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-imperial"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-imperial"] {
-      border: 2px double rgba(230, 210, 255, 0.92);
-      background: linear-gradient(180deg, rgba(8, 2, 28, 0.99) 0%, rgba(20, 6, 52, 0.98) 100%);
-      box-shadow: 0 0 30px rgba(100, 60, 180, 0.32), inset 0 0 0 1px rgba(255, 240, 200, 0.12);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-imperial"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-imperial"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-imperial"]::before {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-void"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-void"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-void"]::after {
       content: "";
       position: absolute;
-      inset: 3px;
-      border-radius: calc(0.48em - 3px);
-      border: 1px solid rgba(255, 225, 160, 0.28);
+      top: 50%;
+      left: 50%;
+      width: 62%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -53%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 36% 30%, rgba(28, 8, 58, 0.55) 0%, rgba(5, 0, 14, 0.98) 48%, rgba(0, 0, 3, 1) 100%);
+      box-shadow:
+        inset -4px -6px 14px rgba(0, 0, 0, 0.75),
+        inset 3px 3px 10px rgba(110, 55, 180, 0.12),
+        0 0 22px rgba(255, 200, 80, 0.22);
       pointer-events: none;
       z-index: -1;
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-imperial"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-imperial"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-imperial"] .player-name {
-      color: #faf4ff;
-      font-weight: 900;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      text-shadow: 0 0 8px rgba(200, 180, 255, 0.4), 0 1px 0 rgba(255, 240, 210, 0.35);
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-void"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-void"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-void"] .player-name {
+      color: #ebe0ff;
+      text-shadow: 0 0 18px rgba(255, 212, 100, 0.42), 0 0 8px rgba(145, 85, 225, 0.48), 0 1px 2px rgba(0, 0, 0, 0.65);
     }
 
-    /* Eclipse — midnight court with golden corona ring */
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-eclipse"],
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-eclipse"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-eclipse"] {
-      border-color: rgba(120, 80, 180, 0.65);
-      background: radial-gradient(circle at 50% 50%, rgba(32, 8, 68, 0.98) 0%, rgba(4, 0, 16, 0.99) 72%);
-      box-shadow: 0 0 32px rgba(80, 40, 140, 0.35);
+    /* 1 · Corona — twin-ring solar halo */
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-corona"],
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-corona"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-corona"] {
+      border-color: rgba(255, 200, 90, 0.42);
+      background: radial-gradient(circle at 50% 46%, rgba(24, 4, 52, 0.98) 0%, rgba(2, 0, 10, 1) 68%);
+      box-shadow: 0 0 42px rgba(255, 190, 70, 0.28), 0 6px 20px rgba(0, 0, 0, 0.52), inset 0 0 28px rgba(0, 0, 0, 0.38);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-eclipse"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-eclipse"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-eclipse"]::before {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-corona"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-corona"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-corona"]::before {
       content: "";
       position: absolute;
-      inset: -25%;
+      top: 50%;
+      left: 50%;
+      width: 128%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
       border-radius: 50%;
-      border: 2px solid rgba(255, 210, 90, 0.45);
-      box-shadow: 0 0 18px rgba(255, 200, 80, 0.35);
-      animation: skin-royal-eclipse-corona 4s ease-in-out infinite;
+      border: 2px solid rgba(255, 220, 120, 0.38);
+      box-shadow:
+        0 0 0 5px rgba(255, 200, 80, 0.1),
+        0 0 0 9px rgba(255, 180, 60, 0.06),
+        0 0 26px rgba(255, 205, 90, 0.45),
+        0 0 52px rgba(255, 170, 40, 0.22);
+      animation: eclipse-corona-breathe 3.6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-corona"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-corona"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-corona"]::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 56%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, rgba(18, 4, 40, 0.5) 0%, rgba(0, 0, 6, 1) 100%);
+      box-shadow: inset -5px -5px 16px rgba(0, 0, 0, 0.8), 0 0 28px rgba(255, 210, 100, 0.3);
       pointer-events: none;
       z-index: -1;
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="royal-eclipse"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="royal-eclipse"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="royal-eclipse"] .player-name {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-corona"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-corona"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-corona"] .player-name {
+      color: #fff4d8;
+      text-shadow: 0 0 20px rgba(255, 215, 110, 0.55), 0 0 6px rgba(180, 120, 255, 0.35);
+    }
+
+    /* 2 · Umbra — soft penumbra, drifting occultation */
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-umbra"],
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-umbra"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-umbra"] {
+      border-color: rgba(100, 70, 160, 0.5);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(20, 4, 44, 0.96) 0%, rgba(3, 0, 12, 1) 75%);
+      box-shadow: 0 0 34px rgba(70, 35, 130, 0.32), inset 0 0 40px rgba(0, 0, 0, 0.55);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-umbra"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-umbra"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-umbra"]::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 110%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, transparent 52%, rgba(255, 200, 90, 0.08) 53% 58%, rgba(255, 210, 100, 0.28) 59% 64%, rgba(255, 190, 70, 0.12) 65% 72%, transparent 73%);
+      animation: eclipse-corona-breathe 5s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-umbra"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-umbra"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-umbra"]::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 66%;
+      aspect-ratio: 1;
+      transform: translate(-51%, -53%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 34% 28%, rgba(12, 2, 32, 0.65) 0%, rgba(0, 0, 4, 1) 100%);
+      box-shadow: inset -6px -8px 18px rgba(0, 0, 0, 0.82), 0 0 16px rgba(255, 195, 80, 0.18);
+      animation: eclipse-umbra-drift 6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-umbra"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-umbra"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-umbra"] .player-name {
+      color: #ddd0f5;
+      text-shadow: 0 0 14px rgba(255, 200, 90, 0.32), 0 0 8px rgba(120, 70, 200, 0.42);
+    }
+
+    /* 3 · Flare — conic solar prominence rays */
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-flare"],
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-flare"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-flare"] {
+      border-color: rgba(255, 180, 60, 0.45);
+      background: radial-gradient(circle at 50% 48%, rgba(30, 6, 62, 0.98) 0%, rgba(2, 0, 8, 1) 70%);
+      box-shadow: 0 0 48px rgba(255, 160, 40, 0.25), 0 8px 24px rgba(0, 0, 0, 0.55);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-flare"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-flare"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-flare"]::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 140%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg 18deg, rgba(255, 210, 100, 0.22) 18deg 22deg,
+        transparent 22deg 48deg, rgba(255, 195, 80, 0.18) 48deg 52deg,
+        transparent 52deg 108deg, rgba(255, 220, 120, 0.24) 108deg 114deg,
+        transparent 114deg 168deg, rgba(255, 185, 60, 0.2) 168deg 172deg,
+        transparent 172deg 228deg, rgba(255, 205, 90, 0.22) 228deg 234deg,
+        transparent 234deg 288deg, rgba(255, 200, 75, 0.19) 288deg 292deg,
+        transparent 292deg 360deg
+      );
+      mask: radial-gradient(circle, transparent 44%, #000 46% 58%, transparent 60%);
+      -webkit-mask: radial-gradient(circle, transparent 44%, #000 46% 58%, transparent 60%);
+      animation: eclipse-corona-spin 18s linear infinite, eclipse-flare-pulse 3.2s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-flare"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-flare"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-flare"]::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 54%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, rgba(8, 0, 20, 0.6) 0%, rgba(0, 0, 2, 1) 100%);
+      box-shadow: inset -4px -5px 14px rgba(0, 0, 0, 0.78), 0 0 32px rgba(255, 190, 60, 0.35);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-flare"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-flare"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-flare"] .player-name {
+      color: #ffe8c8;
+      text-shadow: 0 0 22px rgba(255, 180, 50, 0.55), 0 0 8px rgba(200, 130, 255, 0.38);
+    }
+
+    /* 4 · Orbit — tilted elliptical ring, 3D perspective */
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-orbit"],
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-orbit"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-orbit"] {
+      border-color: rgba(160, 120, 230, 0.52);
+      background: radial-gradient(ellipse 85% 70% at 50% 55%, rgba(22, 4, 48, 0.98) 0%, rgba(1, 0, 6, 1) 72%);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6), 0 0 36px rgba(100, 50, 180, 0.3);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-orbit"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-orbit"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-orbit"]::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 122%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%) scaleX(1.1) scaleY(0.54) rotate(-16deg);
+      border-radius: 50%;
+      border: 2.5px solid rgba(255, 208, 95, 0.55);
+      box-shadow: 0 0 20px rgba(255, 200, 85, 0.4), 0 0 40px rgba(255, 175, 50, 0.18);
+      animation: eclipse-orbit-wobble 4.8s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-orbit"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-orbit"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-orbit"]::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 58%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -48%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 42% 38%, rgba(16, 4, 38, 0.55) 0%, rgba(0, 0, 4, 1) 100%);
+      box-shadow: inset -3px -6px 12px rgba(0, 0, 0, 0.72), 0 0 18px rgba(255, 205, 90, 0.25);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-orbit"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-orbit"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-orbit"] .player-name {
+      color: #e4d4ff;
+      text-shadow: 0 0 16px rgba(255, 205, 90, 0.38), 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 5 · Nexus — plasma core, purple-gold fusion */
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-nexus"],
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-nexus"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-nexus"] {
+      border-color: rgba(180, 130, 255, 0.62);
+      background: radial-gradient(circle at 50% 50%, rgba(4, 0, 12, 1) 0%, rgba(1, 0, 4, 1) 100%);
+      box-shadow: 0 0 50px rgba(140, 70, 220, 0.38), inset 0 0 36px rgba(80, 30, 160, 0.22);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-nexus"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-nexus"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-nexus"]::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 95%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 210, 100, 0.35) 0%, rgba(180, 100, 255, 0.28) 28%, rgba(60, 20, 120, 0.15) 48%, transparent 62%);
+      animation: eclipse-nexus-pulse 3.4s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-nexus"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-nexus"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-nexus"]::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, rgba(40, 10, 80, 0.7) 0%, rgba(0, 0, 2, 1) 100%);
+      box-shadow: inset -5px -7px 16px rgba(0, 0, 0, 0.85), 0 0 24px rgba(200, 140, 255, 0.35);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-nexus"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-nexus"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-nexus"] .player-name {
+      color: #f8eeff;
+      text-shadow: 0 0 20px rgba(200, 150, 255, 0.55), 0 0 12px rgba(255, 210, 100, 0.42);
+    }
+
+    /* 6 · Radiance — maximum bloom, layered corona shells */
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-radiance"],
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-radiance"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-radiance"] {
+      border-color: rgba(255, 220, 130, 0.55);
+      background: radial-gradient(circle at 50% 44%, rgba(32, 6, 68, 0.97) 0%, rgba(2, 0, 8, 1) 65%);
+      box-shadow:
+        0 0 24px rgba(255, 200, 80, 0.35),
+        0 0 56px rgba(255, 170, 50, 0.18),
+        0 8px 26px rgba(0, 0, 0, 0.58);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-radiance"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-radiance"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-radiance"]::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 132%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 3px solid rgba(255, 225, 130, 0.62);
+      animation: eclipse-radiance-surge 2.8s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-radiance"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-radiance"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-radiance"]::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 60%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -52%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 34%, rgba(14, 2, 36, 0.5) 0%, rgba(0, 0, 3, 1) 100%);
+      box-shadow:
+        inset -4px -6px 14px rgba(0, 0, 0, 0.78),
+        0 0 36px rgba(255, 215, 110, 0.42),
+        0 0 64px rgba(255, 180, 60, 0.22);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-radiance"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-radiance"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-radiance"] .player-name {
+      color: #fff8e8;
+      text-shadow: 0 0 24px rgba(255, 220, 120, 0.65), 0 0 10px rgba(170, 110, 255, 0.45), 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    /* 7 · Sovereign — peaked royal corona, NeonWave slot */
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-sovereign"],
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-sovereign"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-sovereign"] {
+      border-color: rgba(210, 170, 255, 0.68);
+      background:
+        radial-gradient(ellipse 88% 80% at 50% 42%, rgba(34, 8, 70, 0.98) 0%, rgba(4, 0, 14, 1) 70%);
+      box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.56),
+        0 0 40px rgba(120, 60, 200, 0.34),
+        inset 0 1px 0 rgba(255, 230, 170, 0.12),
+        inset 0 -12px 30px rgba(0, 0, 0, 0.42);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-sovereign"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-sovereign"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-sovereign"]::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: conic-gradient(
+        from -90deg,
+        rgba(255, 215, 100, 0.55) 0deg 8deg, transparent 8deg 38deg,
+        rgba(255, 205, 90, 0.45) 38deg 46deg, transparent 46deg 128deg,
+        rgba(255, 220, 110, 0.5) 128deg 136deg, transparent 136deg 218deg,
+        rgba(255, 195, 75, 0.48) 218deg 226deg, transparent 226deg 308deg,
+        rgba(255, 210, 95, 0.52) 308deg 316deg, transparent 316deg 360deg
+      );
+      mask: radial-gradient(circle, transparent 47%, #000 49% 57%, transparent 59%);
+      -webkit-mask: radial-gradient(circle, transparent 47%, #000 49% 57%, transparent 59%);
+      animation: eclipse-sovereign-gleam 3.8s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-sovereign"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-sovereign"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-sovereign"]::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 58%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -53%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 36% 30%, rgba(24, 6, 52, 0.58) 0%, rgba(2, 0, 8, 1) 100%);
+      box-shadow:
+        inset -4px -6px 14px rgba(0, 0, 0, 0.76),
+        inset 2px 2px 8px rgba(140, 80, 220, 0.14),
+        0 0 26px rgba(255, 205, 90, 0.32);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="eclipse-sovereign"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="eclipse-sovereign"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="eclipse-sovereign"] .player-name {
       color: #e8d8ff;
-      text-shadow: 0 0 16px rgba(255, 210, 100, 0.4), 0 0 8px rgba(140, 80, 220, 0.45);
+      text-shadow: 0 0 18px rgba(255, 210, 100, 0.45), 0 0 10px rgba(140, 80, 220, 0.48), 0 1px 2px rgba(0, 0, 0, 0.55);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="waiting"],
@@ -1645,24 +1861,12 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .stage[data-phase="guessing"] .player-card[data-card-skin="royal-regent"]::before,
-      .stage[data-phase="results"] .player-card[data-card-skin="royal-regent"]::before,
-      .stage[data-phase="ended"] .player-card[data-card-skin="royal-regent"]::before,
-      .stage[data-phase="guessing"] .player-card[data-card-skin="royal-crown"]::before,
-      .stage[data-phase="results"] .player-card[data-card-skin="royal-crown"]::before,
-      .stage[data-phase="ended"] .player-card[data-card-skin="royal-crown"]::before,
-      .stage[data-phase="guessing"] .player-card[data-card-skin="royal-scepter"]::before,
-      .stage[data-phase="results"] .player-card[data-card-skin="royal-scepter"]::before,
-      .stage[data-phase="ended"] .player-card[data-card-skin="royal-scepter"]::before,
-      .stage[data-phase="guessing"] .player-card[data-card-skin="royal-herald"]::before,
-      .stage[data-phase="results"] .player-card[data-card-skin="royal-herald"]::before,
-      .stage[data-phase="ended"] .player-card[data-card-skin="royal-herald"]::before,
-      .stage[data-phase="guessing"] .player-card[data-card-skin="royal-jewel"]::before,
-      .stage[data-phase="results"] .player-card[data-card-skin="royal-jewel"]::before,
-      .stage[data-phase="ended"] .player-card[data-card-skin="royal-jewel"]::before,
-      .stage[data-phase="guessing"] .player-card[data-card-skin="royal-eclipse"]::before,
-      .stage[data-phase="results"] .player-card[data-card-skin="royal-eclipse"]::before,
-      .stage[data-phase="ended"] .player-card[data-card-skin="royal-eclipse"]::before {
+      .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"]::before,
+      .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"]::before,
+      .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"]::before,
+      .stage[data-phase="guessing"] .player-card[data-card-skin^="eclipse-"]::after,
+      .stage[data-phase="results"] .player-card[data-card-skin^="eclipse-"]::after,
+      .stage[data-phase="ended"] .player-card[data-card-skin^="eclipse-"]::after {
         animation: none;
       }
     }
@@ -3144,8 +3348,8 @@
       || ["1", "true", "yes"].includes((urlParams.get("fs") || "").toLowerCase());
     const LAYOUT_DEBUG = ["borders", "layout", "1", "true", "yes"].includes((urlParams.get("debug") || "").toLowerCase());
     const LIVE_CARD_SKINS = [
-      "royal-regent", "royal-crown", "royal-velvet", "royal-scepter",
-      "royal-herald", "royal-jewel", "royal-imperial", "royal-eclipse",
+      "eclipse-void", "eclipse-corona", "eclipse-umbra", "eclipse-flare",
+      "eclipse-orbit", "eclipse-nexus", "eclipse-radiance", "eclipse-sovereign",
     ];
     const DEMO_CARD_SKINS = LIVE_CARD_SKINS;
     const DEMO_PLAYER_NAMES = [
