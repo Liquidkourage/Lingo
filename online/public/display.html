@@ -436,6 +436,33 @@
       font-size: 1.2em;
     }
 
+    .stage[data-phase="idle"][data-lobby-size="crowded"] .stage-ui {
+      padding-top: 19%;
+      gap: 0.4em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="crowded"] .idle-info {
+      width: 86%;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="crowded"] .idle-callout {
+      padding: 0.55em 0.85em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="crowded"] .idle-qr {
+      width: 4em;
+      height: 4em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="crowded"] .idle-url {
+      font-size: 1.05em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="crowded"] .status-badge {
+      font-size: 1em;
+      padding: 0.55em 1.2em;
+    }
+
     .stage[data-phase="idle"] .subtitle {
       display: none !important;
     }
@@ -607,8 +634,14 @@
     }
 
     .stage[data-phase="idle"] .player-grid {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 0.42em;
+      grid-template-columns: repeat(var(--lobby-cols, 5), minmax(0, 1fr));
+      grid-template-rows: repeat(var(--lobby-rows, 1), minmax(0, 1fr));
+      gap: calc(0.38em * var(--lobby-chip-scale, 1));
+      align-content: stretch;
+    }
+
+    .stage[data-phase="idle"] .player-grid[data-has-overflow="true"] {
+      grid-template-rows: repeat(var(--lobby-rows, 1), minmax(0, 1fr));
     }
 
     .player-card {
@@ -622,9 +655,20 @@
     }
 
     .stage[data-phase="idle"] .player-card {
-      padding: 0.38em 0.45em;
+      padding: calc(0.34em * var(--lobby-chip-scale, 1)) calc(0.4em * var(--lobby-chip-scale, 1));
       border-radius: 0.3em;
       text-align: center;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stage[data-phase="idle"] .player-card[data-status="overflow"] {
+      border-color: rgba(255, 210, 70, 0.55);
+      color: #ffe070;
+      background: linear-gradient(180deg, rgba(40, 32, 0, 0.55) 0%, rgba(20, 16, 0, 0.75) 100%);
+      font-weight: 800;
     }
 
     .stage[data-phase="idle"] .player-card[data-status="waiting"] {
@@ -640,8 +684,9 @@
     }
 
     .stage[data-phase="idle"] .player-name {
-      font-size: 0.78em;
+      font-size: calc(0.78em * var(--lobby-chip-scale, 1));
       letter-spacing: 0.02em;
+      width: 100%;
     }
 
     .player-card[data-status="locked"] {
@@ -825,7 +870,9 @@
 
     function buildDemoPlayers(count) {
       return Array.from({ length: count }, (_value, index) => ({
-        displayName: DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length],
+        displayName: count > DEMO_PLAYER_NAMES.length
+          ? `${DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length]}${Math.floor(index / DEMO_PLAYER_NAMES.length) + 1}`
+          : DEMO_PLAYER_NAMES[index],
         status: "waiting",
         statusText: "In lobby",
       }));
@@ -868,6 +915,37 @@
       const n = Number(count || 0);
       if (n === 1) return "Lobby · 1 player";
       return `Lobby · ${n} players`;
+    }
+
+    const LOBBY_MAX_VISIBLE = 84;
+
+    function idleLobbyLayout(count) {
+      const n = Math.max(0, Number(count || 0));
+      if (n <= 12) {
+        return { size: "", cols: 4, chipScale: 1, maxVisible: n };
+      }
+      if (n <= 24) {
+        return { size: "full", cols: 5, chipScale: 0.88, maxVisible: n };
+      }
+      if (n <= 48) {
+        return { size: "full", cols: 6, chipScale: 0.76, maxVisible: n };
+      }
+      if (n <= LOBBY_MAX_VISIBLE) {
+        return { size: "crowded", cols: 8, chipScale: 0.64, maxVisible: n };
+      }
+      return { size: "crowded", cols: 8, chipScale: 0.64, maxVisible: LOBBY_MAX_VISIBLE - 1 };
+    }
+
+    function applyIdleLobbyLayout(count) {
+      const layout = idleLobbyLayout(count);
+      if (layout.size) {
+        els.stage.dataset.lobbySize = layout.size;
+      } else {
+        delete els.stage.dataset.lobbySize;
+      }
+      els.stage.style.setProperty("--lobby-cols", String(layout.cols));
+      els.stage.style.setProperty("--lobby-chip-scale", String(layout.chipScale));
+      return layout;
     }
 
     function phaseCopy(phase, state) {
@@ -976,10 +1054,29 @@
         return;
       }
 
+      let visiblePlayers = players;
+      let overflowCount = 0;
+      let layout = { cols: 5, chipScale: 1 };
+
+      if (phase === "idle") {
+        layout = applyIdleLobbyLayout(players.length);
+        if (players.length > layout.maxVisible) {
+          visiblePlayers = players.slice(0, layout.maxVisible);
+          overflowCount = players.length - layout.maxVisible;
+        }
+      }
+
+      const slotCount = visiblePlayers.length + (overflowCount > 0 ? 1 : 0);
+      const rows = Math.max(1, Math.ceil(slotCount / layout.cols));
+      els.stage.style.setProperty("--lobby-rows", String(rows));
+
       const grid = document.createElement("div");
       grid.className = "player-grid";
+      if (overflowCount > 0) {
+        grid.dataset.hasOverflow = "true";
+      }
 
-      players.forEach((player) => {
+      visiblePlayers.forEach((player) => {
         const card = document.createElement("article");
         card.className = "player-card";
         card.dataset.status = player.isWinner ? "winner" : (player.status || (phase === "idle" ? "waiting" : "waiting"));
@@ -1004,6 +1101,18 @@
 
         grid.appendChild(card);
       });
+
+      if (overflowCount > 0) {
+        const card = document.createElement("article");
+        card.className = "player-card";
+        card.dataset.status = "overflow";
+
+        const name = document.createElement("div");
+        name.className = "player-name";
+        name.textContent = `+${overflowCount} more`;
+        card.appendChild(name);
+        grid.appendChild(card);
+      }
 
       els.playerBoardBody.appendChild(grid);
     }
@@ -1038,10 +1147,11 @@
       els.stage.dataset.phase = phase;
 
       const playerCount = Number(currentState.playerCount || 0);
-      if (phase === "idle" && playerCount >= 12) {
-        els.stage.dataset.lobbySize = "full";
-      } else {
+      if (phase !== "idle") {
         delete els.stage.dataset.lobbySize;
+        els.stage.style.removeProperty("--lobby-cols");
+        els.stage.style.removeProperty("--lobby-rows");
+        els.stage.style.removeProperty("--lobby-chip-scale");
       }
 
       els.playerBoardHeader.textContent = phase === "idle"
