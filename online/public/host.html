@@ -3,398 +3,684 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lingo Host Dashboard</title>
+  <title>LINGO — Host</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #05070a;
-      --panel: #0d6efd;
-      --panel-dark: #0849a6;
-      --panel-light: #3a8cff;
-      --danger: #c0392b;
-      --warning: #f39c12;
-      --good: #27ae60;
-      --text: #ffffff;
-      --muted: #d9e7ff;
-      --shadow: rgba(0, 0, 0, 0.4);
-      --border: rgba(255, 255, 255, 0.14);
+      --show-gold: #ffcc00;
+      --show-gold-hot: #ffe566;
+      --show-cyan: #00d4ff;
+      --show-green: #00ff55;
+      --show-red: #ff2244;
+      --show-orange: #ff8800;
+      --show-white: #ffffff;
+      --show-black: #000008;
+      --show-panel: #020818;
+      --contrast-stroke: 3px;
     }
 
     * { box-sizing: border-box; }
-    body {
+
+    html, body {
       margin: 0;
-      min-height: 100vh;
-      padding: 20px;
-      background: radial-gradient(circle at top, rgba(58, 140, 255, 0.14), transparent 35%), var(--bg);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100%;
+      color: var(--show-white);
+      font-family: Montserrat, Arial, sans-serif;
+      background: var(--show-black);
     }
 
-    .wrap { max-width: 1180px; margin: 0 auto; }
-    h1, h2, p { margin: 0; }
-    .hero { margin-bottom: 18px; }
-    .hero h1 { font-size: clamp(1.9rem, 4vw, 3rem); margin-bottom: 8px; }
-    .hero p { color: var(--muted); max-width: 860px; line-height: 1.45; }
+    body {
+      min-height: 100vh;
+      padding: 20px 16px 32px;
+    }
 
-    .grid {
+    .host-stage {
+      position: relative;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .host-stage::before {
+      content: "";
+      position: absolute;
+      inset: -48px -20px;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0, 130, 255, 0.28) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255, 204, 0, 0.1) 0%, transparent 70%);
+      z-index: 0;
+    }
+
+    .host-shell {
+      position: relative;
+      z-index: 1;
+    }
+
+    .host-header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .host-logo {
+      display: block;
+      width: min(52%, 240px);
+      height: auto;
+      margin: 0 auto 0.55rem;
+    }
+
+    .host-title {
+      margin: 0 0 0.65rem;
+      font-size: clamp(0.78rem, 2.5vw, 0.92rem);
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(220, 235, 255, 0.82);
+    }
+
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45em;
+      margin-bottom: 0.75rem;
+      padding: 0.45em 0.9em;
+      border: var(--contrast-stroke) solid var(--show-gold);
+      border-radius: 999px;
+      background: var(--show-black);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 14px rgba(255, 204, 0, 0.55);
+    }
+
+    .phase-badge::before {
+      content: "";
+      width: 0.55em;
+      height: 0.55em;
+      border-radius: 999px;
+      background: var(--show-gold);
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+    }
+
+    .host-stage[data-phase="guessing"] .phase-badge {
+      border-color: var(--show-green);
+      color: var(--show-green);
+      text-shadow: 0 0 14px rgba(0, 255, 85, 0.55);
+    }
+
+    .host-stage[data-phase="guessing"] .phase-badge::before {
+      background: var(--show-green);
+      box-shadow: 0 0 10px rgba(0, 255, 85, 0.85);
+      animation: live-dot 1.2s ease-in-out infinite;
+    }
+
+    .host-stage[data-phase="results"] .phase-badge {
+      border-color: var(--show-orange);
+      color: var(--show-orange);
+      text-shadow: 0 0 14px rgba(255, 136, 0, 0.55);
+    }
+
+    .host-stage[data-phase="results"] .phase-badge::before {
+      background: var(--show-orange);
+    }
+
+    .host-stage[data-phase="ended"] .phase-badge {
+      border-color: var(--show-cyan);
+      color: var(--show-cyan);
+      text-shadow: 0 0 14px rgba(0, 212, 255, 0.55);
+    }
+
+    .host-stage[data-phase="ended"] .phase-badge::before {
+      background: var(--show-cyan);
+    }
+
+    @keyframes live-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(0.85); }
+    }
+
+    .host-links {
+      margin: 0 0 1rem;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: rgba(200, 220, 245, 0.72);
+    }
+
+    .host-links strong {
+      color: var(--show-cyan);
+      font-weight: 800;
+    }
+
+    .meta-rail {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0;
+      margin-bottom: 1rem;
+      border: var(--contrast-stroke) solid var(--show-gold);
+      border-radius: 0.2em;
+      background: var(--show-black);
+      overflow: hidden;
+    }
+
+    .meta-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.12em;
+      padding: 0.5em 0.3em;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .meta-slot + .meta-slot {
+      border-left: 2px solid rgba(255, 204, 0, 0.35);
+    }
+
+    .meta-label {
+      font-size: 0.52rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--show-white);
+    }
+
+    .meta-value {
+      font-size: clamp(0.95rem, 2.2vw, 1.25rem);
+      font-weight: 900;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+      word-break: break-word;
+    }
+
+    .meta-value.phase { color: var(--show-gold-hot); text-shadow: 0 0 16px rgba(255, 204, 0, 0.65); }
+    .meta-value.round { color: var(--show-gold-hot); text-shadow: 0 0 16px rgba(255, 204, 0, 0.65); }
+    .meta-value.balls { color: var(--show-cyan); text-shadow: 0 0 16px rgba(0, 212, 255, 0.65); }
+    .meta-value.mult { color: var(--show-green); text-shadow: 0 0 16px rgba(0, 255, 85, 0.55); }
+    .meta-value.word {
+      font-size: clamp(0.82rem, 1.8vw, 1rem);
+      letter-spacing: 0.12em;
+      color: var(--show-white);
+    }
+    .meta-value.updated {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: rgba(200, 220, 245, 0.78);
+    }
+
+    .host-grid {
       display: grid;
       grid-template-columns: repeat(12, 1fr);
-      gap: 16px;
+      gap: 14px;
     }
 
-    .panel {
+    .host-panel {
       grid-column: span 12;
-      background: linear-gradient(180deg, var(--panel-light), var(--panel));
-      border-radius: 20px;
-      padding: 18px;
-      border: 1px solid var(--border);
-      box-shadow: 0 12px 32px var(--shadow);
+      border: var(--contrast-stroke) solid var(--show-gold);
+      border-radius: 0.35em;
+      background: var(--show-panel);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 28px rgba(255, 204, 0, 0.18),
+        0 0 36px rgba(0, 212, 255, 0.08);
+      padding: 1rem 1rem 0.95rem;
     }
 
-    .panel h2 { margin-bottom: 14px; font-size: 1.15rem; }
-    .panel.cols-7 { grid-column: span 7; }
-    .panel.cols-5 { grid-column: span 5; }
-    .panel.cols-12 { grid-column: span 12; }
+    .host-panel.cols-7 { grid-column: span 7; }
+    .host-panel.cols-5 { grid-column: span 5; }
+    .host-panel.cols-12 { grid-column: span 12; }
+
+    .panel-kicker {
+      margin: 0 0 0.85rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 12px rgba(255, 204, 0, 0.45);
+    }
+
+    .panel-copy {
+      margin: -0.45rem 0 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: rgba(200, 220, 245, 0.72);
+    }
 
     .row {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: flex-end;
     }
 
     .field {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 0.35rem;
       flex: 1 1 180px;
     }
 
-    label { font-weight: 700; font-size: 0.95rem; }
+    label {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.78);
+    }
 
     input {
       width: 100%;
-      border: none;
-      border-radius: 10px;
-      padding: 12px;
-      font-size: 1rem;
+      padding: 0.7rem 0.85rem;
+      border: var(--contrast-stroke) solid var(--show-cyan);
+      border-radius: 0.2em;
+      background: var(--show-black);
+      color: var(--show-white);
       font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      outline: none;
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.2);
+    }
+
+    input:focus {
+      border-color: var(--show-gold);
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+    }
+
+    input::placeholder {
+      color: rgba(180, 200, 230, 0.42);
+      font-weight: 600;
+    }
+
+    #wordInput {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      text-align: center;
     }
 
     button {
-      border: none;
-      border-radius: 999px;
-      padding: 12px 16px;
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #fff;
-      background: linear-gradient(180deg, #0850bb, var(--panel-dark));
+      appearance: none;
+      border: var(--contrast-stroke) solid transparent;
+      border-radius: 0.2em;
+      padding: 0.7rem 1rem;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       cursor: pointer;
+      color: var(--show-black);
+      background: var(--show-gold);
+      box-shadow: 0 0 18px rgba(255, 204, 0, 0.32);
     }
 
-    button.secondary { background: linear-gradient(180deg, #5375a8, #415978); }
-    button.warning { background: linear-gradient(180deg, #f5b041, #d68910); }
-    button.danger { background: linear-gradient(180deg, #d35454, var(--danger)); }
-    button.good { background: linear-gradient(180deg, #38c172, var(--good)); }
+    button:hover:not(:disabled) { filter: brightness(1.08); }
+
+    button.secondary {
+      color: var(--show-white);
+      background: var(--show-black);
+      border-color: var(--show-cyan);
+      box-shadow: 0 0 14px rgba(0, 212, 255, 0.22);
+    }
+
+    button.good {
+      color: var(--show-black);
+      background: var(--show-green);
+      border-color: var(--show-green);
+      box-shadow: 0 0 18px rgba(0, 255, 85, 0.35);
+    }
+
+    button.warning {
+      color: var(--show-black);
+      background: var(--show-orange);
+      border-color: var(--show-orange);
+      box-shadow: 0 0 18px rgba(255, 136, 0, 0.35);
+    }
+
+    button.danger {
+      color: var(--show-white);
+      background: var(--show-black);
+      border-color: var(--show-red);
+      box-shadow: 0 0 14px rgba(255, 34, 68, 0.28);
+    }
 
     .status {
       min-height: 1.2em;
-      font-weight: 700;
-      margin-top: 12px;
-    }
-    .status.error { color: #ffd4d4; }
-    .status.success { color: #d8ffea; }
-
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px;
-    }
-
-    .summary-card {
-      background: rgba(0, 0, 0, 0.18);
-      border-radius: 14px;
-      padding: 14px;
-    }
-
-    .summary-card .label {
-      color: var(--muted);
+      margin-top: 0.75rem;
       font-size: 0.82rem;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      font-weight: 700;
     }
 
-    .summary-card .value {
-      font-size: 1.4rem;
-      font-weight: 800;
-      word-break: break-word;
-    }
+    .status.error { color: var(--show-red); text-shadow: 0 0 10px rgba(255, 34, 68, 0.4); }
+    .status.success { color: var(--show-green); text-shadow: 0 0 10px rgba(0, 255, 85, 0.4); }
 
     .actions {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      margin-top: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.85rem;
     }
-
-    pre {
-      margin: 0;
-      padding: 14px;
-      border-radius: 14px;
-      overflow: auto;
-      background: rgba(0, 0, 0, 0.28);
-      line-height: 1.35;
-      font-size: 0.88rem;
-    }
-
-    .muted { color: var(--muted); font-size: 0.92rem; line-height: 1.4; }
 
     .word-pool-meta {
-      margin-top: 8px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--muted);
+      margin-bottom: 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      color: rgba(200, 220, 245, 0.68);
     }
 
     .word-suggestion-list {
       list-style: none;
-      margin: 12px 0 0;
+      margin: 0;
       padding: 0;
-      max-height: min(70vh, 640px);
+      max-height: min(55vh, 520px);
       overflow-y: auto;
-      border-radius: 14px;
-      background: rgba(0, 0, 0, 0.28);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: var(--contrast-stroke) solid var(--show-cyan);
+      border-radius: 0.2em;
+      background: var(--show-black);
     }
 
     .word-suggestion-list li {
-      padding: 11px 14px;
-      font-size: 1.05rem;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.92rem;
       font-weight: 800;
       letter-spacing: 0.14em;
       cursor: pointer;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(0, 212, 255, 0.15);
       user-select: none;
     }
 
-    .word-suggestion-list li:last-child {
-      border-bottom: none;
-    }
-
-    .word-suggestion-list li:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
+    .word-suggestion-list li:last-child { border-bottom: none; }
+    .word-suggestion-list li:hover { background: rgba(0, 212, 255, 0.08); }
 
     .word-suggestion-list li.is-selected {
-      background: rgba(39, 174, 96, 0.35);
+      background: rgba(0, 255, 85, 0.12);
+      color: var(--show-green);
+      text-shadow: 0 0 12px rgba(0, 255, 85, 0.45);
     }
 
     .word-suggestion-list li.is-empty {
       cursor: default;
-      font-weight: 600;
       letter-spacing: normal;
-      color: var(--muted);
+      font-weight: 600;
+      color: rgba(200, 220, 245, 0.55);
+    }
+
+    .roster-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.55rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .stat-chip {
+      padding: 0.55rem 0.75rem;
+      border: 2px solid rgba(255, 204, 0, 0.35);
+      border-radius: 0.2em;
+      background: var(--show-black);
+      text-align: center;
+    }
+
+    .stat-chip .label {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.72);
+    }
+
+    .stat-chip .value {
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: var(--show-cyan);
+      text-shadow: 0 0 14px rgba(0, 212, 255, 0.55);
     }
 
     .roster-table-wrap {
       overflow-x: auto;
-      border-radius: 14px;
-      background: rgba(0, 0, 0, 0.28);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: var(--contrast-stroke) solid var(--show-gold);
+      border-radius: 0.2em;
+      background: var(--show-black);
     }
 
     .roster-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.92rem;
+      font-size: 0.88rem;
     }
 
     .roster-table th,
     .roster-table td {
-      padding: 10px 12px;
+      padding: 0.65rem 0.75rem;
       text-align: left;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 204, 0, 0.15);
       vertical-align: middle;
     }
 
     .roster-table th {
-      font-size: 0.78rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
+      color: var(--show-gold-hot);
     }
 
-    .roster-table tr:last-child td {
-      border-bottom: none;
-    }
+    .roster-table tr:last-child td { border-bottom: none; }
 
     .roster-table .guess-cell {
-      font-weight: 800;
-      letter-spacing: 0.12em;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      color: var(--show-cyan);
     }
 
     .roster-table input[type="number"] {
       width: 72px;
-      padding: 8px;
+      padding: 0.45rem 0.5rem;
+      text-align: center;
     }
 
     .roster-actions {
       display: flex;
-      gap: 8px;
+      gap: 0.45rem;
       flex-wrap: wrap;
     }
 
     .roster-actions button {
-      padding: 8px 12px;
-      font-size: 0.82rem;
+      padding: 0.45rem 0.65rem;
+      font-size: 0.68rem;
     }
 
+    .muted { color: rgba(200, 220, 245, 0.55); }
+
     @media (max-width: 900px) {
-      .panel.cols-7,
-      .panel.cols-5 {
-        grid-column: span 12;
-      }
+      .host-panel.cols-7,
+      .host-panel.cols-5 { grid-column: span 12; }
+      .meta-rail { grid-template-columns: repeat(3, 1fr); }
+      .meta-slot:nth-child(3n + 1) { border-left: none; }
+      .meta-slot { border-top: 2px solid rgba(255, 204, 0, 0.2); }
+      .meta-slot:nth-child(-n + 3) { border-top: none; }
+    }
+
+    @media (max-width: 520px) {
+      .meta-rail { grid-template-columns: repeat(2, 1fr); }
+      .meta-slot { border-left: none !important; }
+      .meta-slot:nth-child(-n + 2) { border-top: none; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="hero">
-      <h1>Lingo Host Dashboard</h1>
-      <p>Railway/Postgres version. The browser controls the show through a single Node backend, and Postgres holds the live session plus accepted player guesses.</p>
-      <p class="muted" style="margin-top:10px;">Public URLs: player page at <strong>/</strong> and OBS/public display at <strong>/display</strong>.</p>
-    </div>
+  <div class="host-stage" id="hostStage" data-phase="idle">
+    <div class="host-shell">
+      <header class="host-header">
+        <img class="host-logo" src="/assets/lingo-logo-extracted.svg" width="240" height="68" alt="Lingo" />
+        <p class="host-title">Host Control</p>
+        <div class="phase-badge" id="phaseBadge">Stand by</div>
+        <p class="host-links">Player page <strong>/</strong> · Venue display <strong>/display</strong></p>
+      </header>
 
-    <div class="grid">
-      <section class="panel cols-7">
-        <h2>Host Access</h2>
-        <div class="row">
-          <div class="field">
-            <label for="adminKey">Admin key</label>
-            <input id="adminKey" type="password" autocomplete="current-password" placeholder="Enter the Railway env var LINGO_ADMIN_KEY" />
+      <div class="meta-rail" aria-label="Session summary">
+        <div class="meta-slot">
+          <span class="meta-label">Phase</span>
+          <span class="meta-value phase" id="phaseValue">idle</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Round</span>
+          <span class="meta-value round" id="roundValue">0</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Balls</span>
+          <span class="meta-value balls" id="ballsValue">0</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Mult</span>
+          <span class="meta-value mult" id="multiplierValue">1x</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Word</span>
+          <span class="meta-value word" id="wordValue">—</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Updated</span>
+          <span class="meta-value updated" id="updatedValue">—</span>
+        </div>
+      </div>
+
+      <div class="host-grid">
+        <section class="host-panel cols-7">
+          <h2 class="panel-kicker">Host Access</h2>
+          <div class="row">
+            <div class="field">
+              <label for="adminKey">Admin key</label>
+              <input id="adminKey" type="password" autocomplete="current-password" placeholder="LINGO_ADMIN_KEY" />
+            </div>
+            <button id="connectBtn" class="good" type="button">Connect</button>
+            <button id="refreshBtn" class="secondary" type="button">Refresh</button>
           </div>
-          <button id="connectBtn" class="good" type="button">Connect</button>
-          <button id="refreshBtn" class="secondary" type="button">Refresh state</button>
-        </div>
-        <div id="connectStatus" class="status"></div>
-      </section>
+          <div id="connectStatus" class="status"></div>
+        </section>
 
-      <section class="panel cols-5">
-        <h2>Session Summary</h2>
-        <div class="summary">
-          <div class="summary-card"><div class="label">Phase</div><div class="value" id="phaseValue">idle</div></div>
-          <div class="summary-card"><div class="label">Round</div><div class="value" id="roundValue">0</div></div>
-          <div class="summary-card"><div class="label">Balls</div><div class="value" id="ballsValue">0</div></div>
-          <div class="summary-card"><div class="label">Multiplier</div><div class="value" id="multiplierValue">1x</div></div>
-          <div class="summary-card"><div class="label">Word</div><div class="value" id="wordValue">—</div></div>
-          <div class="summary-card"><div class="label">Updated</div><div class="value" id="updatedValue">—</div></div>
-        </div>
-      </section>
-
-      <section class="panel cols-7">
-        <h2>Round Controls</h2>
-        <div class="row">
-          <div class="field">
-            <label for="wordInput">Current 5-letter word</label>
-            <input id="wordInput" type="text" maxlength="5" placeholder="LINGO" />
+        <section class="host-panel cols-7">
+          <h2 class="panel-kicker">Round Controls</h2>
+          <div class="row">
+            <div class="field">
+              <label for="wordInput">Current word</label>
+              <input id="wordInput" type="text" maxlength="5" placeholder="LINGO" />
+            </div>
+            <div class="field">
+              <label for="guessSecondsInput">Guess seconds</label>
+              <input id="guessSecondsInput" type="number" min="10" step="5" value="90" />
+            </div>
+            <div class="field">
+              <label for="resultsSecondsInput">Results seconds</label>
+              <input id="resultsSecondsInput" type="number" min="10" step="5" value="45" />
+            </div>
+            <div class="field">
+              <label for="ballsInput">Balls remaining</label>
+              <input id="ballsInput" type="number" min="0" step="1" value="0" />
+            </div>
           </div>
-          <div class="field">
-            <label for="guessSecondsInput">Guess window seconds</label>
-            <input id="guessSecondsInput" type="number" min="10" step="5" value="90" />
+
+          <div class="actions">
+            <button id="startRoundBtn" class="good" type="button">Start round</button>
+            <button id="setWordBtn" type="button">Set word</button>
+            <button id="revealResultsBtn" class="warning" type="button">Reveal results</button>
+            <button id="continueRoundBtn" class="secondary" type="button">Continue round</button>
+            <button id="toggleDoubleBtn" class="secondary" type="button">Toggle 2× balls</button>
+            <button id="setBallsBtn" class="secondary" type="button">Set balls</button>
+            <button id="revealAnswerBtn" class="warning" type="button">Reveal answer</button>
+            <button id="newSessionBtn" class="secondary" type="button">New session</button>
+            <button id="resetSessionBtn" class="danger" type="button">Hard reset</button>
           </div>
-          <div class="field">
-            <label for="resultsSecondsInput">Results window seconds</label>
-            <input id="resultsSecondsInput" type="number" min="10" step="5" value="45" />
+
+          <div id="actionStatus" class="status"></div>
+        </section>
+
+        <section class="host-panel cols-5">
+          <h2 class="panel-kicker">Word Pool</h2>
+          <p class="panel-copy">Double-click to set the word. Right-click to remove from the pool.</p>
+          <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
+          <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
+          <div class="row" style="margin-top:0.75rem;">
+            <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh suggestions</button>
           </div>
+          <div id="wordPoolStatus" class="status"></div>
+        </section>
+
+        <section class="host-panel cols-5">
+          <h2 class="panel-kicker">Show Tools</h2>
+          <p class="panel-copy">Display note, champion crown, and bonus balls.</p>
           <div class="field">
-            <label for="ballsInput">Manual balls remaining</label>
-            <input id="ballsInput" type="number" min="0" step="1" value="0" />
+            <label for="hostNoteInput">Display note</label>
+            <input id="hostNoteInput" type="text" maxlength="160" placeholder="Idle screen message" />
           </div>
-        </div>
+          <div class="row" style="margin-top:0.55rem;">
+            <button id="saveHostNoteBtn" class="secondary" type="button">Save note</button>
+          </div>
+          <div class="field" style="margin-top:0.75rem;">
+            <label for="championInput">Champion name</label>
+            <input id="championInput" type="text" maxlength="40" placeholder="Player to crown" />
+          </div>
+          <div class="row" style="margin-top:0.55rem;">
+            <button id="setChampionBtn" type="button">Set champion</button>
+            <button id="awardAllBallsBtn" class="good" type="button">All +1 ball</button>
+          </div>
+          <div id="showToolsStatus" class="status"></div>
+        </section>
 
-        <div class="actions">
-          <button id="newSessionBtn" type="button">Create / reset session</button>
-          <button id="setWordBtn" type="button">Set word</button>
-          <button id="startRoundBtn" class="good" type="button">Start round</button>
-          <button id="revealResultsBtn" class="warning" type="button">Reveal results</button>
-          <button id="continueRoundBtn" type="button">Continue round</button>
-          <button id="toggleDoubleBtn" type="button">Toggle 2x balls</button>
-          <button id="setBallsBtn" type="button">Set balls</button>
-          <button id="revealAnswerBtn" class="warning" type="button">Reveal answer</button>
-          <button id="resetSessionBtn" class="danger" type="button">Hard reset</button>
-        </div>
-
-        <div id="actionStatus" class="status"></div>
-      </section>
-
-      <section class="panel cols-5">
-        <h2>Word Pool</h2>
-        <p class="muted">Random legal words from the Lingo dictionary. Double-click to set the round word. Right-click to remove a word from the pool.</p>
-        <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
-        <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
-        <div class="row" style="margin-top:12px;">
-          <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh suggestions</button>
-        </div>
-        <div id="wordPoolStatus" class="status"></div>
-      </section>
-
-      <section class="panel cols-5">
-        <h2>Show Tools</h2>
-        <p class="muted">Idle display note, champion crown, and bonus balls.</p>
-        <div class="field" style="margin-top:10px;">
-          <label for="hostNoteInput">Display note (idle screen)</label>
-          <input id="hostNoteInput" type="text" maxlength="160" placeholder="Optional message on the venue display" />
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <button id="saveHostNoteBtn" class="secondary" type="button">Save display note</button>
-        </div>
-        <div class="field" style="margin-top:14px;">
-          <label for="championInput">Champion display name</label>
-          <input id="championInput" type="text" maxlength="40" placeholder="Player name to crown" />
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <button id="setChampionBtn" type="button">Set champion</button>
-          <button id="awardAllBallsBtn" class="good" type="button">Award all +1 ball</button>
-        </div>
-        <div id="showToolsStatus" class="status"></div>
-      </section>
-
-      <section class="panel cols-5">
-        <h2>Backend State</h2>
-        <p class="muted">Raw server state stored in Postgres. Later, the public display and scoring engine can read from the same backend model.</p>
-        <pre id="stateJson">{}</pre>
-      </section>
-
-      <section class="panel cols-12">
-        <h2>Player Roster</h2>
-        <p class="muted">Edit ball totals or remove a player from the session.</p>
-        <div class="summary" style="margin: 14px 0 12px;">
-          <div class="summary-card"><div class="label">Players in session</div><div class="value" id="playerCountValue">0</div></div>
-          <div class="summary-card"><div class="label">Submitted this round</div><div class="value" id="submittedCountValue">0</div></div>
-        </div>
-        <div class="roster-table-wrap">
-          <table class="roster-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Balls</th>
-                <th>Guess</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="playerRosterBody">
-              <tr><td colspan="4" class="muted">Connect to load players.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+        <section class="host-panel cols-12">
+          <h2 class="panel-kicker">Player Roster</h2>
+          <p class="panel-copy">Edit ball totals or remove a player from the session.</p>
+          <div class="roster-stats">
+            <div class="stat-chip">
+              <span class="label">In session</span>
+              <span class="value" id="playerCountValue">0</span>
+            </div>
+            <div class="stat-chip">
+              <span class="label">Submitted</span>
+              <span class="value" id="submittedCountValue">0</span>
+            </div>
+          </div>
+          <div class="roster-table-wrap">
+            <table class="roster-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Balls</th>
+                  <th>Guess</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="playerRosterBody">
+                <tr><td colspan="4" class="muted">Connect to load players.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 
   <script>
+    const PHASE_LABELS = {
+      idle: 'Sign up open',
+      guessing: 'Guessing open',
+      results: 'Results',
+      ended: 'Round ended',
+    };
+
     const els = {
+      hostStage: document.getElementById('hostStage'),
+      phaseBadge: document.getElementById('phaseBadge'),
       adminKey: document.getElementById('adminKey'),
       connectBtn: document.getElementById('connectBtn'),
       refreshBtn: document.getElementById('refreshBtn'),
@@ -410,7 +696,6 @@
       multiplierValue: document.getElementById('multiplierValue'),
       wordValue: document.getElementById('wordValue'),
       updatedValue: document.getElementById('updatedValue'),
-      stateJson: document.getElementById('stateJson'),
       playerRosterBody: document.getElementById('playerRosterBody'),
       playerCountValue: document.getElementById('playerCountValue'),
       submittedCountValue: document.getElementById('submittedCountValue'),
@@ -436,7 +721,6 @@
     };
 
     let currentState = null;
-    let rosterPlayers = [];
     let pollHandle = null;
 
     function storedKey() {
@@ -449,7 +733,7 @@
 
     function setStatus(target, text, type = '') {
       target.textContent = text || '';
-      target.className = 'status' + (type ? ' ' + type : '');
+      target.className = 'status' + (type ? ` ${type}` : '');
     }
 
     function adminFetch(path, options = {}) {
@@ -473,7 +757,7 @@
       currentState = payload.state;
       renderState();
       if (showStatus) {
-        setStatus(els.connectStatus, 'Connected to Railway backend.', 'success');
+        setStatus(els.connectStatus, 'Connected to backend.', 'success');
       }
     }
 
@@ -485,7 +769,6 @@
       }
       const state = payload.state || {};
       const players = state.players || [];
-      rosterPlayers = players;
       const currentRound = Number((state.session && state.session.roundNumber) || (currentState && currentState.roundNumber) || 0);
       const submittedThisRound = players.filter((player) => Number(player.roundNumber || 0) === currentRound && !!player.currentGuess);
 
@@ -535,7 +818,8 @@
 
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
-        saveBtn.textContent = 'Save balls';
+        saveBtn.className = 'secondary';
+        saveBtn.textContent = 'Save';
         saveBtn.addEventListener('click', () => {
           savePlayerBalls(player.id, Number(ballsInput.value));
         });
@@ -576,19 +860,24 @@
 
     function renderState() {
       const state = currentState || {};
-      els.phaseValue.textContent = state.phase || 'idle';
+      const phase = state.phase || 'idle';
+
+      els.hostStage.dataset.phase = phase;
+      els.phaseBadge.textContent = PHASE_LABELS[phase] || PHASE_LABELS.idle;
+      els.phaseValue.textContent = phase;
       els.roundValue.textContent = String(state.roundNumber ?? 0);
       els.ballsValue.textContent = String(state.ballsRemaining ?? 0);
-      els.multiplierValue.textContent = `${state.ballMultiplier || 1}x`;
-      els.wordValue.textContent = state.currentWord || '—';
-      els.updatedValue.textContent = state.updatedAtIso || '—';
+      els.multiplierValue.textContent = `${state.ballMultiplier || 1}×`;
+      els.wordValue.textContent = state.currentWord ? state.currentWord.toUpperCase() : '—';
+      els.updatedValue.textContent = state.updatedAtIso
+        ? new Date(state.updatedAtIso).toLocaleTimeString()
+        : '—';
       els.wordInput.value = state.currentWord || '';
       els.guessSecondsInput.value = String(state.guessWindowSeconds || 90);
       els.resultsSecondsInput.value = String(state.resultsWindowSeconds || 45);
       els.ballsInput.value = String(state.ballsRemaining ?? 0);
       els.hostNoteInput.value = state.hostNote || '';
       els.championInput.value = state.championDisplayName || '';
-      els.stateJson.textContent = JSON.stringify(state, null, 2);
       renderWordPool();
     }
 
@@ -600,8 +889,8 @@
       const available = state.availableWordCount;
 
       els.wordPoolMeta.textContent = suggestions.length
-        ? `${suggestions.length} suggestion${suggestions.length === 1 ? '' : 's'} · ${exclusions.length} removed · ${available ?? '—'} words left`
-        : `${exclusions.length} removed · ${available ?? '—'} words left`;
+        ? `${suggestions.length} words · ${exclusions.length} removed · ${available ?? '—'} left`
+        : `${exclusions.length} removed · ${available ?? '—'} left`;
 
       els.wordSuggestionList.innerHTML = '';
       if (!suggestions.length) {
