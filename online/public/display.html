@@ -650,18 +650,18 @@
       display: none;
     }
 
-    /* Live round: compact HUD + modest player strip at bottom; timer pinned top-right */
+    /* Live round: balanced HUD + player board; timer pinned top-right */
     .stage[data-phase="guessing"] .stage-ui,
     .stage[data-phase="results"] .stage-ui,
     .stage[data-phase="ended"] .stage-ui {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: flex-start;
-      gap: 0.12em;
-      padding: 3% 2% 1.25%;
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto auto var(--live-board-height, 30cqh);
+      align-content: start;
+      gap: 0.28em;
+      padding: 4% 2.5% 1.5%;
       overflow: hidden;
-      font-size: clamp(12px, 2.05cqh, 28px);
+      font-size: clamp(13px, 2.25cqh, 30px);
     }
 
     .stage[data-phase="guessing"] .stage-ui > .ui-topline,
@@ -921,13 +921,10 @@
       grid-area: board;
       display: flex;
       flex-direction: column;
-      align-self: center;
-      width: 92%;
+      justify-self: center;
+      width: 94%;
       min-height: 0;
-      height: auto;
-      max-height: var(--live-board-max, 8.5em);
-      margin-top: auto;
-      flex-shrink: 0;
+      height: 100%;
       z-index: 5;
       overflow: hidden;
       background: linear-gradient(180deg, rgba(0, 18, 48, 0.98) 0%, rgba(0, 4, 16, 0.99) 100%);
@@ -942,7 +939,7 @@
       align-items: baseline;
       justify-content: center;
       gap: 0.35em;
-      padding: 0.2em 0.45em;
+      padding: 0.24em 0.5em;
       flex-shrink: 0;
     }
 
@@ -961,28 +958,32 @@
     .stage[data-phase="guessing"] .player-board-body,
     .stage[data-phase="results"] .player-board-body,
     .stage[data-phase="ended"] .player-board-body {
-      padding: 0.22em 0.28em 0.28em;
+      padding: 0.28em 0.32em 0.32em;
       min-height: 0;
-      flex: 0 1 auto;
+      flex: 1 1 auto;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .stage[data-phase="guessing"] .player-grid,
     .stage[data-phase="results"] .player-grid,
     .stage[data-phase="ended"] .player-grid {
-      height: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
       grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
-      grid-template-rows: repeat(var(--live-rows, 2), auto);
-      align-content: start;
-      gap: var(--live-gap, 0.32em);
+      grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
+      align-content: stretch;
+      gap: var(--live-gap, 0.36em);
     }
 
     .stage[data-phase="guessing"] .player-card,
     .stage[data-phase="results"] .player-card,
     .stage[data-phase="ended"] .player-card {
-      height: auto;
       min-height: 0;
-      padding: 0.18em 0.28em;
+      height: 100%;
+      padding: 0.22em 0.32em;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -2544,11 +2545,11 @@
       return computeLiveGridColumns(playerCount);
     }
 
-    function computeLiveBoardMax(rows, playerCount) {
-      const chipRow = playerCount <= 8 ? 2.15 : playerCount <= 12 ? 1.95 : playerCount <= 24 ? 1.75 : 1.55;
-      const header = 1.35;
-      const rowGap = playerCount <= 8 ? 0.32 : 0.28;
-      return header + rows * chipRow + Math.max(0, rows - 1) * rowGap + 0.5;
+    function computeLiveBoardHeight(rows, playerCount) {
+      const base = playerCount <= 8 ? 18 : playerCount <= 12 ? 16 : 14;
+      const perRow = playerCount <= 8 ? 6 : playerCount <= 12 ? 5.5 : 5;
+      const cap = playerCount <= 8 ? 32 : playerCount <= 24 ? 40 : 44;
+      return `${Math.min(cap, base + rows * perRow)}cqh`;
     }
 
     function applyLiveBoardLayout(playerCount, phase) {
@@ -2557,7 +2558,7 @@
         els.stage.style.removeProperty("--live-cols");
         els.stage.style.removeProperty("--live-rows");
         els.stage.style.removeProperty("--live-gap");
-        els.stage.style.removeProperty("--live-board-max");
+        els.stage.style.removeProperty("--live-board-height");
         return;
       }
 
@@ -2565,7 +2566,7 @@
       const rows = Math.max(1, Math.ceil(playerCount / cols));
       els.stage.style.setProperty("--live-cols", String(cols));
       els.stage.style.setProperty("--live-rows", String(rows));
-      els.stage.style.setProperty("--live-board-max", `${computeLiveBoardMax(rows, playerCount)}em`);
+      els.stage.style.setProperty("--live-board-height", computeLiveBoardHeight(rows, playerCount));
 
       if (playerCount < LIVE_DENSE_THRESHOLD) {
         delete els.stage.dataset.liveDensity;
@@ -3067,7 +3068,7 @@
         const cols = computeComfortableLiveColumns(players.length);
         const rows = Math.max(1, Math.ceil(players.length / cols));
         grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-        grid.style.gridTemplateRows = `repeat(${rows}, auto)`;
+        grid.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
       }
       const fragment = document.createDocumentFragment();
       const newArrivals = phase === "idle" ? detectNewLobbyArrivals(players, phase) : new Set();
@@ -3191,7 +3192,7 @@
         els.stage.style.removeProperty("--live-cols");
         els.stage.style.removeProperty("--live-rows");
         els.stage.style.removeProperty("--live-gap");
-        els.stage.style.removeProperty("--live-board-max");
+        els.stage.style.removeProperty("--live-board-height");
       }
 
       updateLobbyHeader(currentState);
