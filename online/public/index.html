@@ -244,7 +244,7 @@
     .play-stage[data-phase="results"] .meta-rail,
     .play-stage[data-phase="ended"] .meta-rail {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
     }
 
     .play-context {
@@ -269,11 +269,6 @@
     .meta-value.pot {
       color: var(--show-cyan);
       text-shadow: 0 0 16px rgba(0, 212, 255, 0.55);
-    }
-
-    .meta-value.mult {
-      color: var(--show-magenta);
-      text-shadow: 0 0 14px rgba(187, 68, 255, 0.45);
     }
 
     .champion-badge {
@@ -1088,16 +1083,12 @@
             <span class="meta-value round" id="metaRound">0</span>
           </div>
           <div class="meta-slot">
-            <span class="meta-label">At stake</span>
+            <span class="meta-label">Balls for this guess</span>
             <span class="meta-value pot" id="metaPot">0</span>
           </div>
           <div class="meta-slot">
-            <span class="meta-label">Yours</span>
+            <span class="meta-label"># Balls Earned</span>
             <span class="meta-value balls" id="metaYours">0</span>
-          </div>
-          <div class="meta-slot">
-            <span class="meta-label">Mult</span>
-            <span class="meta-value mult" id="metaMult">1×</span>
           </div>
         </div>
         <p class="play-context" id="playContext" aria-live="polite"></p>
@@ -1169,7 +1160,6 @@
       metaRound: document.getElementById('metaRound'),
       metaPot: document.getElementById('metaPot'),
       metaYours: document.getElementById('metaYours'),
-      metaMult: document.getElementById('metaMult'),
       playContext: document.getElementById('playContext'),
       championBadge: document.getElementById('championBadge'),
       playOutcome: document.getElementById('playOutcome'),
@@ -1851,13 +1841,6 @@
       updateSubmitLabel();
     }
 
-    function formatGuessWorthLine(balls) {
-      const count = Math.max(0, Number(balls || 0));
-      return count === 1
-        ? `This guess worth ${count} ball`
-        : `This guess worth ${count} balls`;
-    }
-
     function renderPlayContext(state) {
       const phase = state.phase || 'idle';
       const parts = [];
@@ -1867,7 +1850,6 @@
         if (letter) {
           parts.push(`Word starts with <span class="hint-letter">${letter}</span>`);
         }
-        parts.push(formatGuessWorthLine(Number(state.ballsRemaining || 0)));
         const submitted = Number(state.submittedThisRound || 0);
         const total = Number(state.playerCount || 0);
         if (total > 0) {
@@ -2088,7 +2070,6 @@
 
       els.metaRound.textContent = String(state.roundNumber || 0);
       els.metaPot.textContent = String(state.ballsRemaining || 0);
-      els.metaMult.textContent = `${Number(state.ballMultiplier || 1)}×`;
       els.metaYours.textContent = !activeUserName()
         ? '—'
         : String(viewer && viewer.found ? viewer.balls : 0);
