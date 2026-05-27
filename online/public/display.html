@@ -2930,7 +2930,7 @@
       const patterns = ["!/?//", "/!???", "!!?//", "!!!!!", "/!///", "?!!//", "!!///", "/?!!/"];
       return buildDemoPlayers(count).map((player, index) => {
         if (phase === "guessing") {
-          const locked = IS_DEMO ? true : index % 3 !== 1;
+          const locked = index % 3 !== 1;
           return {
             ...player,
             status: locked ? "locked" : "waiting",
@@ -2984,7 +2984,7 @@
         guessWindowSeconds: 90,
         resultsWindowSeconds: 30,
         guessWindowOpenedAtIso: phase === "guessing"
-          ? new Date(Date.now() - 18000).toISOString()
+          ? new Date(Date.now() - 42000).toISOString()
           : null,
         resultsWindowOpenedAtIso: phase === "results"
           ? new Date(Date.now() - 1000).toISOString()
