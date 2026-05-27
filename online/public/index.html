@@ -1278,7 +1278,7 @@
     let pollTimer = null;
     let guessDraftDirty = false;
     let lastGuessWindowKey = '';
-    let timerToastWindowKey = '';
+    let lastTimerToastWindowKey = '';
     let timerToastLastRemaining = null;
     let timerToastFired = { warn30: false, warn10: false };
     const TIMER_TOAST_MS = 10000;
@@ -1691,7 +1691,7 @@
     }
 
     function resetTimerToastTracking(windowKey) {
-      timerToastWindowKey = windowKey;
+      lastTimerToastWindowKey = windowKey;
       timerToastLastRemaining = null;
       timerToastFired = { warn30: false, warn10: false };
     }
@@ -1717,7 +1717,7 @@
         return;
       }
 
-      if (windowKey !== timerToastWindowKey) {
+      if (windowKey !== lastTimerToastWindowKey) {
         resetTimerToastTracking(windowKey);
       }
 
