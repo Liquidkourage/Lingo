@@ -357,10 +357,14 @@
     .idle-qr-shell {
       position: relative;
       z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 100%;
+      aspect-ratio: 1;
       border-radius: 0.4em;
       background: #fff;
-      padding: 0.08em;
+      padding: 0.12em;
       box-sizing: border-box;
       box-shadow:
         0 0 24px rgba(255, 255, 255, 0.55),
@@ -371,10 +375,10 @@
       position: relative;
       z-index: 1;
       display: block;
-      width: 100%;
-      height: auto;
-      aspect-ratio: 1;
-      border-radius: 0.32em;
+      width: 88%;
+      height: 88%;
+      object-fit: contain;
+      border-radius: 0.2em;
       padding: 0;
       box-sizing: border-box;
       background: #fff;
@@ -383,14 +387,38 @@
     .idle-cta {
       position: relative;
       z-index: 1;
-      margin: 0.1em 0 0;
-      font-size: 0.52em;
+      margin: 0.15em 0 0;
+      padding: 0.4em 0.55em;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 210, 70, 0.95);
+      background: linear-gradient(180deg, rgba(0, 28, 68, 0.96) 0%, rgba(0, 8, 28, 0.98) 100%);
+      box-shadow:
+        0 0 24px rgba(255, 190, 40, 0.4),
+        inset 0 1px 0 rgba(255, 230, 140, 0.2);
+      font-size: 0.5em;
       font-weight: 700;
       letter-spacing: 0.1em;
       line-height: 1.25;
       text-transform: uppercase;
       color: #ffd850;
-      text-shadow: 0 0 12px rgba(255, 210, 60, 0.45);
+      text-shadow: 0 0 12px rgba(255, 210, 60, 0.55);
+      animation: cta-pulse 2.8s ease-in-out infinite;
+    }
+
+    @keyframes cta-pulse {
+      0%, 100% {
+        box-shadow:
+          0 0 24px rgba(255, 190, 40, 0.4),
+          inset 0 1px 0 rgba(255, 230, 140, 0.2);
+        border-color: rgba(255, 210, 70, 0.95);
+      }
+      50% {
+        box-shadow:
+          0 0 36px rgba(255, 200, 60, 0.65),
+          0 0 56px rgba(255, 170, 30, 0.22),
+          inset 0 1px 0 rgba(255, 240, 160, 0.28);
+        border-color: rgba(255, 225, 100, 1);
+      }
     }
 
     .idle-host-note {
@@ -665,12 +693,36 @@
     .stage[data-phase="idle"] .player-grid {
       grid-template-columns: repeat(var(--lobby-cols, 5), minmax(0, 1fr));
       grid-template-rows: repeat(var(--lobby-rows, 1), minmax(0, 1fr));
-      gap: calc(0.38em * var(--lobby-chip-scale, 1));
+      gap: calc(0.32em * var(--lobby-chip-scale, 1));
       align-content: stretch;
     }
 
-    .stage[data-phase="idle"] .player-grid[data-has-overflow="true"] {
-      grid-template-rows: repeat(var(--lobby-rows, 1), minmax(0, 1fr));
+    .stage[data-phase="idle"][data-lobby-density="dense"] .player-grid {
+      gap: calc(0.18em * var(--lobby-chip-scale, 1));
+    }
+
+    .stage[data-phase="idle"][data-lobby-density="ultra"] .player-grid {
+      gap: 1px;
+    }
+
+    .stage[data-phase="idle"][data-lobby-density="ultra"] .player-board-body {
+      padding: 0.35em 0.4em 0.4em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-density="ultra"] .player-board-header {
+      padding: 0.35em 0.6em;
+      font-size: 0.78em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-density="ultra"] .player-card {
+      border-radius: 0.12em;
+      padding: 0 0.12em;
+      box-shadow: none;
+    }
+
+    .stage[data-phase="idle"][data-lobby-density="ultra"] .player-name {
+      font-size: calc(0.62em * var(--lobby-chip-scale, 1));
+      letter-spacing: 0;
     }
 
     .player-card {
@@ -905,9 +957,11 @@
 
     function buildDemoPlayers(count) {
       return Array.from({ length: count }, (_value, index) => ({
-        displayName: count > DEMO_PLAYER_NAMES.length
-          ? `${DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length]}${Math.floor(index / DEMO_PLAYER_NAMES.length) + 1}`
-          : DEMO_PLAYER_NAMES[index],
+        displayName: count > 100
+          ? `Player ${index + 1}`
+          : (count > DEMO_PLAYER_NAMES.length
+            ? `${DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length]}${Math.floor(index / DEMO_PLAYER_NAMES.length) + 1}`
+            : DEMO_PLAYER_NAMES[index]),
         status: "waiting",
         statusText: "In lobby",
       }));
@@ -952,23 +1006,27 @@
       return `Lobby · ${n} players`;
     }
 
-    const LOBBY_MAX_VISIBLE = 84;
-
     function idleLobbyLayout(count) {
       const n = Math.max(0, Number(count || 0));
-      if (n <= 8) {
-        return { size: "", cols: 3, chipScale: 1, maxVisible: n };
+      if (n === 0) {
+        return { size: "", cols: 1, rows: 1, chipScale: 1, density: "normal" };
       }
-      if (n <= 20) {
-        return { size: "full", cols: 4, chipScale: 0.92, maxVisible: n };
+
+      const lobbyAspect = 6.2;
+      const cols = Math.max(3, Math.min(n, Math.ceil(Math.sqrt(n * lobbyAspect))));
+      const rows = Math.ceil(n / cols);
+      const chipScale = Math.min(1, Math.max(0.12, 4.8 / rows));
+
+      let size = "";
+      let density = "normal";
+      if (n > 24) size = "full";
+      if (n > 80) {
+        size = "crowded";
+        density = "dense";
       }
-      if (n <= 40) {
-        return { size: "full", cols: 5, chipScale: 0.82, maxVisible: n };
-      }
-      if (n <= LOBBY_MAX_VISIBLE) {
-        return { size: "crowded", cols: 6, chipScale: 0.72, maxVisible: n };
-      }
-      return { size: "crowded", cols: 7, chipScale: 0.66, maxVisible: LOBBY_MAX_VISIBLE - 1 };
+      if (n > 200) density = "ultra";
+
+      return { size, cols, rows, chipScale, density };
     }
 
     function applyIdleLobbyLayout(count) {
@@ -978,7 +1036,13 @@
       } else {
         delete els.stage.dataset.lobbySize;
       }
+      if (layout.density === "normal") {
+        delete els.stage.dataset.lobbyDensity;
+      } else {
+        els.stage.dataset.lobbyDensity = layout.density;
+      }
       els.stage.style.setProperty("--lobby-cols", String(layout.cols));
+      els.stage.style.setProperty("--lobby-rows", String(layout.rows));
       els.stage.style.setProperty("--lobby-chip-scale", String(layout.chipScale));
       return layout;
     }
@@ -1089,29 +1153,19 @@
         return;
       }
 
-      let visiblePlayers = players;
-      let overflowCount = 0;
-      let layout = { cols: 5, chipScale: 1 };
+      let layout = { cols: 5, rows: 1, chipScale: 1 };
 
       if (phase === "idle") {
         layout = applyIdleLobbyLayout(players.length);
-        if (players.length > layout.maxVisible) {
-          visiblePlayers = players.slice(0, layout.maxVisible);
-          overflowCount = players.length - layout.maxVisible;
-        }
+      } else {
+        els.stage.style.setProperty("--lobby-rows", String(Math.max(1, Math.ceil(players.length / layout.cols))));
       }
-
-      const slotCount = visiblePlayers.length + (overflowCount > 0 ? 1 : 0);
-      const rows = Math.max(1, Math.ceil(slotCount / layout.cols));
-      els.stage.style.setProperty("--lobby-rows", String(rows));
 
       const grid = document.createElement("div");
       grid.className = "player-grid";
-      if (overflowCount > 0) {
-        grid.dataset.hasOverflow = "true";
-      }
+      const fragment = document.createDocumentFragment();
 
-      visiblePlayers.forEach((player) => {
+      players.forEach((player) => {
         const card = document.createElement("article");
         card.className = "player-card";
         card.dataset.status = player.isWinner ? "winner" : (player.status || (phase === "idle" ? "waiting" : "waiting"));
@@ -1134,21 +1188,10 @@
           card.appendChild(renderPatternRow(player.resultPattern));
         }
 
-        grid.appendChild(card);
+        fragment.appendChild(card);
       });
 
-      if (overflowCount > 0) {
-        const card = document.createElement("article");
-        card.className = "player-card";
-        card.dataset.status = "overflow";
-
-        const name = document.createElement("div");
-        name.className = "player-name";
-        name.textContent = `+${overflowCount} more`;
-        card.appendChild(name);
-        grid.appendChild(card);
-      }
-
+      grid.appendChild(fragment);
       els.playerBoardBody.appendChild(grid);
     }
 
@@ -1190,6 +1233,7 @@
 
       if (phase !== "idle") {
         delete els.stage.dataset.lobbySize;
+        delete els.stage.dataset.lobbyDensity;
         els.stage.style.removeProperty("--lobby-cols");
         els.stage.style.removeProperty("--lobby-rows");
         els.stage.style.removeProperty("--lobby-chip-scale");
