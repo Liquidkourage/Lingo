@@ -18,9 +18,10 @@
       --show-navy: rgba(0, 12, 36, 0.96);
       /* Live phases: keep grid UI below extracted logo (28% wide @ ~2.7:1 + top offset) */
       --live-logo-reserve: 19%;
-      /* Score rail: lift moves it up; height stays fixed */
-      --live-score-rail-lift: 28cqh;
+      --live-chrome-top: 0.8%;
+      --live-chrome-inset: 1%;
       --live-score-rail-height: 11em;
+      --live-score-rail-width: 15.5em;
     }
 
     html, body {
@@ -663,8 +664,8 @@
       grid-template-columns: minmax(12em, 15.5em) minmax(0, 1fr);
       grid-template-rows: auto auto minmax(50cqh, 1fr);
       grid-template-areas:
-        "score hud"
-        "score stats"
+        ". hud"
+        ". stats"
         "board board";
       justify-items: stretch;
       align-content: start;
@@ -677,9 +678,6 @@
     .stage[data-phase="guessing"] .stage-ui .live-hud,
     .stage[data-phase="results"] .stage-ui .live-hud,
     .stage[data-phase="ended"] .stage-ui .live-hud,
-    .stage[data-phase="guessing"] .stage-ui .live-score-rail,
-    .stage[data-phase="results"] .stage-ui .live-score-rail,
-    .stage[data-phase="ended"] .stage-ui .live-score-rail,
     .stage[data-phase="guessing"] .live-hud .status-badge,
     .stage[data-phase="results"] .live-hud .status-badge,
     .stage[data-phase="ended"] .live-hud .status-badge,
@@ -717,8 +715,8 @@
     .stage[data-phase="results"] .timer-panel,
     .stage[data-phase="ended"] .timer-panel {
       position: absolute !important;
-      top: 0.8%;
-      right: 1%;
+      top: var(--live-chrome-top);
+      right: var(--live-chrome-inset);
       left: auto !important;
       bottom: auto !important;
       transform: none !important;
@@ -823,16 +821,27 @@
       display: none !important;
     }
 
+    .stage[data-phase="guessing"] .live-score-rail,
+    .stage[data-phase="results"] .live-score-rail,
+    .stage[data-phase="ended"] .live-score-rail {
+      position: absolute !important;
+      top: var(--live-chrome-top);
+      left: var(--live-chrome-inset);
+      right: auto !important;
+      bottom: auto !important;
+      width: var(--live-score-rail-width);
+      min-width: 12em;
+      max-width: 18%;
+      height: var(--live-score-rail-height);
+      min-height: var(--live-score-rail-height);
+      max-height: var(--live-score-rail-height);
+      margin: 0 !important;
+      z-index: 12;
+    }
+
     .live-score-rail {
       display: none;
-      grid-area: score;
-      grid-row: 1 / 3;
       flex-direction: column;
-      align-self: end;
-      width: 100%;
-      min-height: calc(11em + var(--live-score-rail-rise));
-      margin-top: calc(-1 * var(--live-score-rail-rise));
-      z-index: 12;
       border-radius: 0.5em;
       border: 3px solid rgba(255, 200, 60, 0.55);
       background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
@@ -2318,9 +2327,6 @@
     .stage[data-phase="ended"] .live-hud .subtitle,
     .stage[data-phase="ended"] .live-hud .word-tiles,
     .stage[data-phase="ended"] .live-hud .word-clue,
-    .stage[data-phase="guessing"] .stage-ui .live-score-rail,
-    .stage[data-phase="results"] .stage-ui .live-score-rail,
-    .stage[data-phase="ended"] .stage-ui .live-score-rail,
     .stage[data-phase="guessing"] .stage-ui .stats-row,
     .stage[data-phase="results"] .stage-ui .stats-row,
     .stage[data-phase="ended"] .stage-ui .stats-row {
