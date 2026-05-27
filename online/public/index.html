@@ -797,6 +797,17 @@
       display: block;
     }
 
+    .play-stage[data-phase="guessing"][data-solved="true"] .word-entry,
+    .play-stage[data-phase="guessing"][data-solved="true"] .guess-actions,
+    .play-stage[data-phase="guessing"][data-solved="true"] .keyboard-zone {
+      display: none;
+    }
+
+    .play-stage[data-phase="guessing"][data-solved="true"] .prompt {
+      color: var(--show-green);
+      text-shadow: 0 0 16px rgba(0, 255, 85, 0.55);
+    }
+
     .result-area {
       display: none;
     }
@@ -1574,8 +1585,17 @@
       return Boolean(activeUserName());
     }
 
+    function viewerSolvedCurrentWord() {
+      return Boolean(currentState?.viewer?.isSolved);
+    }
+
     function canTypeGuess() {
-      return Boolean(currentState && currentState.phase === 'guessing');
+      return Boolean(
+        currentState
+        && currentState.phase === 'guessing'
+        && currentState.viewer?.found
+        && !viewerSolvedCurrentWord(),
+      );
     }
 
     function hasSubmittedGuess() {
@@ -1587,7 +1607,13 @@
     }
 
     function syncGuessDraftFromState(state) {
-      if (!canTypeGuess() || !state.viewer) return;
+      if (!state.viewer) return;
+      if (!canTypeGuess()) {
+        if (viewerSolvedCurrentWord() && state.phase === 'guessing') {
+          setGuessText('');
+        }
+        return;
+      }
 
       const windowKey = guessWindowKey(state);
       if (windowKey !== lastGuessWindowKey) {
@@ -1935,16 +1961,8 @@
       els.resultFeedback.classList.add('is-visible');
 
       if (resultLabel === 'Not a word…') {
-        guess.split('').forEach((letter) => {
-          const tile = document.createElement('div');
-          tile.className = 'result-tile';
-          tile.textContent = letter;
-          tile.dataset.mark = 'invalid';
-          els.resultTiles.appendChild(tile);
-        });
+        appendResultTiles(guess, '/////');
         els.resultTiles.classList.add('is-visible');
-        els.resultFeedbackValue.textContent = 'Not a word…';
-        els.resultFeedbackValue.classList.add('is-visible', 'is-invalid');
         return;
       }
 
@@ -1995,7 +2013,7 @@
     }
 
     function updateSubmitEnabled() {
-      const canGuess = currentState && currentState.phase === 'guessing';
+      const canGuess = canTypeGuess();
       els.submit.disabled = !canGuess;
       els.inputs.forEach((input) => {
         input.disabled = !canGuess;
@@ -2007,6 +2025,10 @@
     }
 
     function renderPrompt(phase, state) {
+      if (phase === 'guessing' && state?.viewer?.isSolved) {
+        els.promptLine.textContent = 'You solved it — no more guesses this round';
+        return;
+      }
       if (phase === 'guessing') {
         const letter = String(state?.publicFirstLetter || '').charAt(0).toUpperCase();
         if (letter) {
@@ -2136,7 +2158,7 @@
     }
 
     function updateKeyboardEnabled(phase) {
-      const enabled = phase === 'guessing';
+      const enabled = canTypeGuess();
       els.keyboard.querySelectorAll('.keyboard-key').forEach((button) => {
         button.disabled = !enabled;
         button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
@@ -2199,6 +2221,7 @@
       const viewer = state.viewer;
 
       els.stage.dataset.phase = phase;
+      els.stage.dataset.solved = phase === 'guessing' && viewer?.isSolved ? 'true' : 'false';
       renderPhaseBadge(state);
       if (phase === 'idle' && state.hostNote) {
         els.phaseLine.textContent = state.hostNote;
@@ -2310,6 +2333,10 @@
         openNameEditor();
         return;
       }
+      if (viewerSolvedCurrentWord()) {
+        setMessage('You already solved this word for the round.', 'error');
+        return;
+      }
       const displayName = activeUserName();
       const guess = currentGuess();
 
@@ -2338,8 +2365,13 @@
         }
         storeDisplayName(displayName);
         guessDraftDirty = false;
-        setGuessText(payload.player.currentGuess || guess);
-        setMessage('Guess saved — you can still change it before time runs out.', 'success');
+        if (payload.solvedNow) {
+          setGuessText(payload.player.currentGuess || guess);
+          setMessage('Perfect solve! You are done for this round.', 'success');
+        } else {
+          setGuessText(payload.player.currentGuess || guess);
+          setMessage('Guess saved — you can still change it before time runs out.', 'success');
+        }
         renderPublicState(payload.publicState);
       } catch (error) {
         setMessage(error.message || 'Error processing submission.', 'error');

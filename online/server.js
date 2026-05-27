@@ -471,7 +471,7 @@ async function buildViewerContext(displayName, state, client = pool) {
     found: true,
     displayName: player.displayName,
     balls: Number(player.balls || 0),
-    lockedIn: phase === "guessing" && submitted,
+    lockedIn: phase === "guessing" && submitted && !Boolean(player.solved_current_word),
     resultPattern: shouldRevealGuessFeedback(phase) ? resultPattern : "",
     roundGuess: submitted ? guess : "",
     resultLabel,
@@ -982,6 +982,17 @@ app.post("/api/public/submit-guess", async (req, res) => {
       throw new Error("The host has not set a word yet.");
     }
 
+    const existingPlayer = await client.query(
+      `select id, solved_current_word
+       from players
+       where session_id = $1
+         and normalized_display_name = $2`,
+      [state.session_id, normalizePlayerKey(displayName)],
+    );
+    if (existingPlayer.rows[0]?.solved_current_word) {
+      throw new Error("You already solved this word for the round.");
+    }
+
     const upsertResult = await client.query(
       `insert into players (
          session_id,
@@ -1063,6 +1074,21 @@ app.post("/api/public/submit-guess", async (req, res) => {
       }
     }
 
+    let solvedNow = false;
+    if (await isLegalWord(client, guess)) {
+      const pattern = getLingoResultPattern(state.current_word, guess);
+      if (pattern === "!!!!!") {
+        await client.query(
+          `update players
+           set solved_current_word = true,
+               updated_at = now()
+           where id = $1`,
+          [player.id],
+        );
+        solvedNow = true;
+      }
+    }
+
     let nextState = await getState(client);
     nextState = await maybeAutoRevealIfAllSubmitted(nextState, client);
 
@@ -1070,6 +1096,7 @@ app.post("/api/public/submit-guess", async (req, res) => {
 
     res.json({
       ok: true,
+      solvedNow,
       player: {
         id: player.id,
         displayName: player.display_name,
