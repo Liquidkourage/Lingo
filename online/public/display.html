@@ -22,6 +22,14 @@
       --live-chrome-inset: 1%;
       --live-score-rail-height: 6.5em;
       --live-score-rail-width: 22em;
+      /* Letter tiles + stats bar share one scale so the chrome band stays balanced */
+      --live-tile-size: 2.88em;
+      --live-tile-gap: 0.54em;
+      --live-tile-font: 1.75em;
+      --live-tile-hidden-font: 2.38em;
+      --live-stats-width: calc(5 * var(--live-tile-size) + 4 * var(--live-tile-gap));
+      --live-stats-min-height: 3.5em;
+      --live-chrome-stack-gap: 0.22em;
     }
 
     html, body {
@@ -684,7 +692,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.12em;
+      gap: var(--live-chrome-stack-gap);
       width: 100%;
       max-width: 100%;
       justify-self: center;
@@ -1012,26 +1020,26 @@
     .stage[data-phase="guessing"] .word-tiles,
     .stage[data-phase="results"] .word-tiles {
       margin: 0;
-      gap: 0.63em;
+      gap: var(--live-tile-gap);
       flex: 0 1 auto;
     }
 
     .stage[data-phase="guessing"] .word-tile,
     .stage[data-phase="results"] .word-tile {
-      width: 3.23em;
-      height: 3.23em;
-      font-size: 1.98em;
+      width: var(--live-tile-size);
+      height: var(--live-tile-size);
+      font-size: var(--live-tile-font);
     }
 
     .stage[data-phase="guessing"] .word-tile.is-hidden,
     .stage[data-phase="results"] .word-tile.is-hidden {
-      font-size: 2.7em;
+      font-size: var(--live-tile-hidden-font);
     }
 
     .stage[data-phase="results"] .word-tile {
-      width: 3em;
-      height: 3em;
-      font-size: 1.8em;
+      width: calc(var(--live-tile-size) * 0.93);
+      height: calc(var(--live-tile-size) * 0.93);
+      font-size: calc(var(--live-tile-font) * 0.9);
     }
 
     .stage[data-phase="ended"] .word-clue:not([hidden]) {
@@ -1050,13 +1058,13 @@
     .stage[data-phase="guessing"] .stats-row,
     .stage[data-phase="results"] .stats-row,
     .stage[data-phase="ended"] .stats-row {
-      width: min(100%, 52em);
+      width: min(100%, var(--live-stats-width));
       height: auto;
-      min-height: 2.4em;
+      min-height: var(--live-stats-min-height);
       flex-shrink: 0;
       z-index: 4;
-      margin: 0 auto;
-      padding: 0.12em 0;
+      margin: 0.08em auto 0;
+      padding: 0.18em 0;
       overflow: hidden;
       display: grid;
       grid-template-columns: 1fr 1fr 2fr;
@@ -1067,29 +1075,29 @@
     .stage[data-phase="guessing"] .stat-cell,
     .stage[data-phase="results"] .stat-cell,
     .stage[data-phase="ended"] .stat-cell {
-      padding: 0.1em 0.08em;
-      gap: 0.02em;
+      padding: 0.14em 0.1em;
+      gap: 0.04em;
     }
 
     .stage[data-phase="guessing"] .stat-icon,
     .stage[data-phase="results"] .stat-icon,
     .stage[data-phase="ended"] .stat-icon {
       display: block;
-      width: 0.88em;
-      height: 0.88em;
+      width: 1.05em;
+      height: 1.05em;
     }
 
     .stage[data-phase="guessing"] .stat-label,
     .stage[data-phase="results"] .stat-label,
     .stage[data-phase="ended"] .stat-label {
-      font-size: 0.42em;
+      font-size: 0.5em;
       line-height: 1.05;
     }
 
     .stage[data-phase="guessing"] .stat-value,
     .stage[data-phase="results"] .stat-value,
     .stage[data-phase="ended"] .stat-value {
-      font-size: 1.05em;
+      font-size: 1.28em;
       font-weight: 800;
       text-shadow: 0 0 8px currentColor;
     }
@@ -1101,22 +1109,22 @@
     .stage[data-phase="guessing"] .stat-cell--unsubmitted,
     .stage[data-phase="results"] .stat-cell--unsubmitted,
     .stage[data-phase="ended"] .stat-cell--unsubmitted {
-      padding: 0.16em 0.12em;
-      gap: 0.05em;
-      min-height: 2em;
+      padding: 0.18em 0.14em;
+      gap: 0.06em;
+      min-height: calc(var(--live-stats-min-height) - 0.36em);
     }
 
     .stage[data-phase="guessing"] .stat-cell--unsubmitted .stat-icon,
     .stage[data-phase="results"] .stat-cell--unsubmitted .stat-icon,
     .stage[data-phase="ended"] .stat-cell--unsubmitted .stat-icon {
-      width: 1.1em;
-      height: 1.1em;
+      width: 1.15em;
+      height: 1.15em;
     }
 
     .stage[data-phase="guessing"] .stat-cell--unsubmitted .stat-label,
     .stage[data-phase="results"] .stat-cell--unsubmitted .stat-label,
     .stage[data-phase="ended"] .stat-cell--unsubmitted .stat-label {
-      font-size: 0.52em;
+      font-size: 0.54em;
     }
 
     .unsubmitted-chips {
@@ -1124,11 +1132,11 @@
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
-      gap: 0.22em;
+      gap: 0.24em;
       width: 100%;
       max-width: 100%;
-      padding: 0.06em 0.12em 0.1em;
-      min-height: 1.4em;
+      padding: 0.08em 0.14em 0.12em;
+      min-height: 1.55em;
     }
 
     .unsubmitted-chip {
