@@ -866,8 +866,12 @@
       resultFeedbackLabel: document.getElementById('resultFeedbackLabel'),
       resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
+      playIdentity: document.getElementById('playIdentity'),
       playerName: document.getElementById('playerName'),
+      playerNameDisplay: document.getElementById('playerNameDisplay'),
       shuffleName: document.getElementById('shuffleNameBtn'),
+      confirmName: document.getElementById('confirmNameBtn'),
+      changeName: document.getElementById('changeNameBtn'),
       nameHint: document.getElementById('nameHint'),
       message: document.getElementById('message'),
       join: document.getElementById('joinButton'),
@@ -1070,7 +1074,7 @@
       }
 
       const displayName = activeUserName();
-      els.confirmName.disabled = true;
+      if (els.confirmName) els.confirmName.disabled = true;
       try {
         if (currentState && currentState.viewer && currentState.viewer.found) {
           setMessage(`You're ${displayName}.`, 'success');
@@ -1084,7 +1088,7 @@
         setMessage(error.message || 'Could not join the game.', 'error');
         updateLobbyButtons();
       } finally {
-        els.confirmName.disabled = false;
+        if (els.confirmName) els.confirmName.disabled = false;
       }
     }
 
@@ -1726,16 +1730,22 @@
         setMessage('Could not load another suggestion.', 'error');
       });
     });
-    els.confirmName.addEventListener('mousedown', () => {
-      skipNameBlurConfirm = true;
-    });
-    els.confirmName.addEventListener('click', confirmUserNameAndJoin);
-    els.changeName.addEventListener('mousedown', () => {
-      skipNameBlurConfirm = true;
-    });
-    els.changeName.addEventListener('click', () => {
-      openNameEditor();
-    });
+    if (els.confirmName) {
+      els.confirmName.addEventListener('mousedown', () => {
+        skipNameBlurConfirm = true;
+      });
+      els.confirmName.addEventListener('click', (event) => {
+        confirmUserNameAndJoin(event);
+      });
+    }
+    if (els.changeName) {
+      els.changeName.addEventListener('mousedown', () => {
+        skipNameBlurConfirm = true;
+      });
+      els.changeName.addEventListener('click', () => {
+        openNameEditor();
+      });
+    }
 
     let nameSuggestionSeed = '';
     els.playerName.addEventListener('input', () => {
