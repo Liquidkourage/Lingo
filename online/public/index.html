@@ -254,83 +254,52 @@
       50% { opacity: 0.55; transform: scale(0.85); }
     }
 
-    .timer-alert {
-      display: none;
-      margin: 0 0 0.45rem;
-      padding: 0.5em 0.75em;
+    .timer-toast-host {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top, 0px));
+      left: 50%;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+      width: min(92vw, 360px);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .timer-toast {
+      width: 100%;
+      padding: 0.65em 0.85em;
       border-radius: 0.2em;
       text-align: center;
-      font-size: clamp(0.78rem, 3.4vw, 0.92rem);
+      font-size: clamp(0.82rem, 3.6vw, 0.95rem);
       font-weight: 900;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       line-height: 1.2;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
-    .timer-alert.is-visible {
-      display: block;
+    .timer-toast.is-visible {
+      opacity: 1;
+      transform: translateY(0);
     }
 
-    .timer-alert.is-warn-30 {
+    .timer-toast--warn-30 {
       border: var(--contrast-stroke) solid var(--feedback-present-border);
       background: var(--feedback-present);
       color: var(--feedback-present-text);
       box-shadow: 0 0 22px var(--feedback-present-glow);
     }
 
-    .timer-alert.is-warn-10 {
-      border: var(--contrast-stroke) solid var(--show-orange);
-      background: rgba(255, 136, 0, 0.2);
+    .timer-toast--warn-10 {
+      border: var(--contrast-stroke) solid var(--show-red);
+      background: rgba(255, 34, 68, 0.92);
       color: var(--show-gold-hot);
-      text-shadow: 0 0 14px rgba(255, 136, 0, 0.65);
-      animation: timer-urgent 0.9s ease-in-out infinite;
-    }
-
-    @keyframes timer-urgent {
-      0%, 100% {
-        box-shadow: 0 0 18px rgba(255, 136, 0, 0.55);
-        border-color: var(--show-orange);
-      }
-      50% {
-        box-shadow: 0 0 28px rgba(255, 34, 68, 0.7);
-        border-color: var(--show-red);
-      }
-    }
-
-    .phase-badge.timer-warn-30 {
-      border-color: var(--feedback-present-border) !important;
-      color: var(--feedback-present-text) !important;
-      background: rgba(255, 242, 0, 0.1) !important;
-      text-shadow: 0 0 16px var(--feedback-present-glow) !important;
-    }
-
-    .phase-badge.timer-warn-30::before {
-      background: var(--feedback-present) !important;
-      box-shadow: 0 0 12px var(--feedback-present-glow) !important;
-    }
-
-    .phase-badge.timer-warn-30 .phase-badge-timer {
-      color: var(--feedback-present-text) !important;
-      text-shadow: 0 0 18px var(--feedback-present-glow) !important;
-    }
-
-    .phase-badge.timer-warn-10 {
-      border-color: var(--show-red) !important;
-      color: var(--show-gold-hot) !important;
-      background: rgba(255, 34, 68, 0.14) !important;
-      text-shadow: 0 0 16px rgba(255, 34, 68, 0.55) !important;
-      animation: timer-urgent 0.9s ease-in-out infinite;
-    }
-
-    .phase-badge.timer-warn-10::before {
-      background: var(--show-red) !important;
-      box-shadow: 0 0 14px rgba(255, 34, 68, 0.85) !important;
-      animation: none;
-    }
-
-    .phase-badge.timer-warn-10 .phase-badge-timer {
-      color: var(--show-gold-hot) !important;
-      text-shadow: 0 0 20px rgba(255, 136, 0, 0.75) !important;
+      box-shadow: 0 0 24px rgba(255, 34, 68, 0.65);
     }
 
     .phase-line {
@@ -1156,12 +1125,13 @@
   </style>
 </head>
 <body>
+  <div class="timer-toast-host" id="timerToastHost" aria-live="assertive"></div>
+
   <div class="play-stage" id="playStage" data-phase="idle">
     <main class="play-card">
       <header class="play-header">
         <img class="play-logo" src="/assets/lingo-logo-extracted.png" width="280" height="104" alt="Lingo" />
         <div class="phase-badge" id="phaseBadge">Sign up open</div>
-        <p class="timer-alert" id="timerAlert" role="status" aria-live="polite"></p>
         <p class="phase-line" id="phaseLine">Join the lobby so you appear on the venue display before the host starts a round.</p>
       </header>
 
@@ -1266,7 +1236,7 @@
     const els = {
       stage: document.getElementById('playStage'),
       phaseBadge: document.getElementById('phaseBadge'),
-      timerAlert: document.getElementById('timerAlert'),
+      timerToastHost: document.getElementById('timerToastHost'),
       phaseLine: document.getElementById('phaseLine'),
       metaRound: document.getElementById('metaRound'),
       metaPot: document.getElementById('metaPot'),
@@ -1308,6 +1278,10 @@
     let pollTimer = null;
     let guessDraftDirty = false;
     let lastGuessWindowKey = '';
+    let timerToastWindowKey = '';
+    let timerToastLastRemaining = null;
+    let timerToastFired = { warn30: false, warn10: false };
+    const TIMER_TOAST_MS = 10000;
     let keyboardWordKey = '';
     const keyboardLetterStates = new Map();
 
@@ -1705,41 +1679,81 @@
       return state.timerPaused ? 'paused' : `${remaining}s`;
     }
 
-    function formatSecondsRemainingAlert(remaining) {
-      const count = Math.max(0, Number(remaining || 0));
-      if (count === 1) return '1 second remaining';
-      return `${count} seconds remaining`;
+    function timerToastWindowKey(state) {
+      const phase = state.phase || 'idle';
+      if (phase === 'guessing') {
+        return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ''}`;
+      }
+      if (phase === 'results') {
+        return `r:${state.roundNumber || 0}:${state.resultsWindowOpenedAtIso || ''}`;
+      }
+      return '';
     }
 
-    function renderTimerWarnings(state, remaining) {
-      els.phaseBadge.classList.remove('timer-warn-30', 'timer-warn-10');
-      if (!els.timerAlert) return;
+    function resetTimerToastTracking(windowKey) {
+      timerToastWindowKey = windowKey;
+      timerToastLastRemaining = null;
+      timerToastFired = { warn30: false, warn10: false };
+    }
 
-      els.timerAlert.classList.remove('is-visible', 'is-warn-30', 'is-warn-10');
-      els.timerAlert.textContent = '';
+    function showTimerToast(message, variant) {
+      if (!els.timerToastHost) return;
+      const toast = document.createElement('div');
+      toast.className = `timer-toast timer-toast--${variant}`;
+      toast.textContent = message;
+      toast.setAttribute('role', 'status');
+      els.timerToastHost.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('is-visible'));
+      window.setTimeout(() => {
+        toast.classList.remove('is-visible');
+        window.setTimeout(() => toast.remove(), 280);
+      }, TIMER_TOAST_MS);
+    }
 
-      if (remaining == null || state.timerPaused) return;
-
-      if (remaining <= 10) {
-        els.phaseBadge.classList.add('timer-warn-10');
-        els.timerAlert.textContent = formatSecondsRemainingAlert(remaining);
-        els.timerAlert.classList.add('is-visible', 'is-warn-10');
-      } else if (remaining <= 30) {
-        els.phaseBadge.classList.add('timer-warn-30');
-        els.timerAlert.textContent = formatSecondsRemainingAlert(remaining);
-        els.timerAlert.classList.add('is-visible', 'is-warn-30');
+    function maybeShowTimerToasts(state) {
+      const windowKey = timerToastWindowKey(state);
+      if (!windowKey) {
+        resetTimerToastTracking('');
+        return;
       }
+
+      if (windowKey !== timerToastWindowKey) {
+        resetTimerToastTracking(windowKey);
+      }
+
+      const remaining = phaseSecondsRemaining(state);
+      if (remaining == null || state.timerPaused) {
+        timerToastLastRemaining = remaining;
+        return;
+      }
+
+      const prev = timerToastLastRemaining;
+
+      if (!timerToastFired.warn30 && remaining <= 30 && remaining > 10) {
+        if (prev == null || prev > 30) {
+          showTimerToast('30 seconds remaining', 'warn-30');
+          timerToastFired.warn30 = true;
+        }
+      }
+
+      if (!timerToastFired.warn10 && remaining <= 10) {
+        if (prev == null || prev > 10) {
+          showTimerToast('10 seconds remaining', 'warn-10');
+          timerToastFired.warn10 = true;
+        }
+      }
+
+      timerToastLastRemaining = remaining;
     }
 
     function renderPhaseBadge(state) {
       const phase = state.phase || 'idle';
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
       const timerText = phaseTimerText(state);
-      const remaining = phaseSecondsRemaining(state);
 
       if (!timerText) {
         els.phaseBadge.textContent = copy.badge;
-        renderTimerWarnings(state, remaining);
+        maybeShowTimerToasts(state);
         return;
       }
 
@@ -1748,7 +1762,7 @@
         `<span class="phase-badge-timer">${timerText}</span>`,
       ].join('');
 
-      renderTimerWarnings(state, remaining);
+      maybeShowTimerToasts(state);
     }
 
     function isLiveRound(phase) {
