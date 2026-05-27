@@ -1226,7 +1226,7 @@
     let currentState = null;
     let pollTimer = null;
     let guessDraftDirty = false;
-    let lastGuessDraftRound = 0;
+    let lastGuessWindowKey = '';
     let keyboardWordKey = '';
     const keyboardLetterStates = new Map();
 
@@ -1527,12 +1527,16 @@
       return Boolean(currentState && currentState.viewer && currentState.viewer.lockedIn);
     }
 
+    function guessWindowKey(state) {
+      return `${Number(state.roundNumber || 0)}:${state.guessWindowOpenedAtIso || ''}`;
+    }
+
     function syncGuessDraftFromState(state) {
       if (!canTypeGuess() || !state.viewer) return;
 
-      const round = Number(state.roundNumber || 0);
-      if (round !== lastGuessDraftRound) {
-        lastGuessDraftRound = round;
+      const windowKey = guessWindowKey(state);
+      if (windowKey !== lastGuessWindowKey) {
+        lastGuessWindowKey = windowKey;
         guessDraftDirty = false;
       }
 
@@ -1541,6 +1545,8 @@
       const saved = String(state.viewer.roundGuess || '').toUpperCase();
       if (saved.length === 5) {
         setGuessText(saved);
+      } else {
+        setGuessText('');
       }
     }
 
