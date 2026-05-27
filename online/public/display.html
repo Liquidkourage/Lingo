@@ -725,11 +725,11 @@
             <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
             <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span id="statusText">Waiting for the host</span>
+          <span id="statusText">Sign up — game starts soon</span>
         </div>
 
         <p class="subtitle" id="subtitle">
-          This screen updates automatically when the host starts a round.
+          Scan the code or visit the link below to join.
         </p>
 
         <div class="idle-info" id="idleInfo" aria-live="polite">
@@ -887,9 +887,9 @@
           };
         default:
           return {
-            badge: "Waiting for the host",
+            badge: "Sign up — game starts soon",
             subtitle: state.hostNote?.trim()
-              || "Join on the player page — this screen updates when the host starts a round.",
+              || "Scan the code or visit the link below to join.",
             timerLabel: "Next round starts in",
           };
       }
