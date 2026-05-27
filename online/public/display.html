@@ -3511,7 +3511,18 @@
 
     function computeLiveGridColumns(playerCount) {
       if (playerCount <= LIVE_DENSE_THRESHOLD) return Math.min(5, Math.max(1, playerCount));
-      return Math.max(1, Math.ceil(Math.sqrt(playerCount * 1.15)));
+      return Math.max(1, Math.floor(Math.sqrt(playerCount * 0.85)));
+    }
+
+    function liveGridCellSize(width, height, cols, rows, gap) {
+      return {
+        cellW: (width - gap * (cols - 1)) / cols,
+        cellH: (height - gap * (rows - 1)) / rows,
+      };
+    }
+
+    function liveGridLayoutFits(cellW, cellH, minCellW, minCellH) {
+      return cellW >= minCellW && cellH >= minCellH;
     }
 
     function estimateLiveChipMinimums(phase) {
@@ -3589,35 +3600,38 @@
         Math.max(1, Math.floor((width + gap) / (minCellW + gap))),
       );
 
-      for (let cols = maxCols; cols >= 1; cols -= 1) {
+      // Prefer fewer columns (more rows) so chips stay wide; only add columns when rows get too short.
+      for (let cols = 1; cols <= maxCols; cols += 1) {
         const rows = Math.ceil(playerCount / cols);
-        const cellW = (width - gap * (cols - 1)) / cols;
-        const cellH = (height - gap * (rows - 1)) / rows;
-        if (cellW < minCellW || cellH < minCellH) {
+        const { cellW, cellH } = liveGridCellSize(width, height, cols, rows, gap);
+        if (!liveGridLayoutFits(cellW, cellH, minCellW, minCellH)) {
           continue;
         }
+        best = { cols, rows, gap, cellW, cellH };
+        break;
+      }
 
-        const score = Math.min(cellW, cellH);
-        if (!best || score > best.score) {
-          best = { cols, rows, gap, cellW, cellH, score };
+      if (!best) {
+        for (let cols = maxCols; cols >= 1; cols -= 1) {
+          const rows = Math.ceil(playerCount / cols);
+          const { cellW, cellH } = liveGridCellSize(width, height, cols, rows, gap);
+          if (!liveGridLayoutFits(cellW, cellH, minCellW, minCellH)) {
+            continue;
+          }
+          best = { cols, rows, gap, cellW, cellH };
+          break;
         }
       }
 
       if (!best) {
         const cols = Math.max(1, computeLiveGridColumns(playerCount));
         const rows = Math.ceil(playerCount / cols);
-        best = {
-          cols,
-          rows,
-          gap,
-          cellW: (width - gap * (cols - 1)) / cols,
-          cellH: (height - gap * (rows - 1)) / rows,
-          score: 0,
-        };
+        const { cellW, cellH } = liveGridCellSize(width, height, cols, rows, gap);
+        best = { cols, rows, gap, cellW, cellH };
       }
 
       const contentRef = Math.max(minCellH, isReveal ? 56 : 48);
-      const scale = Math.min(1.4, Math.max(0.68, Math.min(best.cellW / 118, best.cellH / contentRef)));
+      const scale = Math.min(1.4, Math.max(0.68, Math.min(best.cellW / 118, best.cellH / contentRef * 0.92)));
 
       els.stage.style.setProperty("--live-cols", String(best.cols));
       els.stage.style.setProperty("--live-rows", String(best.rows));
