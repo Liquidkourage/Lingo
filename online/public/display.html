@@ -31,7 +31,7 @@
       position: relative;
       width: min(100vw, 100vh * (1024 / 575));
       height: min(100vh, 100vw * (575 / 1024));
-      container-type: inline-size;
+      container-type: size;
       color: #e8f4ff;
     }
 
@@ -79,8 +79,8 @@
       inset: 0;
       z-index: 15;
       pointer-events: none;
-      /* Broadcast scale: ~26px at 1024 reference, ~40px on large OBS canvas */
-      font-size: clamp(20px, 2.85cqw, 40px);
+      /* Scale with stage height so 1080p fullscreen stays readable */
+      font-size: clamp(22px, 3.6cqh, 46px);
     }
 
     /* Extracted logo PNG is taller than mockup slot — header UI sits below it */
@@ -273,7 +273,7 @@
     }
 
     .idle-callout {
-      padding: 1em 1.25em 1.1em;
+      padding: 0.75em 1em;
       border-radius: 0.55em;
       border: 2px solid rgba(90, 190, 255, 0.55);
       background: linear-gradient(180deg, rgba(0, 28, 68, 0.92) 0%, rgba(0, 10, 32, 0.96) 100%);
@@ -283,8 +283,8 @@
     }
 
     .idle-kicker {
-      margin: 0 0 0.15em;
-      font-size: 0.82em;
+      margin: 0 0 0.25em;
+      font-size: 0.95em;
       font-weight: 700;
       letter-spacing: 0.18em;
       text-transform: uppercase;
@@ -293,7 +293,7 @@
 
     .idle-url {
       margin: 0;
-      font-size: 1.2em;
+      font-size: 1.45em;
       font-weight: 900;
       line-height: 1.2;
       letter-spacing: 0.02em;
@@ -308,14 +308,17 @@
       50% { text-shadow: 0 0 36px rgba(120, 230, 255, 0.95); }
     }
 
-    /* Idle: stack below logo instead of center-anchored % (breaks at 1080p) */
+    /* Idle: stack below logo — top padding ≈ logo footprint, no min-height overflow */
     .stage[data-phase="idle"] .stage-ui {
       display: grid;
-      grid-template-rows: auto auto auto minmax(14em, 1fr);
+      grid-template-rows: auto auto auto minmax(0, 1fr);
       align-content: start;
       justify-items: center;
-      padding: 29% 4.5% 2.5%;
-      gap: 0.9em;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      padding: 22% 4.5% 1.25%;
+      gap: 0.65em;
     }
 
     .stage[data-phase="idle"] .status-badge,
@@ -329,33 +332,38 @@
     }
 
     .stage[data-phase="idle"] .status-badge {
-      font-size: 1.05em;
+      font-size: 1.1em;
     }
 
     .stage[data-phase="idle"] .subtitle {
       width: 92%;
-      font-size: 0.85em;
+      font-size: 0.95em;
       margin: 0;
     }
 
     .stage[data-phase="idle"] .idle-info {
-      width: 88%;
+      width: 90%;
     }
 
     .stage[data-phase="idle"] .player-board {
       width: 100%;
       height: 100%;
-      min-height: 14em;
+      min-height: 0;
       align-self: stretch;
     }
 
+    .stage[data-phase="idle"] .player-board-body {
+      min-height: 0;
+    }
+
     .stage[data-phase="idle"] .player-board-header {
-      font-size: 0.95em;
+      font-size: 1em;
       letter-spacing: 0.14em;
+      padding: 0.65em 0.85em;
     }
 
     .stage[data-phase="idle"] .player-board-empty {
-      font-size: 1.1em;
+      font-size: 1.15em;
     }
 
     .stats-row {
