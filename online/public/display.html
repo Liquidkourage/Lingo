@@ -3893,10 +3893,17 @@
       els.subtitle.textContent = copy.subtitle;
     }
 
+    function shouldShowHudWordTiles(state) {
+      const phase = state.phase || "idle";
+      if (phase === "guessing" || phase === "results") return true;
+      if (phase === "ended" && !state.answerRevealed && state.publicFirstLetter) return true;
+      return false;
+    }
+
     function renderWordTiles(state) {
       const phase = state.phase || "idle";
 
-      if (phase !== "guessing") {
+      if (!shouldShowHudWordTiles(state)) {
         if (lastWordTilesSignature !== "hidden") {
           lastWordTilesSignature = "hidden";
           els.wordTiles.hidden = true;
@@ -3909,12 +3916,16 @@
       const roundNum = Number(state.roundNumber || 0);
       const balls = Number(state.ballsRemaining || 0);
       if (letter && letter !== ".") {
-        const tilesSignature = `${phase}:${roundNum}:${letter}`;
+        const tilesSignature = `${roundNum}:${letter}`;
         els.wordTiles.hidden = false;
+        const ariaPhase = phase === "results" ? "results" : "guessing";
         els.wordTiles.setAttribute(
           "aria-label",
-          `Round ${roundNum || "?"}, ${balls} ball${balls === 1 ? "" : "s"} remaining, five-letter word starting with ${letter}`,
+          phase === "results"
+            ? `Round ${roundNum || "?"}, results for word starting with ${letter}`
+            : `Round ${roundNum || "?"}, ${balls} ball${balls === 1 ? "" : "s"} remaining, five-letter word starting with ${letter}`,
         );
+        els.wordTiles.dataset.livePhase = ariaPhase;
 
         if (tilesSignature === lastWordTilesSignature && els.wordTiles.childElementCount === 5) {
           return;
@@ -4039,25 +4050,47 @@
         });
       }
 
+      const includeBalls = phase === "guessing";
       return JSON.stringify({
         phase,
         playerCount: players.length,
-        players: players.map((player) => ({
-          id: player.id,
-          displayName: player.displayName,
-          balls: player.balls,
-          status: player.status,
-          statusText: player.statusText,
-          cardTone: player.cardTone,
-          hasSubmitted: Boolean(player.hasSubmitted),
-          resultPattern: player.resultPattern || "",
-          roundGuess: player.roundGuess || "",
-          guessIsLegal: player.guessIsLegal !== false,
-          isWinner: Boolean(player.isWinner),
-          isFirstSolver: Boolean(player.isFirstSolver),
-          isChampion: Boolean(player.isChampion),
-          solvedCurrentWord: Boolean(player.solvedCurrentWord),
-        })),
+        players: players.map((player) => {
+          const entry = {
+            id: player.id,
+            displayName: player.displayName,
+            status: player.status,
+            statusText: player.statusText,
+            cardTone: player.cardTone,
+            hasSubmitted: Boolean(player.hasSubmitted),
+            resultPattern: player.resultPattern || "",
+            roundGuess: player.roundGuess || "",
+            guessIsLegal: player.guessIsLegal !== false,
+            isWinner: Boolean(player.isWinner),
+            isFirstSolver: Boolean(player.isFirstSolver),
+            isChampion: Boolean(player.isChampion),
+            solvedCurrentWord: Boolean(player.solvedCurrentWord),
+          };
+          if (includeBalls) {
+            entry.balls = player.balls;
+          }
+          return entry;
+        }),
+      });
+    }
+
+    function patchPlayerBoardBalls(players) {
+      const cards = els.playerBoardBody.querySelectorAll(".player-card");
+      if (!cards.length) return;
+      const byName = new Map(
+        players.map((player) => [String(player.displayName || "").toLowerCase(), player]),
+      );
+      cards.forEach((card) => {
+        const nameEl = card.querySelector(".player-name");
+        const ballsEl = card.querySelector(".player-balls");
+        if (!nameEl || !ballsEl) return;
+        const player = byName.get(String(nameEl.textContent || "").toLowerCase());
+        if (!player) return;
+        ballsEl.textContent = formatPlayerBalls(player.balls);
       });
     }
 
@@ -4080,14 +4113,17 @@
     }
 
     function renderPlayerBoard(state, options = {}) {
+      const phase = state.phase || "idle";
+      const players = Array.isArray(state.players) ? state.players : [];
       const signature = buildPlayerBoardSignature(state);
       if (!options.force && signature === lastPlayerBoardSignature) {
+        if ((phase === "results" || phase === "ended") && players.length) {
+          patchPlayerBoardBalls(players);
+        }
         return;
       }
       lastPlayerBoardSignature = signature;
 
-      const phase = state.phase || "idle";
-      const players = Array.isArray(state.players) ? state.players : [];
       els.playerBoardBody.innerHTML = "";
 
       if (!players.length) {
