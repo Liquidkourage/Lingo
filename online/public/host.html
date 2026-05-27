@@ -183,18 +183,6 @@
     .meta-value.phase { color: var(--show-gold-soft); }
     .meta-value.round { color: var(--show-gold-soft); }
     .meta-value.balls { color: var(--show-cyan); }
-    .meta-value.mult { color: var(--show-green); }
-    .meta-value.word {
-      font-size: clamp(0.8rem, 1.7vw, 0.98rem);
-      letter-spacing: 0.1em;
-      color: var(--show-white);
-      font-weight: 600;
-    }
-    .meta-value.updated {
-      font-size: 0.7rem;
-      font-weight: 500;
-      color: rgba(180, 198, 220, 0.72);
-    }
 
     .host-topbar {
       display: flex;
@@ -797,18 +785,6 @@
           <span class="meta-label">Balls left</span>
           <span class="meta-value balls" id="ballsValue">0</span>
         </div>
-        <div class="meta-slot">
-          <span class="meta-label">Multiplier</span>
-          <span class="meta-value mult" id="multiplierValue">1×</span>
-        </div>
-        <div class="meta-slot">
-          <span class="meta-label">On air</span>
-          <span class="meta-value word" id="wordValue">—</span>
-        </div>
-        <div class="meta-slot">
-          <span class="meta-label">Updated</span>
-          <span class="meta-value updated" id="updatedValue">—</span>
-        </div>
       </div>
 
       <div class="host-grid">
@@ -952,9 +928,6 @@
       phaseValue: document.getElementById('phaseValue'),
       roundValue: document.getElementById('roundValue'),
       ballsValue: document.getElementById('ballsValue'),
-      multiplierValue: document.getElementById('multiplierValue'),
-      wordValue: document.getElementById('wordValue'),
-      updatedValue: document.getElementById('updatedValue'),
       playerRosterBody: document.getElementById('playerRosterBody'),
       playerCountValue: document.getElementById('playerCountValue'),
       submittedCountValue: document.getElementById('submittedCountValue'),
@@ -1153,11 +1126,6 @@
       els.phaseValue.textContent = phase;
       els.roundValue.textContent = String(state.roundNumber ?? 0);
       els.ballsValue.textContent = String(state.ballsRemaining ?? 0);
-      els.multiplierValue.textContent = `${state.ballMultiplier || 1}×`;
-      els.wordValue.textContent = state.currentWord ? state.currentWord.toUpperCase() : '—';
-      els.updatedValue.textContent = state.updatedAtIso
-        ? new Date(state.updatedAtIso).toLocaleTimeString()
-        : '—';
       els.wordInput.value = state.currentWord || '';
       els.guessSecondsInput.value = String(state.guessWindowSeconds || 90);
       els.resultsSecondsInput.value = String(state.resultsWindowSeconds || 45);
