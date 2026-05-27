@@ -387,37 +387,92 @@
     .idle-cta {
       position: relative;
       z-index: 1;
-      margin: 0.15em 0 0;
-      padding: 0.4em 0.55em;
+      margin: 0.2em 0 0;
+      padding: 0.48em 0.62em;
       border-radius: 999px;
-      border: 2px solid rgba(255, 210, 70, 0.95);
-      background: linear-gradient(180deg, rgba(0, 28, 68, 0.96) 0%, rgba(0, 8, 28, 0.98) 100%);
+      border: 2px solid rgba(255, 215, 80, 0.98);
+      background:
+        linear-gradient(180deg, rgba(0, 36, 82, 0.98) 0%, rgba(0, 10, 32, 0.99) 100%);
       box-shadow:
-        0 0 24px rgba(255, 190, 40, 0.4),
-        inset 0 1px 0 rgba(255, 230, 140, 0.2);
-      font-size: 0.5em;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+        0 0 28px rgba(255, 190, 40, 0.55),
+        0 0 52px rgba(255, 150, 20, 0.22),
+        inset 0 1px 0 rgba(255, 240, 160, 0.28);
+      font-size: 0.52em;
+      font-weight: 800;
+      letter-spacing: 0.11em;
       line-height: 1.25;
       text-transform: uppercase;
-      color: #ffd850;
-      text-shadow: 0 0 12px rgba(255, 210, 60, 0.55);
-      animation: cta-pulse 2.8s ease-in-out infinite;
+      color: #ffe566;
+      text-shadow:
+        0 0 14px rgba(255, 220, 80, 0.85),
+        0 0 28px rgba(255, 180, 40, 0.45);
+      animation: cta-pop 2.5s ease-in-out infinite;
+      overflow: hidden;
+      isolation: isolate;
     }
 
-    @keyframes cta-pulse {
+    .idle-cta::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 2px;
+      background: linear-gradient(
+        125deg,
+        rgba(255, 230, 120, 0.95) 0%,
+        rgba(120, 225, 255, 0.55) 48%,
+        rgba(255, 230, 120, 0.85) 100%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .idle-cta::after {
+      content: "";
+      position: absolute;
+      inset: -30% -50%;
+      background: linear-gradient(
+        105deg,
+        transparent 44%,
+        rgba(255, 255, 255, 0.22) 50%,
+        transparent 56%
+      );
+      pointer-events: none;
+      animation: cta-sheen 3.8s ease-in-out infinite;
+    }
+
+    @keyframes cta-pop {
       0%, 100% {
+        transform: scale(1);
         box-shadow:
-          0 0 24px rgba(255, 190, 40, 0.4),
-          inset 0 1px 0 rgba(255, 230, 140, 0.2);
-        border-color: rgba(255, 210, 70, 0.95);
+          0 0 28px rgba(255, 190, 40, 0.55),
+          0 0 52px rgba(255, 150, 20, 0.22),
+          inset 0 1px 0 rgba(255, 240, 160, 0.28);
+        border-color: rgba(255, 215, 80, 0.98);
+        color: #ffe566;
       }
       50% {
+        transform: scale(1.04);
         box-shadow:
-          0 0 36px rgba(255, 200, 60, 0.65),
-          0 0 56px rgba(255, 170, 30, 0.22),
-          inset 0 1px 0 rgba(255, 240, 160, 0.28);
-        border-color: rgba(255, 225, 100, 1);
+          0 0 40px rgba(255, 210, 70, 0.85),
+          0 0 72px rgba(255, 170, 30, 0.38),
+          inset 0 1px 0 rgba(255, 250, 190, 0.38);
+        border-color: rgba(255, 235, 130, 1);
+        color: #fff0a0;
+      }
+    }
+
+    @keyframes cta-sheen {
+      0%, 68%, 100% {
+        transform: translateX(-120%) rotate(18deg);
+        opacity: 0;
+      }
+      74% { opacity: 1; }
+      84% {
+        transform: translateX(120%) rotate(18deg);
+        opacity: 0;
       }
     }
 
@@ -779,6 +834,7 @@
         inset 0 1px 0 rgba(170, 235, 255, 0.2),
         inset 0 -5px 14px rgba(0, 18, 55, 0.45);
       animation: chip-glow 3.4s ease-in-out infinite;
+      animation-delay: var(--chip-glow-delay, 0s);
       overflow: hidden;
     }
 
@@ -812,20 +868,9 @@
         transparent 58%
       );
       pointer-events: none;
-      animation: chip-sheen 4.8s ease-in-out infinite;
+      animation: chip-sheen var(--chip-sheen-duration, 4.8s) ease-in-out infinite;
+      animation-delay: var(--chip-sheen-delay, 0s);
     }
-
-    .stage[data-phase="idle"] .player-card:nth-child(5n+1) { animation-delay: 0s; }
-    .stage[data-phase="idle"] .player-card:nth-child(5n+2) { animation-delay: 0.35s; }
-    .stage[data-phase="idle"] .player-card:nth-child(5n+3) { animation-delay: 0.7s; }
-    .stage[data-phase="idle"] .player-card:nth-child(5n+4) { animation-delay: 1.05s; }
-    .stage[data-phase="idle"] .player-card:nth-child(5n+5) { animation-delay: 1.4s; }
-
-    .stage[data-phase="idle"] .player-card:nth-child(5n+1)::after { animation-delay: 0.2s; }
-    .stage[data-phase="idle"] .player-card:nth-child(5n+2)::after { animation-delay: 0.9s; }
-    .stage[data-phase="idle"] .player-card:nth-child(5n+3)::after { animation-delay: 1.6s; }
-    .stage[data-phase="idle"] .player-card:nth-child(5n+4)::after { animation-delay: 2.3s; }
-    .stage[data-phase="idle"] .player-card:nth-child(5n+5)::after { animation-delay: 3s; }
 
     .stage[data-phase="idle"] .player-card[data-status="waiting"] {
       border-color: rgba(130, 225, 255, 0.62);
@@ -952,7 +997,7 @@
               <div class="idle-qr-shell">
                 <img class="idle-qr" id="playQr" width="400" height="400" alt="" />
               </div>
-              <p class="idle-cta" id="idleCta">Sign up — game starts soon</p>
+              <p class="idle-cta" id="idleCta"><span class="idle-cta-text">Sign up — game starts soon</span></p>
               <p class="idle-host-note" id="idleHostNote" hidden></p>
               <p class="idle-url" id="playUrl"></p>
             </div>
@@ -1199,6 +1244,30 @@
       );
     }
 
+    function chipAnimationTiming(seed) {
+      let hash = 2166136261;
+      for (let i = 0; i < seed.length; i += 1) {
+        hash ^= seed.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      const u = Math.abs(hash);
+      const v = Math.abs(Math.imul(hash, 2654435761));
+      return {
+        glowDelay: ((u % 3400) / 1000).toFixed(3),
+        sheenDelay: ((v % 4800) / 1000).toFixed(3),
+        sheenDuration: (4.2 + (u % 2300) / 1000).toFixed(3),
+      };
+    }
+
+    function applyChipAnimation(card, player, index) {
+      if ((currentState?.phase || "idle") !== "idle") return;
+      const seed = `${player.displayName || "player"}:${index}:${lobbyPageIndex}`;
+      const timing = chipAnimationTiming(seed);
+      card.style.setProperty("--chip-glow-delay", `${timing.glowDelay}s`);
+      card.style.setProperty("--chip-sheen-delay", `${timing.sheenDelay}s`);
+      card.style.setProperty("--chip-sheen-duration", `${timing.sheenDuration}s`);
+    }
+
     function phaseCopy(phase, state) {
       switch (phase) {
         case "guessing":
@@ -1323,10 +1392,14 @@
       }
       const fragment = document.createDocumentFragment();
 
-      visiblePlayers.forEach((player) => {
+      visiblePlayers.forEach((player, index) => {
         const card = document.createElement("article");
         card.className = "player-card";
         card.dataset.status = player.isWinner ? "winner" : (player.status || (phase === "idle" ? "waiting" : "waiting"));
+
+        if (phase === "idle") {
+          applyChipAnimation(card, player, index);
+        }
 
         const name = document.createElement("div");
         name.className = "player-name";
