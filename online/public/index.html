@@ -1967,17 +1967,27 @@
     }
 
     function officialHistoryIndex(history, viewer, phase) {
-      const official = String(viewer.roundGuess || '').toUpperCase();
-      if (!official) return -1;
       let lastIndex = -1;
       history.forEach((entry, index) => {
         if (entry.isOfficial) lastIndex = index;
       });
       if (lastIndex !== -1) return lastIndex;
-      if (phase !== 'guessing') return -1;
-      history.forEach((entry, index) => {
-        if (String(entry.guess || '').toUpperCase() === official) lastIndex = index;
-      });
+
+      const official = String(viewer.roundGuess || '').toUpperCase();
+      if (official) {
+        history.forEach((entry, index) => {
+          if (String(entry.guess || '').toUpperCase() === official) lastIndex = index;
+        });
+        if (lastIndex !== -1) return lastIndex;
+      }
+
+      if (phase === 'results' || phase === 'ended') {
+        history.forEach((entry, index) => {
+          if (entry.guess && entry.status !== 'missed' && entry.resultLabel !== 'No guess') {
+            lastIndex = index;
+          }
+        });
+      }
       return lastIndex;
     }
 

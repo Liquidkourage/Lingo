@@ -149,22 +149,35 @@ function isChampionPlayer(displayName, state) {
   return String(displayName).trim().toLowerCase() === champion.toLowerCase();
 }
 
+function uniqueStakesInOrder(stakes) {
+  const seen = new Set();
+  const result = [];
+  for (const raw of stakes) {
+    const stake = Number(raw);
+    if (stake > 0 && !seen.has(stake)) {
+      seen.add(stake);
+      result.push(stake);
+    }
+  }
+  return result;
+}
+
 function parseRoundBallStakes(state) {
   const raw = state?.round_ball_stakes ?? state?.roundBallStakes ?? [];
+  let stakes = [];
   if (Array.isArray(raw)) {
-    return raw.map((value) => Number(value)).filter((value) => value > 0);
-  }
-  if (typeof raw === "string") {
+    stakes = raw.map((value) => Number(value)).filter((value) => value > 0);
+  } else if (typeof raw === "string") {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        return parsed.map((value) => Number(value)).filter((value) => value > 0);
+        stakes = parsed.map((value) => Number(value)).filter((value) => value > 0);
       }
     } catch (_error) {
       return [];
     }
   }
-  return [];
+  return uniqueStakesInOrder(stakes);
 }
 
 function isStakeWindowClosed(stake, state) {
@@ -482,7 +495,7 @@ async function performContinueRound(client, guessWindowSeconds) {
   }
   const continueStake = Number(state.balls_remaining || 0);
   const roundBallStakes = [...parseRoundBallStakes(state)];
-  if (continueStake > 0) {
+  if (continueStake > 0 && roundBallStakes[roundBallStakes.length - 1] !== continueStake) {
     roundBallStakes.push(continueStake);
   }
 
@@ -741,14 +754,34 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
 
   const guessHistory = await listViewerGuessHistory(player.id, state, client);
 
+  let roundGuess = submitted ? guess : "";
+  let viewerResultPattern = shouldRevealGuessFeedback(phase) ? resultPattern : "";
+  let viewerResultLabel = resultLabel;
+
+  if (!roundGuess && shouldRevealGuessFeedback(phase) && guessHistory.length) {
+    const officialEntry = guessHistory.find((entry) => entry.isOfficial && entry.guess)
+      || [...guessHistory].reverse().find((entry) => entry.guess && entry.status !== "missed");
+    if (officialEntry) {
+      roundGuess = officialEntry.guess;
+      if (officialEntry.pattern) {
+        viewerResultPattern = officialEntry.pattern;
+        viewerResultLabel = officialEntry.resultLabel;
+      } else {
+        const feedback = await getGuessFeedback(state, roundGuess, client);
+        viewerResultPattern = feedback.pattern;
+        viewerResultLabel = feedback.resultLabel;
+      }
+    }
+  }
+
   return {
     found: true,
     displayName: player.displayName,
     balls: Number(player.balls || 0),
-    lockedIn: phase === "guessing" && submitted && !Boolean(player.solved_current_word),
-    resultPattern: shouldRevealGuessFeedback(phase) ? resultPattern : "",
-    roundGuess: submitted ? guess : "",
-    resultLabel,
+    lockedIn: phase === "guessing" && submitted && !Boolean(player.solvedCurrentWord),
+    resultPattern: viewerResultPattern,
+    roundGuess,
+    resultLabel: viewerResultLabel,
     guessHistory,
     isSolved: Boolean(player.solvedCurrentWord),
     isChampion: isChampionPlayer(player.displayName, state),
