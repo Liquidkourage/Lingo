@@ -331,9 +331,20 @@
       text-align: center;
     }
 
-    .play-identity {
+    .play-setup {
       display: block;
       margin-bottom: 0.85rem;
+    }
+
+    .play-stage[data-phase="guessing"] .play-setup,
+    .play-stage[data-phase="results"] .play-setup,
+    .play-stage[data-phase="ended"] .play-setup {
+      margin-bottom: 0.65rem;
+    }
+
+    .play-identity {
+      display: block;
+      margin-bottom: 0.55rem;
       padding: 0.65rem 0.7rem 0.7rem;
       border: var(--contrast-stroke) solid var(--show-cyan);
       border-radius: 0.2em;
@@ -606,7 +617,15 @@
 
     .play-lobby {
       display: block;
-      margin-top: 0.15rem;
+      margin-top: 0;
+    }
+
+    .play-stats {
+      margin-bottom: 0.65rem;
+    }
+
+    .play-stage[data-phase="idle"] .play-stats {
+      display: none;
     }
 
     .play-guess {
@@ -700,7 +719,24 @@
 
     .play-history {
       display: none;
-      margin-bottom: 0.65rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .history-heading {
+      display: none;
+      margin: 0 0 0.45rem;
+      text-align: center;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.78);
+    }
+
+    .play-stage[data-phase="guessing"] .history-heading,
+    .play-stage[data-phase="results"] .history-heading,
+    .play-stage[data-phase="ended"] .history-heading {
+      display: block;
     }
 
     .play-stage[data-phase="guessing"] .play-history,
@@ -814,10 +850,13 @@
       touch-action: manipulation;
     }
 
-    .play-stage[data-phase="guessing"] .play-keyboard,
+    .play-stage[data-phase="guessing"] .play-keyboard {
+      display: flex;
+    }
+
     .play-stage[data-phase="results"] .play-keyboard,
     .play-stage[data-phase="ended"] .play-keyboard {
-      display: flex;
+      display: none;
     }
 
     .keyboard-row {
@@ -902,6 +941,35 @@
         <p class="phase-line" id="phaseLine">Join the lobby so you appear on the venue display before the host starts a round.</p>
       </header>
 
+      <div class="play-setup" id="playSetup">
+        <section class="play-identity" id="playIdentity" data-name-mode="editing" aria-label="Your user name">
+          <div class="name-edit" id="nameEdit">
+            <label class="field-label" for="playerName">Your user name</label>
+            <div class="name-row">
+              <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="SwiftTiger" />
+              <button id="shuffleNameBtn" class="secondary name-shuffle" type="button" title="Another suggestion" aria-label="Another name suggestion">↻</button>
+              <button id="confirmNameBtn" class="good name-confirm" type="button">Use name &amp; join</button>
+            </div>
+            <p class="name-hint" id="nameHint">Sets your name and joins the game.</p>
+          </div>
+          <div class="name-locked" id="nameLocked">
+            <span class="field-label">Your user name</span>
+            <div class="name-locked-row">
+              <span class="name-display" id="playerNameDisplay"></span>
+              <button id="changeNameBtn" class="name-change" type="button">Change</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
+          <p class="lobby-hint">Join to appear on the venue display. Leave anytime.</p>
+          <div class="button-row button-row--lobby">
+            <button id="joinButton" class="good" type="button">Join game</button>
+            <button id="leaveButton" class="secondary" type="button">Leave game</button>
+          </div>
+        </section>
+      </div>
+
       <section class="play-stats" aria-label="Live stats">
         <div class="meta-rail" aria-label="Game stats">
           <div class="meta-slot">
@@ -916,40 +984,9 @@
         <p class="guess-worth" id="guessWorth" aria-live="polite"></p>
       </section>
 
-      <section class="play-outcome" id="playOutcome" aria-label="Your guess this round">
-        <p class="outcome-empty" id="outcomeEmpty">You did not lock in a guess this round.</p>
-        <div class="result-feedback" id="resultFeedback" aria-live="polite">
-          <span class="result-feedback-label" id="resultFeedbackLabel">Your result</span>
-          <div class="result-tiles" id="resultTiles" aria-label="Your guess with color feedback"></div>
-          <span class="result-feedback-value" id="resultFeedbackValue"></span>
-        </div>
-      </section>
-
-      <section class="play-identity" id="playIdentity" data-name-mode="editing" aria-label="Your user name">
-        <div class="name-edit" id="nameEdit">
-          <label class="field-label" for="playerName">Your user name</label>
-          <div class="name-row">
-            <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="SwiftTiger" />
-            <button id="shuffleNameBtn" class="secondary name-shuffle" type="button" title="Another suggestion" aria-label="Another name suggestion">↻</button>
-            <button id="confirmNameBtn" class="good name-confirm" type="button">Use name &amp; join</button>
-          </div>
-          <p class="name-hint" id="nameHint">Sets your name and joins the game.</p>
-        </div>
-        <div class="name-locked" id="nameLocked">
-          <span class="field-label">Your user name</span>
-          <div class="name-locked-row">
-            <span class="name-display" id="playerNameDisplay"></span>
-            <button id="changeNameBtn" class="name-change" type="button">Change</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
-        <p class="lobby-hint">Join to appear on the venue display. Leave anytime.</p>
-        <div class="button-row button-row--lobby">
-          <button id="joinButton" class="good" type="button">Join game</button>
-          <button id="leaveButton" class="secondary" type="button">Leave game</button>
-        </div>
+      <section class="play-history" id="playHistory" aria-label="Your guesses this round">
+        <p class="history-heading">Your guesses this round</p>
+        <div class="guess-history" id="guessHistory"></div>
       </section>
 
       <section class="play-guess" id="playGuess" aria-label="Guess entry">
@@ -978,8 +1015,13 @@
         </div>
       </section>
 
-      <section class="play-history" id="playHistory" aria-label="Your guesses this round">
-        <div class="guess-history" id="guessHistory"></div>
+      <section class="play-outcome" id="playOutcome" aria-label="Your official guess this round">
+        <p class="outcome-empty" id="outcomeEmpty">You did not lock in a guess this round.</p>
+        <div class="result-feedback" id="resultFeedback" aria-live="polite">
+          <span class="result-feedback-label" id="resultFeedbackLabel">Your result</span>
+          <div class="result-tiles" id="resultTiles" aria-label="Your guess with color feedback"></div>
+          <span class="result-feedback-value" id="resultFeedbackValue"></span>
+        </div>
       </section>
 
       <div class="play-keyboard" id="playKeyboard" aria-label="On-screen keyboard">
