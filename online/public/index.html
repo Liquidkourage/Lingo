@@ -1632,6 +1632,7 @@
       }
 
       guessCaretIndex = slot;
+      guessDraftDirty = true;
       focusGuessCapture();
       if (slot < guess.length) {
         els.guessCapture.setSelectionRange(slot, slot + 1);
@@ -1692,6 +1693,7 @@
     }
 
     function populateInputs(text) {
+      guessDraftDirty = true;
       setGuessText(text);
       focusGuessCapture();
     }
@@ -1745,11 +1747,29 @@
       if (windowKey !== lastGuessWindowKey) {
         lastGuessWindowKey = windowKey;
         guessDraftDirty = false;
+        const saved = normalizedGuessText(state.viewer.roundGuess || '');
+        setGuessText(saved.length === 5 ? saved : '');
+        guessCaretIndex = null;
+        paintGuessSelection();
+        return;
       }
 
       if (guessDraftDirty) return;
 
-      const saved = String(state.viewer.roundGuess || '').toUpperCase();
+      const saved = normalizedGuessText(state.viewer.roundGuess || '');
+      const local = currentGuess();
+
+      if (local !== saved) {
+        if (local === '' && saved.length === 5) {
+          setGuessText(saved);
+          guessCaretIndex = null;
+          paintGuessSelection();
+        } else {
+          guessDraftDirty = true;
+        }
+        return;
+      }
+
       if (saved.length === 5) {
         setGuessText(saved);
       } else {
