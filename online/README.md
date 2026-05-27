@@ -79,6 +79,12 @@ Included:
 Still to migrate:
 
 - bingo flows
-- player signup before rounds (lobby registration)
-- auto timer phase transitions
-- host tools for champion, award-all-balls, and host note
+- session save / load export
+- lock 2× balls after enable (optional VB parity)
+
+Included in recent slices:
+
+- lobby join / leave before rounds
+- display top-line stake copy and bottom-line phase messages
+- host pause / resume timer
+- venue answer fanfare on reveal

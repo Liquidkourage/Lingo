@@ -375,6 +375,17 @@
       grid-column: 1 / -1;
     }
 
+    .button-row--lobby {
+      margin-top: 0.45rem;
+    }
+
+    button.good {
+      color: var(--show-black);
+      background: linear-gradient(180deg, #ffe566 0%, #ffc800 48%, #e8a800 100%);
+      border-color: #000;
+      box-shadow: 0 0 18px rgba(255, 204, 0, 0.45);
+    }
+
     button {
       appearance: none;
       border: var(--contrast-stroke) solid transparent;
@@ -477,6 +488,11 @@
 
       <div id="message" class="message" aria-live="polite"></div>
 
+      <div class="button-row button-row--lobby">
+        <button id="joinButton" class="good" type="button">Join lobby</button>
+        <button id="leaveButton" class="secondary" type="button">Leave lobby</button>
+      </div>
+
       <div class="button-row">
         <button id="submitButton" class="btn-primary" type="button">Submit guess</button>
         <button id="clearButton" class="secondary" type="button">Clear</button>
@@ -499,6 +515,8 @@
       promptLine: document.getElementById('promptLine'),
       playerName: document.getElementById('playerName'),
       message: document.getElementById('message'),
+      join: document.getElementById('joinButton'),
+      leave: document.getElementById('leaveButton'),
       submit: document.getElementById('submitButton'),
       clear: document.getElementById('clearButton'),
       rename: document.getElementById('renameButton'),
@@ -558,7 +576,7 @@
     }
 
     const PHASE_COPY = {
-      idle: { badge: 'Sign up open', line: 'Waiting for the host to start the online game…' },
+      idle: { badge: 'Sign up open', line: 'Join the lobby so you appear on the venue display before the host starts a round.' },
       guessing: { badge: 'Guessing open', line: 'Round is live — lock in your five-letter word.' },
       results: { badge: 'Results', line: 'Results are on the venue display. Do not guess now.' },
       ended: { badge: 'Round ended', line: 'The word has been revealed. Next round soon.' },
@@ -621,6 +639,14 @@
       first.value = letter.toUpperCase();
       first.readOnly = true;
       first.classList.add('is-revealed');
+    }
+
+    function updateLobbyButtons() {
+      const phase = currentState && currentState.phase;
+      const joined = Boolean(currentState && currentState.viewer && currentState.viewer.found);
+      const canLobby = phase === 'idle';
+      els.join.disabled = !canLobby || joined;
+      els.leave.disabled = !canLobby || !joined;
     }
 
     function updateSubmitEnabled() {
@@ -698,7 +724,63 @@
       renderPrompt(phase, firstLetter);
       renderViewerFeedback(state);
       applyFirstLetter(phase === 'guessing' ? firstLetter : '');
+      updateLobbyButtons();
       updateSubmitEnabled();
+    }
+
+    async function joinLobby() {
+      const displayName = els.playerName.value.trim();
+      if (!displayName) {
+        setMessage('Enter your display name first.', 'error');
+        els.playerName.focus();
+        return;
+      }
+
+      els.join.disabled = true;
+      try {
+        const response = await fetch('/api/public/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ displayName }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not join the lobby.');
+        }
+        storeDisplayName(displayName);
+        setMessage('You are in the lobby. You will appear on the venue display.', 'success');
+        renderPublicState(payload.publicState);
+      } catch (error) {
+        setMessage(error.message || 'Could not join the lobby.', 'error');
+        updateLobbyButtons();
+      }
+    }
+
+    async function leaveLobby() {
+      const displayName = els.playerName.value.trim();
+      if (!displayName) {
+        setMessage('Enter your display name first.', 'error');
+        els.playerName.focus();
+        return;
+      }
+
+      els.leave.disabled = true;
+      try {
+        const response = await fetch('/api/public/leave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ displayName }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not leave the lobby.');
+        }
+        setMessage('You left the lobby.', 'success');
+        renderPublicState(payload.publicState);
+      } catch (error) {
+        setMessage(error.message || 'Could not leave the lobby.', 'error');
+        updateLobbyButtons();
+      }
     }
 
     function publicStateUrl() {
@@ -797,6 +879,8 @@
       });
     }
 
+    els.join.addEventListener('click', joinLobby);
+    els.leave.addEventListener('click', leaveLobby);
     els.submit.addEventListener('click', submitGuess);
     els.clear.addEventListener('click', () => {
       clearInputs(true);

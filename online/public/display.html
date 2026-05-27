@@ -329,8 +329,8 @@
       50% { opacity: 1; transform: translateX(-50%) scale(1.02); }
     }
 
-    .stage[data-phase="guessing"] .ui-topline.is-visible {
-      display: none;
+    .ui-topline.is-visible {
+      display: block;
     }
 
     .timer-panel {
@@ -760,10 +760,82 @@
       margin-right: 0 !important;
     }
 
-    .stage[data-phase="guessing"] .stage-ui > .ui-topline,
     .stage[data-phase="results"] .stage-ui > .ui-topline,
     .stage[data-phase="ended"] .stage-ui > .ui-topline {
       display: none !important;
+    }
+
+    .stage[data-phase="guessing"] .stage-ui > .ui-topline.is-visible {
+      display: block !important;
+      position: absolute !important;
+      top: calc(var(--live-chrome-top) + 0.15em) !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: 88%;
+      z-index: 34;
+      font-size: 0.92em;
+    }
+
+    .answer-fanfare {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2em;
+      text-align: center;
+      pointer-events: none;
+      width: 92%;
+    }
+
+    .answer-fanfare[hidden] {
+      display: none !important;
+    }
+
+    .answer-fanfare-kicker {
+      margin: 0;
+      font-size: 0.95em;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(210, 228, 248, 0.92);
+    }
+
+    .answer-fanfare-word {
+      margin: 0;
+      font-size: clamp(3.8em, 9cqw, 7.5em);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.1em;
+      color: var(--show-white);
+      text-shadow:
+        0 4px 0 #000,
+        0 0 40px rgba(0, 212, 255, 0.9),
+        0 0 64px rgba(255, 204, 0, 0.45);
+      animation: clue-reveal 0.85s cubic-bezier(0.22, 1.35, 0.36, 1) both;
+    }
+
+    .answer-fanfare-foot {
+      margin: 0.35em 0 0;
+      font-size: 0.82em;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 18px rgba(255, 210, 60, 0.65);
+    }
+
+    .timer-panel[data-paused="true"] .timer-value {
+      color: var(--show-gold-hot);
+      animation: timer-pause-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes timer-pause-pulse {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 1; }
     }
 
     .stage[data-phase="guessing"] .timer-panel,
@@ -2900,6 +2972,12 @@
       <div class="stage-ui">
         <div class="ui-topline" id="topLine"></div>
 
+        <div class="answer-fanfare" id="answerFanfare" hidden aria-live="polite">
+          <p class="answer-fanfare-kicker">The word was</p>
+          <p class="answer-fanfare-word" id="answerFanfareWord"></p>
+          <p class="answer-fanfare-foot">Do not guess now!</p>
+        </div>
+
         <aside class="live-score-rail" id="liveScoreRail" aria-label="Round and balls">
           <div class="score-slot score-slot--round">
             <span class="score-label">Round</span>
@@ -3000,6 +3078,8 @@
     const els = {
       stage: document.getElementById("stage"),
       topLine: document.getElementById("topLine"),
+      answerFanfare: document.getElementById("answerFanfare"),
+      answerFanfareWord: document.getElementById("answerFanfareWord"),
       timerPanel: document.querySelector(".timer-panel"),
       timerLabel: document.getElementById("timerLabel"),
       timerValue: document.getElementById("timerValue"),
@@ -3635,23 +3715,29 @@
     }
 
     function phaseCopy(phase, state) {
+      const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
+      const roundNum = Number(state.roundNumber || 0);
+      const timerLabel = state.timerPaused ? "Paused" : "Time left";
+
       switch (phase) {
         case "guessing":
           return {
             badge: "Guessing open",
-            subtitle: "",
-            timerLabel: "Time left",
+            subtitle: roundNum > 0 && letter && letter !== "."
+              ? `Word #${roundNum}, first letter is ${letter}`
+              : "",
+            timerLabel,
           };
         case "results":
           return {
             badge: "Results",
-            subtitle: "Do not guess now — results are on screen.",
-            timerLabel: "Next guess in",
+            subtitle: "Here are the results. Do not guess now!",
+            timerLabel: state.timerPaused ? "Paused" : "Next guess in",
           };
         case "ended":
           return {
             badge: "Round ended",
-            subtitle: state.revealedWord ? "" : "Waiting for the next round.",
+            subtitle: state.answerRevealed ? "Do not guess now!" : "Waiting for the next round.",
             timerLabel: "Next round starts in",
           };
         default:
@@ -3665,7 +3751,7 @@
 
     function renderSubtitle(state) {
       const phase = state.phase || "idle";
-      if (phase === "idle" || phase === "guessing") {
+      if (phase === "idle") {
         els.subtitle.hidden = true;
         els.subtitle.textContent = "";
         return;
@@ -3917,8 +4003,33 @@
     }
 
     function renderTopLine(state) {
+      const phase = state.phase || "idle";
       els.topLine.classList.remove("is-visible");
       els.topLine.textContent = "";
+
+      if (phase === "guessing" && Number(state.roundNumber || 0) > 0) {
+        const balls = Number(state.ballsRemaining || 0);
+        const mult = Number(state.ballMultiplier || 1);
+        els.topLine.textContent = mult > 1
+          ? `This guess worth ${balls} balls`
+          : `This guess worth ${balls} ball${balls === 1 ? "" : "s"}`;
+        els.topLine.classList.add("is-visible");
+      }
+    }
+
+    function renderAnswerFanfare(state) {
+      const phase = state.phase || "idle";
+      const word = String(state.revealedWord || "").trim().toUpperCase();
+      const show = phase === "ended" && state.answerRevealed && word;
+
+      if (!show) {
+        els.answerFanfare.hidden = true;
+        els.answerFanfareWord.textContent = "";
+        return;
+      }
+
+      els.answerFanfare.hidden = false;
+      els.answerFanfareWord.textContent = word;
     }
 
     function renderTimer(state) {
@@ -3927,10 +4038,16 @@
       els.timerLabel.textContent = copy.timerLabel;
 
       let remaining = null;
-      if (phase === "guessing") {
-        remaining = secondsRemaining(state.guessWindowOpenedAtIso, state.guessWindowSeconds);
-      } else if (phase === "results") {
-        remaining = secondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
+      if (state.timerPaused && state.timerPausedRemainingSeconds != null) {
+        remaining = Number(state.timerPausedRemainingSeconds);
+        els.timerPanel.dataset.paused = "true";
+      } else {
+        delete els.timerPanel.dataset.paused;
+        if (phase === "guessing") {
+          remaining = secondsRemaining(state.guessWindowOpenedAtIso, state.guessWindowSeconds);
+        } else if (phase === "results") {
+          remaining = secondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
+        }
       }
 
       els.timerValue.textContent = formatTimerValue(remaining);
@@ -4011,6 +4128,7 @@
 
       renderTopLine(currentState);
       renderTimer(currentState);
+      renderAnswerFanfare(currentState);
       renderWordTiles(currentState);
       renderWordClue(currentState);
       renderPlayerBoard(currentState);

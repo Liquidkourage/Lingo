@@ -595,6 +595,7 @@
             <button id="setWordBtn" type="button">Set word</button>
             <button id="revealResultsBtn" class="warning" type="button">Reveal results</button>
             <button id="continueRoundBtn" class="secondary" type="button">Continue round</button>
+            <button id="pauseTimerBtn" class="secondary" type="button">Pause timer</button>
             <button id="toggleDoubleBtn" class="secondary" type="button">Toggle 2× balls</button>
             <button id="setBallsBtn" class="secondary" type="button">Set balls</button>
             <button id="revealAnswerBtn" class="warning" type="button">Reveal answer</button>
@@ -714,6 +715,7 @@
       setBallsBtn: document.getElementById('setBallsBtn'),
       revealAnswerBtn: document.getElementById('revealAnswerBtn'),
       resetSessionBtn: document.getElementById('resetSessionBtn'),
+      pauseTimerBtn: document.getElementById('pauseTimerBtn'),
       wordSuggestionList: document.getElementById('wordSuggestionList'),
       wordPoolMeta: document.getElementById('wordPoolMeta'),
       wordPoolStatus: document.getElementById('wordPoolStatus'),
@@ -878,6 +880,9 @@
       els.ballsInput.value = String(state.ballsRemaining ?? 0);
       els.hostNoteInput.value = state.hostNote || '';
       els.championInput.value = state.championDisplayName || '';
+      const canPause = phase === 'guessing' || phase === 'results';
+      els.pauseTimerBtn.disabled = !canPause;
+      els.pauseTimerBtn.textContent = state.timerPaused ? 'Resume timer' : 'Pause timer';
       renderWordPool();
     }
 
@@ -1008,6 +1013,11 @@
     els.continueRoundBtn.addEventListener('click', () => runAction('continue-round', {
       guessWindowSeconds: Number(els.guessSecondsInput.value),
     }, 'Guessing resumed.'));
+    els.pauseTimerBtn.addEventListener('click', () => runAction(
+      'toggle-timer-pause',
+      {},
+      els.pauseTimerBtn.textContent === 'Pause timer' ? 'Timer paused.' : 'Timer resumed.',
+    ));
     els.toggleDoubleBtn.addEventListener('click', () => runAction('toggle-double-balls', {}, 'Updated ball multiplier.'));
     els.setBallsBtn.addEventListener('click', () => runAction('set-balls', {
       ballsRemaining: Number(els.ballsInput.value),

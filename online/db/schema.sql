@@ -18,10 +18,14 @@ create table if not exists app_state (
   first_solver_player_id bigint,
   guess_window_opened_at timestamptz,
   results_window_opened_at timestamptz,
+  timer_paused boolean not null default false,
+  timer_paused_remaining_seconds integer,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+alter table app_state add column if not exists timer_paused boolean not null default false;
+alter table app_state add column if not exists timer_paused_remaining_seconds integer;
 alter table app_state add column if not exists champion_display_name text not null default '';
 alter table app_state add column if not exists first_solver_player_id bigint;
 alter table app_state add column if not exists host_word_suggestions jsonb not null default '[]'::jsonb;

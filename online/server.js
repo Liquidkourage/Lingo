@@ -138,11 +138,47 @@ async function enrichStateWithWordPool(state, client = pool) {
   };
 }
 
-function windowExpired(openedAt, windowSeconds) {
+function computeWindowRemainingSeconds(openedAt, windowSeconds) {
+  if (!openedAt || !windowSeconds) return null;
+  const openedMs = new Date(openedAt).getTime();
+  if (Number.isNaN(openedMs)) return null;
+  const end = openedMs + Number(windowSeconds) * 1000;
+  return Math.max(0, Math.ceil((end - Date.now()) / 1000));
+}
+
+function windowExpired(openedAt, windowSeconds, timerPaused = false) {
+  if (timerPaused) return false;
   if (!openedAt || !windowSeconds) return false;
   const openedMs = new Date(openedAt).getTime();
   if (Number.isNaN(openedMs)) return false;
   return Date.now() >= openedMs + Number(windowSeconds) * 1000;
+}
+
+function clearTimerPausePatch() {
+  return {
+    timer_paused: false,
+    timer_paused_remaining_seconds: null,
+  };
+}
+
+async function upsertLobbyPlayer(sessionId, displayName, client = pool) {
+  const normalized = normalizePlayerKey(displayName);
+  const result = await client.query(
+    `insert into players (
+       session_id,
+       display_name,
+       normalized_display_name,
+       updated_at
+     )
+     values ($1, $2, $3, now())
+     on conflict (session_id, normalized_display_name)
+     do update set
+       display_name = excluded.display_name,
+       updated_at = now()
+     returning *`,
+    [sessionId, displayName, normalized],
+  );
+  return result.rows[0];
 }
 
 function findPlayerByDisplayName(players, displayName) {
@@ -187,6 +223,7 @@ async function performContinueRound(client, guessWindowSeconds) {
     guess_window_opened_at: nowIso(),
     guess_window_seconds: Number(guessWindowSeconds || state.guess_window_seconds || 90),
     first_solver_player_id: null,
+    ...clearTimerPausePatch(),
   }, client);
   await clearSessionGuesses(nextState.session_id, client);
   return nextState;
@@ -206,10 +243,10 @@ async function maybeAdvanceTimedPhase(client = pool) {
     let state = await getState(db);
 
     if (state.phase === "guessing"
-      && windowExpired(state.guess_window_opened_at, state.guess_window_seconds)) {
+      && windowExpired(state.guess_window_opened_at, state.guess_window_seconds, state.timer_paused)) {
       state = await performRevealResults(db);
     } else if (state.phase === "results"
-      && windowExpired(state.results_window_opened_at, state.results_window_seconds)) {
+      && windowExpired(state.results_window_opened_at, state.results_window_seconds, state.timer_paused)) {
       const multiplier = Number(state.ball_multiplier || 1);
       const balls = Number(state.balls_remaining || 0);
       if (!state.answer_revealed && balls >= 2 * multiplier) {
@@ -330,6 +367,10 @@ function serializeState(row) {
     wordExclusions: parseWordListFromState(row.host_word_exclusions),
     guessWindowOpenedAtIso: row.guess_window_opened_at ? new Date(row.guess_window_opened_at).toISOString() : null,
     resultsWindowOpenedAtIso: row.results_window_opened_at ? new Date(row.results_window_opened_at).toISOString() : null,
+    timerPaused: Boolean(row.timer_paused),
+    timerPausedRemainingSeconds: row.timer_paused_remaining_seconds != null
+      ? Number(row.timer_paused_remaining_seconds)
+      : null,
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
   };
 }
@@ -373,6 +414,8 @@ async function updateState(patch, client = pool) {
     next.host_note,
     next.guess_window_opened_at || null,
     next.results_window_opened_at || null,
+    Boolean(next.timer_paused),
+    next.timer_paused_remaining_seconds ?? null,
     next.champion_display_name ?? state.champion_display_name ?? "",
     next.first_solver_player_id ?? state.first_solver_player_id ?? null,
     JSON.stringify(parseWordListFromState(next.host_word_suggestions ?? state.host_word_suggestions)),
@@ -395,10 +438,12 @@ async function updateState(patch, client = pool) {
          host_note = $12,
          guess_window_opened_at = $13,
          results_window_opened_at = $14,
-         champion_display_name = $15,
-         first_solver_player_id = $16,
-         host_word_suggestions = $17::jsonb,
-         host_word_exclusions = $18::jsonb,
+         timer_paused = $15,
+         timer_paused_remaining_seconds = $16,
+         champion_display_name = $17,
+         first_solver_player_id = $18,
+         host_word_suggestions = $19::jsonb,
+         host_word_exclusions = $20::jsonb,
          updated_at = now()
      where id = 1
      returning *`,
@@ -524,6 +569,7 @@ async function applyRevealResultsScoring(state, client) {
     balls_remaining: Math.max(0, ballsRemaining),
     results_window_opened_at: nowIso(),
     first_solver_player_id: firstSolverId,
+    ...clearTimerPausePatch(),
   };
 
   if (lastGuessWasTwoBall) {
@@ -669,6 +715,82 @@ app.get("/api/public-state", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/join", async (req, res) => {
+  const displayName = normalizeDisplayName(req.body.displayName);
+  if (!displayName) {
+    res.status(400).json({ ok: false, error: "Display name is required." });
+    return;
+  }
+  if (displayName.length > 40) {
+    res.status(400).json({ ok: false, error: "Display name must be 40 characters or fewer." });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const state = await getState(client);
+    if (state.phase !== "idle") {
+      throw new Error("Sign-up is only open before the host starts a round.");
+    }
+
+    const player = await upsertLobbyPlayer(state.session_id, displayName, client);
+    await client.query("commit");
+
+    const nextState = await maybeAdvanceTimedPhase();
+    res.json({
+      ok: true,
+      player: {
+        id: Number(player.id),
+        displayName: player.display_name,
+        balls: Number(player.balls || 0),
+      },
+      publicState: await buildPublicStatePayload(nextState, displayName),
+    });
+  } catch (error) {
+    await client.query("rollback");
+    res.status(400).json({ ok: false, error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/public/leave", async (req, res) => {
+  const displayName = normalizeDisplayName(req.body.displayName);
+  if (!displayName) {
+    res.status(400).json({ ok: false, error: "Display name is required." });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const state = await getState(client);
+    if (state.phase !== "idle") {
+      throw new Error("You can only leave the lobby before a round is in progress.");
+    }
+
+    await client.query(
+      `delete from players
+       where session_id = $1
+         and normalized_display_name = $2`,
+      [state.session_id, normalizePlayerKey(displayName)],
+    );
+    await client.query("commit");
+
+    const nextState = await maybeAdvanceTimedPhase();
+    res.json({
+      ok: true,
+      publicState: await buildPublicStatePayload(nextState, displayName),
+    });
+  } catch (error) {
+    await client.query("rollback");
+    res.status(400).json({ ok: false, error: error.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -821,6 +943,8 @@ async function handleAdminAction(action, body) {
         guess_window_opened_at: null,
         results_window_opened_at: null,
         first_solver_player_id: null,
+        timer_paused: false,
+        timer_paused_remaining_seconds: null,
         ...wordPool,
       }));
     }
@@ -858,6 +982,7 @@ async function handleAdminAction(action, body) {
           results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
           guess_window_opened_at: nowIso(),
           first_solver_player_id: null,
+          ...clearTimerPausePatch(),
         }, client);
         await clearSessionGuesses(nextState.session_id, client);
         await resetWordProgress(nextState.session_id, client);
@@ -990,10 +1115,51 @@ async function handleAdminAction(action, body) {
         [state.session_id]
       );
       return serializeState(await getState());
+    case "toggle-timer-pause": {
+      if (state.phase !== "guessing" && state.phase !== "results") {
+        throw new Error("Timer can only be paused during guessing or results.");
+      }
+      if (state.timer_paused) {
+        const remaining = Math.max(0, Number(state.timer_paused_remaining_seconds || 0));
+        if (state.phase === "guessing") {
+          return serializeState(await updateState({
+            ...clearTimerPausePatch(),
+            guess_window_seconds: remaining,
+            guess_window_opened_at: nowIso(),
+          }));
+        }
+        return serializeState(await updateState({
+          ...clearTimerPausePatch(),
+          results_window_seconds: remaining,
+          results_window_opened_at: nowIso(),
+        }));
+      }
+
+      let remaining = 0;
+      if (state.phase === "guessing") {
+        remaining = computeWindowRemainingSeconds(
+          state.guess_window_opened_at,
+          state.guess_window_seconds,
+        );
+      } else {
+        remaining = computeWindowRemainingSeconds(
+          state.results_window_opened_at,
+          state.results_window_seconds,
+        );
+      }
+      if (remaining == null) {
+        throw new Error("Timer is not running.");
+      }
+      return serializeState(await updateState({
+        timer_paused: true,
+        timer_paused_remaining_seconds: remaining,
+      }));
+    }
     case "reveal-answer":
       return serializeState(await updateState({
         answer_revealed: true,
         phase: "ended",
+        ...clearTimerPausePatch(),
       }));
     case "reset-session": {
       const wordPool = await resetHostWordPool();
@@ -1020,6 +1186,8 @@ async function handleAdminAction(action, body) {
         guess_window_opened_at: null,
         results_window_opened_at: null,
         first_solver_player_id: null,
+        timer_paused: false,
+        timer_paused_remaining_seconds: null,
         ...wordPool,
       }));
     }
