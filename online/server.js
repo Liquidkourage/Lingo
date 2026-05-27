@@ -981,9 +981,6 @@ app.post("/api/public/submit-guess", async (req, res) => {
     if (!state.current_word) {
       throw new Error("The host has not set a word yet.");
     }
-    if (!(await isLegalWord(client, guess))) {
-      throw new Error("Guess must be a legal 5-letter Scrabble word.");
-    }
 
     const upsertResult = await client.query(
       `insert into players (

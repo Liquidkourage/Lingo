@@ -1808,6 +1808,19 @@
       return item;
     }
 
+    function historyMarksForEntry(entry, guess, pattern, phase) {
+      if (String(entry.resultLabel || '') === 'Not a word…') {
+        return guess.split('').map(() => '/');
+      }
+      if (pattern.length === 5) {
+        return pattern.split('');
+      }
+      if (phase === 'guessing') {
+        return guess.split('').map(() => 'pending');
+      }
+      return guess.split('').map(() => '/');
+    }
+
     function historyBallStake(entry, state, index, history) {
       const stored = Number(entry?.ballStake || 0);
       if (stored > 0) return stored;
@@ -1852,9 +1865,7 @@
         const guess = String(entry.guess || '').toUpperCase();
         if (guess.length !== 5) return;
         const pattern = String(entry.pattern || '');
-        const marks = pattern.length === 5
-          ? pattern.split('')
-          : guess.split('').map(() => 'pending');
+        const marks = historyMarksForEntry(entry, guess, pattern, phase);
         const isOfficial = index === officialIndex;
         const ballStake = historyBallStake(entry, state, guessIndex, history);
         guessIndex += 1;
