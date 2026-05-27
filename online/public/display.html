@@ -656,7 +656,7 @@
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto auto auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto auto auto minmax(0, var(--live-board-height, 50cqh));
       grid-template-areas:
         "badge"
         "subtitle"
@@ -665,8 +665,8 @@
         "board";
       justify-items: stretch;
       align-content: start;
-      gap: 0.28em;
-      padding: 9.5% 4% 1.5%;
+      gap: 0.24em;
+      padding: 8% 4% 1.25%;
       overflow: hidden;
       font-size: clamp(14px, 2.4cqh, 32px);
     }
@@ -916,11 +916,10 @@
       grid-area: board;
       display: flex;
       flex-direction: column;
-      align-self: end;
+      align-self: stretch;
       width: 100%;
       min-height: 0;
-      height: auto;
-      max-height: var(--live-board-height, 28cqh);
+      height: 100%;
       z-index: 5;
       overflow: hidden;
       background: linear-gradient(180deg, rgba(0, 18, 48, 0.98) 0%, rgba(0, 4, 16, 0.99) 100%);
@@ -2542,10 +2541,9 @@
     }
 
     function computeLiveBoardHeight(rows, playerCount) {
-      if (playerCount <= 8) return rows <= 2 ? "28cqh" : "34cqh";
-      if (playerCount <= 12) return rows <= 3 ? "32cqh" : "38cqh";
-      if (playerCount <= 24) return "38cqh";
-      return "42cqh";
+      if (playerCount <= 12) return "50cqh";
+      if (playerCount <= 24) return "54cqh";
+      return "58cqh";
     }
 
     function applyLiveBoardLayout(playerCount, phase) {
