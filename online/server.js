@@ -1177,6 +1177,14 @@ async function clearSessionGuesses(sessionId, client = pool) {
   );
 }
 
+async function clearSessionPlayers(sessionId, client = pool) {
+  await client.query(
+    `delete from players
+     where session_id = $1`,
+    [sessionId],
+  );
+}
+
 function playPageUrl(req) {
   const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https")
     .split(",")[0]
@@ -1742,16 +1750,7 @@ async function handleAdminAction(action, body) {
       }));
     case "reset-session": {
       const wordPool = await resetHostWordPool();
-      await pool.query(
-        `update players
-         set balls = 0,
-             solved_current_word = false,
-             current_guess = '',
-             submitted_at = null,
-             updated_at = now()
-         where session_id = $1`,
-        [state.session_id]
-      );
+      await clearSessionPlayers(state.session_id);
       return serializeState(await updateState({
         phase: "idle",
         round_number: 0,
