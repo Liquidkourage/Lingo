@@ -490,8 +490,16 @@
       gap: 0.55rem;
     }
 
-    .button-row .btn-primary {
+    .button-row--lobby .btn-primary {
       grid-column: 1 / -1;
+    }
+
+    .button-row--guess {
+      grid-template-columns: 1.4fr 1fr;
+    }
+
+    .button-row--guess .btn-primary {
+      grid-column: auto;
     }
 
     .button-row--lobby {
@@ -761,7 +769,7 @@
     @media (max-width: 420px) {
       .play-card { padding: 1rem 0.85rem 0.9rem; }
       .word-tiles { gap: 0.35rem; }
-      .button-row { grid-template-columns: 1fr; }
+      .button-row--lobby { grid-template-columns: 1fr; }
     }
   </style>
 </head>
