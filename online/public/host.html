@@ -149,6 +149,55 @@
 
     .muted { color: var(--muted); font-size: 0.92rem; line-height: 1.4; }
 
+    .word-pool-meta {
+      margin-top: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .word-suggestion-list {
+      list-style: none;
+      margin: 12px 0 0;
+      padding: 0;
+      max-height: 360px;
+      overflow-y: auto;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .word-suggestion-list li {
+      padding: 11px 14px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      user-select: none;
+    }
+
+    .word-suggestion-list li:last-child {
+      border-bottom: none;
+    }
+
+    .word-suggestion-list li:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .word-suggestion-list li.is-selected {
+      background: rgba(39, 174, 96, 0.35);
+    }
+
+    .word-suggestion-list li.is-empty {
+      cursor: default;
+      font-weight: 600;
+      letter-spacing: normal;
+      color: var(--muted);
+    }
+
     @media (max-width: 900px) {
       .panel.cols-7,
       .panel.cols-5 {
@@ -228,6 +277,17 @@
       </section>
 
       <section class="panel cols-5">
+        <h2>Word Pool</h2>
+        <p class="muted">Random legal words from the Lingo dictionary. Double-click to set the round word. Right-click to remove a word from the pool.</p>
+        <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
+        <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
+        <div class="row" style="margin-top:12px;">
+          <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh suggestions</button>
+        </div>
+        <div id="wordPoolStatus" class="status"></div>
+      </section>
+
+      <section class="panel cols-5">
         <h2>Backend State</h2>
         <p class="muted">Raw server state stored in Postgres. Later, the public display and scoring engine can read from the same backend model.</p>
         <pre id="stateJson">{}</pre>
@@ -275,6 +335,10 @@
       setBallsBtn: document.getElementById('setBallsBtn'),
       revealAnswerBtn: document.getElementById('revealAnswerBtn'),
       resetSessionBtn: document.getElementById('resetSessionBtn'),
+      wordSuggestionList: document.getElementById('wordSuggestionList'),
+      wordPoolMeta: document.getElementById('wordPoolMeta'),
+      wordPoolStatus: document.getElementById('wordPoolStatus'),
+      refreshWordPoolBtn: document.getElementById('refreshWordPoolBtn'),
     };
 
     let currentState = null;
@@ -347,6 +411,68 @@
       els.resultsSecondsInput.value = String(state.resultsWindowSeconds || 45);
       els.ballsInput.value = String(state.ballsRemaining ?? 0);
       els.stateJson.textContent = JSON.stringify(state, null, 2);
+      renderWordPool();
+    }
+
+    function renderWordPool() {
+      const state = currentState || {};
+      const suggestions = Array.isArray(state.wordSuggestions) ? state.wordSuggestions : [];
+      const exclusions = Array.isArray(state.wordExclusions) ? state.wordExclusions : [];
+      const currentWord = String(state.currentWord || '').toUpperCase();
+      const available = state.availableWordCount;
+
+      els.wordPoolMeta.textContent = suggestions.length
+        ? `${suggestions.length} suggestion${suggestions.length === 1 ? '' : 's'} · ${exclusions.length} removed · ${available ?? '—'} words left`
+        : `${exclusions.length} removed · ${available ?? '—'} words left`;
+
+      els.wordSuggestionList.innerHTML = '';
+      if (!suggestions.length) {
+        const emptyItem = document.createElement('li');
+        emptyItem.className = 'is-empty';
+        emptyItem.textContent = 'No suggestions loaded. Click Refresh suggestions.';
+        els.wordSuggestionList.appendChild(emptyItem);
+        return;
+      }
+
+      suggestions.forEach((word) => {
+        const item = document.createElement('li');
+        item.textContent = word;
+        if (word === currentWord) {
+          item.classList.add('is-selected');
+        }
+        item.addEventListener('dblclick', () => {
+          selectSuggestedWord(word);
+        });
+        item.addEventListener('contextmenu', (event) => {
+          event.preventDefault();
+          excludeSuggestedWord(word);
+        });
+        els.wordSuggestionList.appendChild(item);
+      });
+    }
+
+    async function selectSuggestedWord(word) {
+      els.wordInput.value = word;
+      await runAction('set-word', { word }, `Selected ${word}.`);
+    }
+
+    async function excludeSuggestedWord(word) {
+      setStatus(els.wordPoolStatus, '');
+      try {
+        const response = await adminFetch('/api/admin/exclude-word', {
+          method: 'POST',
+          body: JSON.stringify({ word }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not remove word from pool.');
+        }
+        currentState = payload.state;
+        renderState();
+        setStatus(els.wordPoolStatus, `Removed ${word} from the pool.`, 'success');
+      } catch (error) {
+        setStatus(els.wordPoolStatus, error.message || 'Could not remove word.', 'error');
+      }
     }
 
     async function runAction(action, body = {}, successText = 'Saved.') {
@@ -396,6 +522,17 @@
 
     els.newSessionBtn.addEventListener('click', () => runAction('create-session', {}, 'Created a fresh online session.'));
     els.setWordBtn.addEventListener('click', () => runAction('set-word', { word: els.wordInput.value }, 'Current word updated.'));
+    els.wordInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        runAction('set-word', { word: els.wordInput.value }, 'Current word updated.');
+      }
+    });
+    els.refreshWordPoolBtn.addEventListener('click', () => runAction(
+      'refresh-word-suggestions',
+      {},
+      'Loaded a fresh set of word suggestions.',
+    ));
     els.startRoundBtn.addEventListener('click', () => runAction('start-round', {
       guessWindowSeconds: Number(els.guessSecondsInput.value),
       resultsWindowSeconds: Number(els.resultsSecondsInput.value),

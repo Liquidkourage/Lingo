@@ -63,13 +63,62 @@ async function isLegalWord(db, word) {
   return result.rowCount > 0;
 }
 
+function normalizeWordList(words) {
+  return [...new Set(
+    (Array.isArray(words) ? words : [])
+      .map(normalizeWordInput)
+      .filter(isFiveLetterWord),
+  )];
+}
+
+async function pickRandomWords(db, count, excludeWords = []) {
+  const limit = Math.max(0, Number(count) || 0);
+  if (!limit) return [];
+
+  const exclude = normalizeWordList(excludeWords);
+  const result = exclude.length
+    ? await db.query(
+      `select word
+       from words
+       where not (word = any($1::text[]))
+       order by random()
+       limit $2`,
+      [exclude, limit],
+    )
+    : await db.query(
+      `select word
+       from words
+       order by random()
+       limit $1`,
+      [limit],
+    );
+
+  return result.rows.map((row) => row.word);
+}
+
+async function countAvailableWords(db, excludeWords = []) {
+  const exclude = normalizeWordList(excludeWords);
+  const result = exclude.length
+    ? await db.query(
+      `select count(*)::int as count
+       from words
+       where not (word = any($1::text[]))`,
+      [exclude],
+    )
+    : await db.query("select count(*)::int as count from words");
+  return Number(result.rows[0]?.count || 0);
+}
+
 module.exports = {
+  countAvailableWords,
   countWords,
   isFiveLetterWord,
   isLegalWord,
   loadWordsFromFile,
   normalizeWordInput,
+  normalizeWordList,
   parseWordsFile,
+  pickRandomWords,
   seedWordsTable,
   wordsFilePath,
 };

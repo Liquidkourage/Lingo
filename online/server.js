@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const { Pool } = require("pg");
-const { countWords, isFiveLetterWord, isLegalWord, normalizeWordInput, seedWordsTable } = require("./words");
+const { countAvailableWords, countWords, isFiveLetterWord, isLegalWord, normalizeWordInput, normalizeWordList, pickRandomWords, seedWordsTable } = require("./words");
 require("dotenv").config();
 
 const QRCode = require("qrcode");
@@ -25,6 +25,7 @@ const pool = new Pool({
 
 const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
+const HOST_WORD_SUGGESTION_COUNT = 10;
 
 app.use(express.json());
 app.use(express.static(staticDir));
@@ -91,6 +92,52 @@ function isChampionPlayer(displayName, state) {
   return String(displayName).trim().toLowerCase() === champion.toLowerCase();
 }
 
+function parseWordListFromState(value) {
+  if (Array.isArray(value)) return normalizeWordList(value);
+  if (typeof value === "string") {
+    try {
+      return normalizeWordList(JSON.parse(value));
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+async function buildHostWordSuggestions(exclusions, count = HOST_WORD_SUGGESTION_COUNT, client = pool) {
+  return pickRandomWords(client, count, exclusions);
+}
+
+async function resetHostWordPool(client = pool) {
+  const exclusions = [];
+  const suggestions = await buildHostWordSuggestions(exclusions, HOST_WORD_SUGGESTION_COUNT, client);
+  return {
+    host_word_suggestions: suggestions,
+    host_word_exclusions: exclusions,
+  };
+}
+
+async function ensureHostWordPool(state, client = pool) {
+  const suggestions = parseWordListFromState(state.host_word_suggestions);
+  if (suggestions.length > 0) return state;
+
+  const exclusions = parseWordListFromState(state.host_word_exclusions);
+  const nextSuggestions = await buildHostWordSuggestions(exclusions, HOST_WORD_SUGGESTION_COUNT, client);
+  if (!nextSuggestions.length) return state;
+
+  return updateState({
+    host_word_suggestions: nextSuggestions,
+    host_word_exclusions: exclusions,
+  }, client);
+}
+
+async function enrichStateWithWordPool(state, client = pool) {
+  return {
+    ...state,
+    availableWordCount: await countAvailableWords(client, state.wordExclusions || []),
+  };
+}
+
 function requireAdmin(req, res, next) {
   const provided = String(req.get("x-lingo-admin-key") || "").trim();
   if (!adminKey || provided !== adminKey) {
@@ -123,6 +170,8 @@ function serializeState(row) {
     hostNote: row.host_note,
     championDisplayName: getEffectiveChampion(row),
     firstSolverPlayerId: row.first_solver_player_id ? Number(row.first_solver_player_id) : null,
+    wordSuggestions: parseWordListFromState(row.host_word_suggestions),
+    wordExclusions: parseWordListFromState(row.host_word_exclusions),
     guessWindowOpenedAtIso: row.guess_window_opened_at ? new Date(row.guess_window_opened_at).toISOString() : null,
     resultsWindowOpenedAtIso: row.results_window_opened_at ? new Date(row.results_window_opened_at).toISOString() : null,
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
@@ -170,6 +219,8 @@ async function updateState(patch, client = pool) {
     next.results_window_opened_at || null,
     next.champion_display_name ?? state.champion_display_name ?? "",
     next.first_solver_player_id ?? state.first_solver_player_id ?? null,
+    JSON.stringify(parseWordListFromState(next.host_word_suggestions ?? state.host_word_suggestions)),
+    JSON.stringify(parseWordListFromState(next.host_word_exclusions ?? state.host_word_exclusions)),
   ];
 
   const result = await client.query(
@@ -190,6 +241,8 @@ async function updateState(patch, client = pool) {
          results_window_opened_at = $14,
          champion_display_name = $15,
          first_solver_player_id = $16,
+         host_word_suggestions = $17::jsonb,
+         host_word_exclusions = $18::jsonb,
          updated_at = now()
      where id = 1
      returning *`,
@@ -564,8 +617,10 @@ app.post("/api/public/submit-guess", async (req, res) => {
 
 app.get("/api/admin/state", requireAdmin, async (_req, res) => {
   try {
-    const state = await getState();
-    res.json({ ok: true, state: serializeState(state) });
+    let state = await getState();
+    state = await ensureHostWordPool(state);
+    const serialized = await enrichStateWithWordPool(serializeState(state));
+    res.json({ ok: true, state: serialized });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
@@ -594,7 +649,8 @@ async function handleAdminAction(action, body) {
   switch (action) {
     case "state":
       return serializeState(state);
-    case "create-session":
+    case "create-session": {
+      const wordPool = await resetHostWordPool();
       return serializeState(await updateState({
         version: 1,
         mode: "lingo",
@@ -610,7 +666,10 @@ async function handleAdminAction(action, body) {
         host_note: "",
         guess_window_opened_at: null,
         results_window_opened_at: null,
+        first_solver_player_id: null,
+        ...wordPool,
       }));
+    }
     case "set-word":
       if (word && !isFiveLetterWord(word)) {
         throw new Error("Word must be exactly 5 letters.");
@@ -706,6 +765,33 @@ async function handleAdminAction(action, body) {
         balls_remaining: balls,
       }));
     }
+    case "refresh-word-suggestions": {
+      const exclusions = parseWordListFromState(state.host_word_exclusions);
+      const count = Math.max(1, Number(body.count) || HOST_WORD_SUGGESTION_COUNT);
+      const suggestions = await buildHostWordSuggestions(exclusions, count);
+      if (!suggestions.length) {
+        throw new Error("No words left in the host pool.");
+      }
+      return serializeState(await updateState({
+        host_word_suggestions: suggestions,
+      }));
+    }
+    case "exclude-word": {
+      const excludedWord = normalizeWordInput(body.word);
+      if (!isFiveLetterWord(excludedWord)) {
+        throw new Error("Word must be exactly 5 letters.");
+      }
+      const exclusions = parseWordListFromState(state.host_word_exclusions);
+      if (!exclusions.includes(excludedWord)) {
+        exclusions.push(excludedWord);
+      }
+      const suggestions = parseWordListFromState(state.host_word_suggestions)
+        .filter((item) => item !== excludedWord);
+      return serializeState(await updateState({
+        host_word_exclusions: exclusions,
+        host_word_suggestions: suggestions,
+      }));
+    }
     case "set-champion":
       return serializeState(await updateState({
         champion_display_name: normalizeDisplayName(body.championDisplayName),
@@ -724,7 +810,8 @@ async function handleAdminAction(action, body) {
         answer_revealed: true,
         phase: "ended",
       }));
-    case "reset-session":
+    case "reset-session": {
+      const wordPool = await resetHostWordPool();
       await pool.query(
         `update players
          set balls = 0,
@@ -748,7 +835,9 @@ async function handleAdminAction(action, body) {
         guess_window_opened_at: null,
         results_window_opened_at: null,
         first_solver_player_id: null,
+        ...wordPool,
       }));
+    }
     default:
       throw new Error(`Unknown admin action: ${action}`);
   }
@@ -757,7 +846,7 @@ async function handleAdminAction(action, body) {
 app.post("/api/admin/:action", requireAdmin, async (req, res) => {
   try {
     const state = await handleAdminAction(req.params.action, req.body || {});
-    res.json({ ok: true, state });
+    res.json({ ok: true, state: await enrichStateWithWordPool(state) });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message });
   }
