@@ -202,6 +202,7 @@ async function listPlayers(sessionId, client = pool) {
     roundNumber: row.round_number,
     firstLetter: row.first_letter,
     submittedAtIso: row.submitted_at ? new Date(row.submitted_at).toISOString() : null,
+    createdAtIso: row.created_at ? new Date(row.created_at).toISOString() : null,
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
     submissionCount: Number(row.submission_count || 0),
   }));
@@ -263,6 +264,7 @@ function serializePublicDisplayPlayer(player, state) {
     isWinner: resultPattern === "!!!!!",
     submissionCount: Number(player.submissionCount || 0),
     submittedAtIso: player.submittedAtIso,
+    joinedAtIso: player.createdAtIso || player.updatedAtIso || null,
   };
 }
 
