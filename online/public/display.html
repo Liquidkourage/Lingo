@@ -1483,6 +1483,11 @@
       color: rgba(210, 195, 235, 0.82);
     }
 
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="waiting"] .player-status {
+      color: rgba(255, 220, 120, 0.92);
+      text-shadow: 0 1px 0 #000, 0 0 10px rgba(255, 204, 0, 0.35);
+    }
+
     .player-crown {
       position: absolute;
       top: 0.12em;
@@ -1645,7 +1650,11 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="waiting"],
+    .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="waiting"] {
+      border-color: rgba(187, 68, 255, 0.58);
+      border-style: dashed;
+    }
+
     .stage[data-phase="results"] .player-card[data-card-skin][data-status="waiting"],
     .stage[data-phase="ended"] .player-card[data-card-skin][data-status="waiting"] {
       opacity: 0.55;
