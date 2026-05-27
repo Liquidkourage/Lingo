@@ -254,52 +254,33 @@
       50% { opacity: 0.55; transform: scale(0.85); }
     }
 
-    .timer-toast-host {
+    .timer-flash {
       position: fixed;
-      top: max(12px, env(safe-area-inset-top, 0px));
-      left: 50%;
-      z-index: 20;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.45rem;
-      width: min(92vw, 360px);
-      transform: translateX(-50%);
+      inset: 0;
+      z-index: 25;
       pointer-events: none;
-    }
-
-    .timer-toast {
-      width: 100%;
-      padding: 0.65em 0.85em;
-      border-radius: 0.2em;
-      text-align: center;
-      font-size: clamp(0.82rem, 3.6vw, 0.95rem);
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      line-height: 1.2;
       opacity: 0;
-      transform: translateY(-8px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
+      background: transparent;
     }
 
-    .timer-toast.is-visible {
-      opacity: 1;
-      transform: translateY(0);
+    .timer-flash.is-active.timer-flash--warn-30 {
+      animation: timer-flash-yellow 0.75s ease-out forwards;
     }
 
-    .timer-toast--warn-30 {
-      border: var(--contrast-stroke) solid var(--feedback-present-border);
-      background: var(--feedback-present);
-      color: var(--feedback-present-text);
-      box-shadow: 0 0 22px var(--feedback-present-glow);
+    .timer-flash.is-active.timer-flash--warn-10 {
+      animation: timer-flash-red 0.75s ease-out forwards;
     }
 
-    .timer-toast--warn-10 {
-      border: var(--contrast-stroke) solid var(--show-red);
-      background: rgba(255, 34, 68, 0.92);
-      color: var(--show-gold-hot);
-      box-shadow: 0 0 24px rgba(255, 34, 68, 0.65);
+    @keyframes timer-flash-yellow {
+      0%, 100% { opacity: 0; }
+      18%, 42% { opacity: 0.42; background: var(--feedback-present); }
+      30% { opacity: 0.18; background: var(--feedback-present); }
+    }
+
+    @keyframes timer-flash-red {
+      0%, 100% { opacity: 0; }
+      18%, 42% { opacity: 0.48; background: var(--show-red); }
+      30% { opacity: 0.22; background: var(--show-red); }
     }
 
     .phase-line {
@@ -1171,7 +1152,7 @@
   </style>
 </head>
 <body>
-  <div class="timer-toast-host" id="timerToastHost" aria-live="assertive"></div>
+  <div class="timer-flash" id="timerFlash" aria-hidden="true"></div>
 
   <div class="play-stage" id="playStage" data-phase="idle">
     <main class="play-card">
