@@ -237,8 +237,8 @@
 
     /* Shrink header when lobby is active — give content room below */
     .stage[data-lobby-has-players="true"] .logo-wrap {
-      top: 1.6%;
-      width: 36%;
+      top: 1.4%;
+      width: 34%;
     }
 
     .stage[data-lobby-has-players="true"] .lingo-logo {
@@ -905,6 +905,37 @@
       justify-self: center;
     }
 
+    /* Empty lobby: hide board, hero join callout */
+    .stage[data-phase="idle"]:not([data-lobby-has-players="true"]) .player-board {
+      display: none;
+    }
+
+    .stage[data-phase="idle"]:not([data-lobby-has-players="true"]) .idle-deck {
+      grid-template-rows: minmax(0, 1fr);
+      place-items: center;
+    }
+
+    .stage[data-phase="idle"]:not([data-lobby-has-players="true"]) .idle-info {
+      width: min(72%, 24em);
+      max-width: 24em;
+      height: auto;
+      max-height: 100%;
+      align-self: center;
+    }
+
+    .stage[data-phase="idle"]:not([data-lobby-has-players="true"]) .idle-callout {
+      padding: 0.65em 0.6em 0.75em;
+      gap: 0.5em;
+    }
+
+    .stage[data-phase="idle"]:not([data-lobby-has-players="true"]) .idle-cta {
+      font-size: 0.56em;
+    }
+
+    .stage[data-phase="idle"]:not([data-lobby-has-players="true"]) .idle-qr-shell {
+      max-height: min(42cqh, 16em);
+    }
+
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-info {
       width: 100%;
       max-width: none;
@@ -1319,6 +1350,34 @@
       }
     }
 
+    @keyframes chip-arrival {
+      0% {
+        opacity: 0;
+        transform: scale(0.55);
+        border-color: rgba(255, 230, 120, 1);
+        box-shadow:
+          0 0 32px rgba(255, 210, 60, 0.75),
+          0 0 64px rgba(255, 170, 30, 0.35);
+      }
+      45% {
+        opacity: 1;
+        transform: scale(1.1);
+        border-color: rgba(255, 240, 160, 1);
+        box-shadow:
+          0 0 48px rgba(255, 220, 80, 0.95),
+          0 0 80px rgba(255, 180, 40, 0.55);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .stage[data-phase="idle"] .player-card.is-new-arrival {
+      z-index: 2;
+      animation: chip-arrival 1.15s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+    }
+
     .player-card {
       padding: 0.65em 0.7em;
       border-radius: 0.35em;
@@ -1477,7 +1536,8 @@
       .ui-topline,
       .timer-panel,
       .stage[data-phase="idle"] .player-board,
-      .stage[data-phase="idle"] .player-card {
+      .stage[data-phase="idle"] .player-card,
+      .stage[data-phase="idle"] .player-card.is-new-arrival {
         animation: none !important;
       }
     }
@@ -1639,6 +1699,7 @@
     let lobbyPageIndex = 0;
     let lobbyRotateTimer = null;
     let lobbyRotateSignature = "";
+    let knownLobbyPlayerIds = null;
 
     const LOBBY_PAGE_COLS = 4;
     const LOBBY_PAGE_ROWS = 5;
@@ -1655,12 +1716,46 @@
 
     function buildDemoPlayers(count) {
       return Array.from({ length: count }, (_value, index) => ({
+        id: `demo-${index + 1}`,
         displayName: count > DEMO_PLAYER_NAMES.length
           ? `${DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length]}${Math.floor(index / DEMO_PLAYER_NAMES.length) + 1}`
           : DEMO_PLAYER_NAMES[index],
         status: "waiting",
         statusText: "In lobby",
       }));
+    }
+
+    function playerLobbyKey(player) {
+      if (player.id != null && player.id !== "") return String(player.id);
+      return (player.displayName || "player").trim().toLowerCase();
+    }
+
+    function detectNewLobbyArrivals(players, phase) {
+      if (phase !== "idle") {
+        knownLobbyPlayerIds = null;
+        return new Set();
+      }
+
+      const keys = new Set(players.map(playerLobbyKey));
+      if (knownLobbyPlayerIds === null) {
+        knownLobbyPlayerIds = keys;
+        return new Set();
+      }
+
+      const fresh = new Set();
+      keys.forEach((key) => {
+        if (!knownLobbyPlayerIds.has(key)) fresh.add(key);
+      });
+      knownLobbyPlayerIds = keys;
+      return fresh;
+    }
+
+    function idleCtaCopy(state) {
+      const players = Array.isArray(state.players) ? state.players : [];
+      const n = Math.max(Number(state.playerCount || 0), players.length);
+      if (n <= 0) return "Sign up — game starts soon";
+      if (n === 1) return "Join now — 1 playing";
+      return `Join now — ${n} playing`;
     }
 
     function applyDemoState(state) {
@@ -1849,10 +1944,6 @@
       return "0.52em";
     }
 
-    function applyChipAnimation(card, player, index) {
-      if ((currentState?.phase || "idle") !== "idle") return;
-    }
-
     function phaseCopy(phase, state) {
       switch (phase) {
         case "guessing":
@@ -1976,6 +2067,7 @@
         grid.classList.add("is-rotating");
       }
       const fragment = document.createDocumentFragment();
+      const newArrivals = phase === "idle" ? detectNewLobbyArrivals(players, phase) : new Set();
 
       visiblePlayers.forEach((player, index) => {
         const card = document.createElement("article");
@@ -1983,8 +2075,12 @@
         card.dataset.status = player.isWinner ? "winner" : (player.status || (phase === "idle" ? "waiting" : "waiting"));
 
         if (phase === "idle") {
-          applyChipAnimation(card, player, index);
-          card.style.setProperty("--chip-enter-delay", `${index * 45}ms`);
+          const lobbyKey = playerLobbyKey(player);
+          if (newArrivals.has(lobbyKey)) {
+            card.classList.add("is-new-arrival");
+          } else {
+            card.style.setProperty("--chip-enter-delay", `${index * 45}ms`);
+          }
         }
 
         const name = document.createElement("div");
@@ -2072,6 +2168,7 @@
 
       if (phase !== "idle") {
         stopLobbyRotation();
+        knownLobbyPlayerIds = null;
         delete els.stage.dataset.lobbySize;
         delete els.stage.dataset.lobbyDensity;
         delete els.stage.dataset.lobbyRotating;
@@ -2084,7 +2181,7 @@
       const copy = phaseCopy(phase, currentState);
       els.statusText.textContent = copy.badge;
       if (phase === "idle") {
-        els.idleCtaText.textContent = copy.badge;
+        els.idleCtaText.textContent = idleCtaCopy(currentState);
       }
 
       if (phase === "idle") {
