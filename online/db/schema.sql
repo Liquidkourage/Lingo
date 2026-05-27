@@ -88,8 +88,15 @@ create table if not exists guess_submissions (
   player_id bigint not null references players(id) on delete cascade,
   round_number integer not null,
   guess text not null,
-  submitted_at timestamptz not null default now()
+  submitted_at timestamptz not null default now(),
+  result_pattern text not null default '',
+  result_label text not null default '',
+  is_official boolean not null default false
 );
+
+alter table guess_submissions add column if not exists result_pattern text not null default '';
+alter table guess_submissions add column if not exists result_label text not null default '';
+alter table guess_submissions add column if not exists is_official boolean not null default false;
 
 create table if not exists words (
   word text primary key,

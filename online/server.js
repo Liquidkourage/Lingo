@@ -254,11 +254,51 @@ async function allActivePlayersSubmitted(state, client = pool) {
   );
 }
 
+async function freezeGuessSubmissionFeedback(state, client = pool) {
+  const submissions = await client.query(
+    `select id, guess, player_id
+     from guess_submissions
+     where session_id = $1
+       and round_number = $2`,
+    [state.session_id, state.round_number],
+  );
+
+  for (const row of submissions.rows) {
+    const feedback = await getGuessFeedback(state, row.guess, client);
+    await client.query(
+      `update guess_submissions
+       set result_pattern = $1,
+           result_label = $2,
+           is_official = false
+       where id = $3`,
+      [feedback.pattern, feedback.resultLabel, row.id],
+    );
+  }
+
+  const players = await listPlayers(state.session_id, client);
+  for (const player of players) {
+    const officialGuess = Number(player.roundNumber) === Number(state.round_number)
+      ? normalizeWordInput(player.currentGuess)
+      : "";
+    if (!officialGuess) continue;
+
+    await client.query(
+      `update guess_submissions
+       set is_official = (guess = $4)
+       where session_id = $1
+         and player_id = $2
+         and round_number = $3`,
+      [state.session_id, player.id, state.round_number, officialGuess],
+    );
+  }
+}
+
 async function performRevealResults(client) {
   const currentState = await getState(client);
   if (currentState.phase !== "guessing") {
     throw new Error("Results can only be revealed during the guessing phase.");
   }
+  await freezeGuessSubmissionFeedback(currentState, client);
   const scoringPatch = await applyRevealResultsScoring(currentState, client);
   return updateState(scoringPatch, client);
 }
@@ -328,6 +368,67 @@ function formatPatternFeedback(pattern) {
     .join(" ");
 }
 
+function shouldRevealGuessFeedback(phase) {
+  return phase === "results" || phase === "ended";
+}
+
+async function getGuessFeedback(state, guess, client = pool) {
+  const normalized = normalizeWordInput(guess);
+  if (!normalized) {
+    return { pattern: "", resultLabel: "" };
+  }
+  if (!(await isLegalWord(client, normalized))) {
+    return { pattern: "", resultLabel: "Not a word…" };
+  }
+  const pattern = getLingoResultPattern(state.current_word, normalized);
+  return {
+    pattern,
+    resultLabel: formatPatternFeedback(pattern),
+  };
+}
+
+async function listViewerGuessHistory(playerId, state, client = pool) {
+  const round = Number(state.round_number || 0);
+  if (!playerId || !round) return [];
+
+  const result = await client.query(
+    `select guess, result_pattern, result_label, is_official
+     from guess_submissions
+     where session_id = $1
+       and player_id = $2
+       and round_number = $3
+     order by submitted_at asc, id asc`,
+    [state.session_id, playerId, round],
+  );
+
+  const phase = String(state.phase || "idle");
+  const reveal = shouldRevealGuessFeedback(phase);
+  const history = [];
+
+  for (const row of result.rows) {
+    const guess = normalizeWordInput(row.guess);
+    if (!guess) continue;
+
+    let pattern = String(row.result_pattern || "");
+    let resultLabel = String(row.result_label || "");
+
+    if (!pattern && reveal) {
+      const feedback = await getGuessFeedback(state, guess, client);
+      pattern = feedback.pattern;
+      resultLabel = feedback.resultLabel;
+    }
+
+    history.push({
+      guess,
+      pattern,
+      resultLabel,
+      isOfficial: Boolean(row.is_official),
+    });
+  }
+
+  return history;
+}
+
 async function buildViewerContext(displayName, state, client = pool) {
   const normalized = normalizeDisplayName(displayName);
   if (!normalized) return null;
@@ -346,6 +447,7 @@ async function buildViewerContext(displayName, state, client = pool) {
       resultPattern: "",
       roundGuess: "",
       resultLabel: "",
+      guessHistory: [],
       isSolved: false,
     };
   }
@@ -355,23 +457,23 @@ async function buildViewerContext(displayName, state, client = pool) {
   let resultPattern = "";
   let resultLabel = "";
 
-  if ((phase === "results" || phase === "ended") && submitted) {
-    if (!(await isLegalWord(client, guess))) {
-      resultLabel = "Not a word…";
-    } else {
-      resultPattern = getLingoResultPattern(state.current_word, guess);
-      resultLabel = formatPatternFeedback(resultPattern);
-    }
+  if (shouldRevealGuessFeedback(phase) && submitted) {
+    const feedback = await getGuessFeedback(state, guess, client);
+    resultPattern = feedback.pattern;
+    resultLabel = feedback.resultLabel;
   }
+
+  const guessHistory = await listViewerGuessHistory(player.id, state, client);
 
   return {
     found: true,
     displayName: player.displayName,
     balls: Number(player.balls || 0),
     lockedIn: phase === "guessing" && submitted,
-    resultPattern: phase === "results" || phase === "ended" ? resultPattern : "",
+    resultPattern: shouldRevealGuessFeedback(phase) ? resultPattern : "",
     roundGuess: submitted ? guess : "",
     resultLabel,
+    guessHistory,
     isSolved: Boolean(player.solvedCurrentWord),
   };
 }
@@ -913,17 +1015,33 @@ app.post("/api/public/submit-guess", async (req, res) => {
 
     const player = upsertResult.rows[0];
 
-    await client.query(
-      `insert into guess_submissions (
-         session_id,
-         player_id,
-         round_number,
-         guess,
-         submitted_at
-       )
-       values ($1, $2, $3, $4, now())`,
-      [state.session_id, player.id, state.round_number, guess]
+    const lastSubmission = await client.query(
+      `select guess
+       from guess_submissions
+       where session_id = $1
+         and player_id = $2
+         and round_number = $3
+       order by submitted_at desc, id desc
+       limit 1`,
+      [state.session_id, player.id, state.round_number],
     );
+    const lastGuess = lastSubmission.rows[0]
+      ? normalizeWordInput(lastSubmission.rows[0].guess)
+      : "";
+
+    if (lastGuess !== guess) {
+      await client.query(
+        `insert into guess_submissions (
+           session_id,
+           player_id,
+           round_number,
+           guess,
+           submitted_at
+         )
+         values ($1, $2, $3, $4, now())`,
+        [state.session_id, player.id, state.round_number, guess],
+      );
+    }
 
     let nextState = await getState(client);
     nextState = await maybeAutoRevealIfAllSubmitted(nextState, client);

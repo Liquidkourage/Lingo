@@ -270,12 +270,21 @@
       color: rgba(220, 235, 255, 0.78);
     }
 
+    .result-feedback .result-tiles {
+      margin-bottom: 0.5rem;
+    }
+
     .result-feedback-value {
-      font-size: 1.35rem;
-      font-weight: 900;
-      letter-spacing: 0.18em;
+      display: none;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
       color: var(--show-white);
       text-shadow: 0 0 16px rgba(255, 136, 0, 0.35);
+    }
+
+    .result-feedback-value.is-visible {
+      display: block;
     }
 
     .result-feedback-value.is-solved {
@@ -286,6 +295,13 @@
     .result-feedback-value.is-invalid {
       color: var(--show-red);
       text-shadow: 0 0 16px rgba(255, 34, 68, 0.45);
+    }
+
+    .result-tile[data-mark="invalid"] {
+      border-color: var(--show-red);
+      background: rgba(255, 34, 68, 0.22);
+      color: rgba(255, 220, 220, 0.95);
+      box-shadow: 0 0 12px rgba(255, 34, 68, 0.35);
     }
 
     .prompt {
@@ -431,13 +447,38 @@
     }
 
     .word-tiles {
+      position: relative;
       display: flex;
       justify-content: center;
       gap: 0.45rem;
       margin-bottom: 0.85rem;
+      cursor: text;
+    }
+
+    .guess-capture {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: transparent;
+      caret-color: transparent;
+      opacity: 0.001;
+      z-index: 2;
+      cursor: text;
+    }
+
+    .guess-capture:disabled {
+      pointer-events: none;
     }
 
     .letter-input {
+      position: relative;
+      z-index: 1;
+      pointer-events: none;
       width: clamp(52px, 14vw, 68px);
       height: clamp(52px, 14vw, 68px);
       padding: 0;
@@ -585,34 +626,6 @@
       display: block;
     }
 
-    .play-stage[data-phase="guessing"] .play-outcome.has-guess {
-      display: block;
-    }
-
-    .play-stage[data-phase="guessing"][data-locked="true"] .word-tiles,
-    .play-stage[data-phase="guessing"][data-locked="true"] .button-row--guess {
-      display: none;
-    }
-
-    .play-stage[data-phase="guessing"][data-locked="true"] .play-keyboard {
-      display: none !important;
-    }
-
-    .outcome-heading {
-      display: none;
-      margin: 0 0 0.5rem;
-      text-align: center;
-      font-size: 0.62rem;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(200, 220, 245, 0.78);
-    }
-
-    .play-outcome.has-guess .outcome-heading {
-      display: block;
-    }
-
     .result-tiles {
       display: none;
       justify-content: center;
@@ -683,6 +696,113 @@
 
     .outcome-empty.is-visible {
       display: block;
+    }
+
+    .play-history {
+      display: none;
+      margin-bottom: 0.65rem;
+    }
+
+    .play-stage[data-phase="guessing"] .play-history,
+    .play-stage[data-phase="results"] .play-history,
+    .play-stage[data-phase="ended"] .play-history {
+      display: block;
+    }
+
+    .guess-history {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.28rem;
+    }
+
+    .guess-history-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.28rem;
+    }
+
+    .guess-history-row.is-official {
+      position: relative;
+      padding-bottom: 0.1rem;
+    }
+
+    .guess-history-row.is-official::after {
+      content: "Official";
+      position: absolute;
+      left: 50%;
+      bottom: -0.72rem;
+      transform: translateX(-50%);
+      font-size: 0.48rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      white-space: nowrap;
+    }
+
+    .guess-history {
+      gap: 0.55rem;
+    }
+
+    .history-cell[data-mark="pending"] {
+      border-color: rgba(0, 212, 255, 0.55);
+      color: var(--show-white);
+      background: rgba(0, 212, 255, 0.1);
+      box-shadow: 0 0 8px rgba(0, 212, 255, 0.2);
+    }
+
+    .history-cell {
+      width: clamp(34px, 9vw, 42px);
+      height: clamp(34px, 9vw, 42px);
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--show-cyan);
+      border-radius: 0.12em;
+      background: var(--show-black);
+      font-size: clamp(0.95rem, 4.2vw, 1.15rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .history-cell[data-mark="hint"] {
+      border-color: rgba(255, 204, 0, 0.55);
+      background: rgba(255, 204, 0, 0.1);
+      color: var(--show-gold-hot);
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.25);
+    }
+
+    .history-cell[data-mark="!"] {
+      border-color: var(--show-green);
+      background: var(--show-green);
+      color: #001808;
+      box-shadow: 0 0 12px rgba(0, 255, 85, 0.45);
+    }
+
+    .history-cell[data-mark="?"] {
+      border-color: var(--show-gold);
+      background: var(--show-gold);
+      color: #1a1000;
+      box-shadow: 0 0 12px rgba(255, 204, 0, 0.45);
+    }
+
+    .history-cell[data-mark="/"] {
+      border-color: #3a3040;
+      background: #2a2030;
+      color: rgba(200, 190, 195, 0.88);
+    }
+
+    .history-cell[data-mark="locked"] {
+      border-color: var(--show-green);
+      color: var(--show-white);
+      background: rgba(0, 255, 85, 0.12);
+      box-shadow: 0 0 10px rgba(0, 255, 85, 0.28);
+    }
+
+    .history-cell.is-empty {
+      color: transparent;
+      box-shadow: none;
     }
 
     .play-keyboard {
@@ -797,11 +917,10 @@
       </section>
 
       <section class="play-outcome" id="playOutcome" aria-label="Your guess this round">
-        <p class="outcome-heading" id="outcomeHeading">Your guess</p>
-        <div class="result-tiles" id="resultTiles" aria-label="Your guess"></div>
         <p class="outcome-empty" id="outcomeEmpty">You did not lock in a guess this round.</p>
         <div class="result-feedback" id="resultFeedback" aria-live="polite">
           <span class="result-feedback-label" id="resultFeedbackLabel">Your result</span>
+          <div class="result-tiles" id="resultTiles" aria-label="Your guess with color feedback"></div>
           <span class="result-feedback-value" id="resultFeedbackValue"></span>
         </div>
       </section>
@@ -835,17 +954,32 @@
 
       <section class="play-guess" id="playGuess" aria-label="Guess entry">
         <h1 class="prompt" id="promptLine">Enter your five-letter word</h1>
-        <div class="word-tiles" aria-label="Five-letter guess">
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 3" />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 4" />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" />
+        <div class="word-tiles" id="wordTiles" aria-label="Five-letter guess">
+          <input
+            id="guessCapture"
+            class="guess-capture"
+            type="text"
+            maxlength="5"
+            inputmode="text"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            aria-label="Type your five-letter guess"
+          />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" tabindex="-1" readonly />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" tabindex="-1" readonly />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 3" tabindex="-1" readonly />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 4" tabindex="-1" readonly />
+          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" tabindex="-1" readonly />
         </div>
         <div class="button-row button-row--guess">
           <button id="submitButton" class="btn-primary" type="button">Submit guess</button>
           <button id="clearButton" class="secondary" type="button">Clear</button>
         </div>
+      </section>
+
+      <section class="play-history" id="playHistory" aria-label="Your guesses this round">
+        <div class="guess-history" id="guessHistory"></div>
       </section>
 
       <div class="play-keyboard" id="playKeyboard" aria-label="On-screen keyboard">
@@ -867,13 +1001,15 @@
       metaYours: document.getElementById('metaYours'),
       guessWorth: document.getElementById('guessWorth'),
       playOutcome: document.getElementById('playOutcome'),
-      outcomeHeading: document.getElementById('outcomeHeading'),
       resultTiles: document.getElementById('resultTiles'),
       outcomeEmpty: document.getElementById('outcomeEmpty'),
       resultFeedback: document.getElementById('resultFeedback'),
       resultFeedbackLabel: document.getElementById('resultFeedbackLabel'),
       resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
+      playGuess: document.getElementById('playGuess'),
+      wordTiles: document.getElementById('wordTiles'),
+      guessCapture: document.getElementById('guessCapture'),
       playIdentity: document.getElementById('playIdentity'),
       playerName: document.getElementById('playerName'),
       playerNameDisplay: document.getElementById('playerNameDisplay'),
@@ -886,6 +1022,8 @@
       leave: document.getElementById('leaveButton'),
       submit: document.getElementById('submitButton'),
       clear: document.getElementById('clearButton'),
+      playHistory: document.getElementById('playHistory'),
+      guessHistory: document.getElementById('guessHistory'),
       inputs: [...document.querySelectorAll('.letter-input')],
       keyboard: document.getElementById('playKeyboard'),
       keyboardRows: {
@@ -897,6 +1035,8 @@
 
     let currentState = null;
     let pollTimer = null;
+    let guessDraftDirty = false;
+    let lastGuessDraftRound = 0;
     let keyboardWordKey = '';
     const keyboardLetterStates = new Map();
 
@@ -931,7 +1071,14 @@
         return {
           ...base,
           phase: 'guessing',
-          viewer: { found: true, displayName: 'NightOwl', balls: 12, lockedIn: false, roundGuess: '' },
+          viewer: {
+            found: true,
+            displayName: 'NightOwl',
+            balls: 12,
+            lockedIn: false,
+            roundGuess: '',
+            guessHistory: [],
+          },
         };
       }
       if (DEMO_PHASE === 'results') {
@@ -946,6 +1093,10 @@
             roundGuess: 'STARE',
             resultPattern: '!?///',
             resultLabel: '▪○✕✕✕',
+            guessHistory: [
+              { guess: 'STALE', pattern: '!////', resultLabel: '▪✕✕✕✕', isOfficial: false },
+              { guess: 'STARE', pattern: '!?///', resultLabel: '▪○✕✕✕', isOfficial: true },
+            ],
           },
         };
       }
@@ -961,6 +1112,11 @@
             roundGuess: 'STARK',
             resultPattern: '!!!!!',
             resultLabel: 'Perfect solve!',
+            guessHistory: [
+              { guess: 'STALE', pattern: '!////', resultLabel: '▪✕✕✕✕', isOfficial: false },
+              { guess: 'STARE', pattern: '!?///', resultLabel: '▪○✕✕✕', isOfficial: false },
+              { guess: 'STARK', pattern: '!!!!!', resultLabel: 'Perfect solve!', isOfficial: true },
+            ],
           },
         };
       }
@@ -969,7 +1125,7 @@
 
     const PHASE_COPY = {
       idle: { badge: 'Sign up open', line: 'Join the lobby so you appear on the venue display before the host starts a round.' },
-      guessing: { badge: 'Guessing open', line: 'Round is live — lock in your five-letter word.' },
+      guessing: { badge: 'Guessing open', line: 'Round is live — submit your word, then change it anytime before time runs out.' },
       results: { badge: 'Results', line: 'Results are on the venue display. Do not guess now.' },
       ended: { badge: 'Round ended', line: 'The word has been revealed. Next round soon.' },
     };
@@ -1050,7 +1206,7 @@
       if (showMessage) {
         setMessage(`You're ${name}.`, 'success');
       }
-      scheduleTypingFocus();
+      maybeFocusNameField(currentState?.phase);
       return true;
     }
 
@@ -1123,33 +1279,40 @@
       return suggestion;
     }
 
+    function normalizedGuessText(text) {
+      return String(text || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
+    }
+
     function currentGuess() {
+      if (els.guessCapture) return normalizedGuessText(els.guessCapture.value);
       return els.inputs.map((input) => input.value.trim().toUpperCase()).join('');
     }
 
-    function firstEditableIndex() {
-      return els.inputs.findIndex((input) => !input.classList.contains('is-revealed'));
-    }
-
-    function clearInputs(focusFirst = true) {
+    function syncGuessTilesFromCapture() {
+      const guess = normalizedGuessText(els.guessCapture?.value || '');
       els.inputs.forEach((input, index) => {
         if (input.classList.contains('is-revealed')) return;
-        input.value = '';
+        input.value = guess[index] || '';
       });
-      if (focusFirst) {
-        const target = els.inputs[firstEditableIndex()] || els.inputs[els.inputs.length - 1];
-        target.focus();
+      if (els.guessCapture && els.guessCapture.value !== guess) {
+        els.guessCapture.value = guess;
       }
     }
 
+    function setGuessText(text) {
+      const guess = normalizedGuessText(text);
+      if (els.guessCapture) els.guessCapture.value = guess;
+      syncGuessTilesFromCapture();
+    }
+
+    function clearInputs(focusCapture = false) {
+      setGuessText('');
+      if (focusCapture) focusGuessCapture();
+    }
+
     function populateInputs(text) {
-      const chars = (text || '').replace(/[^a-z]/gi, '').toUpperCase().slice(0, 5).split('');
-      els.inputs.forEach((input, index) => {
-        if (input.classList.contains('is-revealed')) return;
-        input.value = chars[index] || '';
-      });
-      const nextEmpty = els.inputs.find((input) => !input.classList.contains('is-revealed') && !input.value);
-      (nextEmpty || els.inputs[els.inputs.length - 1]).focus();
+      setGuessText(text);
+      focusGuessCapture();
     }
 
     function clearLockedFirstTile() {
@@ -1164,46 +1327,74 @@
     }
 
     function canTypeGuess() {
-      return Boolean(
-        currentState
-        && currentState.phase === 'guessing'
-        && !(currentState.viewer && currentState.viewer.lockedIn),
-      );
+      return Boolean(currentState && currentState.phase === 'guessing');
     }
 
-    function scheduleTypingFocus() {
-      window.requestAnimationFrame(() => {
-        if (!hasUserName() || !isNameLocked()) {
-          if (!isNameLocked()) els.playerName.focus();
-          return;
-        }
-        if (!canTypeGuess()) return;
-        if (document.activeElement === els.playerName) return;
-        const target = els.inputs[firstEditableIndex()] || els.inputs[0];
-        target.focus();
-      });
+    function hasSubmittedGuess() {
+      return Boolean(currentState && currentState.viewer && currentState.viewer.lockedIn);
     }
 
-    function routeLetterKeyToGuess(event) {
+    function syncGuessDraftFromState(state) {
+      if (!canTypeGuess() || !state.viewer) return;
+
+      const round = Number(state.roundNumber || 0);
+      if (round !== lastGuessDraftRound) {
+        lastGuessDraftRound = round;
+        guessDraftDirty = false;
+      }
+
+      if (guessDraftDirty) return;
+
+      const saved = String(state.viewer.roundGuess || '').toUpperCase();
+      if (saved.length === 5) {
+        setGuessText(saved);
+      }
+    }
+
+    function updateSubmitLabel() {
+      els.submit.textContent = hasSubmittedGuess() ? 'Update guess' : 'Submit guess';
+    }
+
+    function focusGuessCapture() {
+      if (!canTypeGuess() || !els.guessCapture) return;
+      els.guessCapture.focus({ preventScroll: true });
+    }
+
+    function maybeFocusNameField(phase) {
+      if (hasUserName() && isNameLocked()) return;
+      if (!isNameLocked()) {
+        window.requestAnimationFrame(() => els.playerName.focus({ preventScroll: true }));
+      }
+    }
+
+    function appendGuessLetter(letter) {
+      if (!canTypeGuess() || !els.guessCapture) return;
+      const next = normalizedGuessText(`${els.guessCapture.value}${letter}`);
+      setGuessText(next);
+    }
+
+    function handleGuessKeydown(event) {
+      if (!canTypeGuess()) return false;
+      if (!hasUserName() || !isNameLocked()) return false;
+
       const key = event.key;
+      if (key === 'Enter') {
+        event.preventDefault();
+        submitGuess();
+        return true;
+      }
+      if (key === 'Backspace') {
+        event.preventDefault();
+        setGuessText(els.guessCapture.value.slice(0, -1));
+        return true;
+      }
       if (!/^[a-zA-Z]$/.test(key)) return false;
-      if (!canTypeGuess()) {
-        if (!hasUserName()) els.playerName.focus();
-        return false;
-      }
-      if (!hasUserName()) {
-        els.playerName.focus();
-        return false;
-      }
+
       const active = document.activeElement;
-      if (active === els.playerName) return false;
-      if (els.inputs.includes(active)) return false;
+      if (active === els.playerName || active === els.guessCapture) return false;
 
       event.preventDefault();
-      const input = els.inputs[firstEditableIndex()] || els.inputs[0];
-      input.value = key.toUpperCase();
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.focus();
+      appendGuessLetter(key);
       return true;
     }
 
@@ -1237,8 +1428,101 @@
     }
 
     function renderLockedIn(state) {
-      const lockedIn = Boolean(state.viewer && state.viewer.lockedIn);
-      els.stage.dataset.locked = lockedIn ? 'true' : 'false';
+      els.stage.dataset.locked = 'false';
+    }
+
+    function makeHistoryCell(letter, mark) {
+      const cell = document.createElement('div');
+      cell.className = 'history-cell';
+      if (!letter) cell.classList.add('is-empty');
+      cell.textContent = letter || '';
+      cell.dataset.mark = mark;
+      return cell;
+    }
+
+    function makeHistoryRow(letters, marks, isOfficial = false) {
+      const row = document.createElement('div');
+      row.className = 'guess-history-row';
+      if (isOfficial) row.classList.add('is-official');
+      letters.forEach((letter, index) => {
+        row.appendChild(makeHistoryCell(letter, marks[index] || '/'));
+      });
+      return row;
+    }
+
+    function officialHistoryIndex(history, viewer, phase) {
+      const official = String(viewer.roundGuess || '').toUpperCase();
+      if (!official) return -1;
+      let lastIndex = -1;
+      history.forEach((entry, index) => {
+        if (entry.isOfficial) lastIndex = index;
+      });
+      if (lastIndex !== -1) return lastIndex;
+      if (phase !== 'guessing') return -1;
+      history.forEach((entry, index) => {
+        if (String(entry.guess || '').toUpperCase() === official) lastIndex = index;
+      });
+      return lastIndex;
+    }
+
+    function renderGuessHistory(state) {
+      const viewer = state.viewer;
+      const phase = state.phase || 'idle';
+
+      els.guessHistory.replaceChildren();
+
+      if (!isLiveRound(phase) || !viewer || !viewer.found) {
+        els.playHistory.hidden = true;
+        return;
+      }
+
+      els.playHistory.hidden = false;
+
+      const hintLetter = String(state.publicFirstLetter || '').charAt(0).toUpperCase();
+      if (hintLetter) {
+        els.guessHistory.appendChild(makeHistoryRow(
+          [hintLetter, '', '', '', ''],
+          ['!', 'hint', 'hint', 'hint', 'hint'],
+        ));
+      }
+
+      const history = Array.isArray(viewer.guessHistory) ? viewer.guessHistory : [];
+      const officialIndex = officialHistoryIndex(history, viewer, phase);
+
+      history.forEach((entry, index) => {
+        const guess = String(entry.guess || '').toUpperCase();
+        if (guess.length !== 5) return;
+        const pattern = String(entry.pattern || '');
+        const marks = pattern.length === 5
+          ? pattern.split('')
+          : guess.split('').map(() => 'pending');
+        const isOfficial = index === officialIndex;
+        els.guessHistory.appendChild(makeHistoryRow(guess.split(''), marks, isOfficial));
+      });
+    }
+
+    function officialHistoryEntry(viewer, phase) {
+      const history = Array.isArray(viewer.guessHistory) ? viewer.guessHistory : [];
+      const officialIndex = officialHistoryIndex(history, viewer, phase);
+      if (officialIndex >= 0) return history[officialIndex];
+      return {
+        guess: viewer.roundGuess,
+        pattern: viewer.resultPattern,
+        resultLabel: viewer.resultLabel,
+        isOfficial: true,
+      };
+    }
+
+    function appendResultTiles(guess, pattern) {
+      const letters = String(guess || '').toUpperCase().split('');
+      const marks = String(pattern || '').padEnd(5, '/').slice(0, 5).split('');
+      letters.forEach((letter, index) => {
+        const tile = document.createElement('div');
+        tile.className = 'result-tile';
+        tile.textContent = letter;
+        tile.dataset.mark = marks[index] || '/';
+        els.resultTiles.appendChild(tile);
+      });
     }
 
     function renderRoundOutcome(state) {
@@ -1246,7 +1530,6 @@
       const phase = state.phase || 'idle';
       const live = isLiveRound(phase);
 
-      els.playOutcome.classList.remove('has-guess');
       els.resultTiles.classList.remove('is-visible');
       els.resultTiles.replaceChildren();
       els.outcomeEmpty.classList.remove('is-visible');
@@ -1258,48 +1541,50 @@
         return;
       }
 
-      const guess = String(viewer.roundGuess || '').toUpperCase();
-      const pattern = String(viewer.resultPattern || '');
-      const hasReveal = pattern.length === 5;
+      const showResults = phase === 'results' || phase === 'ended';
+      const official = officialHistoryEntry(viewer, phase);
+      const guess = String(official.guess || viewer.roundGuess || '').toUpperCase();
+      const pattern = String(official.pattern || viewer.resultPattern || '');
+      const resultLabel = String(official.resultLabel || viewer.resultLabel || '');
 
-      if (guess.length === 5) {
-        els.playOutcome.classList.add('has-guess');
-        guess.split('').forEach((letter, index) => {
-          const tile = document.createElement('div');
-          tile.className = 'result-tile';
-          tile.textContent = letter;
-          tile.dataset.mark = hasReveal ? pattern[index] : 'locked';
-          els.resultTiles.appendChild(tile);
-        });
-        els.resultTiles.classList.add('is-visible');
-      } else if (phase === 'results' || phase === 'ended') {
+      if (showResults && !guess.length) {
         els.outcomeEmpty.classList.add('is-visible');
-      }
-
-      if (phase === 'guessing' && viewer.lockedIn && guess.length === 5) {
-        els.resultFeedbackLabel.textContent = 'Status';
-        els.resultFeedbackValue.textContent = 'Locked in — waiting for results';
-        els.resultFeedback.classList.add('is-visible', 'is-pending');
         return;
       }
 
-      if ((phase === 'results' || phase === 'ended') && viewer.resultLabel) {
-        els.resultFeedbackLabel.textContent = 'Your result';
-        els.resultFeedbackValue.textContent = viewer.resultLabel;
-        els.resultFeedback.classList.add('is-visible');
-        if (viewer.resultPattern === '!!!!!') {
-          els.resultFeedbackValue.classList.add('is-solved');
-        } else if (viewer.resultLabel === 'Not a word…') {
-          els.resultFeedbackValue.classList.add('is-invalid');
+      if (!showResults || guess.length !== 5) {
+        return;
+      }
+
+      els.resultFeedbackLabel.textContent = 'Your official guess';
+      els.resultFeedback.classList.add('is-visible');
+
+      if (resultLabel === 'Not a word…') {
+        guess.split('').forEach((letter) => {
+          const tile = document.createElement('div');
+          tile.className = 'result-tile';
+          tile.textContent = letter;
+          tile.dataset.mark = 'invalid';
+          els.resultTiles.appendChild(tile);
+        });
+        els.resultTiles.classList.add('is-visible');
+        els.resultFeedbackValue.textContent = 'Not a word…';
+        els.resultFeedbackValue.classList.add('is-visible', 'is-invalid');
+        return;
+      }
+
+      if (pattern.length === 5) {
+        appendResultTiles(guess, pattern);
+        els.resultTiles.classList.add('is-visible');
+        if (pattern === '!!!!!') {
+          els.resultFeedbackValue.textContent = 'Perfect solve!';
+          els.resultFeedbackValue.classList.add('is-visible', 'is-solved');
         }
         return;
       }
 
-      if ((phase === 'results' || phase === 'ended') && !guess.length) {
-        els.resultFeedbackLabel.textContent = 'Your result';
-        els.resultFeedbackValue.textContent = 'No guess submitted';
-        els.resultFeedback.classList.add('is-visible');
-      }
+      els.resultFeedbackValue.textContent = resultLabel || 'Waiting for results';
+      els.resultFeedbackValue.classList.add('is-visible');
     }
 
     function updateLobbyButtons() {
@@ -1321,11 +1606,14 @@
 
     function updateSubmitEnabled() {
       const canGuess = currentState && currentState.phase === 'guessing';
-      const lockedIn = Boolean(currentState && currentState.viewer && currentState.viewer.lockedIn);
-      els.submit.disabled = !canGuess || lockedIn;
+      els.submit.disabled = !canGuess;
       els.inputs.forEach((input) => {
         input.disabled = !canGuess;
       });
+      if (els.guessCapture) {
+        els.guessCapture.disabled = !canGuess;
+      }
+      updateSubmitLabel();
     }
 
     function formatGuessWorthLine(balls) {
@@ -1349,7 +1637,9 @@
 
     function renderPrompt(phase) {
       if (phase === 'guessing') {
-        els.promptLine.textContent = 'Enter your five-letter word';
+        els.promptLine.textContent = hasSubmittedGuess()
+          ? 'Change your word below, then tap Update guess'
+          : 'Enter your five-letter word';
         return;
       }
       if (phase === 'results') {
@@ -1436,48 +1726,17 @@
       });
     }
 
-    function focusedEditableInput() {
-      const active = document.activeElement;
-      if (active && els.inputs.includes(active) && !active.classList.contains('is-revealed') && !active.disabled) {
-        return active;
-      }
-      const index = firstEditableIndex();
-      return index >= 0 ? els.inputs[index] : null;
-    }
-
-    function insertKeyboardLetter(letter) {
-      const input = focusedEditableInput();
-      if (!input) return;
-      input.value = letter;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
     function handleKeyboardPress(action) {
       if (action === 'ENTER') {
         submitGuess();
         return;
       }
       if (action === 'BACK') {
-        const input = focusedEditableInput();
-        if (!input) return;
-        if (input.value) {
-          input.value = '';
-          return;
-        }
-        const index = els.inputs.indexOf(input);
-        if (index > 0) {
-          let prev = index - 1;
-          while (prev > 0 && els.inputs[prev].classList.contains('is-revealed')) {
-            prev -= 1;
-          }
-          if (!els.inputs[prev].classList.contains('is-revealed')) {
-            els.inputs[prev].value = '';
-            els.inputs[prev].focus();
-          }
-        }
+        if (!els.guessCapture) return;
+        setGuessText(els.guessCapture.value.slice(0, -1));
         return;
       }
-      insertKeyboardLetter(action);
+      appendGuessLetter(action);
     }
 
     function buildKeyboard() {
@@ -1522,13 +1781,20 @@
       loadKeyboardStates(wordKey);
 
       const viewer = state.viewer;
-      if (viewer && (phase === 'results' || phase === 'ended')) {
-        const guess = String(viewer.roundGuess || '').toUpperCase();
-        const pattern = String(viewer.resultPattern || '');
-        if (guess.length === 5 && pattern) {
-          applyGuessPatternToKeyboard(guess, pattern);
-        } else if (guess.length === 5 && viewer.resultLabel === 'Not a word…') {
-          guess.split('').forEach((letter) => mergeKeyboardLetter(letter, '/'));
+      if (viewer) {
+        const entries = Array.isArray(viewer.guessHistory) ? viewer.guessHistory : [];
+        entries.forEach((entry) => {
+          const guess = String(entry.guess || '').toUpperCase();
+          const pattern = String(entry.pattern || '');
+          if (guess.length === 5 && pattern.length === 5) {
+            applyGuessPatternToKeyboard(guess, pattern);
+            return;
+          }
+          if (guess.length === 5 && entry.resultLabel === 'Not a word…') {
+            guess.split('').forEach((letter) => mergeKeyboardLetter(letter, '/'));
+          }
+        });
+        if (entries.length) {
           saveKeyboardStates();
           paintKeyboardStates();
         }
@@ -1557,13 +1823,15 @@
       renderGuessWorth(state);
       renderPrompt(phase);
       renderLockedIn(state);
+      renderGuessHistory(state);
       renderRoundOutcome(state);
       clearLockedFirstTile();
       syncKeyboardFromState(state);
       updateLobbyButtons();
       updateSubmitEnabled();
+      syncGuessDraftFromState(state);
       schedulePolling();
-      scheduleTypingFocus();
+      maybeFocusNameField(phase);
     }
 
     function refreshTimerBadge() {
@@ -1670,55 +1938,49 @@
           throw new Error(payload.error || 'Could not submit guess.');
         }
         storeDisplayName(displayName);
-        setMessage(`Locked in: ${payload.player.currentGuess}`, 'success');
-        clearInputs(true);
+        guessDraftDirty = false;
+        setGuessText(payload.player.currentGuess || guess);
+        setMessage('Guess saved — you can still change it before time runs out.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
         setMessage(error.message || 'Error processing submission.', 'error');
       } finally {
-        els.submit.textContent = 'Submit guess';
         updateSubmitEnabled();
       }
     }
 
-    function wireInputBehavior() {
-      els.inputs.forEach((input, index) => {
-        input.addEventListener('input', (event) => {
-          if (input.classList.contains('is-revealed')) return;
-          const raw = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-          event.target.value = raw.slice(0, 1);
-          if (event.target.value && index < els.inputs.length - 1) {
-            let next = index + 1;
-            while (next < els.inputs.length && els.inputs[next].classList.contains('is-revealed')) {
-              next += 1;
-            }
-            if (next < els.inputs.length) els.inputs[next].focus();
-          }
-        });
+    function wireGuessCapture() {
+      if (!els.guessCapture) return;
 
-        input.addEventListener('keydown', (event) => {
-          if (input.classList.contains('is-revealed')) return;
-          if (event.key === 'Backspace' && !input.value && index > 0) {
-            let prev = index - 1;
-            while (prev > 0 && els.inputs[prev].classList.contains('is-revealed')) {
-              prev -= 1;
-            }
-            els.inputs[prev].focus();
-            if (!els.inputs[prev].classList.contains('is-revealed')) {
-              els.inputs[prev].value = '';
-            }
-            event.preventDefault();
-          }
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            submitGuess();
-          }
-        });
+      els.guessCapture.addEventListener('input', () => {
+        guessDraftDirty = true;
+        syncGuessTilesFromCapture();
+      });
 
-        input.addEventListener('paste', (event) => {
+      els.guessCapture.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
           event.preventDefault();
-          const text = (event.clipboardData || window.clipboardData).getData('text');
-          populateInputs(text);
+          submitGuess();
+        }
+      });
+
+      els.guessCapture.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const text = (event.clipboardData || window.clipboardData).getData('text');
+        populateInputs(text);
+      });
+
+      if (els.wordTiles) {
+        els.wordTiles.addEventListener('pointerdown', () => {
+          if (canTypeGuess()) focusGuessCapture();
+        });
+      }
+
+      els.inputs.forEach((input) => {
+        input.addEventListener('focus', () => {
+          if (!canTypeGuess()) return;
+          input.blur();
+          focusGuessCapture();
         });
       });
     }
@@ -1727,6 +1989,7 @@
     els.leave.addEventListener('click', leaveLobby);
     els.submit.addEventListener('click', submitGuess);
     els.clear.addEventListener('click', () => {
+      guessDraftDirty = true;
       clearInputs(true);
       setMessage('');
     });
@@ -1776,10 +2039,10 @@
 
     document.addEventListener('keydown', (event) => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
-      routeLetterKeyToGuess(event);
+      handleGuessKeydown(event);
     });
 
-    wireInputBehavior();
+    wireGuessCapture();
     buildKeyboard();
     clearInputs(false);
 
@@ -1816,7 +2079,7 @@
               setMessage(error.message || 'Could not join the game.', 'error');
             }
           }
-          scheduleTypingFocus();
+          maybeFocusNameField(currentState?.phase);
         });
       window.setInterval(refreshTimerBadge, 1000);
     }
