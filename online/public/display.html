@@ -26,8 +26,7 @@
       --live-tile-size: 2.88em;
       --live-tile-gap: 0.54em;
       --live-tile-font: 1.75em;
-      --live-tile-hidden-font: 2.38em;
-      --live-stats-width: calc(5 * var(--live-tile-size) + 4 * var(--live-tile-gap));
+      --live-chrome-side-inset: max(calc(var(--live-score-rail-width) + 0.8em), calc(10.5em + 1.2em));
       --live-stats-min-height: 3.5em;
       --live-chrome-stack-gap: 0.22em;
     }
@@ -696,7 +695,7 @@
       width: 100%;
       max-width: 100%;
       justify-self: center;
-      padding: 0 max(calc(var(--live-score-rail-width) + 0.8em), calc(10.5em + 1.2em));
+      padding: 0 var(--live-chrome-side-inset);
       box-sizing: border-box;
     }
 
@@ -1026,19 +1025,32 @@
 
     .stage[data-phase="guessing"] .word-tile,
     .stage[data-phase="results"] .word-tile {
+      flex: 0 0 var(--live-tile-size);
       width: var(--live-tile-size);
       height: var(--live-tile-size);
+      min-width: var(--live-tile-size);
+      min-height: var(--live-tile-size);
+      max-width: var(--live-tile-size);
+      max-height: var(--live-tile-size);
       font-size: var(--live-tile-font);
+      line-height: 1;
     }
 
     .stage[data-phase="guessing"] .word-tile.is-hidden,
     .stage[data-phase="results"] .word-tile.is-hidden {
-      font-size: var(--live-tile-hidden-font);
+      font-weight: 700;
+      color: rgba(190, 220, 255, 0.55);
+      text-shadow: none;
     }
 
     .stage[data-phase="results"] .word-tile {
+      flex-basis: calc(var(--live-tile-size) * 0.93);
       width: calc(var(--live-tile-size) * 0.93);
       height: calc(var(--live-tile-size) * 0.93);
+      min-width: calc(var(--live-tile-size) * 0.93);
+      min-height: calc(var(--live-tile-size) * 0.93);
+      max-width: calc(var(--live-tile-size) * 0.93);
+      max-height: calc(var(--live-tile-size) * 0.93);
       font-size: calc(var(--live-tile-font) * 0.9);
     }
 
@@ -1058,12 +1070,13 @@
     .stage[data-phase="guessing"] .stats-row,
     .stage[data-phase="results"] .stats-row,
     .stage[data-phase="ended"] .stats-row {
-      width: min(100%, var(--live-stats-width));
+      width: calc(100% + 2 * var(--live-chrome-side-inset));
+      max-width: none;
       height: auto;
       min-height: var(--live-stats-min-height);
       flex-shrink: 0;
       z-index: 4;
-      margin: 0.08em auto 0;
+      margin: 0.08em calc(-1 * var(--live-chrome-side-inset)) 0;
       padding: 0.18em 0;
       overflow: hidden;
       display: grid;
