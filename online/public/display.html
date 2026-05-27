@@ -81,18 +81,35 @@
 
     .stage-byline {
       position: relative;
-      z-index: 13;
-      margin: -7.5% 0 0;
-      width: 110%;
+      z-index: 23;
+      margin: -6.5% 0 0;
+      width: 115%;
       text-align: center;
-      font-size: clamp(10px, 1.45cqh, 14px);
-      font-weight: 600;
-      letter-spacing: 0.14em;
+      font-size: clamp(12px, 1.75cqh, 17px);
+      font-weight: 700;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: rgba(215, 228, 248, 0.72);
-      text-shadow: 0 0 14px rgba(80, 160, 255, 0.25);
+      color: rgba(245, 250, 255, 0.94);
+      text-shadow:
+        0 0 16px rgba(100, 190, 255, 0.5),
+        0 0 32px rgba(60, 140, 255, 0.22);
       pointer-events: none;
       white-space: nowrap;
+    }
+
+    /* Shrink header when lobby is active — give content room below */
+    .stage[data-lobby-has-players="true"] .logo-wrap {
+      top: 1.6%;
+      width: 36%;
+    }
+
+    .stage[data-lobby-has-players="true"] .lingo-logo {
+      transform: translateY(-16%);
+    }
+
+    .stage[data-lobby-has-players="true"] .stage-byline {
+      margin-top: -5%;
+      font-size: clamp(10px, 1.45cqh, 14px);
     }
 
     .stage-ui {
@@ -539,7 +556,7 @@
       height: 100%;
       min-height: 0;
       overflow: hidden;
-      padding: 15.5% 2.5% 1.25%;
+      padding: 15.5% 3.5% 1.25%;
       gap: 0;
     }
 
@@ -553,13 +570,14 @@
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .stage-ui {
-      padding: 14.5% 2.5% 1.1%;
+      padding: 11.5% 3.5% 1.1%;
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-deck {
-      grid-template-columns: minmax(0, 10.5em) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 13.5em) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
-      gap: 0.65em;
+      gap: 0.85em;
+      align-items: stretch;
     }
 
     .stage[data-phase="idle"] .status-badge {
@@ -582,8 +600,8 @@
     }
 
     .stage[data-phase="idle"] .idle-info {
-      width: 52%;
-      max-width: 11em;
+      width: min(58%, 15em);
+      max-width: 15em;
       justify-self: center;
     }
 
@@ -592,6 +610,7 @@
       max-width: none;
       height: 100%;
       min-height: 0;
+      justify-self: stretch;
     }
 
     .stage[data-phase="idle"] .idle-callout {
@@ -600,8 +619,32 @@
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-callout {
-      padding: 0.5em 0.45em 0.55em;
-      gap: 0.4em;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto auto auto;
+      height: 100%;
+      padding: 0.55em 0.5em 0.6em;
+      gap: 0.45em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-qr-shell {
+      aspect-ratio: unset;
+      height: 100%;
+      min-height: 0;
+      width: 100%;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-cta {
+      font-size: 0.44em;
+      letter-spacing: 0.07em;
+      line-height: 1.22;
+      white-space: normal;
+      padding: 0.42em 0.5em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-url {
+      font-size: 0.5em;
+      line-height: 1.3;
+      word-break: break-word;
     }
 
     .stage[data-phase="idle"] .player-board {
@@ -627,7 +670,7 @@
 
     .stage[data-phase="idle"] .player-board-body {
       min-height: 0;
-      padding: 0.6em 0.65em 0.65em;
+      padding: 0.55em 0.75em 0.7em;
       background:
         radial-gradient(ellipse 90% 80% at 50% 0%, rgba(0, 80, 170, 0.12) 0%, transparent 70%);
     }
@@ -762,9 +805,9 @@
     }
 
     .stage[data-phase="idle"] .player-grid {
-      grid-template-columns: repeat(var(--lobby-cols, 5), minmax(0, 1fr));
+      grid-template-columns: repeat(var(--lobby-cols, 4), minmax(0, 1fr));
       grid-template-rows: repeat(var(--lobby-rows, 1), minmax(0, 1fr));
-      gap: 0.48em;
+      gap: 0.52em 0.62em;
       align-content: stretch;
       padding: 0.05em;
     }
@@ -824,8 +867,8 @@
     .stage[data-phase="idle"] .player-card {
       position: relative;
       isolation: isolate;
-      padding: 0.34em 0.68em;
-      border-radius: 999px;
+      padding: 0.28em 0.55em;
+      border-radius: 0.55em;
       text-align: center;
       min-height: 0;
       display: flex;
@@ -891,11 +934,19 @@
     .stage[data-phase="idle"] .player-name {
       position: relative;
       z-index: 1;
-      font-size: 0.76em;
+      font-size: var(--chip-name-size, 0.72em);
       font-weight: 800;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
       width: 100%;
       color: #f2f9ff;
+      white-space: normal;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-height: 1.18;
+      text-overflow: ellipsis;
+      word-break: break-word;
       text-shadow:
         0 0 10px rgba(120, 220, 255, 0.75),
         0 0 22px rgba(60, 170, 255, 0.4),
@@ -1083,8 +1134,8 @@
     let lobbyRotateTimer = null;
     let lobbyRotateSignature = "";
 
-    const LOBBY_PAGE_COLS = 5;
-    const LOBBY_PAGE_ROWS = 4;
+    const LOBBY_PAGE_COLS = 4;
+    const LOBBY_PAGE_ROWS = 5;
     const LOBBY_PAGE_SIZE = LOBBY_PAGE_COLS * LOBBY_PAGE_ROWS;
     const LOBBY_ROTATE_MS = 4000;
 
@@ -1251,6 +1302,14 @@
       );
     }
 
+    function chipNameSize(name) {
+      const len = (name || "").length;
+      if (len <= 11) return "0.74em";
+      if (len <= 15) return "0.66em";
+      if (len <= 19) return "0.58em";
+      return "0.52em";
+    }
+
     function chipAnimationTiming(seed) {
       let hash = 2166136261;
       for (let i = 0; i < seed.length; i += 1) {
@@ -1411,6 +1470,9 @@
         const name = document.createElement("div");
         name.className = "player-name";
         name.textContent = player.displayName || "Player";
+        if (phase === "idle") {
+          name.style.setProperty("--chip-name-size", chipNameSize(name.textContent));
+        }
         card.appendChild(name);
 
         const status = document.createElement("div");
