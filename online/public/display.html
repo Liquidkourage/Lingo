@@ -217,39 +217,42 @@
       color: rgba(190, 215, 245, 0.82);
     }
 
-    .word-row {
+    .word-clue {
       position: absolute;
       left: 50%;
       top: 38.5%;
       transform: translate(-50%, -50%);
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 0.55em;
-      width: 39.06%;
-      height: 13.91%;
+      gap: 0.35em;
+      text-align: center;
     }
 
-    .word-tile {
-      flex: 1 1 0;
-      aspect-ratio: 1;
-      max-height: 100%;
-      display: grid;
-      place-items: center;
-      border-radius: 0.45em;
-      border: 2px solid rgba(70, 170, 255, 0.75);
-      background: linear-gradient(180deg, rgba(0, 28, 68, 0.95) 0%, rgba(0, 12, 36, 0.98) 100%);
-      box-shadow: 0 0 14px rgba(0, 120, 255, 0.22), inset 0 0 10px rgba(0, 60, 140, 0.2);
-      font-size: 2.4em;
+    .word-clue[hidden] {
+      display: none !important;
+    }
+
+    .word-clue-label {
+      font-size: 0.58em;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(190, 215, 245, 0.78);
+    }
+
+    .word-clue-value {
+      font-size: 3.4em;
       font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.1em;
       color: #ffffff;
-      text-shadow: 0 0 12px rgba(100, 190, 255, 0.55);
+      text-shadow: 0 0 16px rgba(100, 190, 255, 0.55);
     }
 
-    .word-tile.is-dot {
-      font-size: 0.55em;
-      color: #2898ff;
-      text-shadow: 0 0 10px rgba(40, 152, 255, 0.8);
+    .word-clue[data-mode="letter"] .word-clue-value {
+      font-size: 4.5em;
+      letter-spacing: 0.04em;
     }
 
     .stats-row {
@@ -471,7 +474,10 @@
           The public display will update automatically when the next online round starts.
         </p>
 
-        <div class="word-row" id="wordRow" aria-label="Current word"></div>
+        <div class="word-clue" id="wordClue" hidden aria-live="polite">
+          <span class="word-clue-label" id="wordClueLabel"></span>
+          <span class="word-clue-value" id="wordClueValue"></span>
+        </div>
 
         <div class="stats-row" aria-label="Game stats">
           <div class="stat-cell">
@@ -517,7 +523,9 @@
       timerValue: document.getElementById("timerValue"),
       statusText: document.getElementById("statusText"),
       subtitle: document.getElementById("subtitle"),
-      wordRow: document.getElementById("wordRow"),
+      wordClue: document.getElementById("wordClue"),
+      wordClueLabel: document.getElementById("wordClueLabel"),
+      wordClueValue: document.getElementById("wordClueValue"),
       statRound: document.getElementById("statRound"),
       statBalls: document.getElementById("statBalls"),
       statMult: document.getElementById("statMult"),
@@ -546,7 +554,7 @@
           return {
             badge: "Round live",
             subtitle: state.roundNumber > 0
-              ? `Word #${state.roundNumber} · first letter ${state.publicFirstLetter?.charAt(0) || "?"}`
+              ? `Word #${state.roundNumber} · submit your guess on the player page`
               : "Submit your guess on the player page.",
             timerLabel: "Time left",
           };
@@ -572,30 +580,32 @@
       }
     }
 
-    function renderWordRow(state) {
+    function renderWordClue(state) {
       const phase = state.phase || "idle";
-      els.wordRow.innerHTML = "";
-
-      let letters = ["", "", "", "", ""];
 
       if (phase === "ended" && state.revealedWord) {
-        letters = state.revealedWord.toUpperCase().padEnd(5, " ").slice(0, 5).split("");
-      } else if (phase === "guessing" || phase === "results") {
-        const hint = (state.publicFirstLetter || ".....").toUpperCase().padEnd(5, ".").slice(0, 5);
-        letters = hint.split("").map((ch) => (ch === "." ? "" : ch));
+        els.wordClue.hidden = false;
+        els.wordClue.dataset.mode = "word";
+        els.wordClueLabel.textContent = "The word was";
+        els.wordClueValue.textContent = state.revealedWord.toUpperCase();
+        return;
       }
 
-      for (let i = 0; i < 5; i += 1) {
-        const tile = document.createElement("div");
-        tile.className = "word-tile";
-        if (letters[i]) {
-          tile.textContent = letters[i];
-        } else {
-          tile.classList.add("is-dot");
-          tile.textContent = "●";
+      if (phase === "guessing" || phase === "results") {
+        const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
+        if (letter && letter !== ".") {
+          els.wordClue.hidden = false;
+          els.wordClue.dataset.mode = "letter";
+          els.wordClueLabel.textContent = "First letter";
+          els.wordClueValue.textContent = letter;
+          return;
         }
-        els.wordRow.appendChild(tile);
       }
+
+      els.wordClue.hidden = true;
+      delete els.wordClue.dataset.mode;
+      els.wordClueLabel.textContent = "";
+      els.wordClueValue.textContent = "";
     }
 
     function renderPatternRow(pattern) {
@@ -698,7 +708,7 @@
 
       renderTopLine(state);
       renderTimer(state);
-      renderWordRow(state);
+      renderWordClue(state);
       renderPlayerBoard(state);
     }
 
