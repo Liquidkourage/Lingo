@@ -1018,8 +1018,9 @@ app.post("/api/public/submit-guess", async (req, res) => {
 
     const player = upsertResult.rows[0];
 
+    const ballStake = Number(state.balls_remaining || 0);
     const lastSubmission = await client.query(
-      `select guess
+      `select id, guess, ball_stake
        from guess_submissions
        where session_id = $1
          and player_id = $2
@@ -1028,29 +1029,41 @@ app.post("/api/public/submit-guess", async (req, res) => {
        limit 1`,
       [state.session_id, player.id, state.round_number],
     );
-    const lastGuess = lastSubmission.rows[0]
-      ? normalizeWordInput(lastSubmission.rows[0].guess)
-      : "";
+    const lastRow = lastSubmission.rows[0];
+    const lastGuess = lastRow ? normalizeWordInput(lastRow.guess) : "";
 
     if (lastGuess !== guess) {
-      await client.query(
-        `insert into guess_submissions (
-           session_id,
-           player_id,
-           round_number,
-           guess,
-           ball_stake,
-           submitted_at
-         )
-         values ($1, $2, $3, $4, $5, now())`,
-        [
-          state.session_id,
-          player.id,
-          state.round_number,
-          guess,
-          Number(state.balls_remaining || 0),
-        ],
-      );
+      if (lastRow && Number(lastRow.ball_stake || 0) === ballStake) {
+        await client.query(
+          `update guess_submissions
+           set guess = $1,
+               submitted_at = now(),
+               result_pattern = '',
+               result_label = '',
+               is_official = false
+           where id = $2`,
+          [guess, lastRow.id],
+        );
+      } else {
+        await client.query(
+          `insert into guess_submissions (
+             session_id,
+             player_id,
+             round_number,
+             guess,
+             ball_stake,
+             submitted_at
+           )
+           values ($1, $2, $3, $4, $5, now())`,
+          [
+            state.session_id,
+            player.id,
+            state.round_number,
+            guess,
+            ballStake,
+          ],
+        );
+      }
     }
 
     let nextState = await getState(client);
