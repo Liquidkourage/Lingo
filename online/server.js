@@ -616,8 +616,14 @@ async function maybeAdvanceTimedPhase(client = pool) {
     if (state.phase === "guessing") {
       state = await syncAllSubmittedGrace(state, db);
       if (state.phase === "guessing"
-        && allSubmittedGraceExpired(state)) {
+        && state.all_players_submitted_at
+        && allSubmittedGraceExpired(state)
+        && await allActivePlayersSubmitted(state, db)) {
         state = await performRevealResults(db);
+      } else if (state.phase === "guessing"
+        && state.all_players_submitted_at
+        && allSubmittedGraceExpired(state)) {
+        state = await updateState(clearAllSubmittedGracePatch(), db);
       } else if (state.phase === "guessing"
         && windowExpired(state.guess_window_opened_at, state.guess_window_seconds, state.timer_paused)) {
         if (await hasPlayersWhoCanStillGuess(state, db)) {
@@ -970,6 +976,13 @@ async function updateState(patch, client = pool) {
     ...patch,
   };
 
+  function patchOrState(key, fallback = null) {
+    if (Object.prototype.hasOwnProperty.call(patch, key)) {
+      return patch[key] ?? fallback;
+    }
+    return state[key] ?? fallback;
+  }
+
   const params = [
     next.version,
     next.mode,
@@ -986,13 +999,13 @@ async function updateState(patch, client = pool) {
     next.guess_window_opened_at || null,
     next.results_window_opened_at || null,
     Boolean(next.timer_paused),
-    next.timer_paused_remaining_seconds ?? null,
-    next.champion_display_name ?? state.champion_display_name ?? "",
-    next.first_solver_player_id ?? state.first_solver_player_id ?? null,
+    patchOrState("timer_paused_remaining_seconds"),
+    patchOrState("champion_display_name", ""),
+    patchOrState("first_solver_player_id"),
     JSON.stringify(parseWordListFromState(next.host_word_suggestions ?? state.host_word_suggestions)),
     JSON.stringify(parseWordListFromState(next.host_word_exclusions ?? state.host_word_exclusions)),
     JSON.stringify(parseRoundBallStakesPreserveOrder(next)),
-    next.all_players_submitted_at ?? state.all_players_submitted_at ?? null,
+    patchOrState("all_players_submitted_at"),
     Number(next.guess_window_seq ?? state.guess_window_seq ?? 0),
   ];
 
@@ -1243,6 +1256,7 @@ async function clearSessionGuesses(sessionId, client = pool) {
   await client.query(
     `update players
      set current_guess = '',
+         round_number = 0,
          submitted_at = null,
          updated_at = now()
      where session_id = $1`,
@@ -1916,6 +1930,7 @@ app.post("/api/admin/rehearsal/:command", requireAdmin, async (req, res) => {
               guess_window_opened_at: windowOpenedAtIso(),
               first_solver_player_id: null,
               ...clearTimerPausePatch(),
+              ...clearAllSubmittedGracePatch(),
             }, client);
             await clearSessionGuesses(state.session_id, client);
             await resetWordProgress(state.session_id, client);
