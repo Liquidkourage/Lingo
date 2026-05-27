@@ -946,13 +946,19 @@
 
     .stage[data-phase="idle"] .idle-callout {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto auto;
-      height: 100%;
+      grid-template-rows: auto minmax(7em, 1fr) auto auto;
+      min-height: 0;
+      max-height: 100%;
       gap: 0.45em;
       padding: 0.6em 0.55em 0.7em;
     }
 
+    .stage[data-phase="idle"]:not([data-lobby-has-players="true"]) .idle-callout {
+      height: auto;
+    }
+
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-callout {
+      height: 100%;
       padding: 0.55em 0.5em 0.75em;
       gap: 0.38em;
     }
@@ -973,10 +979,12 @@
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-qr-shell {
-      aspect-ratio: unset;
-      height: 100%;
+      aspect-ratio: 1;
+      height: auto;
+      max-height: 100%;
       min-height: 0;
       width: 100%;
+      align-self: center;
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-cta {
@@ -1878,12 +1886,7 @@
 
       const players = Array.isArray(state.players) ? state.players : [];
       const pageInfo = getLobbyPageInfo(players);
-      const parts = lobbyHeaderParts(
-        Number(state.playerCount || players.length || 0),
-        pageInfo.pageCount > 1 ? pageInfo : null
-      );
-      els.playerBoardCount.textContent = parts.count;
-      els.playerBoardUnit.textContent = parts.unit;
+      const parts = lobbyHeaderParts(pageInfo.pageCount > 1 ? pageInfo : null);
       if (parts.range) {
         els.playerBoardRange.hidden = false;
         els.playerBoardRange.textContent = parts.range;
@@ -2116,8 +2119,9 @@
 
       els.stage.dataset.phase = phase;
 
-      const playerCount = Number(currentState.playerCount || 0);
-      if (phase === "idle" && playerCount > 0) {
+      const players = Array.isArray(currentState.players) ? currentState.players : [];
+      const playerCount = Math.max(Number(currentState.playerCount || 0), players.length);
+      if (phase === "idle" && players.length > 0) {
         els.stage.dataset.lobbyHasPlayers = "true";
       } else {
         delete els.stage.dataset.lobbyHasPlayers;
