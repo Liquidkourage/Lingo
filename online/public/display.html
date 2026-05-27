@@ -39,11 +39,12 @@
       height: 100%;
     }
 
-    /* Logo overlay: ~20% smaller than mockup bounds, ~3vh from top */
+    /* Mockup slot: 16/575 top; PNG letter faces start ~25% below canvas top */
     .logo-wrap {
       position: absolute;
-      left: 24.6875%;
-      top: 3vh;
+      left: 50%;
+      top: 2.78125%;
+      transform: translateX(-50%);
       width: 50.625%;
       overflow: visible;
       pointer-events: none;
@@ -55,6 +56,7 @@
       width: 100%;
       height: auto;
       overflow: visible;
+      transform: translateY(-25.21%);
     }
   </style>
 </head>
