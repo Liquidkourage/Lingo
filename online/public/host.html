@@ -63,16 +63,9 @@
       z-index: 1;
     }
 
-    .host-header {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-
     .host-logo {
       display: block;
-      width: min(50%, 228px);
       height: auto;
-      margin: 0 auto 0.55rem;
     }
 
     .host-title {
@@ -156,18 +149,6 @@
       font-weight: 600;
     }
 
-    .meta-rail {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 0;
-      margin-bottom: 1rem;
-      border: var(--stroke) solid rgba(230, 184, 0, 0.28);
-      border-radius: var(--radius);
-      background: var(--show-panel);
-      box-shadow: var(--glow-gold);
-      overflow: hidden;
-    }
-
     .meta-slot {
       display: flex;
       flex-direction: column;
@@ -215,24 +196,253 @@
       color: rgba(180, 198, 220, 0.72);
     }
 
-    .host-grid {
+    .host-topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 16px;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      border: var(--stroke) solid rgba(230, 184, 0, 0.2);
+      border-radius: var(--radius);
+      background: var(--show-panel);
+    }
+
+    .host-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .host-brand .host-logo {
+      width: 120px;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .host-brand-text {
+      min-width: 0;
+    }
+
+    .host-brand-text .host-title {
+      margin: 0 0 0.25rem;
+      text-align: left;
+    }
+
+    .host-brand-text .phase-badge {
+      margin-bottom: 0;
+    }
+
+    .host-connect {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 8px;
+      flex: 1 1 280px;
+      max-width: 520px;
+      justify-content: flex-end;
+    }
+
+    .host-connect .field {
+      flex: 1 1 160px;
+      min-width: 120px;
+    }
+
+    .host-connect-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    #connectStatus {
+      flex: 1 1 100%;
+      text-align: right;
+      margin-top: 0;
+    }
+
+    .host-links {
+      margin: 0 0 0.85rem;
+    }
+
+    .host-status {
       display: grid;
-      grid-template-columns: repeat(12, 1fr);
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0;
+      margin-bottom: 1rem;
+      border: var(--stroke) solid rgba(230, 184, 0, 0.28);
+      border-radius: var(--radius);
+      background: var(--show-panel);
+      box-shadow: var(--glow-gold);
+      overflow: hidden;
+    }
+
+    .host-primary {
+      margin-bottom: 14px;
+      border-color: rgba(230, 184, 0, 0.35);
+      background: linear-gradient(180deg, #10182a 0%, var(--show-panel) 100%);
+    }
+
+    .host-primary .panel-kicker {
+      font-size: 0.78rem;
+      margin-bottom: 1rem;
+      color: var(--show-gold);
+    }
+
+    .word-hero-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 1rem;
+    }
+
+    .word-hero-row .field-word {
+      flex: none;
+    }
+
+    .word-hero-row #wordInput {
+      font-size: 1.35rem;
+      padding: 0.85rem 1rem;
+      min-height: 52px;
+    }
+
+    .word-hero-row .btn-lg {
+      padding: 0.85rem 1.25rem;
+      font-size: 0.88rem;
+      min-height: 52px;
+      white-space: nowrap;
+    }
+
+    .flow-section {
+      margin-bottom: 0.85rem;
+    }
+
+    .flow-section-label {
+      margin: 0 0 0.45rem;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(180, 198, 220, 0.65);
+    }
+
+    .flow-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .flow-actions .btn-flow {
+      padding: 0.75rem 0.65rem;
+      font-size: 0.82rem;
+      min-height: 48px;
+    }
+
+    .flow-actions .btn-flow.good,
+    .flow-actions .btn-flow.warning {
+      font-weight: 700;
+    }
+
+    .tuning-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(230, 184, 0, 0.12);
+    }
+
+    .tuning-row .field {
+      flex: 0 1 100px;
+    }
+
+    .tuning-row .field-balls {
+      flex: 0 1 88px;
+    }
+
+    .tuning-row .tuning-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .host-workspace {
+      display: grid;
+      grid-template-columns: 5fr 7fr;
       gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .host-workspace .host-panel {
+      margin: 0;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .host-workspace .word-suggestion-list {
+      flex: 1;
+      min-height: 200px;
+    }
+
+    .host-workspace .roster-table-wrap {
+      flex: 1;
+      max-height: min(50vh, 420px);
+      overflow-y: auto;
+    }
+
+    .host-footer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .show-tools-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .show-tools-grid .field {
+      flex: none;
+    }
+
+    .show-tools-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .session-danger {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+      min-width: 160px;
+    }
+
+    .session-danger .flow-section-label {
+      text-align: right;
+    }
+
+    .host-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
 
     .host-panel {
-      grid-column: span 12;
       border: var(--stroke) solid rgba(230, 184, 0, 0.22);
       border-radius: var(--radius);
       background: var(--show-panel);
       box-shadow: var(--glow-gold), var(--glow-cyan);
       padding: 1.05rem 1.05rem 1rem;
     }
-
-    .host-panel.cols-7 { grid-column: span 7; }
-    .host-panel.cols-5 { grid-column: span 5; }
-    .host-panel.cols-12 { grid-column: span 12; }
 
     .panel-kicker {
       margin: 0 0 0.8rem;
@@ -321,6 +531,10 @@
     button:hover:not(:disabled) { filter: brightness(1.06); }
     button:disabled { opacity: 0.45; cursor: not-allowed; }
 
+    button.is-emphasis {
+      box-shadow: 0 0 0 2px rgba(240, 208, 96, 0.45), var(--glow-gold);
+    }
+
     button.secondary {
       color: var(--show-white);
       background: var(--show-panel-raised);
@@ -364,13 +578,6 @@
 
     .status.error { color: var(--show-red); }
     .status.success { color: var(--show-green); }
-
-    .actions {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(152px, 1fr));
-      gap: 0.5rem;
-      margin-top: 0.85rem;
-    }
 
     .word-pool-meta {
       margin-bottom: 0.55rem;
@@ -506,33 +713,61 @@
 
     .muted { color: rgba(180, 198, 220, 0.55); }
 
+    @media (max-width: 960px) {
+      .host-workspace { grid-template-columns: 1fr; }
+      .host-footer { grid-template-columns: 1fr; }
+      .show-tools-grid { grid-template-columns: 1fr; }
+      .session-danger { align-items: stretch; }
+      .session-danger .flow-section-label { text-align: left; }
+      .word-hero-row { grid-template-columns: 1fr; }
+      .tuning-row .tuning-actions { margin-left: 0; width: 100%; }
+    }
+
     @media (max-width: 900px) {
-      .host-panel.cols-7,
-      .host-panel.cols-5 { grid-column: span 12; }
-      .meta-rail { grid-template-columns: repeat(3, 1fr); }
+      .host-status { grid-template-columns: repeat(3, 1fr); }
       .meta-slot:nth-child(3n + 1) { border-left: none; }
       .meta-slot { border-top: 1px solid rgba(230, 184, 0, 0.14); }
       .meta-slot:nth-child(-n + 3) { border-top: none; }
+      .host-topbar { flex-direction: column; align-items: stretch; }
+      .host-connect { max-width: none; justify-content: stretch; }
+      #connectStatus { text-align: left; }
     }
 
     @media (max-width: 520px) {
-      .meta-rail { grid-template-columns: repeat(2, 1fr); }
+      .host-status { grid-template-columns: repeat(2, 1fr); }
       .meta-slot { border-left: none !important; }
       .meta-slot:nth-child(-n + 2) { border-top: none; }
+      .flow-actions { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="host-stage" id="hostStage" data-phase="idle">
     <div class="host-shell">
-      <header class="host-header">
-        <img class="host-logo" src="/assets/lingo-logo-extracted.svg" width="240" height="68" alt="Lingo" />
-        <p class="host-title">Host control</p>
-        <div class="phase-badge" id="phaseBadge">Stand by</div>
-        <p class="host-links">Player page <strong>/</strong> · Venue display <strong>/display</strong></p>
-      </header>
+      <div class="host-topbar">
+        <div class="host-brand">
+          <img class="host-logo" src="/assets/lingo-logo-extracted.svg" width="120" height="34" alt="Lingo" />
+          <div class="host-brand-text">
+            <p class="host-title">Host control</p>
+            <div class="phase-badge" id="phaseBadge">Stand by</div>
+          </div>
+        </div>
+        <div class="host-connect">
+          <div class="field">
+            <label for="adminKey">Admin key</label>
+            <input id="adminKey" type="password" autocomplete="current-password" placeholder="LINGO_ADMIN_KEY" />
+          </div>
+          <div class="host-connect-actions">
+            <button id="connectBtn" class="good" type="button">Connect</button>
+            <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+          </div>
+          <div id="connectStatus" class="status"></div>
+        </div>
+      </div>
 
-      <div class="meta-rail" aria-label="Session summary">
+      <p class="host-links">Players <strong>/</strong> · Venue <strong>/display</strong></p>
+
+      <div class="host-status" aria-label="Live session">
         <div class="meta-slot">
           <span class="meta-label">Phase</span>
           <span class="meta-value phase" id="phaseValue">idle</span>
@@ -542,15 +777,15 @@
           <span class="meta-value round" id="roundValue">0</span>
         </div>
         <div class="meta-slot">
-          <span class="meta-label">Balls</span>
+          <span class="meta-label">Balls left</span>
           <span class="meta-value balls" id="ballsValue">0</span>
         </div>
         <div class="meta-slot">
-          <span class="meta-label">Mult</span>
-          <span class="meta-value mult" id="multiplierValue">1x</span>
+          <span class="meta-label">Multiplier</span>
+          <span class="meta-value mult" id="multiplierValue">1×</span>
         </div>
         <div class="meta-slot">
-          <span class="meta-label">Word</span>
+          <span class="meta-label">On air</span>
           <span class="meta-value word" id="wordValue">—</span>
         </div>
         <div class="meta-slot">
@@ -560,115 +795,116 @@
       </div>
 
       <div class="host-grid">
-        <section class="host-panel cols-7">
-          <h2 class="panel-kicker">Host Access</h2>
-          <div class="row">
-            <div class="field">
-              <label for="adminKey">Admin key</label>
-              <input id="adminKey" type="password" autocomplete="current-password" placeholder="LINGO_ADMIN_KEY" />
-            </div>
-            <button id="connectBtn" class="good" type="button">Connect</button>
-            <button id="refreshBtn" class="secondary" type="button">Refresh</button>
-          </div>
-          <div id="connectStatus" class="status"></div>
-        </section>
+        <section class="host-panel host-primary" aria-label="Run the round">
+          <h2 class="panel-kicker">Run the round</h2>
 
-        <section class="host-panel cols-7">
-          <h2 class="panel-kicker">Round Controls</h2>
-          <div class="row">
-            <div class="field">
-              <label for="wordInput">Current word</label>
-              <input id="wordInput" type="text" maxlength="5" placeholder="LINGO" />
+          <div class="word-hero-row">
+            <div class="field field-word">
+              <label for="wordInput">Word for this round</label>
+              <input id="wordInput" type="text" maxlength="5" placeholder="LINGO" autocomplete="off" />
             </div>
+            <button id="setWordBtn" class="secondary btn-lg" type="button">Set word</button>
+            <button id="startRoundBtn" class="good btn-lg" type="button">Start round</button>
+          </div>
+
+          <div class="flow-section">
+            <p class="flow-section-label">Round flow</p>
+            <div class="flow-actions">
+              <button id="revealResultsBtn" class="warning btn-flow" type="button">Reveal results</button>
+              <button id="continueRoundBtn" class="good btn-flow" type="button">Continue guessing</button>
+              <button id="revealAnswerBtn" class="warning btn-flow" type="button">Reveal answer</button>
+              <button id="pauseTimerBtn" class="secondary btn-flow" type="button">Pause timer</button>
+            </div>
+          </div>
+
+          <div class="tuning-row">
             <div class="field">
-              <label for="guessSecondsInput">Guess seconds</label>
+              <label for="guessSecondsInput">Guess (sec)</label>
               <input id="guessSecondsInput" type="number" min="10" step="5" value="90" />
             </div>
             <div class="field">
-              <label for="resultsSecondsInput">Results seconds</label>
+              <label for="resultsSecondsInput">Results (sec)</label>
               <input id="resultsSecondsInput" type="number" min="10" step="5" value="45" />
             </div>
-            <div class="field">
-              <label for="ballsInput">Balls remaining</label>
+            <div class="field field-balls">
+              <label for="ballsInput">Balls left</label>
               <input id="ballsInput" type="number" min="0" step="1" value="0" />
             </div>
-          </div>
-
-          <div class="actions">
-            <button id="startRoundBtn" class="good" type="button">Start round</button>
-            <button id="setWordBtn" type="button">Set word</button>
-            <button id="revealResultsBtn" class="warning" type="button">Reveal results</button>
-            <button id="continueRoundBtn" class="secondary" type="button">Continue round</button>
-            <button id="pauseTimerBtn" class="secondary" type="button">Pause timer</button>
-            <button id="toggleDoubleBtn" class="secondary" type="button">Toggle 2× balls</button>
-            <button id="setBallsBtn" class="secondary" type="button">Set balls</button>
-            <button id="revealAnswerBtn" class="warning" type="button">Reveal answer</button>
-            <button id="newSessionBtn" class="secondary" type="button">New session</button>
-            <button id="resetSessionBtn" class="danger" type="button">Hard reset</button>
+            <div class="tuning-actions">
+              <button id="toggleDoubleBtn" class="secondary" type="button">Toggle 2×</button>
+              <button id="setBallsBtn" class="secondary" type="button">Apply balls</button>
+            </div>
           </div>
 
           <div id="actionStatus" class="status"></div>
         </section>
 
-        <section class="host-panel cols-5">
-          <h2 class="panel-kicker">Word Pool</h2>
-          <p class="panel-copy">Double-click to set the word. Right-click to remove from the pool.</p>
-          <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
-          <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
-          <div class="row" style="margin-top:0.75rem;">
-            <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh suggestions</button>
-          </div>
-          <div id="wordPoolStatus" class="status"></div>
-        </section>
-
-        <section class="host-panel cols-5">
-          <h2 class="panel-kicker">Show Tools</h2>
-          <p class="panel-copy">Display note, champion crown, and bonus balls.</p>
-          <div class="field">
-            <label for="hostNoteInput">Display note</label>
-            <input id="hostNoteInput" type="text" maxlength="160" placeholder="Idle screen message" />
-          </div>
-          <div class="row" style="margin-top:0.55rem;">
-            <button id="saveHostNoteBtn" class="secondary" type="button">Save note</button>
-          </div>
-          <div class="field" style="margin-top:0.75rem;">
-            <label for="championInput">Champion name</label>
-            <input id="championInput" type="text" maxlength="40" placeholder="Player to crown" />
-          </div>
-          <div class="row" style="margin-top:0.55rem;">
-            <button id="setChampionBtn" type="button">Set champion</button>
-            <button id="awardAllBallsBtn" class="good" type="button">All +1 ball</button>
-          </div>
-          <div id="showToolsStatus" class="status"></div>
-        </section>
-
-        <section class="host-panel cols-12">
-          <h2 class="panel-kicker">Player Roster</h2>
-          <p class="panel-copy">Edit ball totals or remove a player from the session.</p>
-          <div class="roster-stats">
-            <div class="stat-chip">
-              <span class="label">In session</span>
-              <span class="value" id="playerCountValue">0</span>
+        <div class="host-workspace">
+          <section class="host-panel" aria-label="Word pool">
+            <h2 class="panel-kicker">Pick a word</h2>
+            <p class="panel-copy">Double-click to set · right-click to remove</p>
+            <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
+            <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
+            <div class="row" style="margin-top:0.65rem;">
+              <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh pool</button>
             </div>
-            <div class="stat-chip">
-              <span class="label">Submitted</span>
-              <span class="value" id="submittedCountValue">0</span>
+            <div id="wordPoolStatus" class="status"></div>
+          </section>
+
+          <section class="host-panel" aria-label="Player roster">
+            <h2 class="panel-kicker">Players live</h2>
+            <div class="roster-stats">
+              <div class="stat-chip">
+                <span class="label">In session</span>
+                <span class="value" id="playerCountValue">0</span>
+              </div>
+              <div class="stat-chip">
+                <span class="label">Submitted</span>
+                <span class="value" id="submittedCountValue">0</span>
+              </div>
             </div>
+            <div class="roster-table-wrap">
+              <table class="roster-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Balls</th>
+                    <th>Guess</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="playerRosterBody">
+                  <tr><td colspan="4" class="muted">Connect to load players.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <section class="host-panel host-footer">
+          <div class="show-tools-block">
+            <h2 class="panel-kicker">Venue extras</h2>
+            <div class="show-tools-grid">
+              <div class="field">
+                <label for="hostNoteInput">Idle message</label>
+                <input id="hostNoteInput" type="text" maxlength="160" placeholder="Shown on display while idle" />
+              </div>
+              <div class="field">
+                <label for="championInput">Champion</label>
+                <input id="championInput" type="text" maxlength="40" placeholder="Display name" />
+              </div>
+              <div class="show-tools-buttons">
+                <button id="saveHostNoteBtn" class="secondary" type="button">Save note</button>
+                <button id="setChampionBtn" type="button">Crown</button>
+                <button id="awardAllBallsBtn" class="good" type="button">All +1</button>
+              </div>
+            </div>
+            <div id="showToolsStatus" class="status"></div>
           </div>
-          <div class="roster-table-wrap">
-            <table class="roster-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Balls</th>
-                  <th>Guess</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="playerRosterBody">
-                <tr><td colspan="4" class="muted">Connect to load players.</td></tr>
-              </tbody>
-            </table>
+          <div class="session-danger">
+            <p class="flow-section-label">Session</p>
+            <button id="newSessionBtn" class="secondary" type="button">New session</button>
+            <button id="resetSessionBtn" class="danger" type="button">Hard reset</button>
           </div>
         </section>
       </div>
@@ -887,7 +1123,28 @@
       const canPause = phase === 'guessing' || phase === 'results';
       els.pauseTimerBtn.disabled = !canPause;
       els.pauseTimerBtn.textContent = state.timerPaused ? 'Resume timer' : 'Pause timer';
+      updateFlowEmphasis(phase);
       renderWordPool();
+    }
+
+    function updateFlowEmphasis(phase) {
+      const emphasisByPhase = {
+        idle: els.startRoundBtn,
+        guessing: els.revealResultsBtn,
+        results: els.continueRoundBtn,
+        ended: els.startRoundBtn,
+      };
+      const targets = [
+        els.startRoundBtn,
+        els.setWordBtn,
+        els.revealResultsBtn,
+        els.continueRoundBtn,
+        els.revealAnswerBtn,
+        els.pauseTimerBtn,
+      ];
+      targets.forEach((btn) => btn.classList.remove('is-emphasis'));
+      const active = emphasisByPhase[phase];
+      if (active && !active.disabled) active.classList.add('is-emphasis');
     }
 
     function renderWordPool() {
