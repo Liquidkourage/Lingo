@@ -3031,6 +3031,8 @@
       || ["1", "true", "yes"].includes((urlParams.get("fs") || "").toLowerCase());
     const LAYOUT_DEBUG = ["borders", "layout", "1", "true", "yes"].includes((urlParams.get("debug") || "").toLowerCase());
     const LIVE_CARD_SKINS = ["aurora", "goldleaf", "holo", "matrix", "sunset", "chrome", "magma", "ice"];
+    /* Demo showcase: Storm → magma, Echo → ice; holo/matrix rotate to slots 4–5 */
+    const DEMO_CARD_SKINS = ["aurora", "goldleaf", "magma", "ice", "holo", "matrix", "sunset", "chrome"];
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
       "BlueJay", "CryptoKat", "NeonWave", "TurboTurtle", "Glitch",
@@ -3048,7 +3050,9 @@
         joinedAtIso: new Date(now - (count - index) * 60000).toISOString(),
         status: "waiting",
         statusText: "In lobby",
-        cardSkin: LIVE_CARD_SKINS[index % LIVE_CARD_SKINS.length],
+        cardSkin: (IS_DEMO && index < DEMO_CARD_SKINS.length)
+          ? DEMO_CARD_SKINS[index]
+          : LIVE_CARD_SKINS[index % LIVE_CARD_SKINS.length],
       }));
     }
 
@@ -3056,7 +3060,7 @@
       const patterns = ["!/?//", "/!???", "!!?//", "!!!!!", "/!///", "?!!//", "!!///", "/?!!/"];
       return buildDemoPlayers(count).map((player, index) => {
         if (phase === "guessing") {
-          const locked = index % 3 !== 1;
+          const locked = IS_DEMO ? true : index % 3 !== 1;
           return {
             ...player,
             status: locked ? "locked" : "waiting",
