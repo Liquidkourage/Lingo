@@ -268,7 +268,11 @@
     }
 
     .timer-flash.is-active.timer-flash--warn-10 {
-      animation: timer-flash-red 0.75s ease-out forwards;
+      animation: timer-flash-cyan-double 0.75s ease-out forwards;
+    }
+
+    .timer-flash.is-active.timer-flash--warn-urgent {
+      animation: timer-flash-cyan-single 0.55s ease-out forwards;
     }
 
     @keyframes timer-flash-yellow {
@@ -277,10 +281,15 @@
       30% { opacity: 0.18; background: var(--feedback-present); }
     }
 
-    @keyframes timer-flash-red {
+    @keyframes timer-flash-cyan-double {
       0%, 100% { opacity: 0; }
-      18%, 42% { opacity: 0.48; background: var(--show-red); }
-      30% { opacity: 0.22; background: var(--show-red); }
+      18%, 42% { opacity: 0.36; background: var(--show-cyan); }
+      30% { opacity: 0.14; background: var(--show-cyan); }
+    }
+
+    @keyframes timer-flash-cyan-single {
+      0%, 100% { opacity: 0; }
+      24% { opacity: 0.28; background: var(--show-cyan); }
     }
 
     .phase-line {
@@ -1876,14 +1885,34 @@
       timerToastFired = { warn30: false, warn10: false };
     }
 
+    function shouldShowTimerFlashes(state) {
+      if ((state.phase || 'idle') !== 'guessing') return false;
+      if (state.timerPaused) return false;
+      if (!isViewerJoined(state)) return false;
+      if (state.viewer?.isSolved) return false;
+      if (hasSubmittedGuess()) return false;
+      return true;
+    }
+
     function triggerTimerFlash(variant) {
       if (!els.timerFlash) return;
-      els.timerFlash.classList.remove('timer-flash--warn-30', 'timer-flash--warn-10', 'is-active');
+      els.timerFlash.classList.remove(
+        'timer-flash--warn-30',
+        'timer-flash--warn-10',
+        'timer-flash--warn-urgent',
+        'is-active',
+      );
       void els.timerFlash.offsetWidth;
       els.timerFlash.classList.add(`timer-flash--${variant}`, 'is-active');
+      const durationMs = variant === 'warn-urgent' ? 550 : TIMER_FLASH_MS;
       window.setTimeout(() => {
-        els.timerFlash.classList.remove('is-active', 'timer-flash--warn-30', 'timer-flash--warn-10');
-      }, TIMER_FLASH_MS);
+        els.timerFlash.classList.remove(
+          'is-active',
+          'timer-flash--warn-30',
+          'timer-flash--warn-10',
+          'timer-flash--warn-urgent',
+        );
+      }, durationMs);
     }
 
     function maybeShowTimerToasts(state) {
@@ -1908,6 +1937,11 @@
         return;
       }
 
+      if (!shouldShowTimerFlashes(state)) {
+        timerToastLastRemaining = remaining;
+        return;
+      }
+
       const prev = timerToastLastRemaining;
 
       if (!timerToastFired.warn30 && remaining <= 30 && remaining > 10) {
@@ -1922,6 +1956,8 @@
           triggerTimerFlash('warn-10');
           timerToastFired.warn10 = true;
         }
+      } else if (remaining > 0 && remaining < 10 && prev !== remaining) {
+        triggerTimerFlash('warn-urgent');
       }
 
       timerToastLastRemaining = remaining;
