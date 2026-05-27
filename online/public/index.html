@@ -624,8 +624,9 @@
 
     .letter-input {
       position: relative;
-      z-index: 1;
-      pointer-events: none;
+      z-index: 3;
+      pointer-events: auto;
+      cursor: text;
       width: clamp(52px, 14vw, 68px);
       height: clamp(52px, 14vw, 68px);
       padding: 0;
@@ -642,7 +643,8 @@
       box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
     }
 
-    .letter-input:focus {
+    .letter-input:focus,
+    .letter-input.is-selected {
       border-color: var(--show-gold);
       box-shadow: 0 0 20px rgba(255, 204, 0, 0.45);
     }
@@ -1309,6 +1311,7 @@
     let pollTimer = null;
     let tickTimer = null;
     let guessDraftDirty = false;
+    let guessCaretIndex = null;
     let lastGuessWindowKey = '';
     let lastTimerToastWindowKey = '';
     let timerToastLastRemaining = null;
@@ -1610,8 +1613,81 @@
       syncGuessTilesFromCapture();
     }
 
+    function paintGuessSelection() {
+      els.inputs.forEach((input, index) => {
+        input.classList.toggle('is-selected', guessCaretIndex != null && index === guessCaretIndex);
+      });
+    }
+
+    function focusGuessSlot(index) {
+      if (!canTypeGuess() || !els.guessCapture) return;
+      if (index < 0 || index > 4) return;
+      if (els.inputs[index]?.classList.contains('is-revealed')) return;
+
+      const guess = normalizedGuessText(els.guessCapture.value);
+      const firstEmpty = guess.length < 5 ? guess.length : -1;
+      let slot = index;
+      if (firstEmpty !== -1 && index > firstEmpty) {
+        slot = firstEmpty;
+      }
+
+      guessCaretIndex = slot;
+      focusGuessCapture();
+      if (slot < guess.length) {
+        els.guessCapture.setSelectionRange(slot, slot + 1);
+      } else {
+        els.guessCapture.setSelectionRange(guess.length, guess.length);
+      }
+      paintGuessSelection();
+    }
+
+    function backspaceGuess() {
+      if (!canTypeGuess() || !els.guessCapture) return;
+      guessDraftDirty = true;
+
+      const input = els.guessCapture;
+      if (document.activeElement !== input) {
+        focusGuessCapture();
+        const guess = normalizedGuessText(input.value);
+        if (guessCaretIndex != null) {
+          const pos = Math.min(guessCaretIndex, guess.length);
+          if (pos < guess.length) {
+            input.setSelectionRange(pos, pos + 1);
+          } else {
+            input.setSelectionRange(guess.length, guess.length);
+          }
+        }
+      }
+
+      const value = normalizedGuessText(input.value);
+      const start = input.selectionStart ?? value.length;
+      const end = input.selectionEnd ?? start;
+
+      let next = value;
+      let caret = start;
+
+      if (start !== end) {
+        next = normalizedGuessText(`${value.slice(0, start)}${value.slice(end)}`);
+        caret = start;
+      } else if (start > 0) {
+        next = normalizedGuessText(`${value.slice(0, start - 1)}${value.slice(start)}`);
+        caret = start - 1;
+      } else {
+        return;
+      }
+
+      setGuessText(next);
+      guessCaretIndex = Math.min(caret, Math.max(0, next.length));
+      window.requestAnimationFrame(() => {
+        input.setSelectionRange(guessCaretIndex, guessCaretIndex);
+        paintGuessSelection();
+      });
+    }
+
     function clearInputs(focusCapture = false) {
+      guessCaretIndex = null;
       setGuessText('');
+      paintGuessSelection();
       if (focusCapture) focusGuessCapture();
     }
 
@@ -1697,10 +1773,34 @@
       }
     }
 
-    function appendGuessLetter(letter) {
+    function insertGuessLetter(letter) {
       if (!canTypeGuess() || !els.guessCapture) return;
-      const next = normalizedGuessText(`${els.guessCapture.value}${letter}`);
+      const ch = normalizedGuessText(letter);
+      if (!ch) return;
+
+      guessDraftDirty = true;
+      const input = els.guessCapture;
+      if (document.activeElement !== input) {
+        focusGuessSlot(guessCaretIndex ?? normalizedGuessText(input.value).length);
+      }
+
+      const value = normalizedGuessText(input.value);
+      const start = input.selectionStart ?? value.length;
+      const end = input.selectionEnd ?? start;
+      const next = normalizedGuessText(`${value.slice(0, start)}${ch}${value.slice(end)}`);
+      if (!next || next === value) return;
+
       setGuessText(next);
+      const caret = Math.min(start + 1, next.length);
+      guessCaretIndex = Math.min(start, 4);
+      window.requestAnimationFrame(() => {
+        input.setSelectionRange(caret, caret);
+        paintGuessSelection();
+      });
+    }
+
+    function appendGuessLetter(letter) {
+      insertGuessLetter(letter);
     }
 
     function handleGuessKeydown(event) {
@@ -1715,16 +1815,16 @@
       }
       if (key === 'Backspace') {
         event.preventDefault();
-        setGuessText(els.guessCapture.value.slice(0, -1));
+        backspaceGuess();
         return true;
       }
       if (!/^[a-zA-Z]$/.test(key)) return false;
 
       const active = document.activeElement;
-      if (active === els.playerName || active === els.guessCapture) return false;
+      if (active === els.playerName) return false;
 
       event.preventDefault();
-      appendGuessLetter(key);
+      insertGuessLetter(key);
       return true;
     }
 
@@ -2346,8 +2446,7 @@
         return;
       }
       if (action === 'BACK') {
-        if (!els.guessCapture) return;
-        setGuessText(els.guessCapture.value.slice(0, -1));
+        backspaceGuess();
         return;
       }
       appendGuessLetter(action);
@@ -2655,6 +2754,10 @@
       els.guessCapture.addEventListener('input', () => {
         guessDraftDirty = true;
         syncGuessTilesFromCapture();
+        const guess = normalizedGuessText(els.guessCapture.value);
+        const caret = els.guessCapture.selectionStart ?? guess.length;
+        guessCaretIndex = Math.min(Math.max(0, caret), Math.max(0, guess.length));
+        paintGuessSelection();
       });
 
       els.guessCapture.addEventListener('keydown', (event) => {
@@ -2671,16 +2774,18 @@
       });
 
       if (els.wordTiles) {
-        els.wordTiles.addEventListener('pointerdown', () => {
-          if (canTypeGuess()) focusGuessCapture();
+        els.wordTiles.addEventListener('pointerdown', (event) => {
+          if (!canTypeGuess()) return;
+          if (event.target.closest('.letter-input')) return;
+          focusGuessCapture();
         });
       }
 
-      els.inputs.forEach((input) => {
-        input.addEventListener('focus', () => {
+      els.inputs.forEach((input, index) => {
+        input.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
           if (!canTypeGuess()) return;
-          input.blur();
-          focusGuessCapture();
+          focusGuessSlot(index);
         });
       });
     }
