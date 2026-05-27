@@ -451,10 +451,30 @@ function findPlayerByDisplayName(players, displayName) {
   ) || null;
 }
 
+async function playerHasPerfectSolveForRound(state, player, client = pool) {
+  if (Number(player.roundNumber || 0) !== Number(state.round_number || 0)) {
+    return false;
+  }
+  const guess = normalizeWordInput(player.currentGuess || "");
+  if (!guess) {
+    return false;
+  }
+  if (!(await isLegalWord(client, guess))) {
+    return false;
+  }
+  return getLingoResultPattern(state.current_word, guess) === "!!!!!";
+}
+
 async function allActivePlayersSubmitted(state, client = pool) {
   const players = await listPlayers(state.session_id, client);
   const round = Number(state.round_number || 0);
-  const awaiting = players.filter((player) => !player.solvedCurrentWord);
+  const awaiting = [];
+  for (const player of players) {
+    if (player.solvedCurrentWord || await playerHasPerfectSolveForRound(state, player, client)) {
+      continue;
+    }
+    awaiting.push(player);
+  }
   if (!awaiting.length) return false;
   return awaiting.every(
     (player) => Number(player.roundNumber) === round && !!player.currentGuess,
@@ -772,6 +792,7 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
 
   const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
   const guess = submitted ? normalizeWordInput(player.currentGuess) : "";
+  const hasPerfectSolve = await playerHasPerfectSolveForRound(state, player, client);
   let resultPattern = "";
   let resultLabel = "";
 
@@ -808,12 +829,12 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
     sessionValid,
     displayName: player.displayName,
     balls: Number(player.balls || 0),
-    lockedIn: phase === "guessing" && submitted && !Boolean(player.solvedCurrentWord),
+    lockedIn: phase === "guessing" && submitted && !hasPerfectSolve,
     resultPattern: viewerResultPattern,
     roundGuess,
     resultLabel: viewerResultLabel,
     guessHistory,
-    isSolved: Boolean(player.solvedCurrentWord),
+    isSolved: Boolean(player.solvedCurrentWord) || (phase === "guessing" && hasPerfectSolve),
     isChampion: isChampionPlayer(player.displayName, state),
   };
 }
@@ -1349,7 +1370,8 @@ app.post("/api/public/submit-guess", async (req, res) => {
       throw new Error("Display name does not match your player session.");
     }
 
-    if (playerRow.solved_current_word) {
+    if (playerRow.solved_current_word
+      || await playerHasPerfectSolveForRound(state, playerRow, client)) {
       throw new Error("You already solved this word for the round.");
     }
 
@@ -1423,20 +1445,8 @@ app.post("/api/public/submit-guess", async (req, res) => {
       }
     }
 
-    let solvedNow = false;
-    if (await isLegalWord(client, guess)) {
-      const pattern = getLingoResultPattern(state.current_word, guess);
-      if (pattern === "!!!!!") {
-        await client.query(
-          `update players
-           set solved_current_word = true,
-               updated_at = now()
-           where id = $1`,
-          [player.id],
-        );
-        solvedNow = true;
-      }
-    }
+    const solvedNow = await isLegalWord(client, guess)
+      && getLingoResultPattern(state.current_word, guess) === "!!!!!";
 
     let nextState = await getState(client);
     nextState = await maybeAutoRevealIfAllSubmitted(nextState, client);
