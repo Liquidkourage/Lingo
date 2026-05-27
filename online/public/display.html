@@ -18,8 +18,9 @@
       --show-navy: rgba(0, 12, 36, 0.96);
       /* Live phases: keep grid UI below extracted logo (28% wide @ ~2.7:1 + top offset) */
       --live-logo-reserve: 19%;
-      /* Score rail grows upward into left dead zone below logo, not downward into HUD */
-      --live-score-rail-rise: 22cqh;
+      /* Score rail: lift moves it up; height stays fixed */
+      --live-score-rail-lift: 28cqh;
+      --live-score-rail-height: 11em;
     }
 
     html, body {
