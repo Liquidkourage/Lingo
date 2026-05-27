@@ -342,45 +342,51 @@
       margin-bottom: 0.65rem;
     }
 
-    .play-identity {
-      display: block;
-      margin-bottom: 0.55rem;
-      padding: 0.65rem 0.7rem 0.7rem;
-      border: var(--contrast-stroke) solid var(--show-cyan);
+    .play-setup-panel {
+      padding: 0.55rem 0.65rem 0.6rem;
+      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.45);
       border-radius: 0.2em;
+      background: rgba(0, 0, 0, 0.35);
+    }
+
+    .play-setup-panel[data-name-mode="editing"] {
+      border-color: var(--show-cyan);
       background: rgba(0, 20, 40, 0.65);
       box-shadow: 0 0 18px rgba(0, 212, 255, 0.2);
     }
 
-    .play-identity[data-name-mode="locked"] {
-      padding: 0.5rem 0.7rem 0.55rem;
-      border-color: rgba(255, 204, 0, 0.45);
-      background: rgba(0, 0, 0, 0.35);
-      box-shadow: none;
-    }
-
-    .play-identity[data-name-mode="editing"] .name-locked {
+    .play-setup-panel[data-name-mode="editing"] .setup-row {
       display: none;
     }
 
-    .play-identity[data-name-mode="locked"] .name-edit {
+    .play-setup-panel[data-name-mode="locked"] .name-edit {
       display: none;
     }
 
-    .name-locked-row {
+    .setup-row {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       gap: 0.55rem;
-      flex-wrap: wrap;
+    }
+
+    .setup-name-group {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: 0;
+      flex: 1 1 auto;
     }
 
     .name-display {
-      font-size: 1.12rem;
+      font-size: 1.05rem;
       font-weight: 900;
       letter-spacing: 0.04em;
       color: var(--show-cyan);
       text-shadow: 0 0 14px rgba(0, 212, 255, 0.45);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .name-change {
@@ -550,27 +556,12 @@
       grid-column: auto;
     }
 
-    .play-lobby {
-      display: block;
-      margin-top: 0;
-      padding: 0.55rem 0.65rem 0.65rem;
-      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.35);
-      border-radius: 0.2em;
-      background: rgba(0, 0, 0, 0.35);
-    }
-
-    .play-lobby .lobby-hint {
-      margin: 0 0 0.5rem;
-      text-align: center;
-      font-size: 0.72rem;
-      font-weight: 600;
-      line-height: 1.35;
-      color: rgba(200, 220, 245, 0.72);
-    }
-
     .lobby-toggle {
-      display: block;
-      width: 100%;
+      flex: 0 0 auto;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
     }
 
     button.good {
@@ -942,7 +933,7 @@
       </header>
 
       <div class="play-setup" id="playSetup">
-        <section class="play-identity" id="playIdentity" data-name-mode="editing" aria-label="Your user name">
+        <section class="play-setup-panel" id="playIdentity" data-name-mode="editing" aria-label="Your player setup">
           <div class="name-edit" id="nameEdit">
             <label class="field-label" for="playerName">Your user name</label>
             <div class="name-row">
@@ -952,18 +943,13 @@
             </div>
             <p class="name-hint" id="nameHint">Sets your name and joins the game.</p>
           </div>
-          <div class="name-locked" id="nameLocked">
-            <span class="field-label">Your user name</span>
-            <div class="name-locked-row">
+          <div class="setup-row" id="nameLocked">
+            <div class="setup-name-group">
               <span class="name-display" id="playerNameDisplay"></span>
               <button id="changeNameBtn" class="name-change" type="button">Change</button>
             </div>
+            <button id="lobbyToggle" class="good lobby-toggle" type="button">Join game</button>
           </div>
-        </section>
-
-        <section class="play-lobby" id="playLobby" aria-label="Venue display">
-          <p class="lobby-hint">Appear on the venue display while joined.</p>
-          <button id="lobbyToggle" class="good lobby-toggle" type="button">Join game</button>
         </section>
       </div>
 
