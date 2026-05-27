@@ -298,7 +298,7 @@ app.get("/api/play-qr", async (req, res) => {
       width: 400,
       margin: 1,
       errorCorrectionLevel: "M",
-      color: { dark: "#001a40", light: "#ffffff" },
+      color: { dark: "#58e8ff", light: "#061428" },
     });
     res.type("png");
     res.set("Cache-Control", "public, max-age=3600");

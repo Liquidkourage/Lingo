@@ -667,25 +667,64 @@
       width: 100%;
       aspect-ratio: 1;
       border-radius: 0.4em;
-      background: #fff;
-      padding: 0.12em;
+      background: linear-gradient(180deg, rgba(0, 22, 52, 0.98) 0%, rgba(0, 8, 22, 0.99) 100%);
+      border: 2px solid rgba(255, 210, 60, 0.42);
+      padding: 0.32em;
       box-sizing: border-box;
       box-shadow:
-        0 0 24px rgba(255, 255, 255, 0.55),
-        0 0 48px rgba(80, 200, 255, 0.35);
+        inset 0 0 28px rgba(0, 90, 200, 0.28),
+        0 0 18px rgba(72, 212, 255, 0.22);
+    }
+
+    .idle-qr-shell::before,
+    .idle-qr-shell::after {
+      content: "";
+      position: absolute;
+      width: 0.85em;
+      height: 0.85em;
+      border: 2px solid rgba(255, 220, 90, 0.85);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .idle-qr-shell::before {
+      top: 0.22em;
+      left: 0.22em;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .idle-qr-shell::after {
+      bottom: 0.22em;
+      right: 0.22em;
+      border-left: none;
+      border-top: none;
+    }
+
+    .idle-join-kicker {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      font-family: "Bebas Neue", Montserrat, sans-serif;
+      font-size: 0.62em;
+      font-weight: 400;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 14px rgba(255, 210, 60, 0.55);
     }
 
     .idle-qr {
       position: relative;
       z-index: 1;
       display: block;
-      width: 88%;
-      height: 88%;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
       border-radius: 0.2em;
       padding: 0;
       box-sizing: border-box;
-      background: #fff;
+      background: transparent;
     }
 
     .idle-cta {
@@ -798,20 +837,31 @@
       display: none !important;
     }
 
+    .idle-url-wrap {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      padding: 0.38em 0.45em;
+      border-radius: 0.35em;
+      border: 1px solid rgba(72, 212, 255, 0.45);
+      background: linear-gradient(180deg, rgba(0, 28, 64, 0.92) 0%, rgba(0, 10, 32, 0.96) 100%);
+      box-shadow: inset 0 0 12px rgba(0, 80, 180, 0.2);
+    }
+
     .idle-url {
       position: relative;
       z-index: 1;
       margin: 0;
-      font-size: 0.56em;
-      font-weight: 800;
-      line-height: 1.25;
-      letter-spacing: 0.02em;
-      color: #7ae8ff;
+      font-size: 0.62em;
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: 0.04em;
+      color: #9ef4ff;
       text-shadow:
-        0 0 16px rgba(80, 220, 255, 0.75),
-        0 0 36px rgba(40, 160, 255, 0.45);
+        0 0 12px rgba(80, 220, 255, 0.85),
+        0 0 24px rgba(40, 160, 255, 0.45);
       animation: url-glow 3s ease-in-out infinite;
-      word-break: break-all;
+      word-break: break-word;
     }
 
     @keyframes url-glow {
@@ -907,10 +957,24 @@
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-callout {
       display: grid;
-      grid-template-rows: minmax(0, 1fr) auto auto auto;
+      grid-template-rows: auto minmax(0, 1fr) auto auto auto;
       height: 100%;
       padding: 0.55em 0.5em 0.6em;
-      gap: 0.45em;
+      gap: 0.4em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-join-kicker {
+      font-size: 0.54em;
+      letter-spacing: 0.22em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-url-wrap {
+      padding: 0.32em 0.38em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-url {
+      font-size: 0.56em;
+      letter-spacing: 0.03em;
     }
 
     .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-qr-shell {
@@ -928,10 +992,12 @@
       padding: 0.42em 0.5em;
     }
 
-    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-url {
-      font-size: 0.5em;
-      line-height: 1.3;
-      word-break: break-word;
+    .stage[data-phase="idle"][data-lobby-has-players="true"] .idle-cta {
+      font-size: 0.44em;
+      letter-spacing: 0.07em;
+      line-height: 1.22;
+      white-space: normal;
+      padding: 0.42em 0.5em;
     }
 
     .stage[data-phase="idle"] .player-board {
@@ -981,16 +1047,98 @@
     }
 
     .stage[data-phase="idle"] .player-board-header {
-      font-family: "Bebas Neue", Montserrat, sans-serif;
-      font-size: 1.12em;
-      font-weight: 400;
-      letter-spacing: 0.24em;
-      padding: 0.5em 0.75em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.08em;
+      font-family: Montserrat, sans-serif;
+      font-size: unset;
+      font-weight: unset;
+      letter-spacing: unset;
+      text-transform: none;
+      padding: 0.55em 0.75em 0.6em;
       position: relative;
       overflow: hidden;
+    }
+
+    .lobby-header-idle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.08em;
+    }
+
+    .board-header-game {
+      font-family: "Bebas Neue", Montserrat, sans-serif;
+      font-size: 1.05em;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #ffe070;
+      text-shadow: 0 0 16px rgba(255, 210, 60, 0.55);
+    }
+
+    .board-header-game[hidden],
+    .lobby-header-idle[hidden] {
+      display: none !important;
+    }
+
+    .lobby-header-kicker {
+      font-family: "Bebas Neue", Montserrat, sans-serif;
+      font-size: 0.72em;
+      font-weight: 400;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: rgba(255, 230, 160, 0.88);
+      text-shadow: 0 0 12px rgba(255, 200, 60, 0.45);
+    }
+
+    .lobby-header-main {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0.22em;
+      line-height: 1;
+    }
+
+    .lobby-header-count {
+      font-family: "Bebas Neue", Montserrat, sans-serif;
+      font-size: 1.65em;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: var(--show-gold-hot);
       text-shadow:
-        0 0 18px rgba(255, 210, 60, 0.65),
-        0 0 36px rgba(255, 170, 30, 0.28);
+        0 0 20px rgba(255, 210, 60, 0.75),
+        0 0 40px rgba(255, 160, 30, 0.35);
+      animation: count-pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes count-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .lobby-header-unit {
+      font-family: "Bebas Neue", Montserrat, sans-serif;
+      font-size: 0.95em;
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255, 220, 120, 0.92);
+      text-shadow: 0 0 14px rgba(255, 190, 60, 0.45);
+    }
+
+    .lobby-header-range {
+      font-size: 0.42em;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(180, 220, 255, 0.82);
+      text-shadow: 0 0 10px rgba(80, 180, 255, 0.35);
+    }
+
+    .lobby-header-range[hidden] {
+      display: none !important;
     }
 
     .stage[data-phase="idle"] .player-board-header::after {
@@ -1164,6 +1312,36 @@
       gap: 0.52em 0.62em;
       align-content: stretch;
       padding: 0.05em;
+    }
+
+    .stage[data-lobby-density="sparse"] .player-grid {
+      align-content: center;
+      gap: 0.72em 0.82em;
+    }
+
+    .stage[data-lobby-density="sparse"] .player-card {
+      padding: 0.42em 0.72em;
+      min-height: 2.4em;
+    }
+
+    .stage[data-lobby-density="sparse"] .player-name {
+      font-size: var(--chip-name-size, 0.82em) !important;
+    }
+
+    .stage[data-lobby-density="comfortable"] .player-grid {
+      align-content: center;
+      gap: 0.62em 0.72em;
+    }
+
+    .stage[data-phase="idle"] .player-board-empty {
+      font-size: 1.05em;
+      color: rgba(200, 225, 255, 0.88);
+      text-shadow: 0 0 16px rgba(80, 180, 255, 0.35);
+    }
+
+    .stage[data-phase="idle"] .player-board-empty svg {
+      opacity: 0.72;
+      filter: drop-shadow(0 0 12px rgba(80, 200, 255, 0.45));
     }
 
     .stage[data-phase="idle"] .player-grid.is-rotating {
@@ -1395,6 +1573,7 @@
       .status-badge,
       .ui-topline,
       .timer-panel,
+      .lobby-header-count,
       .stage[data-phase="idle"] .player-board,
       .stage[data-phase="idle"] .player-card {
         animation: none !important;
@@ -1456,17 +1635,28 @@
         <div class="idle-deck" id="idleDeck">
           <div class="idle-info" id="idleInfo" aria-live="polite">
             <div class="idle-callout">
+              <p class="idle-join-kicker">Scan to join</p>
               <div class="idle-qr-shell">
                 <img class="idle-qr" id="playQr" width="400" height="400" alt="" />
               </div>
               <p class="idle-cta" id="idleCta"><span class="idle-cta-text">Sign up — game starts soon</span></p>
               <p class="idle-host-note" id="idleHostNote" hidden></p>
-              <p class="idle-url" id="playUrl"></p>
+              <p class="idle-url-wrap"><span class="idle-url" id="playUrl"></span></p>
             </div>
           </div>
 
           <section class="player-board" aria-label="Player board">
-            <div class="player-board-header" id="playerBoardHeader">Player board</div>
+            <div class="player-board-header" id="playerBoardHeader">
+              <div class="lobby-header-idle" id="lobbyHeaderIdle">
+                <span class="lobby-header-kicker">Lobby</span>
+                <span class="lobby-header-main">
+                  <span class="lobby-header-count" id="playerBoardCount">0</span>
+                  <span class="lobby-header-unit" id="playerBoardUnit">players</span>
+                </span>
+                <span class="lobby-header-range" id="playerBoardRange" hidden></span>
+              </div>
+              <span class="board-header-game" id="playerBoardGameTitle" hidden>Player board</span>
+            </div>
             <div class="player-board-body" id="playerBoardBody"></div>
           </section>
         </div>
@@ -1523,6 +1713,11 @@
       idleCtaText: document.querySelector("#idleCta .idle-cta-text"),
       idleHostNote: document.getElementById("idleHostNote"),
       playerBoardHeader: document.getElementById("playerBoardHeader"),
+      lobbyHeaderIdle: document.getElementById("lobbyHeaderIdle"),
+      playerBoardGameTitle: document.getElementById("playerBoardGameTitle"),
+      playerBoardCount: document.getElementById("playerBoardCount"),
+      playerBoardUnit: document.getElementById("playerBoardUnit"),
+      playerBoardRange: document.getElementById("playerBoardRange"),
       wordClue: document.getElementById("wordClue"),
       wordClueLabel: document.getElementById("wordClueLabel"),
       wordClueValue: document.getElementById("wordClueValue"),
@@ -1597,13 +1792,27 @@
       }
     }
 
-    function lobbyHeaderLabel(count, pageInfo) {
+    function lobbyHeaderParts(count, pageInfo) {
       const n = Number(count || 0);
-      if (n === 1) return "Lobby · 1 player";
+      const unit = n === 1 ? "player" : "players";
+      let range = "";
       if (pageInfo && pageInfo.pageCount > 1) {
-        return `Lobby · ${n} players · showing ${pageInfo.rangeStart}–${pageInfo.rangeEnd}`;
+        range = `Showing ${pageInfo.rangeStart}–${pageInfo.rangeEnd} of ${n}`;
       }
-      return `Lobby · ${n} players`;
+      return { count: String(n), unit, range };
+    }
+
+    function getLobbyColumns(visibleCount) {
+      if (visibleCount <= 4) return visibleCount;
+      if (visibleCount <= 8) return 3;
+      if (visibleCount <= 12) return 4;
+      return LOBBY_PAGE_COLS;
+    }
+
+    function getLobbyDensity(visibleCount) {
+      if (visibleCount <= 8) return "sparse";
+      if (visibleCount <= 12) return "comfortable";
+      return "";
     }
 
     function getLobbyPageInfo(players) {
@@ -1679,8 +1888,9 @@
 
     function applyIdleLobbyLayout(visibleCount) {
       const n = Math.max(1, Math.min(visibleCount, LOBBY_PAGE_SIZE));
-      const cols = LOBBY_PAGE_COLS;
+      const cols = getLobbyColumns(n);
       const rows = Math.max(1, Math.ceil(n / cols));
+      const density = getLobbyDensity(n);
 
       if (visibleCount > 24) {
         els.stage.dataset.lobbySize = "full";
@@ -1688,7 +1898,12 @@
         delete els.stage.dataset.lobbySize;
       }
 
-      delete els.stage.dataset.lobbyDensity;
+      if (density) {
+        els.stage.dataset.lobbyDensity = density;
+      } else {
+        delete els.stage.dataset.lobbyDensity;
+      }
+
       els.stage.style.setProperty("--lobby-cols", String(cols));
       els.stage.style.setProperty("--lobby-rows", String(rows));
       return { cols, rows };
@@ -1697,16 +1912,29 @@
     function updateLobbyHeader(state) {
       const phase = state.phase || "idle";
       if (phase !== "idle") {
-        els.playerBoardHeader.textContent = "Player board";
+        els.lobbyHeaderIdle.hidden = true;
+        els.playerBoardGameTitle.hidden = false;
         return;
       }
 
+      els.lobbyHeaderIdle.hidden = false;
+      els.playerBoardGameTitle.hidden = true;
+
       const players = Array.isArray(state.players) ? state.players : [];
       const pageInfo = getLobbyPageInfo(players);
-      els.playerBoardHeader.textContent = lobbyHeaderLabel(
+      const parts = lobbyHeaderParts(
         Number(state.playerCount || players.length || 0),
         pageInfo.pageCount > 1 ? pageInfo : null
       );
+      els.playerBoardCount.textContent = parts.count;
+      els.playerBoardUnit.textContent = parts.unit;
+      if (parts.range) {
+        els.playerBoardRange.hidden = false;
+        els.playerBoardRange.textContent = parts.range;
+      } else {
+        els.playerBoardRange.hidden = true;
+        els.playerBoardRange.textContent = "";
+      }
     }
 
     function chipNameSize(name) {
