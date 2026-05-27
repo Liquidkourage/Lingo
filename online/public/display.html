@@ -17,18 +17,20 @@
       --show-cyan-dim: rgba(72, 212, 255, 0.55);
       --show-navy: rgba(0, 12, 36, 0.96);
       /* Live UI starts just under visible logo foot (PNG has bottom transparency) */
-      --live-logo-reserve: 13%;
+      --live-logo-reserve: 11.5%;
       --live-chrome-top: 0.8%;
       --live-chrome-inset: 1%;
       --live-score-rail-height: 6.5em;
       --live-score-rail-width: 22em;
-      /* Letter tiles + stats bar share one scale so the chrome band stays balanced */
+      /* Shared vertical rhythm between logo, tiles, stats, and player board */
+      --live-v-gap: max(0.7em, 1.1cqh);
       --live-tile-size: 2.88em;
       --live-tile-gap: 0.54em;
       --live-tile-font: 1.75em;
       --live-chrome-side-inset: max(calc(var(--live-score-rail-width) + 0.8em), calc(10.5em + 1.2em));
       --live-stats-min-height: 3.5em;
-      --live-chrome-stack-gap: 0.22em;
+      --live-chrome-stack-gap: var(--live-v-gap);
+      --live-chrome-board-gap: var(--live-v-gap);
     }
 
     html, body {
@@ -669,14 +671,14 @@
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto minmax(60cqh, 1fr);
+      grid-template-rows: auto minmax(58cqh, 1fr);
       grid-template-areas:
         "chrome"
         "board";
       justify-items: center;
       align-content: start;
-      gap: 0.1em;
-      padding: var(--live-logo-reserve) 2.5% 0.25% 2.5%;
+      gap: var(--live-chrome-board-gap);
+      padding: var(--live-logo-reserve) 2.5% 0.35% 2.5%;
       overflow: visible;
       font-size: clamp(14px, 2.4cqh, 32px);
     }
@@ -690,7 +692,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: var(--live-chrome-stack-gap);
       width: 100%;
       max-width: 100%;
@@ -1076,7 +1078,7 @@
       min-height: var(--live-stats-min-height);
       flex-shrink: 0;
       z-index: 4;
-      margin: 0.08em calc(-1 * var(--live-chrome-side-inset)) 0;
+      margin: 0 calc(-1 * var(--live-chrome-side-inset)) 0;
       padding: 0.18em 0;
       overflow: hidden;
       display: grid;
