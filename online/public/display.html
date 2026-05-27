@@ -1315,8 +1315,14 @@
       50% { filter: hue-rotate(18deg); opacity: 1; }
     }
 
-    @keyframes skin-holo-spin {
-      to { transform: rotate(360deg); }
+    @keyframes skin-neon-pulse {
+      0%, 100% { box-shadow: 0 0 16px rgba(255, 60, 180, 0.35), 0 0 32px rgba(60, 220, 255, 0.18); }
+      50% { box-shadow: 0 0 28px rgba(255, 60, 180, 0.55), 0 0 48px rgba(60, 220, 255, 0.32); }
+    }
+
+    @keyframes skin-royal-shimmer {
+      0%, 100% { opacity: 0.55; }
+      50% { opacity: 0.95; }
     }
 
     @keyframes skin-magma-flicker {
@@ -1365,39 +1371,31 @@
       text-shadow: 0 0 14px rgba(255, 200, 60, 0.55);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="holo"],
-    .stage[data-phase="results"] .player-card[data-card-skin="holo"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="holo"] {
-      border-color: transparent;
-      background: linear-gradient(180deg, rgba(8, 10, 28, 0.98) 0%, rgba(4, 6, 18, 0.99) 100%);
-      box-shadow: 0 0 24px rgba(180, 120, 255, 0.22);
+    .stage[data-phase="guessing"] .player-card[data-card-skin="neon"],
+    .stage[data-phase="results"] .player-card[data-card-skin="neon"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="neon"] {
+      border-color: rgba(255, 80, 200, 0.88);
+      background: linear-gradient(160deg, rgba(18, 0, 42, 0.98) 0%, rgba(4, 18, 48, 0.99) 100%);
+      animation: skin-neon-pulse 2.4s ease-in-out infinite;
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="holo"]::before,
-    .stage[data-phase="results"] .player-card[data-card-skin="holo"]::before,
-    .stage[data-phase="ended"] .player-card[data-card-skin="holo"]::before {
+    .stage[data-phase="guessing"] .player-card[data-card-skin="neon"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="neon"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="neon"]::before {
       content: "";
       position: absolute;
-      inset: -2px;
+      inset: 0;
       border-radius: inherit;
-      padding: 2px;
-      background: conic-gradient(from 0deg, #ff6bcb, #ffd060, #60ffa0, #60c8ff, #b060ff, #ff6bcb);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      animation: skin-holo-spin 5s linear infinite;
+      background: linear-gradient(120deg, rgba(255, 60, 180, 0.12) 0%, transparent 45%, rgba(60, 220, 255, 0.14) 100%);
+      pointer-events: none;
       z-index: -1;
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="holo"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="holo"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="holo"] .player-name {
-      background: linear-gradient(90deg, #ffd060, #ff80d0, #80e0ff);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      text-shadow: none;
-      filter: drop-shadow(0 0 8px rgba(255, 160, 220, 0.45));
+    .stage[data-phase="guessing"] .player-card[data-card-skin="neon"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="neon"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="neon"] .player-name {
+      color: #ffb8f0;
+      text-shadow: 0 0 10px rgba(255, 80, 200, 0.55), 0 0 18px rgba(80, 220, 255, 0.35);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="matrix"],
@@ -1434,19 +1432,32 @@
       text-shadow: 0 0 12px rgba(255, 140, 80, 0.5);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="chrome"],
-    .stage[data-phase="results"] .player-card[data-card-skin="chrome"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="chrome"] {
-      border-color: rgba(210, 225, 240, 0.78);
-      background: linear-gradient(180deg, rgba(48, 58, 72, 0.98) 0%, rgba(18, 22, 32, 0.99) 55%, rgba(32, 38, 48, 0.98) 100%);
-      box-shadow: 0 0 20px rgba(180, 200, 220, 0.22), inset 0 2px 0 rgba(255, 255, 255, 0.18);
+    .stage[data-phase="guessing"] .player-card[data-card-skin="royal"],
+    .stage[data-phase="results"] .player-card[data-card-skin="royal"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="royal"] {
+      border-color: rgba(210, 170, 255, 0.82);
+      background: linear-gradient(180deg, rgba(36, 8, 68, 0.98) 0%, rgba(14, 4, 36, 0.99) 100%);
+      box-shadow: 0 0 24px rgba(140, 80, 220, 0.28), inset 0 1px 0 rgba(255, 220, 140, 0.14);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="chrome"] .player-name,
-    .stage[data-phase="results"] .player-card[data-card-skin="chrome"] .player-name,
-    .stage[data-phase="ended"] .player-card[data-card-skin="chrome"] .player-name {
-      color: #f4f8ff;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 10px rgba(180, 210, 255, 0.35);
+    .stage[data-phase="guessing"] .player-card[data-card-skin="royal"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="royal"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="royal"]::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(255, 210, 90, 0.35);
+      animation: skin-royal-shimmer 3.2s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="royal"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="royal"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="royal"] .player-name {
+      color: #f5e8ff;
+      text-shadow: 0 0 10px rgba(180, 120, 255, 0.45), 0 0 6px rgba(255, 210, 90, 0.35);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="magma"],
@@ -1544,9 +1555,12 @@
       .stage[data-phase="guessing"] .player-card[data-card-skin="aurora"]::before,
       .stage[data-phase="results"] .player-card[data-card-skin="aurora"]::before,
       .stage[data-phase="ended"] .player-card[data-card-skin="aurora"]::before,
-      .stage[data-phase="guessing"] .player-card[data-card-skin="holo"]::before,
-      .stage[data-phase="results"] .player-card[data-card-skin="holo"]::before,
-      .stage[data-phase="ended"] .player-card[data-card-skin="holo"]::before,
+      .stage[data-phase="guessing"] .player-card[data-card-skin="neon"],
+      .stage[data-phase="results"] .player-card[data-card-skin="neon"],
+      .stage[data-phase="ended"] .player-card[data-card-skin="neon"],
+      .stage[data-phase="guessing"] .player-card[data-card-skin="royal"]::before,
+      .stage[data-phase="results"] .player-card[data-card-skin="royal"]::before,
+      .stage[data-phase="ended"] .player-card[data-card-skin="royal"]::before,
       .stage[data-phase="guessing"] .player-card[data-card-skin="magma"]::after,
       .stage[data-phase="results"] .player-card[data-card-skin="magma"]::after,
       .stage[data-phase="ended"] .player-card[data-card-skin="magma"]::after {
@@ -3030,9 +3044,8 @@
     const KIOSK_MODE = ["1", "true", "yes"].includes((urlParams.get("kiosk") || "").toLowerCase())
       || ["1", "true", "yes"].includes((urlParams.get("fs") || "").toLowerCase());
     const LAYOUT_DEBUG = ["borders", "layout", "1", "true", "yes"].includes((urlParams.get("debug") || "").toLowerCase());
-    const LIVE_CARD_SKINS = ["aurora", "goldleaf", "holo", "matrix", "sunset", "chrome", "magma", "ice"];
-    /* Demo showcase: Storm → magma, Echo → ice; holo/matrix rotate to slots 4–5 */
-    const DEMO_CARD_SKINS = ["aurora", "goldleaf", "magma", "ice", "holo", "matrix", "sunset", "chrome"];
+    const LIVE_CARD_SKINS = ["aurora", "goldleaf", "magma", "ice", "neon", "matrix", "sunset", "royal"];
+    const DEMO_CARD_SKINS = ["aurora", "goldleaf", "magma", "ice", "neon", "matrix", "sunset", "royal"];
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
       "BlueJay", "CryptoKat", "NeonWave", "TurboTurtle", "Glitch",
