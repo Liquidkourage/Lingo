@@ -675,6 +675,22 @@ async function getGuessFeedback(state, guess, client = pool) {
   };
 }
 
+function isPerfectSolveEntry(entry) {
+  return entry?.pattern === "!!!!!" || entry?.resultLabel === "Perfect solve!";
+}
+
+function trimHistoryAfterSolve(history) {
+  const solveIndex = history.findIndex((entry) => isPerfectSolveEntry(entry));
+  if (solveIndex === -1) {
+    return history;
+  }
+  return history.slice(0, solveIndex + 1);
+}
+
+function historyAlreadySolved(history) {
+  return history.some((entry) => isPerfectSolveEntry(entry));
+}
+
 async function listViewerGuessHistory(playerId, state, client = pool, options = {}) {
   const round = Number(state.round_number || 0);
   if (!playerId || !round) return [];
@@ -731,6 +747,9 @@ async function listViewerGuessHistory(playerId, state, client = pool, options = 
   if (windows.length) {
     const history = [];
     windows.forEach(({ seq, stake }) => {
+      if (historyAlreadySolved(history)) {
+        return;
+      }
       const existing = submissionBySeq.get(seq);
       if (existing) {
         history.push(existing);
@@ -751,19 +770,22 @@ async function listViewerGuessHistory(playerId, state, client = pool, options = 
     });
 
     submissionBySeq.forEach((entry, seq) => {
+      if (historyAlreadySolved(history)) {
+        return;
+      }
       if (!windows.some((window) => window.seq === seq)) {
         history.push(entry);
       }
     });
 
-    return history;
+    return trimHistoryAfterSolve(history);
   }
 
   if (legacyEntries.length) {
-    return legacyEntries;
+    return trimHistoryAfterSolve(legacyEntries);
   }
 
-  return [...submissionBySeq.values()];
+  return trimHistoryAfterSolve([...submissionBySeq.values()]);
 }
 
 async function buildViewerContext(displayName, playerToken, state, client = pool) {
@@ -1077,6 +1099,7 @@ async function applyRevealResultsScoring(state, client) {
   const lastGuessWasTwoBall = ballsRemaining === 2 * multiplier;
 
   const players = await listPlayers(state.session_id, client);
+  const hadSolverBeforeReveal = players.some((player) => player.solvedCurrentWord);
   const submittedPlayers = players
     .filter((player) => Number(player.roundNumber) === Number(state.round_number) && player.currentGuess)
     .sort((left, right) => new Date(left.submittedAtIso || 0) - new Date(right.submittedAtIso || 0));
@@ -1115,8 +1138,10 @@ async function applyRevealResultsScoring(state, client) {
 
   if (ballsRemaining === 6 * multiplier) {
     ballsRemaining = 5 * multiplier;
-  }
-  if (someoneNewlySolved) {
+    if (someoneNewlySolved) {
+      ballsRemaining -= multiplier;
+    }
+  } else if (hadSolverBeforeReveal || someoneNewlySolved) {
     ballsRemaining -= multiplier;
   }
 
