@@ -88,3 +88,18 @@ Included in recent slices:
 - display top-line stake copy and bottom-line phase messages
 - host pause / resume timer
 - venue answer fanfare on reveal
+
+## 20-bot rehearsal (no real players)
+
+1. Open **`/rehearsal`** (link also on the host page).
+2. Save your admin key, then click **Setup 20 bots + word + round 1**.
+3. Open **`/display`** and **`/host`** beside it — bots are named `Rehearsal 01` … `Rehearsal 20`.
+4. Auto-guess submits legal words during each guessing phase; use host controls for reveal / continue as usual.
+5. When finished: **Hard reset** on host (idle), then **Clear bots** on the rehearsal page.
+
+CLI (optional):
+
+```bash
+cd online
+LINGO_ADMIN_KEY=your-key BASE_URL=https://lingo-production-fc88.up.railway.app npm run rehearsal
+```

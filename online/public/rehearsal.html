@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lingo — Rehearsal (20 bots)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060a12;
+      --panel: #0c1220;
+      --text: #e8eef8;
+      --muted: rgba(180, 198, 220, 0.75);
+      --gold: #f0d060;
+      --cyan: #3ec8e8;
+      --green: #3dd97a;
+      --red: #e85a6f;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 20px 16px 36px;
+      font-family: Montserrat, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.35rem; color: var(--gold); }
+    .lede { margin: 0 0 1.25rem; font-size: 0.88rem; color: var(--muted); line-height: 1.5; }
+    .panel {
+      border: 1.5px solid rgba(230, 184, 0, 0.22);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 1rem 1.1rem;
+      margin-bottom: 14px;
+    }
+    .panel h2 {
+      margin: 0 0 0.75rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+    .field { flex: 1 1 200px; display: flex; flex-direction: column; gap: 0.3rem; }
+    label { font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    input {
+      padding: 0.6rem 0.75rem;
+      border: 1.5px solid rgba(62, 200, 232, 0.35);
+      border-radius: 8px;
+      background: #060a12;
+      color: var(--text);
+      font: inherit;
+    }
+    button {
+      padding: 0.65rem 1rem;
+      border: 1.5px solid rgba(230, 184, 0, 0.45);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #f0d060, #e6b800);
+      color: #060a12;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: var(--panel);
+      color: var(--text);
+      border-color: rgba(62, 200, 232, 0.4);
+    }
+    button.danger {
+      background: transparent;
+      color: var(--red);
+      border-color: rgba(232, 90, 111, 0.45);
+    }
+    button.good {
+      background: linear-gradient(180deg, #5ee89a, var(--green));
+      border-color: rgba(61, 217, 122, 0.5);
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .status { min-height: 1.2em; margin-top: 0.65rem; font-size: 0.82rem; font-weight: 600; }
+    .status.ok { color: var(--green); }
+    .status.err { color: var(--red); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 0.85rem;
+    }
+    .stat {
+      padding: 0.55rem;
+      border-radius: 8px;
+      background: #060a12;
+      text-align: center;
+      border: 1px solid rgba(62, 200, 232, 0.15);
+    }
+    .stat .n { display: block; font-size: 1.35rem; font-weight: 700; color: var(--cyan); }
+    .stat .l { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; }
+    ol.steps { margin: 0; padding-left: 1.2rem; font-size: 0.84rem; line-height: 1.55; color: var(--muted); }
+    ol.steps li { margin-bottom: 0.35rem; }
+    ol.steps strong { color: var(--text); }
+    .links { font-size: 0.82rem; margin-top: 0.5rem; }
+    .links a { color: var(--cyan); font-weight: 600; }
+    .auto-on { color: var(--green); }
+    .auto-off { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>20-player rehearsal</h1>
+    <p class="lede">
+      Seeds <strong>Rehearsal 01–20</strong> only — no real phones. Bots join the lobby, then auto-submit legal guesses while guessing is open.
+      Use with <a href="/host">host</a> and <a href="/display">display</a> open beside this panel.
+    </p>
+
+    <section class="panel">
+      <h2>Connect</h2>
+      <div class="row">
+        <div class="field">
+          <label for="adminKey">Admin key</label>
+          <input id="adminKey" type="password" autocomplete="current-password" placeholder="LINGO_ADMIN_KEY" />
+        </div>
+        <button id="saveKeyBtn" class="secondary" type="button">Save key</button>
+      </div>
+      <div id="connectStatus" class="status"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Live status</h2>
+      <div class="stats">
+        <div class="stat"><span class="n" id="statBots">0</span><span class="l">Bots</span></div>
+        <div class="stat"><span class="n" id="statSubmitted">0</span><span class="l">Submitted</span></div>
+        <div class="stat"><span class="n" id="statPhase">—</span><span class="l">Phase</span></div>
+      </div>
+      <p id="statDetail" class="lede" style="margin:0;"></p>
+      <p id="autoLabel" class="lede auto-off" style="margin:0.5rem 0 0;">Auto-guess: off</p>
+    </section>
+
+    <section class="panel">
+      <h2>One-click setup</h2>
+      <div class="row">
+        <button id="setupBtn" class="good" type="button">Setup 20 bots + word + round 1</button>
+        <button id="submitBtn" class="secondary" type="button">Submit all guesses now</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button id="autoOnBtn" class="secondary" type="button">Auto-guess on</button>
+        <button id="autoOffBtn" class="secondary" type="button">Auto-guess off</button>
+        <button id="clearBtn" class="danger" type="button">Clear bots</button>
+      </div>
+      <div id="actionStatus" class="status"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Run-through checklist</h2>
+      <ol class="steps">
+        <li>Click <strong>Setup 20 bots…</strong> (session must be idle, or allow force reset).</li>
+        <li>Open <strong><a href="/display">/display</a></strong> fullscreen — lobby should show 20 names.</li>
+        <li>Open <strong><a href="/host">/host</a></strong> — run reveal / continue / balls as normal.</li>
+        <li>Bots lock in within a few seconds each guessing wave (auto-guess stays on).</li>
+        <li>Practice <strong>Reveal results</strong>, <strong>Continue</strong>, <strong>Reveal answer</strong>, pause timer.</li>
+        <li>When done: <strong>Hard reset</strong> on host, then <strong>Clear bots</strong> here.</li>
+      </ol>
+      <p class="links">
+        <a href="/host">Host</a> · <a href="/display">Display</a> · <a href="/">Player</a> (leave closed during bot rehearsal)
+      </p>
+    </section>
+  </div>
+
+  <script>
+    const els = {
+      adminKey: document.getElementById('adminKey'),
+      saveKeyBtn: document.getElementById('saveKeyBtn'),
+      connectStatus: document.getElementById('connectStatus'),
+      statBots: document.getElementById('statBots'),
+      statSubmitted: document.getElementById('statSubmitted'),
+      statPhase: document.getElementById('statPhase'),
+      statDetail: document.getElementById('statDetail'),
+      autoLabel: document.getElementById('autoLabel'),
+      setupBtn: document.getElementById('setupBtn'),
+      submitBtn: document.getElementById('submitBtn'),
+      autoOnBtn: document.getElementById('autoOnBtn'),
+      autoOffBtn: document.getElementById('autoOffBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      actionStatus: document.getElementById('actionStatus'),
+    };
+
+    let pollHandle = null;
+
+    function storedKey() {
+      return localStorage.getItem('lingo_host_admin_key') || '';
+    }
+
+    function setStatus(target, text, ok) {
+      target.textContent = text || '';
+      target.className = 'status' + (text ? (ok ? ' ok' : ' err') : '');
+    }
+
+    function adminFetch(path, options = {}) {
+      const key = els.adminKey.value.trim();
+      return fetch(path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-lingo-admin-key': key,
+          ...(options.headers || {}),
+        },
+      });
+    }
+
+    function renderStatus(payload) {
+      const status = payload.status || {};
+      els.statBots.textContent = `${status.botCount ?? 0}/${status.targetCount ?? 20}`;
+      els.statSubmitted.textContent = String(status.submittedThisRound ?? 0);
+      els.statPhase.textContent = status.phase || '—';
+      const word = status.currentWord ? ` · word ${status.currentWord}` : '';
+      const round = status.roundNumber ? ` · round ${status.roundNumber}` : '';
+      els.statDetail.textContent = `Session phase ${status.phase || 'idle'}${round}${word}`;
+      if (payload.autoSubmit) {
+        els.autoLabel.textContent = 'Auto-guess: on (bots submit every few seconds while guessing is open)';
+        els.autoLabel.className = 'lede auto-on';
+      } else {
+        els.autoLabel.textContent = 'Auto-guess: off';
+        els.autoLabel.className = 'lede auto-off';
+      }
+    }
+
+    async function refresh() {
+      const response = await adminFetch('/api/admin/rehearsal');
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'Could not load rehearsal status.');
+      }
+      renderStatus(payload);
+      return payload;
+    }
+
+    async function rehearsalCommand(command, body = {}) {
+      const response = await adminFetch(`/api/admin/rehearsal/${command}`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || `Rehearsal command failed: ${command}`);
+      }
+      renderStatus(payload);
+      return payload;
+    }
+
+    els.saveKeyBtn.addEventListener('click', () => {
+      const key = els.adminKey.value.trim();
+      if (!key) {
+        setStatus(els.connectStatus, 'Enter admin key.', false);
+        return;
+      }
+      localStorage.setItem('lingo_host_admin_key', key);
+      setStatus(els.connectStatus, 'Key saved.', true);
+    });
+
+    els.setupBtn.addEventListener('click', async () => {
+      els.setupBtn.disabled = true;
+      setStatus(els.actionStatus, 'Setting up…', true);
+      try {
+        const force = window.confirm(
+          'If the session is not idle, this will reset round state (keeps session). Continue?',
+        );
+        const payload = await rehearsalCommand('setup', {
+          forceReset: true,
+          startRound: true,
+          autoSubmit: true,
+        });
+        setStatus(
+          els.actionStatus,
+          `Ready: ${payload.bots?.length || 20} bots, word ${payload.word || 'set'}, round started.`,
+          true,
+        );
+      } catch (error) {
+        setStatus(els.actionStatus, error.message, false);
+      } finally {
+        els.setupBtn.disabled = false;
+      }
+    });
+
+    els.submitBtn.addEventListener('click', async () => {
+      try {
+        const payload = await rehearsalCommand('submit-guesses');
+        const r = payload.result || {};
+        setStatus(
+          els.actionStatus,
+          `Submitted ${r.submitted || 0} guesses (${r.skipped || 0} skipped). Phase: ${r.phase || '?'}.`,
+          true,
+        );
+      } catch (error) {
+        setStatus(els.actionStatus, error.message, false);
+      }
+    });
+
+    els.autoOnBtn.addEventListener('click', async () => {
+      try {
+        await rehearsalCommand('auto', { enabled: true });
+        setStatus(els.actionStatus, 'Auto-guess enabled.', true);
+      } catch (error) {
+        setStatus(els.actionStatus, error.message, false);
+      }
+    });
+
+    els.autoOffBtn.addEventListener('click', async () => {
+      try {
+        await rehearsalCommand('auto', { enabled: false });
+        setStatus(els.actionStatus, 'Auto-guess disabled.', true);
+      } catch (error) {
+        setStatus(els.actionStatus, error.message, false);
+      }
+    });
+
+    els.clearBtn.addEventListener('click', async () => {
+      if (!window.confirm('Remove all Rehearsal 01–20 bots? Session must be idle.')) return;
+      try {
+        await rehearsalCommand('clear');
+        setStatus(els.actionStatus, 'Rehearsal bots cleared.', true);
+      } catch (error) {
+        setStatus(els.actionStatus, error.message, false);
+      }
+    });
+
+    els.adminKey.value = storedKey();
+    if (els.adminKey.value) {
+      refresh().then(() => {
+        pollHandle = window.setInterval(() => refresh().catch(() => {}), 2000);
+      }).catch((error) => setStatus(els.connectStatus, error.message, false));
+    } else {
+      setStatus(els.connectStatus, 'Enter and save your admin key.', false);
+    }
+  </script>
+</body>
+</html>

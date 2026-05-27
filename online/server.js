@@ -3,6 +3,13 @@ const path = require("path");
 const express = require("express");
 const { Pool } = require("pg");
 const { countAvailableWords, countWords, isFiveLetterWord, isLegalWord, normalizeWordInput, normalizeWordList, pickRandomWords, seedWordsTable } = require("./words");
+const {
+  REHEARSAL_BOT_COUNT,
+  clearRehearsalBots,
+  getRehearsalStatus,
+  seedRehearsalBots,
+  submitRehearsalBotGuesses,
+} = require("./rehearsal-bots");
 require("dotenv").config();
 
 const QRCode = require("qrcode");
@@ -26,6 +33,39 @@ const pool = new Pool({
 const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
 const HOST_WORD_SUGGESTION_COUNT = 100;
+let rehearsalAutoSubmitEnabled = false;
+
+function rehearsalDeps() {
+  return {
+    listPlayers,
+    normalizeDisplayName,
+    normalizePlayerKey,
+    isLegalWord,
+    maybeAutoRevealIfAllSubmitted,
+    getState,
+  };
+}
+
+async function runRehearsalBotSubmissions(client = pool) {
+  const db = client === pool ? await pool.connect() : client;
+  const releaseAfter = client === pool;
+  try {
+    await db.query("begin");
+    const state = await getState(db);
+    const result = await submitRehearsalBotGuesses({
+      ...rehearsalDeps(),
+      state,
+      client: db,
+    });
+    await db.query("commit");
+    return result;
+  } catch (error) {
+    await db.query("rollback");
+    throw error;
+  } finally {
+    if (releaseAfter) db.release();
+  }
+}
 
 app.use(express.json());
 app.use(express.static(staticDir));
@@ -1196,6 +1236,158 @@ async function handleAdminAction(action, body) {
   }
 }
 
+app.get("/api/admin/rehearsal", requireAdmin, async (_req, res) => {
+  try {
+    const state = await getState();
+    res.json({
+      ok: true,
+      autoSubmit: rehearsalAutoSubmitEnabled,
+      status: await getRehearsalStatus(state, listPlayers, pool),
+      state: serializeState(state),
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/admin/rehearsal/:command", requireAdmin, async (req, res) => {
+  const body = req.body || {};
+  try {
+    switch (req.params.command) {
+      case "setup": {
+        const client = await pool.connect();
+        try {
+          await client.query("begin");
+          let state = await getState(client);
+          if (state.phase !== "idle") {
+            if (!body.forceReset) {
+              throw new Error("Session must be idle. Use force reset on setup or hard reset first.");
+            }
+            await clearRehearsalBots(state.session_id, client);
+            await client.query(
+              `update players
+               set balls = 0,
+                   solved_current_word = false,
+                   current_guess = '',
+                   submitted_at = null,
+                   updated_at = now()
+               where session_id = $1`,
+              [state.session_id],
+            );
+            state = await updateState({
+              phase: "idle",
+              round_number: 0,
+              current_word: "",
+              answer_revealed: false,
+              balls_remaining: 0,
+              guess_window_opened_at: null,
+              results_window_opened_at: null,
+              first_solver_player_id: null,
+              ...clearTimerPausePatch(),
+            }, client);
+          }
+
+          const bots = await seedRehearsalBots(state.session_id, upsertLobbyPlayer, client);
+          const [word] = await pickRandomWords(client, 1);
+          if (!word) {
+            throw new Error("No legal words available for rehearsal.");
+          }
+          state = await updateState({
+            current_word: word,
+            answer_revealed: false,
+            host_note: `Rehearsal — ${REHEARSAL_BOT_COUNT} virtual players`,
+          }, client);
+
+          if (body.startRound) {
+            const multiplier = Number(state.ball_multiplier || 1);
+            state = await updateState({
+              phase: "guessing",
+              round_number: 1,
+              answer_revealed: false,
+              balls_remaining: 6 * multiplier,
+              guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
+              results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
+              guess_window_opened_at: nowIso(),
+              first_solver_player_id: null,
+              ...clearTimerPausePatch(),
+            }, client);
+            await clearSessionGuesses(state.session_id, client);
+            await resetWordProgress(state.session_id, client);
+          }
+
+          await client.query("commit");
+          if (body.autoSubmit !== false) {
+            rehearsalAutoSubmitEnabled = true;
+          }
+          if (state.phase === "guessing") {
+            await runRehearsalBotSubmissions();
+          }
+          const finalState = await getState();
+          res.json({
+            ok: true,
+            autoSubmit: rehearsalAutoSubmitEnabled,
+            bots,
+            word,
+            status: await getRehearsalStatus(finalState, listPlayers, pool),
+            state: await enrichStateWithWordPool(finalState),
+          });
+        } catch (error) {
+          await client.query("rollback");
+          throw error;
+        } finally {
+          client.release();
+        }
+        return;
+      }
+      case "submit-guesses": {
+        const result = await runRehearsalBotSubmissions();
+        const state = await getState();
+        res.json({
+          ok: true,
+          result,
+          status: await getRehearsalStatus(state, listPlayers, pool),
+          state: await enrichStateWithWordPool(state),
+        });
+        return;
+      }
+      case "clear": {
+        const state = await getState();
+        if (state.phase !== "idle") {
+          throw new Error("Clear rehearsal bots only while idle.");
+        }
+        await clearRehearsalBots(state.session_id, pool);
+        rehearsalAutoSubmitEnabled = false;
+        const nextState = await getState();
+        res.json({
+          ok: true,
+          autoSubmit: false,
+          status: await getRehearsalStatus(nextState, listPlayers, pool),
+          state: await enrichStateWithWordPool(nextState),
+        });
+        return;
+      }
+      case "auto": {
+        rehearsalAutoSubmitEnabled = Boolean(body.enabled);
+        const state = await getState();
+        if (rehearsalAutoSubmitEnabled && state.phase === "guessing") {
+          await runRehearsalBotSubmissions();
+        }
+        res.json({
+          ok: true,
+          autoSubmit: rehearsalAutoSubmitEnabled,
+          status: await getRehearsalStatus(await getState(), listPlayers, pool),
+          state: await enrichStateWithWordPool(await getState()),
+        });
+        return;
+      }
+      default:
+        throw new Error(`Unknown rehearsal command: ${req.params.command}`);
+    }
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
 app.post("/api/admin/:action", requireAdmin, async (req, res) => {
   try {
     const state = await handleAdminAction(req.params.action, req.body || {});
@@ -1218,7 +1410,9 @@ app.use((req, res, next) => {
     ? "host.html"
     : req.path === "/display"
       ? "display.html"
-      : "index.html";
+      : req.path === "/rehearsal"
+        ? "rehearsal.html"
+        : "index.html";
   res.sendFile(path.join(staticDir, fileName));
 });
 
@@ -1235,6 +1429,12 @@ ensureSchema()
         console.error("timer tick", error.message);
       });
     }, 2000);
+    setInterval(() => {
+      if (!rehearsalAutoSubmitEnabled) return;
+      runRehearsalBotSubmissions().catch((error) => {
+        console.error("rehearsal bots", error.message);
+      });
+    }, 2500);
   })
   .catch((error) => {
     console.error("Failed to start app:", error);
