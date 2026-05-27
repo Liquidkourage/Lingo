@@ -18,6 +18,8 @@
       --show-navy: rgba(0, 12, 36, 0.96);
       /* Live phases: keep grid UI below extracted logo (28% wide @ ~2.7:1 + top offset) */
       --live-logo-reserve: 19%;
+      /* Score rail grows upward into left dead zone below logo, not downward into HUD */
+      --live-score-rail-rise: 10cqh;
     }
 
     html, body {
@@ -658,7 +660,7 @@
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
       grid-template-columns: minmax(12em, 15.5em) minmax(0, 1fr);
-      grid-template-rows: minmax(7.5em, auto) minmax(4em, auto) minmax(50cqh, 1fr);
+      grid-template-rows: auto auto minmax(50cqh, 1fr);
       grid-template-areas:
         "score hud"
         "score stats"
@@ -667,7 +669,7 @@
       align-content: start;
       gap: 0.18em 0.28em;
       padding: var(--live-logo-reserve) 2.5% 0.25% 1%;
-      overflow: hidden;
+      overflow: visible;
       font-size: clamp(14px, 2.4cqh, 32px);
     }
 
@@ -825,9 +827,11 @@
       grid-area: score;
       grid-row: 1 / 3;
       flex-direction: column;
-      align-self: stretch;
+      align-self: end;
       width: 100%;
-      min-height: 11em;
+      min-height: calc(11em + var(--live-score-rail-rise));
+      margin-top: calc(-1 * var(--live-score-rail-rise));
+      z-index: 12;
       border-radius: 0.5em;
       border: 3px solid rgba(255, 200, 60, 0.55);
       background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
