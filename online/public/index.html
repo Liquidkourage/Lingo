@@ -1030,11 +1030,16 @@
     }
 
     function lockUserName() {
-      const name = els.playerName.value.trim();
+      const name = (
+        els.playerName.value.trim()
+        || els.playerNameDisplay.textContent.trim()
+        || String(nameSuggestionSeed || '').trim()
+      );
       if (!name) return false;
       els.playerNameDisplay.textContent = name;
       els.playerName.value = name;
       els.playIdentity.dataset.nameMode = 'locked';
+      nameSuggestionSeed = name;
       storeDisplayName(name);
       scheduleTypingFocus();
       return true;
@@ -1057,7 +1062,11 @@
       const parts = await loadUsernameParts();
       const suggestion = randomSuggestedName(parts);
       els.playerName.value = suggestion;
+      nameSuggestionSeed = suggestion;
       setNameHintMode('suggested');
+      if (!forceNew) {
+        lockUserName();
+      }
       return suggestion;
     }
 
@@ -1678,14 +1687,21 @@
       clearInputs(true);
       setMessage('');
     });
+    els.shuffleName.addEventListener('mousedown', () => {
+      skipNameBlurConfirm = true;
+    });
     els.shuffleName.addEventListener('click', () => {
       applySuggestedName(true).catch(() => {
         setMessage('Could not load another suggestion.', 'error');
       });
     });
+    els.confirmName.addEventListener('mousedown', () => {
+      skipNameBlurConfirm = true;
+    });
     els.confirmName.addEventListener('click', () => {
       if (!lockUserName()) {
         setMessage('Enter a user name first.', 'error');
+        openNameEditor();
         els.playerName.focus();
         return;
       }
@@ -1751,6 +1767,7 @@
             els.playerName.value = 'NightOwl';
             nameSuggestionSeed = 'NightOwl';
             setNameHintMode('suggested');
+            lockUserName();
           }
         }
       }
