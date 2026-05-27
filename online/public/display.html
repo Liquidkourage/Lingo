@@ -24,11 +24,12 @@
       --live-score-rail-width: 22em;
       /* Shared vertical rhythm between logo, tiles, stats, and player board */
       --live-v-gap: max(0.7em, 1.1cqh);
-      --live-tile-size: 2.88em;
+      --live-tile-size: 3.05em;
       --live-tile-gap: 0.54em;
-      --live-tile-font: 1.75em;
+      --live-tile-font: 2.05em;
       --live-chrome-side-inset: max(calc(var(--live-score-rail-width) + 0.8em), calc(10.5em + 1.2em));
-      --live-stats-min-height: 3.5em;
+      --live-stats-min-height: 3.75em;
+      --live-stat-label-size: 0.62em;
       --live-chrome-stack-gap: var(--live-v-gap);
       --live-chrome-board-gap: var(--live-v-gap);
     }
@@ -1098,14 +1099,14 @@
     .stage[data-phase="results"] .stat-icon,
     .stage[data-phase="ended"] .stat-icon {
       display: block;
-      width: 1.05em;
-      height: 1.05em;
+      width: 1.15em;
+      height: 1.15em;
     }
 
     .stage[data-phase="guessing"] .stat-label,
     .stage[data-phase="results"] .stat-label,
     .stage[data-phase="ended"] .stat-label {
-      font-size: 0.5em;
+      font-size: var(--live-stat-label-size);
       line-height: 1.05;
     }
 
@@ -1139,7 +1140,7 @@
     .stage[data-phase="guessing"] .stat-cell--unsubmitted .stat-label,
     .stage[data-phase="results"] .stat-cell--unsubmitted .stat-label,
     .stage[data-phase="ended"] .stat-cell--unsubmitted .stat-label {
-      font-size: 0.54em;
+      font-size: calc(var(--live-stat-label-size) * 1.04);
     }
 
     .unsubmitted-chips {
