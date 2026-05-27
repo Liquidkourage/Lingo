@@ -1,0 +1,12 @@
+# Monorepo fallback when the Railway service root is still "/".
+# Prefer setting the service Root Directory to "online" in Railway settings.
+[build]
+builder = "RAILPACK"
+buildCommand = "npm ci --prefix online --omit=dev"
+watchPatterns = ["online/**"]
+
+[deploy]
+startCommand = "npm run online:start"
+healthcheckPath = "/health/live"
+healthcheckTimeout = 180
+restartPolicyType = "ON_FAILURE"

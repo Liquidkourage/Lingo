@@ -43,14 +43,18 @@ Then open:
 ## Railway deploy
 
 1. Create a new Railway service from this repo
-2. Set the root directory to `online`
+2. Set the **Root Directory** to `online` (important — avoids building the repo root, which installs legacy `firebase-tools`)
 3. Add a PostgreSQL database
 4. Add environment variables:
    - `DATABASE_URL` = Railway Postgres connection string
    - `LINGO_ADMIN_KEY` = your chosen host secret
 5. Deploy
 
-Railway should automatically run:
+`online/railway.toml` pins the build to `npm ci --omit=dev`, Node 22, and a fast `/health/live` check so deploys do not fail while Postgres schema/word import runs.
+
+If the service root is still `/`, the repo-root `railway.toml` builds only `online/` and runs `npm run online:start`.
+
+Railway runs:
 
 ```bash
 npm start

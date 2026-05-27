@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "npm --prefix online start",
     "online:start": "npm --prefix online start",
     "online:lint": "npm --prefix online run lint",
     "firebase:emulators": "firebase emulators:start --only hosting,functions",

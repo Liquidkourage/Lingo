@@ -1,0 +1,9 @@
+[build]
+builder = "RAILPACK"
+buildCommand = "npm ci --omit=dev"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/health/live"
+healthcheckTimeout = 180
+restartPolicyType = "ON_FAILURE"

@@ -34,6 +34,7 @@ const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
 const HOST_WORD_SUGGESTION_COUNT = 100;
 let rehearsalAutoSubmitEnabled = false;
+let appReady = false;
 
 function rehearsalDeps() {
   return {
@@ -737,7 +738,15 @@ app.get("/api/play-qr", async (req, res) => {
   }
 });
 
+app.get("/health/live", (_req, res) => {
+  res.json({ ok: true });
+});
+
 app.get("/health", async (_req, res) => {
+  if (!appReady) {
+    res.status(503).json({ ok: false, error: "Starting" });
+    return;
+  }
   try {
     await pool.query("select 1");
     res.json({ ok: true });
@@ -1417,27 +1426,32 @@ app.use((req, res, next) => {
   res.sendFile(path.join(staticDir, fileName));
 });
 
-ensureSchema()
-  .then(async () => {
-    const state = await getState();
-    const totalWords = await countWords(pool);
-    console.log(`Lingo online app ready on port ${port}. Session: ${state.session_id}. Words: ${totalWords}`);
-    app.listen(port, () => {
-      console.log(`Listening on http://localhost:${port}`);
+async function bootstrap() {
+  await ensureSchema();
+  const state = await getState();
+  const totalWords = await countWords(pool);
+  appReady = true;
+  console.log(`Lingo online app ready on port ${port}. Session: ${state.session_id}. Words: ${totalWords}`);
+}
+
+app.listen(port, () => {
+  console.log(`Listening on http://localhost:${port}`);
+  bootstrap()
+    .then(() => {
+      setInterval(() => {
+        maybeAdvanceTimedPhase().catch((error) => {
+          console.error("timer tick", error.message);
+        });
+      }, 2000);
+      setInterval(() => {
+        if (!rehearsalAutoSubmitEnabled) return;
+        runRehearsalBotSubmissions().catch((error) => {
+          console.error("rehearsal bots", error.message);
+        });
+      }, 2500);
+    })
+    .catch((error) => {
+      console.error("Failed to initialize app:", error);
+      process.exit(1);
     });
-    setInterval(() => {
-      maybeAdvanceTimedPhase().catch((error) => {
-        console.error("timer tick", error.message);
-      });
-    }, 2000);
-    setInterval(() => {
-      if (!rehearsalAutoSubmitEnabled) return;
-      runRehearsalBotSubmissions().catch((error) => {
-        console.error("rehearsal bots", error.message);
-      });
-    }, 2500);
-  })
-  .catch((error) => {
-    console.error("Failed to start app:", error);
-    process.exit(1);
-  });
+});
