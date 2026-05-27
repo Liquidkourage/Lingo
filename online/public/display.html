@@ -1375,7 +1375,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 0.04em;
       overflow: hidden;
       font-size: calc(1em * var(--live-card-scale, 1));
@@ -1394,7 +1394,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 0.04em;
       overflow: hidden;
       font-size: calc(1em * var(--live-card-scale, 1));
@@ -1722,7 +1722,7 @@
       font-size: clamp(0.62em, 24cqmin, 1.05em);
       max-width: 100%;
       line-height: 1.08;
-      flex-shrink: 1;
+      flex: 0 0 auto;
       overflow: hidden;
       display: -webkit-box;
       -webkit-box-orient: vertical;
@@ -1736,7 +1736,7 @@
     .stage[data-phase="ended"] .player-balls {
       font-size: clamp(0.46em, 16cqmin, 0.82em);
       line-height: 1.08;
-      flex-shrink: 0;
+      flex: 0 0 auto;
     }
 
     .stage[data-phase="guessing"] .player-status,
@@ -1747,7 +1747,8 @@
       margin-top: 0;
       white-space: normal;
       text-align: center;
-      flex-shrink: 1;
+      flex: 1 1 auto;
+      min-height: 0;
       max-width: 100%;
       overflow: hidden;
       display: -webkit-box;
@@ -1756,19 +1757,10 @@
       text-overflow: ellipsis;
     }
 
-    .stage[data-phase="guessing"] .pending-row,
-    .stage[data-phase="results"] .pending-row,
-    .stage[data-phase="ended"] .pending-row {
-      margin-top: 0.06em;
-      gap: 0.08em;
-      flex-shrink: 0;
-    }
-
-    .stage[data-phase="guessing"] .pending-dot,
-    .stage[data-phase="results"] .pending-dot,
-    .stage[data-phase="ended"] .pending-dot {
-      width: 0.28em;
-      height: 0.28em;
+    .stage[data-phase="results"] .pattern-row.reveal-letter-row,
+    .stage[data-phase="ended"] .pattern-row.reveal-letter-row {
+      flex: 1 1 auto;
+      min-height: 0;
     }
 
     .board-header-kicker {
@@ -3579,13 +3571,19 @@
       }
 
       let maxHeight = 0;
+      let maxRequiredHeight = 0;
       let maxWidth = 0;
       cards.forEach((card) => {
         let contentH = 0;
+        let requiredH = 0;
         let contentW = 0;
-        card.querySelectorAll(
-          ".player-name, .player-balls, .player-status, .pending-row, .pattern-row, .player-crown",
-        ).forEach((el) => {
+        card.querySelectorAll(".player-name, .player-balls").forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          requiredH += rect.height;
+          contentH += rect.height;
+          contentW = Math.max(contentW, rect.width);
+        });
+        card.querySelectorAll(".player-status, .pattern-row").forEach((el) => {
           const rect = el.getBoundingClientRect();
           contentH += rect.height;
           contentW = Math.max(contentW, rect.width);
@@ -3593,6 +3591,7 @@
         const style = getComputedStyle(card);
         const padV = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
         const padH = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
+        maxRequiredHeight = Math.max(maxRequiredHeight, requiredH + padV + 2);
         maxHeight = Math.max(maxHeight, contentH + padV + 2);
         maxWidth = Math.max(maxWidth, contentW + padH + 4);
       });
@@ -3607,6 +3606,7 @@
 
       return {
         height: Math.ceil(maxHeight),
+        requiredHeight: Math.ceil(maxRequiredHeight),
         width: Math.ceil(maxWidth),
       };
     }
@@ -3638,7 +3638,9 @@
         if (!bounds) {
           break;
         }
-        if (bounds.height <= targetFill) {
+        const requiredFits = bounds.requiredHeight <= cellH;
+        const totalFits = bounds.height <= targetFill;
+        if (requiredFits && totalFits) {
           best = mid;
           lo = mid;
         } else {
@@ -4550,9 +4552,6 @@
           if (player.isFirstSolver) {
             card.dataset.firstSolve = "true";
           }
-          if (player.isChampion) {
-            card.dataset.isChampion = "true";
-          }
         }
 
         if (phase === "idle") {
@@ -4575,10 +4574,6 @@
           name.style.setProperty("--chip-name-size", chipNameSize(lobbyLabel));
         }
         card.appendChild(name);
-
-        if (player.isChampion) {
-          card.appendChild(renderPlayerCrown());
-        }
 
         if (phase !== "idle") {
           const balls = document.createElement("div");
@@ -4605,10 +4600,6 @@
           status.textContent = player.statusText || "";
         }
         card.appendChild(status);
-
-        if (phase === "guessing" && player.status === "locked" && !player.solvedCurrentWord) {
-          card.appendChild(renderPendingRow());
-        }
 
         if (showRevealBoxes && (revealGuess || revealPattern)) {
           card.appendChild(renderRevealLetterBoxes(revealGuess, revealPattern));
