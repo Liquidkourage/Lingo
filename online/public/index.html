@@ -329,11 +329,8 @@
 
     .result-feedback {
       display: none;
-      margin-bottom: 0.85rem;
-      padding: 0.75rem 0.85rem;
-      border: var(--contrast-stroke) solid var(--show-orange);
-      border-radius: 0.2em;
-      background: rgba(255, 136, 0, 0.08);
+      margin-bottom: var(--block-gap-inner);
+      padding: 0.55rem 0.35rem 0.65rem;
       text-align: center;
     }
 
@@ -692,37 +689,48 @@
       display: none;
     }
 
-    .play-guess .prompt {
-      margin-bottom: var(--block-gap-inner);
-    }
-
-    .play-guess .word-tiles {
-      margin-bottom: var(--block-gap-inner);
-    }
-
-    .play-guess .play-keyboard {
-      margin-bottom: var(--block-gap-inner);
-    }
-
-    .play-guess {
+    .play-round {
       display: none;
-      padding: 0.75rem 0.55rem 0.8rem;
-      border: 2px solid rgba(0, 255, 85, 0.28);
+      padding: 0.75rem 0.55rem 0.85rem;
+      border: 2px solid rgba(0, 212, 255, 0.22);
       border-radius: 0.2em;
-      background: rgba(0, 16, 8, 0.45);
+      background: rgba(0, 12, 24, 0.5);
     }
 
-    .play-stage[data-phase="guessing"] .play-guess {
+    .play-stage[data-phase="guessing"] .play-round,
+    .play-stage[data-phase="results"] .play-round,
+    .play-stage[data-phase="ended"] .play-round {
       display: block;
     }
 
-    .play-outcome {
+    .play-round .prompt {
+      margin-bottom: var(--block-gap-inner);
+    }
+
+    .play-round .word-tiles {
+      margin-bottom: var(--block-gap-inner);
+    }
+
+    .word-entry {
       display: none;
     }
 
-    .play-stage[data-phase="results"] .play-outcome,
-    .play-stage[data-phase="ended"] .play-outcome {
+    .play-stage[data-phase="guessing"] .word-entry {
       display: block;
+    }
+
+    .result-area {
+      display: none;
+    }
+
+    .play-stage[data-phase="results"] .result-area,
+    .play-stage[data-phase="ended"] .result-area {
+      display: block;
+    }
+
+    .keyboard-zone {
+      padding: 1rem 0.4rem 0.65rem;
+      margin-top: var(--block-gap-inner);
     }
 
     .result-tiles {
@@ -797,12 +805,17 @@
       display: block;
     }
 
-    .play-history {
+    .round-history {
+      margin-top: var(--block-gap-inner);
+      padding-top: var(--block-gap-inner);
+      border-top: 1px solid rgba(0, 212, 255, 0.18);
+    }
+
+    .round-history:not(:has(.guess-history-row)) {
       display: none;
-      padding: 0.65rem 0.55rem 0.7rem;
-      border: 2px solid rgba(0, 212, 255, 0.28);
-      border-radius: 0.2em;
-      background: rgba(0, 12, 28, 0.55);
+      margin: 0;
+      padding: 0;
+      border: none;
     }
 
     .history-heading {
@@ -816,15 +829,7 @@
       color: rgba(200, 220, 245, 0.78);
     }
 
-    .play-stage[data-phase="guessing"] .history-heading,
-    .play-stage[data-phase="results"] .history-heading,
-    .play-stage[data-phase="ended"] .history-heading {
-      display: block;
-    }
-
-    .play-stage[data-phase="guessing"] .play-history,
-    .play-stage[data-phase="results"] .play-history,
-    .play-stage[data-phase="ended"] .play-history {
+    .round-history:has(.guess-history-row) .history-heading {
       display: block;
     }
 
@@ -924,11 +929,10 @@
       box-shadow: none;
     }
 
-    .play-guess .play-keyboard {
+    .play-round .play-keyboard {
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
-      margin-bottom: 0.55rem;
+      gap: 0.4rem;
       user-select: none;
       touch-action: manipulation;
     }
@@ -1063,48 +1067,54 @@
         <p class="play-context" id="playContext" aria-live="polite"></p>
       </section>
 
-      <section class="play-block play-history" id="playHistory" aria-label="Your guesses this round">
-        <p class="history-heading">Your guesses this round</p>
-        <div class="guess-history" id="guessHistory"></div>
-      </section>
-
-      <section class="play-block play-guess" id="playGuess" aria-label="Guess entry">
+      <section class="play-block play-round" id="playRound" aria-label="Round play">
         <h1 class="prompt" id="promptLine">Enter your five-letter word</h1>
-        <div class="word-tiles" id="wordTiles" aria-label="Five-letter guess">
-          <input
-            id="guessCapture"
-            class="guess-capture"
-            type="text"
-            maxlength="5"
-            inputmode="text"
-            autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            aria-label="Type your five-letter guess"
-          />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" tabindex="-1" readonly />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" tabindex="-1" readonly />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 3" tabindex="-1" readonly />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 4" tabindex="-1" readonly />
-          <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" tabindex="-1" readonly />
-        </div>
-        <div class="play-keyboard" id="playKeyboard" aria-label="On-screen keyboard">
-          <div class="keyboard-row" data-row="top"></div>
-          <div class="keyboard-row keyboard-row--mid" data-row="mid"></div>
-          <div class="keyboard-row" data-row="bottom"></div>
-        </div>
-        <div class="button-row button-row--guess">
-          <button id="submitButton" class="btn-primary" type="button">Submit guess</button>
-          <button id="clearButton" class="secondary" type="button">Clear</button>
-        </div>
-      </section>
 
-      <section class="play-outcome" id="playOutcome" aria-label="Your official guess this round">
-        <p class="outcome-empty" id="outcomeEmpty">You did not lock in a guess this round.</p>
-        <div class="result-feedback" id="resultFeedback" aria-live="polite">
-          <span class="result-feedback-label" id="resultFeedbackLabel">Your result</span>
-          <div class="result-tiles" id="resultTiles" aria-label="Your guess with color feedback"></div>
-          <span class="result-feedback-value" id="resultFeedbackValue"></span>
+        <div class="word-entry" id="wordEntry">
+          <div class="word-tiles" id="wordTiles" aria-label="Five-letter guess">
+            <input
+              id="guessCapture"
+              class="guess-capture"
+              type="text"
+              maxlength="5"
+              inputmode="text"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              aria-label="Type your five-letter guess"
+            />
+            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 3" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 4" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" tabindex="-1" readonly />
+          </div>
+          <div class="button-row button-row--guess">
+            <button id="submitButton" class="btn-primary" type="button">Submit guess</button>
+            <button id="clearButton" class="secondary" type="button">Clear</button>
+          </div>
+        </div>
+
+        <div class="result-area" id="playOutcome" aria-label="Your official guess this round">
+          <p class="outcome-empty" id="outcomeEmpty">You did not lock in a guess this round.</p>
+          <div class="result-feedback" id="resultFeedback" aria-live="polite">
+            <span class="result-feedback-label" id="resultFeedbackLabel">Your result</span>
+            <div class="result-tiles" id="resultTiles" aria-label="Your guess with color feedback"></div>
+            <span class="result-feedback-value" id="resultFeedbackValue"></span>
+          </div>
+        </div>
+
+        <div class="keyboard-zone">
+          <div class="play-keyboard" id="playKeyboard" aria-label="On-screen keyboard">
+            <div class="keyboard-row" data-row="top"></div>
+            <div class="keyboard-row keyboard-row--mid" data-row="mid"></div>
+            <div class="keyboard-row" data-row="bottom"></div>
+          </div>
+        </div>
+
+        <div class="round-history" id="roundHistory">
+          <p class="history-heading">Your guesses this round</p>
+          <div class="guess-history" id="guessHistory"></div>
         </div>
       </section>
 
@@ -1130,7 +1140,8 @@
       resultFeedbackLabel: document.getElementById('resultFeedbackLabel'),
       resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
-      playGuess: document.getElementById('playGuess'),
+      playRound: document.getElementById('playRound'),
+      roundHistory: document.getElementById('roundHistory'),
       wordTiles: document.getElementById('wordTiles'),
       guessCapture: document.getElementById('guessCapture'),
       playIdentity: document.getElementById('playIdentity'),
@@ -1144,7 +1155,6 @@
       lobbyToggle: document.getElementById('lobbyToggle'),
       submit: document.getElementById('submitButton'),
       clear: document.getElementById('clearButton'),
-      playHistory: document.getElementById('playHistory'),
       guessHistory: document.getElementById('guessHistory'),
       inputs: [...document.querySelectorAll('.letter-input')],
       keyboard: document.getElementById('playKeyboard'),
@@ -1611,11 +1621,11 @@
       els.guessHistory.replaceChildren();
 
       if (!isLiveRound(phase) || !viewer || !viewer.found) {
-        els.playHistory.hidden = true;
+        els.playRound.hidden = true;
         return;
       }
 
-      els.playHistory.hidden = false;
+      els.playRound.hidden = false;
 
       const hintLetter = String(state.publicFirstLetter || '').charAt(0).toUpperCase();
       if (hintLetter) {
@@ -1936,6 +1946,7 @@
       const enabled = phase === 'guessing';
       els.keyboard.querySelectorAll('.keyboard-key').forEach((button) => {
         button.disabled = !enabled;
+        button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
       });
     }
 
@@ -1956,18 +1967,30 @@
       const viewer = state.viewer;
       if (viewer) {
         const entries = Array.isArray(viewer.guessHistory) ? viewer.guessHistory : [];
+        let painted = false;
         entries.forEach((entry) => {
           const guess = String(entry.guess || '').toUpperCase();
           const pattern = String(entry.pattern || '');
           if (guess.length === 5 && pattern.length === 5) {
             applyGuessPatternToKeyboard(guess, pattern);
+            painted = true;
             return;
           }
           if (guess.length === 5 && entry.resultLabel === 'Not a word…') {
             guess.split('').forEach((letter) => mergeKeyboardLetter(letter, '/'));
+            painted = true;
           }
         });
-        if (entries.length) {
+        if (phase === 'results' || phase === 'ended') {
+          const official = officialHistoryEntry(viewer, phase);
+          const guess = String(official.guess || viewer.roundGuess || '').toUpperCase();
+          const pattern = String(official.pattern || viewer.resultPattern || '');
+          if (guess.length === 5 && pattern.length === 5) {
+            applyGuessPatternToKeyboard(guess, pattern);
+            painted = true;
+          }
+        }
+        if (painted) {
           saveKeyboardStates();
           paintKeyboardStates();
         }
