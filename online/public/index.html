@@ -1420,6 +1420,18 @@
       localStorage.setItem('lingo_display_name_ts', String(Date.now()));
     }
 
+    function storePlayerToken(token) {
+      if (token) localStorage.setItem('lingo_player_token', token);
+    }
+
+    function getPlayerToken() {
+      return localStorage.getItem('lingo_player_token') || '';
+    }
+
+    function clearPlayerToken() {
+      localStorage.removeItem('lingo_player_token');
+    }
+
     function getStoredDisplayName() {
       const name = localStorage.getItem('lingo_display_name');
       const ts = parseInt(localStorage.getItem('lingo_display_name_ts') || '', 10);
@@ -1494,13 +1506,19 @@
       const response = await fetch('/api/public/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName }),
+        body: JSON.stringify({
+          displayName,
+          playerToken: getPlayerToken(),
+        }),
       });
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
         throw new Error(payload.error || 'Could not join the game.');
       }
       storeDisplayName(displayName);
+      if (payload.player?.playerToken) {
+        storePlayerToken(payload.player.playerToken);
+      }
       return payload;
     }
 
@@ -1520,13 +1538,14 @@
       const displayName = activeUserName();
       if (els.confirmName) els.confirmName.disabled = true;
       try {
-        if (currentState && currentState.viewer && currentState.viewer.found) {
-          setMessage(`You're ${displayName}.`, 'success');
-          await fetchPublicState();
-          return;
-        }
         const payload = await joinGame(displayName);
-        setMessage(`You're ${displayName} — joined the game.`, 'success');
+        const joinedBefore = Boolean(currentState && currentState.viewer && currentState.viewer.found);
+        setMessage(
+          joinedBefore
+            ? `You're ${displayName} — name updated.`
+            : `You're ${displayName} — joined the game.`,
+          'success',
+        );
         renderPublicState(payload.publicState);
       } catch (error) {
         setMessage(error.message || 'Could not join the game.', 'error');
@@ -2397,10 +2416,9 @@
     }
 
     async function leaveLobby() {
-      const displayName = activeUserName();
-      if (!displayName) {
-        setMessage('Enter your user name above first.', 'error');
-        els.playerName.focus();
+      const playerToken = getPlayerToken();
+      if (!playerToken) {
+        setMessage('You are not in the game.', 'error');
         return;
       }
 
@@ -2409,12 +2427,16 @@
         const response = await fetch('/api/public/leave', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ displayName }),
+          body: JSON.stringify({
+            displayName: activeUserName(),
+            playerToken,
+          }),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || 'Could not leave the lobby.');
         }
+        clearPlayerToken();
         setMessage('You left the game.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
@@ -2424,9 +2446,16 @@
     }
 
     function publicStateUrl() {
-      const displayName = activeUserName();
-      if (!displayName) return '/api/public-state';
-      return `/api/public-state?displayName=${encodeURIComponent(displayName)}`;
+      const params = new URLSearchParams();
+      const playerToken = getPlayerToken();
+      if (playerToken) {
+        params.set('playerToken', playerToken);
+      } else {
+        const displayName = activeUserName();
+        if (displayName) params.set('displayName', displayName);
+      }
+      const query = params.toString();
+      return query ? `/api/public-state?${query}` : '/api/public-state';
     }
 
     async function fetchPublicState() {
@@ -2465,10 +2494,14 @@
       els.submit.textContent = 'Sending…';
 
       try {
+        const playerToken = getPlayerToken();
+        if (!playerToken) {
+          throw new Error('Re-join the game before submitting a guess.');
+        }
         const response = await fetch('/api/public/submit-guess', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ displayName, guess }),
+          body: JSON.stringify({ displayName, playerToken, guess }),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {

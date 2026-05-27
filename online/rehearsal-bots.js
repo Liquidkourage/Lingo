@@ -29,7 +29,7 @@ async function seedRehearsalBots(sessionId, upsertLobbyPlayer, client) {
   await clearRehearsalBots(sessionId, client);
   const created = [];
   for (const displayName of REHEARSAL_BOT_NAMES) {
-    const row = await upsertLobbyPlayer(sessionId, displayName, client);
+    const row = await upsertLobbyPlayer(sessionId, displayName, "", client);
     created.push({
       id: Number(row.id),
       displayName: row.display_name,

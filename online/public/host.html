@@ -694,6 +694,23 @@
       color: var(--show-cyan);
     }
 
+    .roster-history-cell {
+      font-size: 0.72rem;
+      line-height: 1.45;
+      color: rgba(200, 214, 232, 0.88);
+      min-width: 10rem;
+      max-width: 16rem;
+    }
+
+    .roster-history-line + .roster-history-line {
+      margin-top: 0.2rem;
+    }
+
+    .roster-history-line strong {
+      color: var(--show-cyan);
+      font-weight: 700;
+    }
+
     .roster-table input[type="number"] {
       width: 72px;
       padding: 0.45rem 0.5rem;
@@ -869,12 +886,13 @@
                   <tr>
                     <th>Name</th>
                     <th>Balls</th>
-                    <th>Guess</th>
+                    <th>Current</th>
+                    <th>History</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody id="playerRosterBody">
-                  <tr><td colspan="4" class="muted">Connect to load players.</td></tr>
+                  <tr><td colspan="5" class="muted">Connect to load players.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1019,12 +1037,23 @@
       renderPlayerRoster(players, currentRound);
     }
 
+    function formatHostHistoryLine(entry) {
+      const stake = Number(entry.ballStake || 0);
+      const stakeLabel = stake > 0 ? `${stake} balls` : '—';
+      if (entry.status === 'missed' || entry.resultLabel === 'No guess') {
+        return `${stakeLabel}: No guess`;
+      }
+      const guess = String(entry.guess || '').toUpperCase();
+      const detail = entry.resultLabel || (guess ? 'Pending' : '');
+      return `${stakeLabel}: ${guess || '—'}${detail ? ` (${detail})` : ''}`;
+    }
+
     function renderPlayerRoster(players, currentRound) {
       els.playerRosterBody.innerHTML = '';
       if (!players.length) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 4;
+        cell.colSpan = 5;
         cell.className = 'muted';
         cell.textContent = 'No players in the session yet.';
         row.appendChild(cell);
@@ -1053,6 +1082,21 @@
         const submitted = Number(player.roundNumber || 0) === currentRound && !!player.currentGuess;
         guessCell.textContent = submitted ? String(player.currentGuess || '').toUpperCase() : '—';
         row.appendChild(guessCell);
+
+        const historyCell = document.createElement('td');
+        historyCell.className = 'roster-history-cell';
+        const history = Array.isArray(player.guessHistory) ? player.guessHistory : [];
+        if (!history.length) {
+          historyCell.textContent = '—';
+        } else {
+          history.forEach((entry) => {
+            const line = document.createElement('div');
+            line.className = 'roster-history-line';
+            line.textContent = formatHostHistoryLine(entry);
+            historyCell.appendChild(line);
+          });
+        }
+        row.appendChild(historyCell);
 
         const actionsCell = document.createElement('td');
         const actions = document.createElement('div');

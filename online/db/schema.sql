@@ -31,6 +31,10 @@ alter table app_state add column if not exists first_solver_player_id bigint;
 alter table app_state add column if not exists host_word_suggestions jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists host_word_exclusions jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists round_ball_stakes jsonb not null default '[]'::jsonb;
+alter table app_state add column if not exists all_players_submitted_at timestamptz;
+
+alter table players add column if not exists player_token text;
+create unique index if not exists idx_players_player_token on players(player_token) where player_token is not null;
 
 insert into app_state (
   id,

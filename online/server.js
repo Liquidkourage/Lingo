@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
@@ -33,6 +34,7 @@ const pool = new Pool({
 const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
 const HOST_WORD_SUGGESTION_COUNT = 100;
+const ALL_SUBMITTED_GRACE_SECONDS = 10;
 let rehearsalAutoSubmitEnabled = false;
 let appReady = false;
 
@@ -255,7 +257,7 @@ function timerRemainingForState(row) {
 
   return {
     guessWindowRemainingSeconds: phase === "guessing"
-      ? computeWindowRemainingSeconds(row.guess_window_opened_at, row.guess_window_seconds)
+      ? effectiveGuessWindowRemaining(row)
       : null,
     resultsWindowRemainingSeconds: phase === "results"
       ? computeWindowRemainingSeconds(row.results_window_opened_at, row.results_window_seconds)
@@ -278,24 +280,127 @@ function clearTimerPausePatch() {
   };
 }
 
-async function upsertLobbyPlayer(sessionId, displayName, client = pool) {
+function clearAllSubmittedGracePatch() {
+  return {
+    all_players_submitted_at: null,
+  };
+}
+
+function newPlayerToken() {
+  return crypto.randomUUID();
+}
+
+function normalizePlayerToken(playerToken) {
+  return String(playerToken || "").trim();
+}
+
+function allSubmittedGraceExpired(state) {
+  if (!state?.all_players_submitted_at) return false;
+  const startMs = new Date(state.all_players_submitted_at).getTime();
+  if (Number.isNaN(startMs)) return false;
+  return Date.now() >= startMs + ALL_SUBMITTED_GRACE_SECONDS * 1000;
+}
+
+function effectiveGuessWindowRemaining(row) {
+  const base = computeWindowRemainingSeconds(row.guess_window_opened_at, row.guess_window_seconds);
+  if (base == null || !row.all_players_submitted_at) return base;
+  const startMs = new Date(row.all_players_submitted_at).getTime();
+  if (Number.isNaN(startMs)) return base;
+  const graceRemaining = Math.max(
+    0,
+    ALL_SUBMITTED_GRACE_SECONDS - Math.floor((Date.now() - startMs) / 1000),
+  );
+  return Math.min(base, graceRemaining);
+}
+
+async function getPlayerByToken(sessionId, playerToken, client = pool) {
+  const token = normalizePlayerToken(playerToken);
+  if (!token) return null;
+  const result = await client.query(
+    `select *
+     from players
+     where session_id = $1
+       and player_token = $2`,
+    [sessionId, token],
+  );
+  return result.rows[0] || null;
+}
+
+async function ensurePlayerToken(row, client = pool) {
+  if (row.player_token) return row;
+  const token = newPlayerToken();
+  const result = await client.query(
+    `update players
+     set player_token = $1,
+         updated_at = now()
+     where id = $2
+     returning *`,
+    [token, row.id],
+  );
+  return result.rows[0];
+}
+
+async function upsertLobbyPlayer(sessionId, displayName, playerToken, client = pool) {
   const normalized = normalizePlayerKey(displayName);
+  const token = normalizePlayerToken(playerToken);
+
+  if (token) {
+    const existing = await getPlayerByToken(sessionId, token, client);
+    if (existing) {
+      const conflict = await client.query(
+        `select id
+         from players
+         where session_id = $1
+           and normalized_display_name = $2
+           and id <> $3`,
+        [sessionId, normalized, existing.id],
+      );
+      if (conflict.rows.length) {
+        throw new Error("That name is already taken.");
+      }
+      const updated = await client.query(
+        `update players
+         set display_name = $1,
+             normalized_display_name = $2,
+             updated_at = now()
+         where id = $3
+         returning *`,
+        [displayName, normalized, existing.id],
+      );
+      return ensurePlayerToken(updated.rows[0], client);
+    }
+  }
+
   const result = await client.query(
     `insert into players (
        session_id,
        display_name,
        normalized_display_name,
+       player_token,
        updated_at
      )
-     values ($1, $2, $3, now())
+     values ($1, $2, $3, $4, now())
      on conflict (session_id, normalized_display_name)
      do update set
        display_name = excluded.display_name,
        updated_at = now()
      returning *`,
-    [sessionId, displayName, normalized],
+    [sessionId, displayName, normalized, newPlayerToken()],
   );
-  return result.rows[0];
+  const row = result.rows[0];
+  if (!token && row.player_token) {
+    throw new Error("That name is already in use. Re-join with your saved session or choose another name.");
+  }
+  return ensurePlayerToken(row, client);
+}
+
+function serializePlayerIdentity(row) {
+  return {
+    id: Number(row.id),
+    displayName: row.display_name,
+    playerToken: row.player_token,
+    balls: Number(row.balls || 0),
+  };
 }
 
 function findPlayerByDisplayName(players, displayName) {
@@ -388,15 +493,41 @@ async function performContinueRound(client, guessWindowSeconds) {
     first_solver_player_id: null,
     round_ball_stakes: roundBallStakes,
     ...clearTimerPausePatch(),
+    ...clearAllSubmittedGracePatch(),
   }, client);
   await clearSessionGuesses(nextState.session_id, client);
   return nextState;
 }
 
+async function syncAllSubmittedGrace(state, client) {
+  if (state.phase !== "guessing") {
+    if (state.all_players_submitted_at) {
+      return updateState(clearAllSubmittedGracePatch(), client);
+    }
+    return state;
+  }
+
+  const allIn = await allActivePlayersSubmitted(state, client);
+  if (!allIn) {
+    if (state.all_players_submitted_at) {
+      return updateState(clearAllSubmittedGracePatch(), client);
+    }
+    return state;
+  }
+
+  if (!state.all_players_submitted_at) {
+    return updateState({ all_players_submitted_at: nowIso() }, client);
+  }
+
+  if (allSubmittedGraceExpired(state)) {
+    return performRevealResults(client);
+  }
+
+  return state;
+}
+
 async function maybeAutoRevealIfAllSubmitted(state, client) {
-  if (state.phase !== "guessing") return state;
-  if (!(await allActivePlayersSubmitted(state, client))) return state;
-  return performRevealResults(client);
+  return syncAllSubmittedGrace(state, client);
 }
 
 async function maybeAdvanceTimedPhase(client = pool) {
@@ -406,9 +537,15 @@ async function maybeAdvanceTimedPhase(client = pool) {
     await db.query("begin");
     let state = await getState(db);
 
-    if (state.phase === "guessing"
-      && windowExpired(state.guess_window_opened_at, state.guess_window_seconds, state.timer_paused)) {
-      state = await performRevealResults(db);
+    if (state.phase === "guessing") {
+      state = await syncAllSubmittedGrace(state, db);
+      if (state.phase === "guessing"
+        && allSubmittedGraceExpired(state)) {
+        state = await performRevealResults(db);
+      } else if (state.phase === "guessing"
+        && windowExpired(state.guess_window_opened_at, state.guess_window_seconds, state.timer_paused)) {
+        state = await performRevealResults(db);
+      }
     } else if (state.phase === "results"
       && windowExpired(state.results_window_opened_at, state.results_window_seconds, state.timer_paused)) {
       const multiplier = Number(state.ball_multiplier || 1);
@@ -456,7 +593,7 @@ async function getGuessFeedback(state, guess, client = pool) {
   };
 }
 
-async function listViewerGuessHistory(playerId, state, client = pool) {
+async function listViewerGuessHistory(playerId, state, client = pool, options = {}) {
   const round = Number(state.round_number || 0);
   if (!playerId || !round) return [];
 
@@ -471,7 +608,7 @@ async function listViewerGuessHistory(playerId, state, client = pool) {
   );
 
   const phase = String(state.phase || "idle");
-  const reveal = shouldRevealGuessFeedback(phase);
+  const reveal = options.hostMode || shouldRevealGuessFeedback(phase);
   const submissionByStake = new Map();
 
   for (const row of result.rows) {
@@ -485,6 +622,8 @@ async function listViewerGuessHistory(playerId, state, client = pool) {
       const feedback = await getGuessFeedback(state, guess, client);
       pattern = feedback.pattern;
       resultLabel = feedback.resultLabel;
+    } else if (!pattern && phase === "guessing" && options.hostMode) {
+      resultLabel = "Pending";
     }
 
     const ballStake = Number(row.ball_stake || 0);
@@ -545,12 +684,32 @@ async function listViewerGuessHistory(playerId, state, client = pool) {
   return history;
 }
 
-async function buildViewerContext(displayName, state, client = pool) {
+async function buildViewerContext(displayName, playerToken, state, client = pool) {
   const normalized = normalizeDisplayName(displayName);
-  if (!normalized) return null;
+  const token = normalizePlayerToken(playerToken);
 
-  const players = await listPlayers(state.session_id, client);
-  const player = findPlayerByDisplayName(players, normalized);
+  let player = null;
+  if (token) {
+    const row = await getPlayerByToken(state.session_id, token, client);
+    if (row) {
+      player = {
+        id: row.id,
+        displayName: row.display_name,
+        normalizedDisplayName: row.normalized_display_name,
+        currentGuess: row.current_guess,
+        roundNumber: row.round_number,
+        balls: Number(row.balls || 0),
+        solvedCurrentWord: Boolean(row.solved_current_word),
+      };
+    }
+  }
+
+  if (!player && normalized) {
+    const players = await listPlayers(state.session_id, client);
+    player = findPlayerByDisplayName(players, normalized);
+  }
+
+  if (!token && !normalized) return null;
   const phase = String(state.phase || "idle");
   const round = Number(state.round_number || 0);
 
@@ -596,10 +755,10 @@ async function buildViewerContext(displayName, state, client = pool) {
   };
 }
 
-async function buildPublicStatePayload(state, displayName, client = pool) {
+async function buildPublicStatePayload(state, displayName, playerToken, client = pool) {
   const metrics = await getPublicMetrics(state.session_id, state.round_number, client);
   const players = await getPublicDisplayPlayers(state, client);
-  const viewer = await buildViewerContext(displayName, state, client);
+  const viewer = await buildViewerContext(displayName, playerToken, state, client);
   return {
     ...serializePublicState(state),
     ...metrics,
@@ -649,6 +808,9 @@ function serializeState(row) {
       ? Number(row.timer_paused_remaining_seconds)
       : null,
     roundBallStakes: parseRoundBallStakes(row),
+    allPlayersSubmittedAtIso: row.all_players_submitted_at
+      ? new Date(row.all_players_submitted_at).toISOString()
+      : null,
     ...timerRemainingForState(row),
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
   };
@@ -700,6 +862,7 @@ async function updateState(patch, client = pool) {
     JSON.stringify(parseWordListFromState(next.host_word_suggestions ?? state.host_word_suggestions)),
     JSON.stringify(parseWordListFromState(next.host_word_exclusions ?? state.host_word_exclusions)),
     JSON.stringify(parseRoundBallStakes(next)),
+    next.all_players_submitted_at ?? state.all_players_submitted_at ?? null,
   ];
 
   const result = await client.query(
@@ -725,6 +888,7 @@ async function updateState(patch, client = pool) {
          host_word_suggestions = $19::jsonb,
          host_word_exclusions = $20::jsonb,
          round_ball_stakes = $21::jsonb,
+         all_players_submitted_at = $22,
          updated_at = now()
      where id = 1
      returning *`,
@@ -851,6 +1015,7 @@ async function applyRevealResultsScoring(state, client) {
     results_window_opened_at: nowIso(),
     first_solver_player_id: firstSolverId,
     ...clearTimerPausePatch(),
+    ...clearAllSubmittedGracePatch(),
   };
 
   if (lastGuessWasTwoBall) {
@@ -888,11 +1053,7 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
   let statusText = "Waiting for guess";
   let cardTone = "default";
 
-  if (solvedCurrentWord && phase !== "idle") {
-    status = "solved";
-    statusText = "Congratulations!";
-    cardTone = "solved";
-  } else if (phase === "guessing") {
+  if (phase === "guessing") {
     if (submittedThisRound) {
       status = "locked";
       statusText = "Locked in";
@@ -999,9 +1160,10 @@ app.get("/api/public-state", async (req, res) => {
   try {
     const state = await maybeAdvanceTimedPhase();
     const displayName = normalizeDisplayName(req.query.displayName);
+    const playerToken = normalizePlayerToken(req.query.playerToken);
     res.json({
       ok: true,
-      state: await buildPublicStatePayload(state, displayName),
+      state: await buildPublicStatePayload(state, displayName, playerToken),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
@@ -1010,6 +1172,7 @@ app.get("/api/public-state", async (req, res) => {
 
 app.post("/api/public/join", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
+  const playerToken = normalizePlayerToken(req.body.playerToken);
   if (!displayName) {
     res.status(400).json({ ok: false, error: "User name is required." });
     return;
@@ -1023,18 +1186,15 @@ app.post("/api/public/join", async (req, res) => {
   try {
     await client.query("begin");
     const state = await getState(client);
-    const player = await upsertLobbyPlayer(state.session_id, displayName, client);
+    const player = await upsertLobbyPlayer(state.session_id, displayName, playerToken, client);
     await client.query("commit");
 
     const nextState = await maybeAdvanceTimedPhase();
+    const identity = serializePlayerIdentity(player);
     res.json({
       ok: true,
-      player: {
-        id: Number(player.id),
-        displayName: player.display_name,
-        balls: Number(player.balls || 0),
-      },
-      publicState: await buildPublicStatePayload(nextState, displayName),
+      player: identity,
+      publicState: await buildPublicStatePayload(nextState, identity.displayName, identity.playerToken),
     });
   } catch (error) {
     await client.query("rollback");
@@ -1046,8 +1206,9 @@ app.post("/api/public/join", async (req, res) => {
 
 app.post("/api/public/leave", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
-  if (!displayName) {
-    res.status(400).json({ ok: false, error: "User name is required." });
+  const playerToken = normalizePlayerToken(req.body.playerToken);
+  if (!playerToken) {
+    res.status(400).json({ ok: false, error: "Player session is required. Re-join the game." });
     return;
   }
 
@@ -1055,18 +1216,22 @@ app.post("/api/public/leave", async (req, res) => {
   try {
     await client.query("begin");
     const state = await getState(client);
+    const player = await getPlayerByToken(state.session_id, playerToken, client);
+    if (!player) {
+      throw new Error("Player session not found. Re-join the game.");
+    }
     await client.query(
       `delete from players
-       where session_id = $1
-         and normalized_display_name = $2`,
-      [state.session_id, normalizePlayerKey(displayName)],
+       where id = $1
+         and session_id = $2`,
+      [player.id, state.session_id],
     );
     await client.query("commit");
 
     const nextState = await maybeAdvanceTimedPhase();
     res.json({
       ok: true,
-      publicState: await buildPublicStatePayload(nextState, displayName),
+      publicState: await buildPublicStatePayload(nextState, displayName, ""),
     });
   } catch (error) {
     await client.query("rollback");
@@ -1078,10 +1243,11 @@ app.post("/api/public/leave", async (req, res) => {
 
 app.post("/api/public/submit-guess", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
+  const playerToken = normalizePlayerToken(req.body.playerToken);
   const guess = normalizeWordInput(req.body.guess);
 
-  if (!displayName) {
-    res.status(400).json({ ok: false, error: "User name is required." });
+  if (!playerToken) {
+    res.status(400).json({ ok: false, error: "Player session is required. Re-join the game." });
     return;
   }
   if (!isFiveLetterWord(guess)) {
@@ -1101,46 +1267,34 @@ app.post("/api/public/submit-guess", async (req, res) => {
       throw new Error("The host has not set a word yet.");
     }
 
-    const existingPlayer = await client.query(
-      `select id, solved_current_word
-       from players
-       where session_id = $1
-         and normalized_display_name = $2`,
-      [state.session_id, normalizePlayerKey(displayName)],
-    );
-    if (existingPlayer.rows[0]?.solved_current_word) {
+    const playerRow = await getPlayerByToken(state.session_id, playerToken, client);
+    if (!playerRow) {
+      throw new Error("Player session not found. Re-join the game.");
+    }
+    if (displayName
+      && normalizePlayerKey(displayName) !== playerRow.normalized_display_name) {
+      throw new Error("Display name does not match your player session.");
+    }
+
+    if (playerRow.solved_current_word) {
       throw new Error("You already solved this word for the round.");
     }
 
     const upsertResult = await client.query(
-      `insert into players (
-         session_id,
-         display_name,
-         normalized_display_name,
-         current_guess,
-         round_number,
-         first_letter,
-         submitted_at,
-         updated_at
-       )
-       values ($1, $2, $3, $4, $5, $6, now(), now())
-       on conflict (session_id, normalized_display_name)
-       do update set
-         display_name = excluded.display_name,
-         current_guess = excluded.current_guess,
-         round_number = excluded.round_number,
-         first_letter = excluded.first_letter,
-         submitted_at = now(),
-         updated_at = now()
+      `update players
+       set current_guess = $1,
+           round_number = $2,
+           first_letter = $3,
+           submitted_at = now(),
+           updated_at = now()
+       where id = $4
        returning *`,
       [
-        state.session_id,
-        displayName,
-        normalizePlayerKey(displayName),
         guess,
         state.round_number,
         guess.charAt(0).toUpperCase(),
-      ]
+        playerRow.id,
+      ],
     );
 
     const player = upsertResult.rows[0];
@@ -1213,17 +1367,21 @@ app.post("/api/public/submit-guess", async (req, res) => {
 
     await client.query("commit");
 
+    const identity = serializePlayerIdentity(await ensurePlayerToken(player, client));
     res.json({
       ok: true,
       solvedNow,
       player: {
-        id: player.id,
-        displayName: player.display_name,
+        ...identity,
         currentGuess: player.current_guess,
         roundNumber: player.round_number,
         submittedAtIso: player.submitted_at ? new Date(player.submitted_at).toISOString() : nowIso(),
       },
-      publicState: await buildPublicStatePayload(nextState, displayName),
+      publicState: await buildPublicStatePayload(
+        nextState,
+        identity.displayName,
+        identity.playerToken,
+      ),
     });
   } catch (error) {
     await client.query("rollback");
@@ -1248,11 +1406,15 @@ app.get("/api/admin/players", requireAdmin, async (_req, res) => {
   try {
     const state = await getState();
     const players = await listPlayers(state.session_id);
+    const playersWithHistory = await Promise.all(players.map(async (player) => ({
+      ...player,
+      guessHistory: await listViewerGuessHistory(player.id, state, pool, { hostMode: true }),
+    })));
     res.json({
       ok: true,
       state: {
         session: serializeState(state),
-        players,
+        players: playersWithHistory,
       },
     });
   } catch (error) {
@@ -1288,6 +1450,7 @@ async function handleAdminAction(action, body) {
         timer_paused: false,
         timer_paused_remaining_seconds: null,
         round_ball_stakes: [],
+        all_players_submitted_at: null,
         ...wordPool,
       }));
     }
@@ -1328,6 +1491,7 @@ async function handleAdminAction(action, body) {
           guess_window_opened_at: nowIso(),
           first_solver_player_id: null,
           ...clearTimerPausePatch(),
+          ...clearAllSubmittedGracePatch(),
         }, client);
         await clearSessionGuesses(nextState.session_id, client);
         await resetWordProgress(nextState.session_id, client);
@@ -1534,6 +1698,7 @@ async function handleAdminAction(action, body) {
         timer_paused: false,
         timer_paused_remaining_seconds: null,
         round_ball_stakes: [],
+        all_players_submitted_at: null,
         ...wordPool,
       }));
     }
