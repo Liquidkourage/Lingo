@@ -662,7 +662,7 @@
       grid-template-areas:
         "score hud"
         "score stats"
-        "score board";
+        "board board";
       justify-items: stretch;
       align-content: start;
       gap: 0.18em 0.28em;
@@ -823,7 +823,7 @@
     .live-score-rail {
       display: none;
       grid-area: score;
-      grid-row: 1 / -1;
+      grid-row: 1 / 3;
       flex-direction: column;
       align-self: stretch;
       width: 100%;
@@ -879,7 +879,7 @@
     }
 
     .score-value.round {
-      font-size: clamp(1.6em, 14cqh, 3.4em);
+      font-size: clamp(1.4em, 7.5cqh, 2.5em);
       color: #ffc832;
       text-shadow:
         0 0 20px rgba(255, 200, 50, 0.95),
@@ -887,7 +887,7 @@
     }
 
     .score-value.balls {
-      font-size: clamp(1.6em, 14cqh, 3.4em);
+      font-size: clamp(1.4em, 7.5cqh, 2.5em);
       color: #0092e0;
       text-shadow:
         0 0 20px rgba(0, 146, 224, 0.95),
@@ -1044,10 +1044,14 @@
     .stage[data-phase="results"] .player-board,
     .stage[data-phase="ended"] .player-board {
       grid-area: board;
+      grid-column: 1 / -1;
       display: flex;
       flex-direction: column;
       align-self: stretch;
-      width: 100%;
+      width: calc(100% + 3.5%);
+      max-width: none;
+      margin-left: -1%;
+      margin-right: -2.5%;
       min-height: 0;
       height: 100%;
       z-index: 5;
