@@ -153,14 +153,35 @@
     }
 
     .meta-rail {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      display: none;
+      grid-template-columns: repeat(2, 1fr);
       gap: 0;
       margin-bottom: 1rem;
       border: var(--contrast-stroke) solid var(--show-gold);
       border-radius: 0.2em;
       background: var(--show-black);
       overflow: hidden;
+    }
+
+    .play-stage[data-phase="guessing"] .meta-rail,
+    .play-stage[data-phase="results"] .meta-rail,
+    .play-stage[data-phase="ended"] .meta-rail {
+      display: grid;
+    }
+
+    .guess-worth {
+      display: none;
+      margin: 0 0 0.75rem;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: var(--show-cyan);
+      text-shadow: 0 0 14px rgba(0, 212, 255, 0.55);
+    }
+
+    .guess-worth.is-visible {
+      display: block;
     }
 
     .meta-slot {
@@ -200,16 +221,6 @@
     .meta-value.balls {
       color: var(--show-green);
       text-shadow: 0 0 20px rgba(0, 255, 85, 0.65);
-    }
-
-    .meta-value.stake {
-      color: var(--show-cyan);
-      text-shadow: 0 0 20px rgba(0, 212, 255, 0.85);
-    }
-
-    .meta-value.mult {
-      color: var(--show-gold-hot);
-      text-shadow: 0 0 20px rgba(255, 204, 0, 0.85);
     }
 
     .result-feedback {
@@ -514,7 +525,6 @@
 
     @media (max-width: 420px) {
       .play-card { padding: 1rem 0.85rem 0.9rem; }
-      .meta-rail { grid-template-columns: repeat(2, 1fr); }
       .word-tiles { gap: 0.35rem; }
       .button-row { grid-template-columns: 1fr; }
     }
@@ -534,18 +544,12 @@
           <span class="meta-value round" id="metaRound">0</span>
         </div>
         <div class="meta-slot">
-          <span class="meta-label">Yours</span>
+          <span class="meta-label">Balls</span>
           <span class="meta-value balls" id="metaYours">0</span>
         </div>
-        <div class="meta-slot">
-          <span class="meta-label">Stake</span>
-          <span class="meta-value stake" id="metaStake">0</span>
-        </div>
-        <div class="meta-slot">
-          <span class="meta-label">Mult</span>
-          <span class="meta-value mult" id="metaMult">1x</span>
-        </div>
       </div>
+
+      <p class="guess-worth" id="guessWorth" aria-live="polite"></p>
 
       <div class="result-feedback" id="resultFeedback" aria-live="polite">
         <span class="result-feedback-label">Your last result</span>
@@ -595,8 +599,7 @@
       phaseLine: document.getElementById('phaseLine'),
       metaRound: document.getElementById('metaRound'),
       metaYours: document.getElementById('metaYours'),
-      metaStake: document.getElementById('metaStake'),
-      metaMult: document.getElementById('metaMult'),
+      guessWorth: document.getElementById('guessWorth'),
       resultFeedback: document.getElementById('resultFeedback'),
       resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
@@ -766,6 +769,25 @@
         }
         input.disabled = !canGuess;
       });
+    }
+
+    function formatGuessWorthLine(balls) {
+      const count = Math.max(0, Number(balls || 0));
+      return count === 1
+        ? `This guess worth ${count} ball`
+        : `This guess worth ${count} balls`;
+    }
+
+    function renderGuessWorth(state) {
+      const phase = state.phase || 'idle';
+      if (phase !== 'guessing') {
+        els.guessWorth.classList.remove('is-visible');
+        els.guessWorth.textContent = '';
+        return;
+      }
+      const balls = Number(state.ballsRemaining || 0);
+      els.guessWorth.textContent = formatGuessWorthLine(balls);
+      els.guessWorth.classList.add('is-visible');
     }
 
     function renderPrompt(phase, firstLetter) {
@@ -1007,12 +1029,11 @@
           : copy.line;
 
       els.metaRound.textContent = String(state.roundNumber || 0);
-      els.metaStake.textContent = String(Number.isFinite(state.ballsRemaining) ? state.ballsRemaining : 0);
-      els.metaMult.textContent = `${state.ballMultiplier || 1}x`;
       els.metaYours.textContent = !els.playerName.value.trim()
         ? '—'
         : String(viewer && viewer.found ? viewer.balls : 0);
 
+      renderGuessWorth(state);
       renderPrompt(phase, firstLetter);
       renderViewerFeedback(state);
       applyFirstLetter(phase === 'guessing' ? firstLetter : '');
