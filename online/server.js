@@ -162,29 +162,55 @@ function uniqueStakesInOrder(stakes) {
   return result;
 }
 
-function parseRoundBallStakes(state) {
+function parseRoundBallStakesPreserveOrder(state) {
   const raw = state?.round_ball_stakes ?? state?.roundBallStakes ?? [];
   let stakes = [];
   if (Array.isArray(raw)) {
-    stakes = raw.map((value) => Number(value)).filter((value) => value > 0);
+    stakes = raw
+      .map((value) => {
+        if (value && typeof value === "object") {
+          return Number(value.stake ?? value.ballStake ?? 0);
+        }
+        return Number(value);
+      })
+      .filter((value) => value > 0);
   } else if (typeof raw === "string") {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        stakes = parsed.map((value) => Number(value)).filter((value) => value > 0);
+        stakes = parsed
+          .map((value) => {
+            if (value && typeof value === "object") {
+              return Number(value.stake ?? value.ballStake ?? 0);
+            }
+            return Number(value);
+          })
+          .filter((value) => value > 0);
       }
     } catch (_error) {
       return [];
     }
   }
-  return uniqueStakesInOrder(stakes);
+  return stakes;
 }
 
-function isStakeWindowClosed(stake, state) {
+function parseRoundBallStakes(state) {
+  return uniqueStakesInOrder(parseRoundBallStakesPreserveOrder(state));
+}
+
+function parseRoundGuessWindows(state) {
+  return parseRoundBallStakesPreserveOrder(state).map((stake, index) => ({
+    seq: index + 1,
+    stake,
+  }));
+}
+
+function isGuessWindowClosed(windowSeq, state) {
+  const current = Number(state.guess_window_seq || 0);
   const phase = String(state.phase || "idle");
-  if (phase === "results" || phase === "ended") return true;
-  if (phase === "guessing") {
-    return Number(stake) !== Number(state.balls_remaining || 0);
+  if (windowSeq < current) return true;
+  if (windowSeq === current) {
+    return phase === "results" || phase === "ended";
   }
   return false;
 }
@@ -491,16 +517,15 @@ async function performContinueRound(client, guessWindowSeconds) {
     throw new Error("The round cannot continue in the current state.");
   }
   const continueStake = Number(state.balls_remaining || 0);
-  const roundBallStakes = [...parseRoundBallStakes(state)];
-  if (continueStake > 0 && roundBallStakes[roundBallStakes.length - 1] !== continueStake) {
-    roundBallStakes.push(continueStake);
-  }
+  const nextWindowSeq = Number(state.guess_window_seq || 0) + 1;
+  const roundBallStakes = [...parseRoundBallStakesPreserveOrder(state), continueStake];
 
   const nextState = await updateState({
     phase: "guessing",
     guess_window_opened_at: nowIso(),
     guess_window_seconds: Number(guessWindowSeconds || state.guess_window_seconds || 90),
     first_solver_player_id: null,
+    guess_window_seq: nextWindowSeq,
     round_ball_stakes: roundBallStakes,
     ...clearTimerPausePatch(),
     ...clearAllSubmittedGracePatch(),
@@ -608,18 +633,20 @@ async function listViewerGuessHistory(playerId, state, client = pool, options = 
   if (!playerId || !round) return [];
 
   const result = await client.query(
-    `select guess, result_pattern, result_label, is_official, ball_stake
+    `select guess, result_pattern, result_label, is_official, ball_stake, guess_window_seq
      from guess_submissions
      where session_id = $1
        and player_id = $2
        and round_number = $3
-     order by submitted_at asc, id asc`,
+     order by guess_window_seq asc, submitted_at asc, id asc`,
     [state.session_id, playerId, round],
   );
 
   const phase = String(state.phase || "idle");
   const reveal = options.hostMode || shouldRevealGuessFeedback(phase);
-  const submissionByStake = new Map();
+  const windows = parseRoundGuessWindows(state);
+  const submissionBySeq = new Map();
+  const legacyEntries = [];
 
   for (const row of result.rows) {
     const guess = normalizeWordInput(row.guess);
@@ -643,55 +670,53 @@ async function listViewerGuessHistory(playerId, state, client = pool, options = 
       resultLabel,
       isOfficial: Boolean(row.is_official),
       ballStake,
+      guessWindowSeq: Number(row.guess_window_seq || 0),
       status: resultLabel === "Not a word…" ? "invalid" : "guess",
     };
-    if (ballStake > 0) {
-      submissionByStake.set(ballStake, entry);
+    const windowSeq = Number(row.guess_window_seq || 0);
+    if (windowSeq > 0) {
+      submissionBySeq.set(windowSeq, entry);
+    } else {
+      legacyEntries.push(entry);
     }
   }
 
-  let roundStakes = parseRoundBallStakes(state);
-  if (!roundStakes.length) {
-    const stakesInOrder = [];
-    result.rows.forEach((row) => {
-      const stake = Number(row.ball_stake || 0);
-      if (stake > 0 && !stakesInOrder.includes(stake)) {
-        stakesInOrder.push(stake);
+  if (windows.length) {
+    const history = [];
+    windows.forEach(({ seq, stake }) => {
+      const existing = submissionBySeq.get(seq);
+      if (existing) {
+        history.push(existing);
+        return;
+      }
+      if (!isGuessWindowClosed(seq, state)) {
+        return;
+      }
+      history.push({
+        guess: "",
+        pattern: "",
+        resultLabel: "No guess",
+        isOfficial: false,
+        ballStake: stake,
+        guessWindowSeq: seq,
+        status: "missed",
+      });
+    });
+
+    submissionBySeq.forEach((entry, seq) => {
+      if (!windows.some((window) => window.seq === seq)) {
+        history.push(entry);
       }
     });
-    if (!stakesInOrder.length) {
-      return [...submissionByStake.values()];
-    }
-    roundStakes = stakesInOrder;
+
+    return history;
   }
 
-  const history = [];
-  roundStakes.forEach((ballStake) => {
-    const existing = submissionByStake.get(ballStake);
-    if (existing) {
-      history.push(existing);
-      return;
-    }
-    if (!isStakeWindowClosed(ballStake, state)) {
-      return;
-    }
-    history.push({
-      guess: "",
-      pattern: "",
-      resultLabel: "No guess",
-      isOfficial: false,
-      ballStake,
-      status: "missed",
-    });
-  });
+  if (legacyEntries.length) {
+    return legacyEntries;
+  }
 
-  submissionByStake.forEach((entry, ballStake) => {
-    if (!roundStakes.includes(ballStake)) {
-      history.push(entry);
-    }
-  });
-
-  return history;
+  return [...submissionBySeq.values()];
 }
 
 async function buildViewerContext(displayName, playerToken, state, client = pool) {
@@ -841,7 +866,8 @@ function serializeState(row) {
     timerPausedRemainingSeconds: row.timer_paused_remaining_seconds != null
       ? Number(row.timer_paused_remaining_seconds)
       : null,
-    roundBallStakes: parseRoundBallStakes(row),
+    roundBallStakes: parseRoundBallStakesPreserveOrder(row),
+    guessWindowSeq: Number(row.guess_window_seq || 0),
     allPlayersSubmittedAtIso: row.all_players_submitted_at
       ? new Date(row.all_players_submitted_at).toISOString()
       : null,
@@ -895,8 +921,9 @@ async function updateState(patch, client = pool) {
     next.first_solver_player_id ?? state.first_solver_player_id ?? null,
     JSON.stringify(parseWordListFromState(next.host_word_suggestions ?? state.host_word_suggestions)),
     JSON.stringify(parseWordListFromState(next.host_word_exclusions ?? state.host_word_exclusions)),
-    JSON.stringify(parseRoundBallStakes(next)),
+    JSON.stringify(parseRoundBallStakesPreserveOrder(next)),
     next.all_players_submitted_at ?? state.all_players_submitted_at ?? null,
+    Number(next.guess_window_seq ?? state.guess_window_seq ?? 0),
   ];
 
   const result = await client.query(
@@ -923,6 +950,7 @@ async function updateState(patch, client = pool) {
          host_word_exclusions = $20::jsonb,
          round_ball_stakes = $21::jsonb,
          all_players_submitted_at = $22,
+         guess_window_seq = $23,
          updated_at = now()
      where id = 1
      returning *`,
@@ -1333,8 +1361,9 @@ app.post("/api/public/submit-guess", async (req, res) => {
     const player = upsertResult.rows[0];
 
     const ballStake = Number(state.balls_remaining || 0);
+    const windowSeq = Number(state.guess_window_seq || 0);
     const lastSubmission = await client.query(
-      `select id, guess, ball_stake
+      `select id, guess, ball_stake, guess_window_seq
        from guess_submissions
        where session_id = $1
          and player_id = $2
@@ -1347,7 +1376,7 @@ app.post("/api/public/submit-guess", async (req, res) => {
     const lastGuess = lastRow ? normalizeWordInput(lastRow.guess) : "";
 
     if (lastGuess !== guess) {
-      if (lastRow && Number(lastRow.ball_stake || 0) === ballStake) {
+      if (lastRow && Number(lastRow.guess_window_seq || 0) === windowSeq) {
         await client.query(
           `update guess_submissions
            set guess = $1,
@@ -1366,15 +1395,17 @@ app.post("/api/public/submit-guess", async (req, res) => {
              round_number,
              guess,
              ball_stake,
+             guess_window_seq,
              submitted_at
            )
-           values ($1, $2, $3, $4, $5, now())`,
+           values ($1, $2, $3, $4, $5, $6, now())`,
           [
             state.session_id,
             player.id,
             state.round_number,
             guess,
             ballStake,
+            windowSeq,
           ],
         );
       }
@@ -1483,6 +1514,7 @@ async function handleAdminAction(action, body) {
         timer_paused: false,
         timer_paused_remaining_seconds: null,
         round_ball_stakes: [],
+        guess_window_seq: 0,
         all_players_submitted_at: null,
         ...wordPool,
       }));
@@ -1518,6 +1550,7 @@ async function handleAdminAction(action, body) {
           round_number: nextRound,
           answer_revealed: false,
           balls_remaining: openingStake,
+          guess_window_seq: 1,
           round_ball_stakes: [openingStake],
           guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
           results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
@@ -1731,6 +1764,7 @@ async function handleAdminAction(action, body) {
         timer_paused: false,
         timer_paused_remaining_seconds: null,
         round_ball_stakes: [],
+        guess_window_seq: 0,
         all_players_submitted_at: null,
         ...wordPool,
       }));
@@ -1804,11 +1838,14 @@ app.post("/api/admin/rehearsal/:command", requireAdmin, async (req, res) => {
 
           if (body.startRound) {
             const multiplier = Number(state.ball_multiplier || 1);
+            const openingStake = 6 * multiplier;
             state = await updateState({
               phase: "guessing",
               round_number: 1,
               answer_revealed: false,
-              balls_remaining: 6 * multiplier,
+              balls_remaining: openingStake,
+              guess_window_seq: 1,
+              round_ball_stakes: [openingStake],
               guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
               results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
               guess_window_opened_at: nowIso(),

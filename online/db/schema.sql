@@ -31,6 +31,7 @@ alter table app_state add column if not exists first_solver_player_id bigint;
 alter table app_state add column if not exists host_word_suggestions jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists host_word_exclusions jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists round_ball_stakes jsonb not null default '[]'::jsonb;
+alter table app_state add column if not exists guess_window_seq integer not null default 0;
 alter table app_state add column if not exists all_players_submitted_at timestamptz;
 
 alter table players add column if not exists player_token text;
@@ -103,6 +104,7 @@ alter table guess_submissions add column if not exists result_pattern text not n
 alter table guess_submissions add column if not exists result_label text not null default '';
 alter table guess_submissions add column if not exists is_official boolean not null default false;
 alter table guess_submissions add column if not exists ball_stake integer not null default 0;
+alter table guess_submissions add column if not exists guess_window_seq integer not null default 0;
 
 create table if not exists words (
   word text primary key,
