@@ -1121,7 +1121,6 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
     statusText,
     cardTone,
     resultPattern: (phase === "results" || phase === "ended") && guessIsLegal ? resultPattern : "",
-    roundGuess: (phase === "results" || phase === "ended") && submittedThisRound ? guess : "",
     isWinner: resultPattern === "!!!!!",
     submissionCount: Number(player.submissionCount || 0),
     submittedAtIso: player.submittedAtIso,

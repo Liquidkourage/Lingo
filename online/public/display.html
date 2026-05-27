@@ -2946,6 +2946,10 @@
       min-height: 0;
     }
 
+    .pattern-letter {
+      display: none !important;
+    }
+
     .pattern-cell {
       flex: 0 0 auto;
       width: 1.35em;
@@ -2961,23 +2965,10 @@
       justify-content: center;
     }
 
-    .pattern-letter {
-      font-size: clamp(0.55em, 7cqmin, 0.85em);
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: 0.02em;
-      color: var(--show-white);
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
-    }
-
     .pattern-cell[data-mark="!"] {
       background: var(--feedback-correct);
       border-color: var(--feedback-correct-border);
       box-shadow: 0 0 14px var(--feedback-correct-glow);
-    }
-
-    .pattern-cell[data-mark="!"] .pattern-letter {
-      color: var(--feedback-correct-text);
     }
 
     .pattern-cell[data-mark="?"] {
@@ -2986,18 +2977,10 @@
       box-shadow: 0 0 14px var(--feedback-present-glow);
     }
 
-    .pattern-cell[data-mark="?"] .pattern-letter {
-      color: var(--feedback-present-text);
-    }
-
     .pattern-cell[data-mark="/"] {
       background: #3a2030;
       border-color: rgba(255, 34, 68, 0.55);
       box-shadow: inset 0 0 0 1px rgba(255, 34, 68, 0.35);
-    }
-
-    .pattern-cell[data-mark="/"] .pattern-letter {
-      color: rgba(255, 220, 220, 0.95);
     }
 
     .stage[data-live-density="lg"] .pattern-cell,
@@ -4555,7 +4538,6 @@
             cardTone: player.cardTone,
             hasSubmitted: Boolean(player.hasSubmitted),
             resultPattern: player.resultPattern || "",
-            roundGuess: player.roundGuess || "",
             guessIsLegal: player.guessIsLegal !== false,
             isWinner: Boolean(player.isWinner),
             isFirstSolver: Boolean(player.isFirstSolver),
@@ -4586,20 +4568,24 @@
       });
     }
 
-    function renderRevealLetterBoxes(guess, pattern, options = {}) {
+    function patternMarkAriaLabel(mark) {
+      if (mark === "!") return "Correct position";
+      if (mark === "?") return "Wrong position";
+      if (mark === "/") return "Not in word";
+      return "Unknown";
+    }
+
+    function renderRevealPatternBoxes(pattern, options = {}) {
       const row = document.createElement("div");
       row.className = `pattern-row reveal-letter-row${options.animate ? " is-revealing" : ""}`;
-      const letters = String(guess || "").toUpperCase().padEnd(5, " ").slice(0, 5).split("");
+      row.setAttribute("aria-label", "Guess result colors");
       const marks = (pattern || "").padEnd(5, "/").slice(0, 5).split("");
-      letters.forEach((letter, index) => {
+      marks.forEach((mark, index) => {
         const cell = document.createElement("div");
         cell.className = "pattern-cell";
-        cell.dataset.mark = marks[index] || "/";
+        cell.dataset.mark = mark || "/";
         cell.style.setProperty("--reveal-index", String(index));
-        const letterEl = document.createElement("span");
-        letterEl.className = "pattern-letter";
-        letterEl.textContent = letter.trim() || "·";
-        cell.appendChild(letterEl);
+        cell.setAttribute("aria-label", patternMarkAriaLabel(mark));
         row.appendChild(cell);
       });
       return row;
@@ -4696,10 +4682,9 @@
 
         const showRevealBoxes = (phase === "results" || phase === "ended")
           && player.hasSubmitted
-          && (player.resultPattern || player.roundGuess || player.guessIsLegal === false);
+          && (player.resultPattern || player.guessIsLegal === false);
         const revealPattern = player.resultPattern
           || (player.guessIsLegal === false ? "/////" : "");
-        const revealGuess = String(player.roundGuess || "").toUpperCase();
 
         const status = document.createElement("div");
         status.className = "player-status";
@@ -4713,8 +4698,8 @@
         }
         card.appendChild(status);
 
-        if (showRevealBoxes && (revealGuess || revealPattern)) {
-          card.appendChild(renderRevealLetterBoxes(revealGuess, revealPattern, {
+        if (showRevealBoxes && revealPattern) {
+          card.appendChild(renderRevealPatternBoxes(revealPattern, {
             animate: Boolean(options.animateGuessReveal),
           }));
         }
