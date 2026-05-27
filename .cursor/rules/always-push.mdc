@@ -1,0 +1,25 @@
+---
+description: Always commit and push all project changes when finishing work
+alwaysApply: true
+---
+
+# Always push changes
+
+When you finish making changes in this repo, **always commit and push** — do not leave work only on disk.
+
+## Required workflow
+
+After completing any task that modifies files:
+
+1. Run `git status` and `git diff` to see everything changed (modified + untracked).
+2. Stage and commit **all** relevant changes from the task.
+3. Push to `origin` on the current branch (`git push origin HEAD` or `git push origin master`).
+4. Confirm with `git status` that the branch is up to date with remote.
+
+## Rules
+
+- Do this **every time**, including at the end of long sessions — never assume an earlier push covered later edits.
+- Do not wait for the user to say "push"; pushing is part of completing the task.
+- Only skip commit/push if the user explicitly says not to, or there are genuinely zero changes.
+- Do not commit secrets (`.env`, credentials). Warn if those would be included.
+- Do not force-push to `main`/`master` unless explicitly requested.
