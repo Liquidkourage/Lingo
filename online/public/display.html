@@ -33,6 +33,8 @@
       --live-chrome-stack-gap: var(--live-v-gap);
       --live-chrome-board-gap: var(--live-v-gap);
       --live-board-bottom-inset: 2px;
+      --live-card-width: min(100%, 10.4em);
+      --live-card-min-height: 2.85em;
     }
 
     html, body {
@@ -1230,31 +1232,326 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      justify-content: center;
     }
 
     .stage[data-phase="guessing"] .player-grid,
     .stage[data-phase="results"] .player-grid,
     .stage[data-phase="ended"] .player-grid {
-      flex: 1 1 auto;
+      flex: 0 1 auto;
       min-height: 0;
-      height: 100%;
+      max-height: 100%;
+      height: auto;
+      width: 100%;
       grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
-      grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
-      align-content: stretch;
-      gap: var(--live-gap, 0.36em);
+      grid-template-rows: repeat(var(--live-rows, 2), auto);
+      place-content: center;
+      place-items: center;
+      gap: var(--live-gap, 0.42em);
     }
 
     .stage[data-phase="guessing"] .player-card,
     .stage[data-phase="results"] .player-card,
     .stage[data-phase="ended"] .player-card {
-      min-height: 0;
-      height: 100%;
-      padding: 0.22em 0.32em;
+      width: var(--live-card-width);
+      max-width: var(--live-card-width);
+      min-height: var(--live-card-min-height);
+      height: auto;
+      padding: 0.28em 0.42em;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      align-self: center;
+      justify-self: center;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin],
+    .stage[data-phase="results"] .player-card[data-card-skin],
+    .stage[data-phase="ended"] .player-card[data-card-skin] {
+      position: relative;
+      isolation: isolate;
+      border-radius: 0.48em;
+      border-width: 2px;
+      border-style: solid;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="locked"]:not([data-card-skin]),
+    .stage[data-phase="results"] .player-card[data-status="locked"]:not([data-card-skin]),
+    .stage[data-phase="ended"] .player-card[data-status="locked"]:not([data-card-skin]) {
+      border: 2px solid rgba(255, 210, 60, 0.95);
+      background: linear-gradient(180deg, rgba(72, 52, 8, 0.96) 0%, rgba(36, 24, 4, 0.98) 100%);
+      box-shadow:
+        0 0 22px rgba(255, 190, 40, 0.45),
+        0 0 40px rgba(255, 150, 20, 0.18),
+        inset 0 1px 0 rgba(255, 230, 140, 0.22);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="locked"]:not([data-card-skin]) .player-name,
+    .stage[data-phase="results"] .player-card[data-status="locked"]:not([data-card-skin]) .player-name,
+    .stage[data-phase="ended"] .player-card[data-status="locked"]:not([data-card-skin]) .player-name {
+      color: #fff4c8;
+      text-shadow: 0 0 10px rgba(255, 210, 60, 0.45);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="locked"]:not([data-card-skin]) .player-status,
+    .stage[data-phase="results"] .player-card[data-status="locked"]:not([data-card-skin]) .player-status,
+    .stage[data-phase="ended"] .player-card[data-status="locked"]:not([data-card-skin]) .player-status {
+      color: rgba(255, 220, 130, 0.92);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="waiting"]:not([data-card-skin]),
+    .stage[data-phase="results"] .player-card[data-status="waiting"]:not([data-card-skin]),
+    .stage[data-phase="ended"] .player-card[data-status="waiting"]:not([data-card-skin]) {
+      opacity: 0.78;
+      border-color: rgba(100, 140, 180, 0.35);
+      background: linear-gradient(180deg, rgba(0, 18, 42, 0.88) 0%, rgba(0, 8, 22, 0.94) 100%);
+    }
+
+    /* Live card skins — one distinct look per demo slot */
+    @keyframes skin-aurora-shift {
+      0%, 100% { filter: hue-rotate(0deg); opacity: 0.88; }
+      50% { filter: hue-rotate(18deg); opacity: 1; }
+    }
+
+    @keyframes skin-holo-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes skin-magma-flicker {
+      0%, 100% { opacity: 0.75; }
+      50% { opacity: 1; }
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="aurora"],
+    .stage[data-phase="results"] .player-card[data-card-skin="aurora"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="aurora"] {
+      border-color: rgba(120, 255, 240, 0.75);
+      background: linear-gradient(145deg, rgba(18, 8, 58, 0.98) 0%, rgba(8, 32, 72, 0.98) 55%, rgba(42, 8, 68, 0.98) 100%);
+      box-shadow: 0 0 22px rgba(80, 220, 255, 0.28), inset 0 1px 0 rgba(180, 255, 255, 0.18);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="aurora"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="aurora"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="aurora"]::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: conic-gradient(from 0deg, rgba(80, 255, 220, 0.35), rgba(180, 80, 255, 0.35), rgba(80, 255, 220, 0.35));
+      animation: skin-aurora-shift 4.5s ease-in-out infinite;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="aurora"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="aurora"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="aurora"] .player-name {
+      color: #dffbff;
+      text-shadow: 0 0 12px rgba(100, 240, 255, 0.65);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="goldleaf"],
+    .stage[data-phase="results"] .player-card[data-card-skin="goldleaf"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="goldleaf"] {
+      border-color: rgba(255, 210, 80, 0.92);
+      background: linear-gradient(180deg, rgba(58, 38, 4, 0.98) 0%, rgba(22, 14, 2, 0.99) 100%);
+      box-shadow: 0 0 26px rgba(255, 190, 40, 0.38), inset 0 2px 0 rgba(255, 230, 150, 0.22);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="goldleaf"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="goldleaf"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="goldleaf"] .player-name {
+      color: #ffe992;
+      text-shadow: 0 0 14px rgba(255, 200, 60, 0.55);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="holo"],
+    .stage[data-phase="results"] .player-card[data-card-skin="holo"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="holo"] {
+      border-color: transparent;
+      background: linear-gradient(180deg, rgba(8, 10, 28, 0.98) 0%, rgba(4, 6, 18, 0.99) 100%);
+      box-shadow: 0 0 24px rgba(180, 120, 255, 0.22);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="holo"]::before,
+    .stage[data-phase="results"] .player-card[data-card-skin="holo"]::before,
+    .stage[data-phase="ended"] .player-card[data-card-skin="holo"]::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      padding: 2px;
+      background: conic-gradient(from 0deg, #ff6bcb, #ffd060, #60ffa0, #60c8ff, #b060ff, #ff6bcb);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: skin-holo-spin 5s linear infinite;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="holo"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="holo"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="holo"] .player-name {
+      background: linear-gradient(90deg, #ffd060, #ff80d0, #80e0ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(0 0 8px rgba(255, 160, 220, 0.45));
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="matrix"],
+    .stage[data-phase="results"] .player-card[data-card-skin="matrix"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="matrix"] {
+      border-color: rgba(60, 255, 120, 0.72);
+      background:
+        linear-gradient(180deg, rgba(0, 12, 4, 0.98) 0%, rgba(0, 4, 2, 0.99) 100%),
+        repeating-linear-gradient(0deg, rgba(40, 255, 100, 0.06) 0 1px, transparent 1px 3px);
+      box-shadow: 0 0 18px rgba(60, 255, 120, 0.22), inset 0 0 18px rgba(20, 120, 60, 0.12);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="matrix"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="matrix"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="matrix"] .player-name {
+      color: #8cffb0;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 10px rgba(80, 255, 140, 0.55);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="sunset"],
+    .stage[data-phase="results"] .player-card[data-card-skin="sunset"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="sunset"] {
+      border-color: rgba(255, 140, 80, 0.82);
+      background: linear-gradient(145deg, rgba(72, 18, 48, 0.98) 0%, rgba(48, 12, 28, 0.98) 45%, rgba(88, 28, 8, 0.98) 100%);
+      box-shadow: 0 0 24px rgba(255, 120, 60, 0.28), inset 0 1px 0 rgba(255, 200, 140, 0.16);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="sunset"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="sunset"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="sunset"] .player-name {
+      color: #ffd8c0;
+      text-shadow: 0 0 12px rgba(255, 140, 80, 0.5);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="chrome"],
+    .stage[data-phase="results"] .player-card[data-card-skin="chrome"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="chrome"] {
+      border-color: rgba(210, 225, 240, 0.78);
+      background: linear-gradient(180deg, rgba(48, 58, 72, 0.98) 0%, rgba(18, 22, 32, 0.99) 55%, rgba(32, 38, 48, 0.98) 100%);
+      box-shadow: 0 0 20px rgba(180, 200, 220, 0.22), inset 0 2px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="chrome"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="chrome"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="chrome"] .player-name {
+      color: #f4f8ff;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 10px rgba(180, 210, 255, 0.35);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="magma"],
+    .stage[data-phase="results"] .player-card[data-card-skin="magma"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="magma"] {
+      border-color: rgba(255, 90, 30, 0.88);
+      background: linear-gradient(180deg, rgba(48, 8, 0, 0.98) 0%, rgba(22, 4, 0, 0.99) 100%);
+      box-shadow: 0 0 28px rgba(255, 80, 20, 0.35), inset 0 0 20px rgba(255, 60, 0, 0.08);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="magma"]::after,
+    .stage[data-phase="results"] .player-card[data-card-skin="magma"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-skin="magma"]::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 110%, rgba(255, 120, 40, 0.35), transparent 55%);
+      animation: skin-magma-flicker 2.2s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="magma"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="magma"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="magma"] .player-name {
+      color: #ffc8a0;
+      text-shadow: 0 0 14px rgba(255, 100, 40, 0.55);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="ice"],
+    .stage[data-phase="results"] .player-card[data-card-skin="ice"],
+    .stage[data-phase="ended"] .player-card[data-card-skin="ice"] {
+      border-color: rgba(180, 235, 255, 0.82);
+      background: linear-gradient(180deg, rgba(12, 42, 68, 0.96) 0%, rgba(6, 22, 42, 0.98) 100%);
+      box-shadow: 0 0 22px rgba(120, 210, 255, 0.28), inset 0 0 16px rgba(200, 240, 255, 0.08);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="ice"] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin="ice"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin="ice"] .player-name {
+      color: #eefaff;
+      text-shadow: 0 0 12px rgba(160, 230, 255, 0.55);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="waiting"],
+    .stage[data-phase="results"] .player-card[data-card-skin][data-status="waiting"],
+    .stage[data-phase="ended"] .player-card[data-card-skin][data-status="waiting"] {
+      opacity: 0.72;
+      filter: saturate(0.55) brightness(0.88);
+      border-style: dashed;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="locked"],
+    .stage[data-phase="results"] .player-card[data-card-skin][data-status="locked"],
+    .stage[data-phase="ended"] .player-card[data-card-skin][data-status="locked"],
+    .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="solved"],
+    .stage[data-phase="results"] .player-card[data-card-skin][data-status="solved"],
+    .stage[data-phase="ended"] .player-card[data-card-skin][data-status="solved"],
+    .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="winner"],
+    .stage[data-phase="results"] .player-card[data-card-skin][data-status="winner"],
+    .stage[data-phase="ended"] .player-card[data-card-skin][data-status="winner"],
+    .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="resolved"],
+    .stage[data-phase="results"] .player-card[data-card-skin][data-status="resolved"],
+    .stage[data-phase="ended"] .player-card[data-card-skin][data-status="resolved"] {
+      opacity: 1;
+      filter: none;
+      border-style: solid;
+      transform: scale(1.02);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin] .player-name,
+    .stage[data-phase="results"] .player-card[data-card-skin] .player-name,
+    .stage[data-phase="ended"] .player-card[data-card-skin] .player-name,
+    .stage[data-phase="guessing"] .player-card[data-card-skin] .player-status,
+    .stage[data-phase="results"] .player-card[data-card-skin] .player-status,
+    .stage[data-phase="ended"] .player-card[data-card-skin] .player-status,
+    .stage[data-phase="guessing"] .player-card[data-card-skin] .pending-row,
+    .stage[data-phase="results"] .player-card[data-card-skin] .pending-row,
+    .stage[data-phase="ended"] .player-card[data-card-skin] .pending-row,
+    .stage[data-phase="guessing"] .player-card[data-card-skin] .pattern-row,
+    .stage[data-phase="results"] .player-card[data-card-skin] .pattern-row,
+    .stage[data-phase="ended"] .player-card[data-card-skin] .pattern-row {
+      position: relative;
+      z-index: 1;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin] .player-status,
+    .stage[data-phase="results"] .player-card[data-card-skin] .player-status,
+    .stage[data-phase="ended"] .player-card[data-card-skin] .player-status {
+      color: rgba(220, 235, 255, 0.82);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stage[data-phase="guessing"] .player-card[data-card-skin="aurora"]::before,
+      .stage[data-phase="results"] .player-card[data-card-skin="aurora"]::before,
+      .stage[data-phase="ended"] .player-card[data-card-skin="aurora"]::before,
+      .stage[data-phase="guessing"] .player-card[data-card-skin="holo"]::before,
+      .stage[data-phase="results"] .player-card[data-card-skin="holo"]::before,
+      .stage[data-phase="ended"] .player-card[data-card-skin="holo"]::before,
+      .stage[data-phase="guessing"] .player-card[data-card-skin="magma"]::after,
+      .stage[data-phase="results"] .player-card[data-card-skin="magma"]::after,
+      .stage[data-phase="ended"] .player-card[data-card-skin="magma"]::after {
+        animation: none;
+      }
     }
 
     .stage[data-phase="guessing"] .player-name,
@@ -1326,30 +1623,6 @@
     .stage[data-live-density="lg"] .player-status,
     .stage[data-live-density="xl"] .player-status {
       font-size: 0.58em;
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-status="locked"] {
-      border: 2px solid rgba(255, 210, 60, 0.95);
-      background: linear-gradient(180deg, rgba(72, 52, 8, 0.96) 0%, rgba(36, 24, 4, 0.98) 100%);
-      box-shadow:
-        0 0 22px rgba(255, 190, 40, 0.45),
-        0 0 40px rgba(255, 150, 20, 0.18),
-        inset 0 1px 0 rgba(255, 230, 140, 0.22);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-status="locked"] .player-name {
-      color: #fff4c8;
-      text-shadow: 0 0 10px rgba(255, 210, 60, 0.45);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-status="locked"] .player-status {
-      color: rgba(255, 220, 130, 0.92);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-status="waiting"] {
-      opacity: 0.78;
-      border-color: rgba(100, 140, 180, 0.35);
-      background: linear-gradient(180deg, rgba(0, 18, 42, 0.88) 0%, rgba(0, 8, 22, 0.94) 100%);
     }
 
     .pending-row {
@@ -2757,6 +3030,7 @@
     const KIOSK_MODE = ["1", "true", "yes"].includes((urlParams.get("kiosk") || "").toLowerCase())
       || ["1", "true", "yes"].includes((urlParams.get("fs") || "").toLowerCase());
     const LAYOUT_DEBUG = ["borders", "layout", "1", "true", "yes"].includes((urlParams.get("debug") || "").toLowerCase());
+    const LIVE_CARD_SKINS = ["aurora", "goldleaf", "holo", "matrix", "sunset", "chrome", "magma", "ice"];
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
       "BlueJay", "CryptoKat", "NeonWave", "TurboTurtle", "Glitch",
@@ -2774,6 +3048,7 @@
         joinedAtIso: new Date(now - (count - index) * 60000).toISOString(),
         status: "waiting",
         statusText: "In lobby",
+        cardSkin: LIVE_CARD_SKINS[index % LIVE_CARD_SKINS.length],
       }));
     }
 
@@ -3443,7 +3718,7 @@
         const cols = computeComfortableLiveColumns(players.length);
         const rows = Math.max(1, Math.ceil(players.length / cols));
         grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-        grid.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+        grid.style.gridTemplateRows = `repeat(${rows}, auto)`;
       }
       const fragment = document.createDocumentFragment();
       const newArrivals = phase === "idle" ? detectNewLobbyArrivals(players, phase) : new Set();
@@ -3452,6 +3727,10 @@
         const card = document.createElement("article");
         card.className = "player-card";
         card.dataset.status = player.isWinner ? "winner" : (player.status || (phase === "idle" ? "waiting" : "waiting"));
+
+        if (phase !== "idle") {
+          card.dataset.cardSkin = player.cardSkin || LIVE_CARD_SKINS[index % LIVE_CARD_SKINS.length];
+        }
 
         if (phase === "idle") {
           const lobbyKey = playerLobbyKey(player);
