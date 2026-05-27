@@ -901,7 +901,7 @@
       }
     }
 
-    function renderIdleInfo(state) {
+    function renderIdleInfo(state = {}) {
       els.playUrl.textContent = playSiteUrlDisplay();
       els.playQr.src = `${playSiteUrl()}/api/play-qr`;
       els.playQr.alt = `QR code for ${playSiteUrlDisplay()}`;
@@ -1082,6 +1082,8 @@
     }
 
     async function fetchPublicState() {
+      if (DEMO_PLAYER_COUNT > 0) return;
+
       const response = await fetch("/api/public-state");
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
@@ -1091,7 +1093,7 @@
     }
 
     async function boot() {
-      renderIdleInfo();
+      startTickTimer();
       if (DEMO_PLAYER_COUNT > 0) {
         renderState({
           phase: "idle",
@@ -1100,13 +1102,16 @@
           ballMultiplier: 1,
           playerCount: DEMO_PLAYER_COUNT,
           submittedThisRound: 0,
+          hostNote: "",
           players: buildDemoPlayers(DEMO_PLAYER_COUNT),
         });
+        return;
       }
-      startTickTimer();
+
       try {
         await fetchPublicState();
       } catch (error) {
+        els.subtitle.hidden = false;
         els.subtitle.textContent = error.message;
       }
       window.setInterval(async () => {
