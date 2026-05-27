@@ -594,6 +594,7 @@
 
     .button-row--guess {
       grid-template-columns: 1.4fr 1fr;
+      margin-top: 0;
     }
 
     .button-row--guess .btn-primary {
@@ -877,22 +878,13 @@
       box-shadow: none;
     }
 
-    .play-keyboard {
-      display: none;
+    .play-guess .play-keyboard {
+      display: flex;
       flex-direction: column;
       gap: 0.35rem;
-      margin-bottom: 0.85rem;
+      margin-bottom: 0.55rem;
       user-select: none;
       touch-action: manipulation;
-    }
-
-    .play-stage[data-phase="guessing"] .play-keyboard {
-      display: flex;
-    }
-
-    .play-stage[data-phase="results"] .play-keyboard,
-    .play-stage[data-phase="ended"] .play-keyboard {
-      display: none;
     }
 
     .keyboard-row {
@@ -1036,6 +1028,11 @@
           <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 4" tabindex="-1" readonly />
           <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" tabindex="-1" readonly />
         </div>
+        <div class="play-keyboard" id="playKeyboard" aria-label="On-screen keyboard">
+          <div class="keyboard-row" data-row="top"></div>
+          <div class="keyboard-row keyboard-row--mid" data-row="mid"></div>
+          <div class="keyboard-row" data-row="bottom"></div>
+        </div>
         <div class="button-row button-row--guess">
           <button id="submitButton" class="btn-primary" type="button">Submit guess</button>
           <button id="clearButton" class="secondary" type="button">Clear</button>
@@ -1050,12 +1047,6 @@
           <span class="result-feedback-value" id="resultFeedbackValue"></span>
         </div>
       </section>
-
-      <div class="play-keyboard" id="playKeyboard" aria-label="On-screen keyboard">
-        <div class="keyboard-row" data-row="top"></div>
-        <div class="keyboard-row keyboard-row--mid" data-row="mid"></div>
-        <div class="keyboard-row" data-row="bottom"></div>
-      </div>
 
       <p id="message" class="message" aria-live="polite"></p>
     </main>
