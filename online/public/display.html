@@ -656,23 +656,58 @@
       display: none;
     }
 
-    /* Live round: score rail left, main stack right */
+    /* Live round: centered chrome band above full-width player board */
     .stage[data-phase="guessing"] .stage-ui,
     .stage[data-phase="results"] .stage-ui,
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
-      grid-template-columns: minmax(20em, 24em) minmax(0, 1fr);
-      grid-template-rows: auto auto minmax(50cqh, 1fr);
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto minmax(50cqh, 1fr);
       grid-template-areas:
-        ". hud"
-        ". stats"
-        "board board";
-      justify-items: stretch;
-      align-content: start;
-      gap: 0.18em 0.28em;
-      padding: var(--live-logo-reserve) 2.5% 0.25% 1%;
+        "."
+        "chrome"
+        "board";
+      justify-items: center;
+      align-content: end;
+      gap: 0.22em;
+      padding: var(--live-logo-reserve) 2.5% 0.25% 2.5%;
       overflow: visible;
       font-size: clamp(14px, 2.4cqh, 32px);
+    }
+
+    .live-chrome {
+      display: none;
+    }
+
+    .stage:not([data-phase="idle"]) .live-chrome {
+      grid-area: chrome;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      gap: 0.2em;
+      width: fit-content;
+      max-width: min(100%, 96%);
+      justify-self: center;
+    }
+
+    .live-chrome-top {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: center;
+      gap: 0.35em;
+      width: fit-content;
+      max-width: 100%;
+    }
+
+    .live-chrome-top .live-hud {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      padding: 0;
     }
 
     .stage[data-phase="guessing"] .stage-ui .live-hud,
@@ -714,24 +749,29 @@
     .stage[data-phase="guessing"] .timer-panel,
     .stage[data-phase="results"] .timer-panel,
     .stage[data-phase="ended"] .timer-panel {
-      position: absolute !important;
-      top: var(--live-chrome-top);
-      right: var(--live-chrome-inset);
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
       left: auto !important;
       bottom: auto !important;
       transform: none !important;
       width: auto;
       min-width: 8.5em;
       max-width: 10.5em;
-      z-index: 35;
+      flex-shrink: 0;
+      align-self: stretch;
+      z-index: 4;
       margin: 0;
       padding: 0.55em 0.65em 0.6em;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .stage[data-phase="guessing"] .timer-label,
     .stage[data-phase="results"] .timer-label,
     .stage[data-phase="ended"] .timer-label {
-      font-size: 0.72em;
+      font-size: 0.95em;
       margin-bottom: 0.24em;
     }
 
@@ -744,7 +784,7 @@
     .stage[data-phase="guessing"] .timer-unit,
     .stage[data-phase="results"] .timer-unit,
     .stage[data-phase="ended"] .timer-unit {
-      font-size: 0.68em;
+      font-size: 0.95em;
       margin-top: 0.24em;
     }
 
@@ -777,13 +817,12 @@
     }
 
     .stage:not([data-phase="idle"]) .live-hud {
-      grid-area: hud;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 0.22em;
-      width: 100%;
+      width: auto;
       min-width: 0;
     }
 
@@ -812,7 +851,7 @@
       justify-content: center;
       align-items: center;
       gap: 0.12em;
-      padding: 0.06em 10% 0.04em;
+      padding: 0;
       min-height: 0;
     }
 
@@ -824,9 +863,9 @@
     .stage[data-phase="guessing"] .live-score-rail,
     .stage[data-phase="results"] .live-score-rail,
     .stage[data-phase="ended"] .live-score-rail {
-      position: absolute !important;
-      top: var(--live-chrome-top);
-      left: var(--live-chrome-inset);
+      position: relative !important;
+      top: auto !important;
+      left: auto !important;
       right: auto !important;
       bottom: auto !important;
       width: var(--live-score-rail-width);
@@ -835,8 +874,10 @@
       height: var(--live-score-rail-height);
       min-height: var(--live-score-rail-height);
       max-height: var(--live-score-rail-height);
+      flex-shrink: 0;
+      align-self: stretch;
       margin: 0 !important;
-      z-index: 12;
+      z-index: 4;
     }
 
     .live-score-rail {
@@ -879,7 +920,7 @@
     }
 
     .score-label {
-      font-size: 0.72em;
+      font-size: 0.95em;
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -894,7 +935,7 @@
     }
 
     .score-value.round {
-      font-size: clamp(2.4em, 8cqh, 4.2em);
+      font-size: clamp(2.8em, 9cqh, 4.8em);
       color: #ffc832;
       text-shadow:
         0 0 24px rgba(255, 200, 50, 0.95),
@@ -902,7 +943,7 @@
     }
 
     .score-value.balls {
-      font-size: clamp(2.4em, 8cqh, 4.2em);
+      font-size: clamp(2.8em, 9cqh, 4.8em);
       color: #0092e0;
       text-shadow:
         0 0 24px rgba(0, 146, 224, 0.95),
@@ -1010,14 +1051,13 @@
     .stage[data-phase="guessing"] .stats-row,
     .stage[data-phase="results"] .stats-row,
     .stage[data-phase="ended"] .stats-row {
-      grid-area: stats;
       width: 100%;
       height: auto;
       min-height: 2.4em;
       flex-shrink: 0;
       z-index: 4;
-      margin: 0.06em 0 0.12em;
-      padding: 0.12em 9.5em 0.12em 0;
+      margin: 0;
+      padding: 0.12em 0;
       overflow: hidden;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -1063,9 +1103,9 @@
       display: flex;
       flex-direction: column;
       align-self: stretch;
-      width: calc(100% + 3.5%);
+      width: calc(100% + 5%);
       max-width: none;
-      margin-left: -1%;
+      margin-left: -2.5%;
       margin-right: -2.5%;
       min-height: 0;
       height: 100%;
@@ -1245,6 +1285,7 @@
       height: 0.34em;
     }
 
+    .stage[data-phase="idle"] .live-chrome,
     .stage[data-phase="idle"] .timer-panel,
     .stage[data-phase="idle"] .stats-row,
     .stage[data-phase="idle"] .live-score-rail {
@@ -2340,24 +2381,19 @@
       transform: none !important;
     }
 
-    /* Score rail + timer share chrome top inset (must follow legacy resets) */
-    .stage[data-phase="guessing"] .live-score-rail,
-    .stage[data-phase="results"] .live-score-rail,
-    .stage[data-phase="ended"] .live-score-rail {
-      position: absolute !important;
-      top: var(--live-chrome-top) !important;
-      left: var(--live-chrome-inset) !important;
+    /* Live chrome: keep in-flow (must follow legacy resets) */
+    .stage[data-phase="guessing"] .live-chrome .live-score-rail,
+    .stage[data-phase="results"] .live-chrome .live-score-rail,
+    .stage[data-phase="ended"] .live-chrome .live-score-rail,
+    .stage[data-phase="guessing"] .live-chrome .timer-panel,
+    .stage[data-phase="results"] .live-chrome .timer-panel,
+    .stage[data-phase="ended"] .live-chrome .timer-panel {
+      position: relative !important;
+      top: auto !important;
       right: auto !important;
       bottom: auto !important;
-      width: var(--live-score-rail-width);
-      min-width: 18em;
-      max-width: 28%;
-      height: var(--live-score-rail-height);
-      min-height: var(--live-score-rail-height);
-      max-height: var(--live-score-rail-height);
-      margin: 0 !important;
+      left: auto !important;
       transform: none !important;
-      z-index: 12;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -2427,58 +2463,62 @@
       <div class="stage-ui">
         <div class="ui-topline" id="topLine"></div>
 
-        <aside class="timer-panel" aria-live="polite">
-          <p class="timer-label" id="timerLabel">Next round starts in</p>
-          <p class="timer-value" id="timerValue">--</p>
-          <p class="timer-unit">seconds</p>
-        </aside>
+        <div class="live-chrome" id="liveChrome">
+          <div class="live-chrome-top">
+            <aside class="live-score-rail" id="liveScoreRail" aria-label="Round and balls">
+              <div class="score-slot score-slot--round">
+                <span class="score-label">Round</span>
+                <span class="score-value round" id="statRound">0</span>
+              </div>
+              <div class="score-slot score-slot--balls">
+                <span class="score-label">Balls</span>
+                <span class="score-value balls" id="statBalls">0</span>
+              </div>
+            </aside>
 
-        <aside class="live-score-rail" id="liveScoreRail" aria-label="Round and balls">
-          <div class="score-slot score-slot--round">
-            <span class="score-label">Round</span>
-            <span class="score-value round" id="statRound">0</span>
-          </div>
-          <div class="score-slot score-slot--balls">
-            <span class="score-label">Balls</span>
-            <span class="score-value balls" id="statBalls">0</span>
-          </div>
-        </aside>
+            <div class="live-hud" id="liveHud">
+              <div class="status-badge" id="statusBadge">
+                <svg class="status-icon-live" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                  <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="status-icon-dot" aria-hidden="true"></span>
+                <span id="statusText">Sign up — game starts soon</span>
+              </div>
 
-        <div class="live-hud" id="liveHud">
-          <div class="status-badge" id="statusBadge">
-            <svg class="status-icon-live" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span class="status-icon-dot" aria-hidden="true"></span>
-            <span id="statusText">Sign up — game starts soon</span>
+              <p class="subtitle" id="subtitle" hidden></p>
+
+              <div class="word-tiles" id="wordTiles" hidden aria-label="Word progress"></div>
+
+              <div class="word-clue" id="wordClue" hidden aria-live="polite">
+                <span class="word-clue-label" id="wordClueLabel"></span>
+                <span class="word-clue-value" id="wordClueValue"></span>
+              </div>
+            </div>
+
+            <aside class="timer-panel" aria-live="polite">
+              <p class="timer-label" id="timerLabel">Next round starts in</p>
+              <p class="timer-value" id="timerValue">--</p>
+              <p class="timer-unit">seconds</p>
+            </aside>
           </div>
 
-          <p class="subtitle" id="subtitle" hidden></p>
-
-          <div class="word-tiles" id="wordTiles" hidden aria-label="Word progress"></div>
-
-          <div class="word-clue" id="wordClue" hidden aria-live="polite">
-            <span class="word-clue-label" id="wordClueLabel"></span>
-            <span class="word-clue-value" id="wordClueValue"></span>
-          </div>
-        </div>
-
-        <div class="stats-row" aria-label="Game stats">
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="#24b04c" aria-hidden="true"><path d="M4 18h16M7 14l3-4 3 3 4-6" stroke="#24b04c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="stat-label">Multiplier</span>
-            <span class="stat-value mult" id="statMult">1x</span>
-          </div>
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="#9828a8" aria-hidden="true"><circle cx="9" cy="10" r="3" fill="#9828a8"/><circle cx="16" cy="11" r="2.5" fill="#9828a8"/><path d="M4 18c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#9828a8" stroke-width="2" fill="none"/><path d="M13 17c0-1.8 1.5-3.2 3.2-3.2" stroke="#9828a8" stroke-width="2" fill="none"/></svg>
-            <span class="stat-label">Players</span>
-            <span class="stat-value players" id="statPlayers">0</span>
-          </div>
-          <div class="stat-cell">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="#18a8d8" aria-hidden="true"><path d="M3 12l18-7-7 18-2-7-7-4z" fill="#18a8d8"/></svg>
-            <span class="stat-label">Submitted</span>
-            <span class="stat-value submitted" id="statSubmitted">0</span>
+          <div class="stats-row" aria-label="Game stats">
+            <div class="stat-cell">
+              <svg class="stat-icon" viewBox="0 0 24 24" fill="#24b04c" aria-hidden="true"><path d="M4 18h16M7 14l3-4 3 3 4-6" stroke="#24b04c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="stat-label">Multiplier</span>
+              <span class="stat-value mult" id="statMult">1x</span>
+            </div>
+            <div class="stat-cell">
+              <svg class="stat-icon" viewBox="0 0 24 24" fill="#9828a8" aria-hidden="true"><circle cx="9" cy="10" r="3" fill="#9828a8"/><circle cx="16" cy="11" r="2.5" fill="#9828a8"/><path d="M4 18c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#9828a8" stroke-width="2" fill="none"/><path d="M13 17c0-1.8 1.5-3.2 3.2-3.2" stroke="#9828a8" stroke-width="2" fill="none"/></svg>
+              <span class="stat-label">Players</span>
+              <span class="stat-value players" id="statPlayers">0</span>
+            </div>
+            <div class="stat-cell">
+              <svg class="stat-icon" viewBox="0 0 24 24" fill="#18a8d8" aria-hidden="true"><path d="M3 12l18-7-7 18-2-7-7-4z" fill="#18a8d8"/></svg>
+              <span class="stat-label">Submitted</span>
+              <span class="stat-value submitted" id="statSubmitted">0</span>
+            </div>
           </div>
         </div>
 
