@@ -650,57 +650,58 @@
       display: none;
     }
 
-    /* Live round: balanced HUD + player board; timer pinned top-right */
+    /* Live round: explicit grid stack — fully overrides legacy absolute HUD coords */
     .stage[data-phase="guessing"] .stage-ui,
     .stage[data-phase="results"] .stage-ui,
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto auto auto var(--live-board-height, 30cqh);
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto auto auto minmax(0, 1fr);
+      grid-template-areas:
+        "badge"
+        "subtitle"
+        "clue"
+        "stats"
+        "board";
+      justify-items: stretch;
       align-content: start;
       gap: 0.28em;
-      padding: 4% 2.5% 1.5%;
+      padding: 9.5% 4% 1.5%;
       overflow: hidden;
-      font-size: clamp(13px, 2.25cqh, 30px);
+      font-size: clamp(14px, 2.4cqh, 32px);
+    }
+
+    .stage[data-phase="guessing"] .stage-ui .status-badge,
+    .stage[data-phase="results"] .stage-ui .status-badge,
+    .stage[data-phase="ended"] .stage-ui .status-badge,
+    .stage[data-phase="guessing"] .stage-ui .subtitle,
+    .stage[data-phase="results"] .stage-ui .subtitle,
+    .stage[data-phase="ended"] .stage-ui .subtitle,
+    .stage[data-phase="guessing"] .stage-ui .word-tiles,
+    .stage[data-phase="results"] .stage-ui .word-tiles,
+    .stage[data-phase="guessing"] .stage-ui .word-clue,
+    .stage[data-phase="results"] .stage-ui .word-clue,
+    .stage[data-phase="ended"] .stage-ui .word-clue,
+    .stage[data-phase="guessing"] .stage-ui .stats-row,
+    .stage[data-phase="results"] .stage-ui .stats-row,
+    .stage[data-phase="ended"] .stage-ui .stats-row,
+    .stage[data-phase="guessing"] .player-board,
+    .stage[data-phase="results"] .player-board,
+    .stage[data-phase="ended"] .player-board {
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      left: auto !important;
+      transform: none !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
     }
 
     .stage[data-phase="guessing"] .stage-ui > .ui-topline,
     .stage[data-phase="results"] .stage-ui > .ui-topline,
     .stage[data-phase="ended"] .stage-ui > .ui-topline {
       display: none !important;
-    }
-
-    .stage[data-phase="guessing"] .stage-ui > .status-badge,
-    .stage[data-phase="results"] .stage-ui > .status-badge,
-    .stage[data-phase="ended"] .stage-ui > .status-badge,
-    .stage[data-phase="guessing"] .stage-ui > .subtitle,
-    .stage[data-phase="results"] .stage-ui > .subtitle,
-    .stage[data-phase="ended"] .stage-ui > .subtitle,
-    .stage[data-phase="guessing"] .stage-ui > .word-tiles,
-    .stage[data-phase="results"] .stage-ui > .word-tiles,
-    .stage[data-phase="guessing"] .stage-ui > .word-clue,
-    .stage[data-phase="results"] .stage-ui > .word-clue,
-    .stage[data-phase="ended"] .stage-ui > .word-clue,
-    .stage[data-phase="guessing"] .stage-ui > .stats-row,
-    .stage[data-phase="results"] .stage-ui > .stats-row,
-    .stage[data-phase="ended"] .stage-ui > .stats-row {
-      position: relative !important;
-      top: auto !important;
-      left: auto !important;
-      right: auto !important;
-      bottom: auto !important;
-      transform: none !important;
-    }
-
-    .stage[data-phase="guessing"] .player-board,
-    .stage[data-phase="results"] .player-board,
-    .stage[data-phase="ended"] .player-board {
-      position: relative !important;
-      top: auto !important;
-      left: auto !important;
-      right: auto !important;
-      bottom: auto !important;
-      transform: none !important;
     }
 
     .stage[data-phase="guessing"] .timer-panel,
@@ -723,8 +724,8 @@
     .stage[data-phase="guessing"] .logo-wrap,
     .stage[data-phase="results"] .logo-wrap,
     .stage[data-phase="ended"] .logo-wrap {
-      top: 0.2%;
-      width: 22%;
+      top: 0.5%;
+      width: 28%;
     }
 
     .stage[data-phase="guessing"] .lingo-logo,
@@ -768,30 +769,27 @@
     .stage[data-phase="results"] .status-badge,
     .stage[data-phase="ended"] .status-badge {
       grid-area: badge;
-      position: relative;
-      top: auto;
-      left: auto;
-      transform: none;
       justify-self: center;
+      width: fit-content;
+      max-width: 92%;
       min-width: 0;
-      max-width: 100%;
-      margin: 0.05em 0 0;
+      margin: 0;
+      white-space: nowrap;
     }
 
     .stage[data-phase="guessing"] .status-badge {
-      padding: 0.32em 0.85em;
-      font-size: 0.68em;
+      padding: 0.38em 1em;
+      font-size: 0.72em;
+      border-width: 2px;
       animation: live-pulse-grid 1.1s ease-in-out infinite;
     }
 
     @keyframes live-pulse-grid {
       0%, 100% {
         box-shadow: 0 0 28px rgba(60, 220, 120, 0.4), 0 0 56px rgba(40, 180, 90, 0.18);
-        transform: scale(1);
       }
       50% {
         box-shadow: 0 0 44px rgba(80, 255, 140, 0.65), 0 0 80px rgba(60, 220, 100, 0.3);
-        transform: scale(1.02);
       }
     }
 
@@ -812,29 +810,30 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.08em;
+      gap: 0.12em;
       width: 100%;
+      max-width: 100%;
       margin: 0;
-      padding: 0 1%;
+      padding: 0 2%;
       text-align: center;
-      line-height: 1.25;
+      line-height: 1.3;
     }
 
     .subtitle-round {
-      font-size: 0.76em;
+      font-size: 0.88em;
       font-weight: 800;
       letter-spacing: 0.03em;
       color: rgba(240, 248, 255, 0.96);
     }
 
     .subtitle-hint {
-      font-size: 0.68em;
+      font-size: 0.76em;
       font-weight: 600;
       color: rgba(220, 235, 255, 0.92);
     }
 
     .subtitle-worth {
-      font-size: 0.58em;
+      font-size: 0.62em;
       font-weight: 800;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -845,18 +844,15 @@
     .stage[data-phase="guessing"] .word-tiles,
     .stage[data-phase="results"] .word-tiles {
       grid-area: clue;
-      position: relative;
-      top: auto;
-      left: auto;
-      transform: none;
-      margin: 0.08em 0 0.04em;
+      justify-self: center;
+      margin: 0.12em 0 0.08em;
     }
 
     .stage[data-phase="guessing"] .word-tile,
     .stage[data-phase="results"] .word-tile {
-      width: 1.55em;
-      height: 1.55em;
-      font-size: 1.05em;
+      width: 1.85em;
+      height: 1.85em;
+      font-size: 1.18em;
     }
 
     .stage[data-phase="ended"] .word-clue:not([hidden]) {
@@ -878,12 +874,11 @@
       grid-area: stats;
       width: 100%;
       height: auto;
-      min-height: 1.85em;
-      max-height: 2.1em;
+      min-height: 2.4em;
       flex-shrink: 0;
       z-index: 4;
-      margin: 0.04em 0 0.06em;
-      padding: 0.06em 0;
+      margin: 0.1em 0 0.15em;
+      padding: 0.12em 0;
       overflow: hidden;
       background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
       box-shadow: 0 0 16px rgba(0, 120, 255, 0.18);
@@ -905,14 +900,14 @@
     .stage[data-phase="guessing"] .stat-label,
     .stage[data-phase="results"] .stat-label,
     .stage[data-phase="ended"] .stat-label {
-      font-size: 0.4em;
-      line-height: 1;
+      font-size: 0.44em;
+      line-height: 1.05;
     }
 
     .stage[data-phase="guessing"] .stat-value,
     .stage[data-phase="results"] .stat-value,
     .stage[data-phase="ended"] .stat-value {
-      font-size: 1.05em;
+      font-size: 1.15em;
     }
 
     .stage[data-phase="guessing"] .player-board,
@@ -921,10 +916,11 @@
       grid-area: board;
       display: flex;
       flex-direction: column;
-      justify-self: center;
-      width: 94%;
+      align-self: end;
+      width: 100%;
       min-height: 0;
-      height: 100%;
+      height: auto;
+      max-height: var(--live-board-height, 28cqh);
       z-index: 5;
       overflow: hidden;
       background: linear-gradient(180deg, rgba(0, 18, 48, 0.98) 0%, rgba(0, 4, 16, 0.99) 100%);
@@ -2546,10 +2542,10 @@
     }
 
     function computeLiveBoardHeight(rows, playerCount) {
-      const base = playerCount <= 8 ? 18 : playerCount <= 12 ? 16 : 14;
-      const perRow = playerCount <= 8 ? 6 : playerCount <= 12 ? 5.5 : 5;
-      const cap = playerCount <= 8 ? 32 : playerCount <= 24 ? 40 : 44;
-      return `${Math.min(cap, base + rows * perRow)}cqh`;
+      if (playerCount <= 8) return rows <= 2 ? "28cqh" : "34cqh";
+      if (playerCount <= 12) return rows <= 3 ? "32cqh" : "38cqh";
+      if (playerCount <= 24) return "38cqh";
+      return "42cqh";
     }
 
     function applyLiveBoardLayout(playerCount, phase) {
