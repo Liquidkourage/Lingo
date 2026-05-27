@@ -33,10 +33,25 @@
       container-type: inline-size;
     }
 
+    .stage-bg-wrap {
+      position: absolute;
+      inset: 0;
+    }
+
     .stage-bg {
       display: block;
       width: 100%;
       height: 100%;
+    }
+
+    /* Extra top spotlight pulled from reference atmosphere */
+    .stage-atmosphere {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 92% 42% at 50% 0%, rgba(0, 78, 175, 0.22) 0%, rgba(0, 30, 82, 0.1) 42%, transparent 72%);
+      mix-blend-mode: screen;
     }
 
     /* Mockup slot: 16/575 top; PNG letter faces start ~25% below canvas top */
@@ -63,13 +78,16 @@
 <body>
   <div class="viewport">
     <div class="stage">
-      <img
-        class="stage-bg"
-        src="/assets/lingo-display-waiting-v2-bg.png"
-        width="1024"
-        height="575"
-        alt=""
-      />
+      <div class="stage-bg-wrap">
+        <img
+          class="stage-bg"
+          src="/assets/lingo-display-waiting-v2-bg-rich.png"
+          width="1024"
+          height="575"
+          alt=""
+        />
+        <div class="stage-atmosphere" aria-hidden="true"></div>
+      </div>
 
       <div class="logo-wrap">
         <img
