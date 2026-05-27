@@ -1,4 +1,4 @@
-"""Extract large LINGO from green-screen source -> transparent PNG + minimal SVG."""
+"""Extract large LINGO from green-screen source -> tight transparent PNG + SVG."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,11 +10,10 @@ SRC = ROOT / "lingo-logo-source.png"
 PNG_OUT = ROOT / "lingo-logo-extracted.png"
 SVG_OUT = ROOT / "lingo-logo-extracted.svg"
 
-PAD = 48
 
-
-def is_green(r: int, g: int, b: int) -> bool:
-    return g > 130 and g > r + 35 and g > b + 35
+def is_screen_green(r: int, g: int, b: int) -> bool:
+    """Only the flat chroma-key backdrop — not logo pixels."""
+    return g >= 160 and r <= 140 and b <= 140 and g > r + 40 and g > b + 40
 
 
 def chroma_key(im: Image.Image) -> Image.Image:
@@ -24,32 +23,24 @@ def chroma_key(im: Image.Image) -> Image.Image:
     for y in range(h):
         for x in range(w):
             r, g, b, a = px[x, y]
-            if is_green(r, g, b):
+            if is_screen_green(r, g, b):
                 px[x, y] = (0, 0, 0, 0)
-            elif g > max(r, b) + 15:
-                spill = min(1.0, (g - max(r, b)) / 100)
-                px[x, y] = (r, g, b, int(a * (1 - spill * 0.9)))
     return out
 
 
 def crop_large_word(im: Image.Image) -> Image.Image:
-    """Keep only the bottom LINGO — starts ~y237 on the 1024×682 source."""
     w, h = im.size
-    split = int(h * 0.33)  # 225px: below small logo, above large logo top
+    split = int(h * 0.33)
     return im.crop((0, split, w, h))
 
 
-def trim_and_pad(im: Image.Image, pad: int = PAD) -> Image.Image:
-    """Tight crop to opaque pixels, then equal transparent padding on all sides."""
+def trim_to_logo(im: Image.Image) -> Image.Image:
+    """Canvas exactly fits opaque logo pixels — no extra margin."""
     alpha = im.split()[3]
     bbox = alpha.getbbox()
     if not bbox:
         raise RuntimeError("No logo pixels found after chroma key")
-    tight = im.crop(bbox)
-    tw, th = tight.size
-    canvas = Image.new("RGBA", (tw + pad * 2, th + pad * 2), (0, 0, 0, 0))
-    canvas.paste(tight, (pad, pad))
-    return canvas
+    return im.crop(bbox)
 
 
 def write_svg(svg_path: Path, png_name: str, w: int, h: int) -> None:
@@ -69,15 +60,12 @@ def main() -> None:
 
     keyed = chroma_key(Image.open(SRC))
     bottom = crop_large_word(keyed)
-    final = trim_and_pad(bottom, PAD)
+    final = trim_to_logo(bottom)
     final.save(PNG_OUT, optimize=True)
 
     w, h = final.size
     write_svg(SVG_OUT, PNG_OUT.name, w, h)
-
-    bbox = final.split()[3].getbbox()
-    print(f"OK  png={PNG_OUT.name}  {w}x{h}  content_bbox={bbox}")
-    print(f"    svg={SVG_OUT.name}  ({SVG_OUT.stat().st_size} bytes)")
+    print(f"OK  {PNG_OUT.name}  {w}x{h}  (tight canvas, transparent background only)")
 
 
 if __name__ == "__main__":
