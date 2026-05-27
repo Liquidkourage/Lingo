@@ -1263,7 +1263,7 @@
     const els = {
       stage: document.getElementById('playStage'),
       phaseBadge: document.getElementById('phaseBadge'),
-      timerToastHost: document.getElementById('timerToastHost'),
+      timerFlash: document.getElementById('timerFlash'),
       phaseLine: document.getElementById('phaseLine'),
       metaRound: document.getElementById('metaRound'),
       metaPot: document.getElementById('metaPot'),
@@ -1308,7 +1308,12 @@
     let lastTimerToastWindowKey = '';
     let timerToastLastRemaining = null;
     let timerToastFired = { warn30: false, warn10: false };
-    const TIMER_TOAST_MS = 10000;
+    const TIMER_FLASH_MS = 750;
+    let timerDisplay = {
+      windowKey: '',
+      baseRemaining: null,
+      syncedAtMs: 0,
+    };
     let keyboardWordKey = '';
     const keyboardLetterStates = new Map();
 
@@ -1694,25 +1699,86 @@
       return true;
     }
 
-    function secondsRemaining(openedAtIso, windowSeconds) {
-      if (!openedAtIso || !windowSeconds) return null;
-      const end = new Date(openedAtIso).getTime() + Number(windowSeconds) * 1000;
-      return Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    function timerDisplayWindowKey(state) {
+      const phase = state.phase || 'idle';
+      if (state.timerPaused) {
+        return `paused:${phase}:${state.roundNumber || 0}:${state.timerPausedRemainingSeconds}`;
+      }
+      if (phase === 'guessing') {
+        return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ''}:${state.guessWindowSeconds || ''}`;
+      }
+      if (phase === 'results') {
+        return `r:${state.roundNumber || 0}:${state.resultsWindowOpenedAtIso || ''}:${state.resultsWindowSeconds || ''}`;
+      }
+      return '';
     }
 
-    function phaseSecondsRemaining(state) {
+    function localWindowSecondsRemaining(openedAtIso, windowSeconds) {
+      const total = Number(windowSeconds || 0);
+      if (!openedAtIso || !total) return null;
+      const end = new Date(openedAtIso).getTime() + total * 1000;
+      if (Number.isNaN(end)) return null;
+      return Math.min(total, Math.max(0, Math.floor((end - Date.now()) / 1000)));
+    }
+
+    function serverPhaseSecondsRemaining(state) {
       const phase = state.phase || 'idle';
       if (phase === 'idle') return null;
       if (state.timerPaused && state.timerPausedRemainingSeconds != null) {
         return Number(state.timerPausedRemainingSeconds);
       }
       if (phase === 'guessing') {
-        return secondsRemaining(state.guessWindowOpenedAtIso, state.guessWindowSeconds);
+        if (state.guessWindowRemainingSeconds != null) {
+          return Number(state.guessWindowRemainingSeconds);
+        }
+        return localWindowSecondsRemaining(state.guessWindowOpenedAtIso, state.guessWindowSeconds);
       }
       if (phase === 'results') {
-        return secondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
+        if (state.resultsWindowRemainingSeconds != null) {
+          return Number(state.resultsWindowRemainingSeconds);
+        }
+        return localWindowSecondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
       }
       return null;
+    }
+
+    function capPhaseSecondsRemaining(state, remaining) {
+      if (remaining == null) return null;
+      const phase = state.phase || 'idle';
+      const maxSeconds = phase === 'guessing'
+        ? Number(state.guessWindowSeconds || 0)
+        : Number(state.resultsWindowSeconds || 0);
+      if (maxSeconds > 0) {
+        return Math.min(maxSeconds, Math.max(0, remaining));
+      }
+      return Math.max(0, remaining);
+    }
+
+    function syncTimerDisplay(state) {
+      const key = timerDisplayWindowKey(state);
+      const serverRemaining = serverPhaseSecondsRemaining(state);
+      if (!key || serverRemaining == null) {
+        timerDisplay.windowKey = '';
+        timerDisplay.baseRemaining = null;
+        return;
+      }
+      timerDisplay.windowKey = key;
+      timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
+      timerDisplay.syncedAtMs = Date.now();
+    }
+
+    function phaseSecondsRemaining(state) {
+      const phase = state.phase || 'idle';
+      if (phase === 'idle') return null;
+      if (timerDisplay.baseRemaining == null) return null;
+      if (state.timerPaused) {
+        return timerDisplay.baseRemaining;
+      }
+      const elapsed = Math.floor((Date.now() - timerDisplay.syncedAtMs) / 1000);
+      return capPhaseSecondsRemaining(
+        state,
+        timerDisplay.baseRemaining - elapsed,
+      );
     }
 
     function phaseTimerText(state) {
@@ -1732,18 +1798,14 @@
       timerToastFired = { warn30: false, warn10: false };
     }
 
-    function showTimerToast(message, variant) {
-      if (!els.timerToastHost) return;
-      const toast = document.createElement('div');
-      toast.className = `timer-toast timer-toast--${variant}`;
-      toast.textContent = message;
-      toast.setAttribute('role', 'status');
-      els.timerToastHost.appendChild(toast);
-      requestAnimationFrame(() => toast.classList.add('is-visible'));
+    function triggerTimerFlash(variant) {
+      if (!els.timerFlash) return;
+      els.timerFlash.classList.remove('timer-flash--warn-30', 'timer-flash--warn-10', 'is-active');
+      void els.timerFlash.offsetWidth;
+      els.timerFlash.classList.add(`timer-flash--${variant}`, 'is-active');
       window.setTimeout(() => {
-        toast.classList.remove('is-visible');
-        window.setTimeout(() => toast.remove(), 280);
-      }, TIMER_TOAST_MS);
+        els.timerFlash.classList.remove('is-active', 'timer-flash--warn-30', 'timer-flash--warn-10');
+      }, TIMER_FLASH_MS);
     }
 
     function maybeShowTimerToasts(state) {
@@ -1772,14 +1834,14 @@
 
       if (!timerToastFired.warn30 && remaining <= 30 && remaining > 10) {
         if (prev == null || prev > 30) {
-          showTimerToast('30 seconds remaining', 'warn-30');
+          triggerTimerFlash('warn-30');
           timerToastFired.warn30 = true;
         }
       }
 
       if (!timerToastFired.warn10 && remaining <= 10) {
         if (prev == null || prev > 10) {
-          showTimerToast('10 seconds remaining', 'warn-10');
+          triggerTimerFlash('warn-10');
           timerToastFired.warn10 = true;
         }
       }
@@ -2264,6 +2326,7 @@
 
     function renderPublicState(state) {
       currentState = state;
+      syncTimerDisplay(state);
       const phase = state.phase || 'idle';
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
       const viewer = state.viewer;

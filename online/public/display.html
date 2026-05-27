@@ -3242,6 +3242,11 @@
     };
 
     let currentState = null;
+    let timerDisplay = {
+      windowKey: "",
+      baseRemaining: null,
+      syncedAtMs: 0,
+    };
     let lastPhase = null;
     let tickTimer = null;
     let lobbyPageIndex = 0;
@@ -3538,10 +3543,83 @@
       }
     }
 
-    function secondsRemaining(openedAtIso, windowSeconds) {
-      if (!openedAtIso || !windowSeconds) return null;
-      const end = new Date(openedAtIso).getTime() + Number(windowSeconds) * 1000;
-      return Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    function timerDisplayWindowKey(state) {
+      const phase = state.phase || "idle";
+      if (state.timerPaused) {
+        return `paused:${phase}:${state.roundNumber || 0}:${state.timerPausedRemainingSeconds}`;
+      }
+      if (phase === "guessing") {
+        return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ""}:${state.guessWindowSeconds || ""}`;
+      }
+      if (phase === "results") {
+        return `r:${state.roundNumber || 0}:${state.resultsWindowOpenedAtIso || ""}:${state.resultsWindowSeconds || ""}`;
+      }
+      return "";
+    }
+
+    function localWindowSecondsRemaining(openedAtIso, windowSeconds) {
+      const total = Number(windowSeconds || 0);
+      if (!openedAtIso || !total) return null;
+      const end = new Date(openedAtIso).getTime() + total * 1000;
+      if (Number.isNaN(end)) return null;
+      return Math.min(total, Math.max(0, Math.floor((end - Date.now()) / 1000)));
+    }
+
+    function serverPhaseSecondsRemaining(state) {
+      const phase = state.phase || "idle";
+      if (phase === "idle") return null;
+      if (state.timerPaused && state.timerPausedRemainingSeconds != null) {
+        return Number(state.timerPausedRemainingSeconds);
+      }
+      if (phase === "guessing") {
+        if (state.guessWindowRemainingSeconds != null) {
+          return Number(state.guessWindowRemainingSeconds);
+        }
+        return localWindowSecondsRemaining(state.guessWindowOpenedAtIso, state.guessWindowSeconds);
+      }
+      if (phase === "results") {
+        if (state.resultsWindowRemainingSeconds != null) {
+          return Number(state.resultsWindowRemainingSeconds);
+        }
+        return localWindowSecondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
+      }
+      return null;
+    }
+
+    function capPhaseSecondsRemaining(state, remaining) {
+      if (remaining == null) return null;
+      const phase = state.phase || "idle";
+      const maxSeconds = phase === "guessing"
+        ? Number(state.guessWindowSeconds || 0)
+        : Number(state.resultsWindowSeconds || 0);
+      if (maxSeconds > 0) {
+        return Math.min(maxSeconds, Math.max(0, remaining));
+      }
+      return Math.max(0, remaining);
+    }
+
+    function syncTimerDisplay(state) {
+      const key = timerDisplayWindowKey(state);
+      const serverRemaining = serverPhaseSecondsRemaining(state);
+      if (!key || serverRemaining == null) {
+        timerDisplay.windowKey = "";
+        timerDisplay.baseRemaining = null;
+        return;
+      }
+      timerDisplay.windowKey = key;
+      timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
+      timerDisplay.syncedAtMs = Date.now();
+    }
+
+    function phaseSecondsRemaining(state) {
+      const phase = state.phase || "idle";
+      if (phase === "idle") return null;
+      if (timerDisplay.baseRemaining == null) return null;
+      if (state.timerPaused) {
+        return timerDisplay.baseRemaining;
+      }
+      const elapsed = Math.floor((Date.now() - timerDisplay.syncedAtMs) / 1000);
+      return capPhaseSecondsRemaining(state, timerDisplay.baseRemaining - elapsed);
     }
 
     function formatTimerValue(value) {
@@ -4300,16 +4378,13 @@
       els.timerLabel.textContent = copy.timerLabel;
 
       let remaining = null;
-      if (state.timerPaused && state.timerPausedRemainingSeconds != null) {
-        remaining = Number(state.timerPausedRemainingSeconds);
+      if (state.timerPaused) {
         els.timerPanel.dataset.paused = "true";
       } else {
         delete els.timerPanel.dataset.paused;
-        if (phase === "guessing") {
-          remaining = secondsRemaining(state.guessWindowOpenedAtIso, state.guessWindowSeconds);
-        } else if (phase === "results") {
-          remaining = secondsRemaining(state.resultsWindowOpenedAtIso, state.resultsWindowSeconds);
-        }
+      }
+      if (phase === "guessing" || phase === "results") {
+        remaining = phaseSecondsRemaining(state);
       }
 
       els.timerValue.textContent = formatTimerValue(remaining);
@@ -4329,6 +4404,7 @@
 
     function renderState(state) {
       currentState = applyDemoState(state);
+      syncTimerDisplay(currentState);
       const phase = currentState.phase || "idle";
 
       if (IS_DEMO || apiConnected) {

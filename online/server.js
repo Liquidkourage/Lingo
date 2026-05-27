@@ -221,11 +221,46 @@ async function enrichStateWithWordPool(state, client = pool) {
 }
 
 function computeWindowRemainingSeconds(openedAt, windowSeconds) {
-  if (!openedAt || !windowSeconds) return null;
+  const total = Number(windowSeconds || 0);
+  if (!openedAt || !total) return null;
   const openedMs = new Date(openedAt).getTime();
   if (Number.isNaN(openedMs)) return null;
-  const end = openedMs + Number(windowSeconds) * 1000;
-  return Math.max(0, Math.ceil((end - Date.now()) / 1000));
+  const end = openedMs + total * 1000;
+  const remaining = Math.max(0, Math.floor((end - Date.now()) / 1000));
+  return Math.min(total, remaining);
+}
+
+function capTimerRemainingSeconds(remaining, windowSeconds) {
+  const total = Number(windowSeconds || 0);
+  const value = Math.max(0, Number(remaining || 0));
+  if (!total) return value;
+  return Math.min(total, value);
+}
+
+function timerRemainingForState(row) {
+  if (!row) return { guessWindowRemainingSeconds: null, resultsWindowRemainingSeconds: null };
+  const phase = String(row.phase || "idle");
+  const timerPaused = Boolean(row.timer_paused);
+
+  if (timerPaused && row.timer_paused_remaining_seconds != null) {
+    const frozen = capTimerRemainingSeconds(
+      row.timer_paused_remaining_seconds,
+      phase === "guessing" ? row.guess_window_seconds : row.results_window_seconds,
+    );
+    return {
+      guessWindowRemainingSeconds: phase === "guessing" ? frozen : null,
+      resultsWindowRemainingSeconds: phase === "results" ? frozen : null,
+    };
+  }
+
+  return {
+    guessWindowRemainingSeconds: phase === "guessing"
+      ? computeWindowRemainingSeconds(row.guess_window_opened_at, row.guess_window_seconds)
+      : null,
+    resultsWindowRemainingSeconds: phase === "results"
+      ? computeWindowRemainingSeconds(row.results_window_opened_at, row.results_window_seconds)
+      : null,
+  };
 }
 
 function windowExpired(openedAt, windowSeconds, timerPaused = false) {
@@ -614,6 +649,7 @@ function serializeState(row) {
       ? Number(row.timer_paused_remaining_seconds)
       : null,
     roundBallStakes: parseRoundBallStakes(row),
+    ...timerRemainingForState(row),
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
   };
 }
