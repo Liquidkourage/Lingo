@@ -51,7 +51,8 @@
       inset: 0;
       pointer-events: none;
       background:
-        radial-gradient(ellipse 92% 42% at 50% 0%, rgba(0, 78, 175, 0.22) 0%, rgba(0, 30, 82, 0.1) 42%, transparent 72%);
+        radial-gradient(ellipse 92% 42% at 50% 0%, rgba(0, 100, 220, 0.32) 0%, rgba(0, 40, 110, 0.14) 42%, transparent 72%),
+        radial-gradient(ellipse 55% 35% at 50% 38%, rgba(255, 190, 50, 0.06) 0%, transparent 70%);
       mix-blend-mode: screen;
     }
 
@@ -72,6 +73,7 @@
       width: 100%;
       height: auto;
       transform: translateY(-25.21%);
+      filter: drop-shadow(0 0 28px rgba(80, 180, 255, 0.35)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
     }
 
     .stage-ui {
@@ -168,15 +170,41 @@
       min-width: 280px;
       padding: 0.7em 1.5em;
       border-radius: 999px;
-      border: 3px solid rgba(255, 210, 70, 0.9);
-      background: linear-gradient(180deg, rgba(0, 20, 55, 0.95) 0%, rgba(0, 10, 35, 0.98) 100%);
-      box-shadow: 0 0 28px rgba(255, 190, 40, 0.28);
+      border: 3px solid rgba(255, 210, 70, 0.95);
+      background: linear-gradient(180deg, rgba(0, 28, 68, 0.96) 0%, rgba(0, 8, 28, 0.98) 100%);
+      box-shadow:
+        0 0 32px rgba(255, 190, 40, 0.45),
+        0 0 64px rgba(255, 160, 20, 0.18),
+        inset 0 1px 0 rgba(255, 230, 140, 0.22),
+        inset 0 -8px 24px rgba(0, 40, 100, 0.35);
       font-size: 0.95em;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #ffd040;
+      color: #ffd850;
+      text-shadow: 0 0 14px rgba(255, 210, 60, 0.55);
       white-space: nowrap;
+    }
+
+    .stage[data-phase="idle"] .status-badge {
+      animation: badge-pulse 2.8s ease-in-out infinite;
+    }
+
+    @keyframes badge-pulse {
+      0%, 100% {
+        box-shadow:
+          0 0 32px rgba(255, 190, 40, 0.45),
+          0 0 64px rgba(255, 160, 20, 0.18),
+          inset 0 1px 0 rgba(255, 230, 140, 0.22),
+          inset 0 -8px 24px rgba(0, 40, 100, 0.35);
+      }
+      50% {
+        box-shadow:
+          0 0 44px rgba(255, 200, 60, 0.65),
+          0 0 80px rgba(255, 170, 30, 0.28),
+          inset 0 1px 0 rgba(255, 240, 160, 0.32),
+          inset 0 -8px 24px rgba(0, 40, 100, 0.35);
+      }
     }
 
     .status-badge svg {
@@ -216,7 +244,8 @@
       font-size: 0.88em;
       font-weight: 600;
       line-height: 1.4;
-      color: rgba(210, 230, 255, 0.92);
+      color: rgba(235, 245, 255, 0.96);
+      text-shadow: 0 0 18px rgba(80, 160, 255, 0.35);
     }
 
     .word-clue {
@@ -273,41 +302,68 @@
     }
 
     .idle-callout {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 1.1em;
-      padding: 0.75em 1em;
-      border-radius: 0.55em;
-      border: 2px solid rgba(90, 190, 255, 0.55);
-      background: linear-gradient(180deg, rgba(0, 28, 68, 0.92) 0%, rgba(0, 10, 32, 0.96) 100%);
+      padding: 0.85em 1.15em;
+      border-radius: 0.65em;
+      border: 2px solid rgba(90, 210, 255, 0.75);
+      background:
+        linear-gradient(180deg, rgba(0, 36, 82, 0.94) 0%, rgba(0, 12, 36, 0.97) 100%);
       box-shadow:
-        0 0 36px rgba(0, 120, 255, 0.28),
-        inset 0 0 24px rgba(0, 80, 180, 0.12);
+        0 0 48px rgba(0, 150, 255, 0.38),
+        0 0 96px rgba(0, 100, 220, 0.14),
+        inset 0 1px 0 rgba(120, 220, 255, 0.18),
+        inset 0 0 32px rgba(0, 80, 180, 0.16);
       text-align: left;
+      overflow: hidden;
+    }
+
+    .idle-callout::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 2px;
+      background: linear-gradient(135deg, rgba(255, 210, 70, 0.55) 0%, rgba(80, 200, 255, 0.45) 50%, rgba(255, 210, 70, 0.35) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.85;
     }
 
     .idle-qr {
+      position: relative;
+      z-index: 1;
       flex: 0 0 auto;
       width: 5.5em;
       height: 5.5em;
-      border-radius: 0.4em;
+      border-radius: 0.45em;
       background: #fff;
-      padding: 0.2em;
+      padding: 0.22em;
       box-sizing: border-box;
+      box-shadow:
+        0 0 24px rgba(255, 255, 255, 0.55),
+        0 0 48px rgba(80, 200, 255, 0.35);
     }
 
     .idle-callout-text {
+      position: relative;
+      z-index: 1;
       flex: 1 1 auto;
       min-width: 0;
     }
 
     .idle-kicker {
       margin: 0 0 0.25em;
-      font-size: 0.95em;
+      font-size: 0.88em;
       font-weight: 700;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: rgba(210, 230, 255, 0.88);
+      color: rgba(235, 245, 255, 0.92);
+      text-shadow: 0 0 12px rgba(120, 200, 255, 0.4);
     }
 
     .idle-url {
@@ -316,15 +372,29 @@
       font-weight: 900;
       line-height: 1.2;
       letter-spacing: 0.02em;
-      color: #8fe0ff;
-      text-shadow: 0 0 24px rgba(80, 200, 255, 0.65);
+      color: #7ae8ff;
+      text-shadow:
+        0 0 20px rgba(80, 220, 255, 0.85),
+        0 0 48px rgba(40, 160, 255, 0.55),
+        0 0 80px rgba(0, 120, 255, 0.25);
       animation: url-glow 3s ease-in-out infinite;
       word-break: break-word;
     }
 
     @keyframes url-glow {
-      0%, 100% { text-shadow: 0 0 20px rgba(80, 200, 255, 0.55); }
-      50% { text-shadow: 0 0 36px rgba(120, 230, 255, 0.95); }
+      0%, 100% {
+        color: #7ae8ff;
+        text-shadow:
+          0 0 20px rgba(80, 220, 255, 0.75),
+          0 0 48px rgba(40, 160, 255, 0.45);
+      }
+      50% {
+        color: #b8f4ff;
+        text-shadow:
+          0 0 28px rgba(120, 240, 255, 1),
+          0 0 64px rgba(60, 190, 255, 0.75),
+          0 0 96px rgba(0, 140, 255, 0.35);
+      }
     }
 
     /* Idle: stack below logo — top padding ≈ logo footprint, no min-height overflow */
@@ -337,7 +407,29 @@
       min-height: 0;
       overflow: hidden;
       padding: 22% 4.5% 1.25%;
-      gap: 0.65em;
+      gap: 0.55em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="full"] .stage-ui {
+      padding-top: 20%;
+      gap: 0.45em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="full"] .idle-info {
+      width: 88%;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="full"] .idle-callout {
+      padding: 0.65em 1em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="full"] .idle-qr {
+      width: 4.5em;
+      height: 4.5em;
+    }
+
+    .stage[data-phase="idle"][data-lobby-size="full"] .idle-url {
+      font-size: 1.2em;
     }
 
     .stage[data-phase="idle"] .status-badge,
@@ -445,10 +537,13 @@
       transform: translate(-50%, -50%);
       width: 90.62%;
       height: 41.74%;
-      border-radius: 0.35em;
-      border: 1px solid rgba(60, 150, 230, 0.5);
-      background: linear-gradient(180deg, rgba(0, 14, 38, 0.92) 0%, rgba(0, 6, 20, 0.96) 100%);
-      box-shadow: inset 0 0 24px rgba(0, 40, 100, 0.25);
+      border-radius: 0.45em;
+      border: 2px solid rgba(80, 190, 255, 0.55);
+      background: linear-gradient(180deg, rgba(0, 18, 48, 0.94) 0%, rgba(0, 4, 16, 0.98) 100%);
+      box-shadow:
+        0 0 36px rgba(0, 120, 255, 0.22),
+        inset 0 0 32px rgba(0, 40, 100, 0.35),
+        inset 0 2px 0 rgba(100, 200, 255, 0.12);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -462,9 +557,11 @@
       font-weight: 700;
       letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: rgba(210, 230, 255, 0.9);
-      border-bottom: 1px solid rgba(60, 130, 200, 0.28);
-      background: linear-gradient(180deg, rgba(0, 24, 58, 0.75) 0%, rgba(0, 12, 34, 0.4) 100%);
+      color: #ffe070;
+      text-shadow: 0 0 16px rgba(255, 210, 60, 0.45);
+      border-bottom: 1px solid rgba(255, 200, 60, 0.28);
+      background: linear-gradient(180deg, rgba(0, 32, 72, 0.85) 0%, rgba(0, 14, 38, 0.55) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 230, 140, 0.1);
     }
 
     .player-board-body {
@@ -501,11 +598,42 @@
       align-content: start;
     }
 
+    .stage[data-phase="idle"] .player-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.42em;
+    }
+
     .player-card {
       padding: 0.65em 0.7em;
       border-radius: 0.35em;
-      border: 1px solid rgba(60, 140, 210, 0.35);
-      background: rgba(0, 18, 44, 0.82);
+      border: 1px solid rgba(80, 180, 255, 0.45);
+      background: linear-gradient(180deg, rgba(0, 28, 64, 0.92) 0%, rgba(0, 10, 32, 0.96) 100%);
+      box-shadow:
+        0 0 14px rgba(0, 120, 255, 0.18),
+        inset 0 1px 0 rgba(120, 210, 255, 0.14);
+    }
+
+    .stage[data-phase="idle"] .player-card {
+      padding: 0.38em 0.45em;
+      border-radius: 0.3em;
+      text-align: center;
+    }
+
+    .stage[data-phase="idle"] .player-card[data-status="waiting"] {
+      border-color: rgba(100, 210, 255, 0.55);
+      background: linear-gradient(180deg, rgba(0, 36, 78, 0.94) 0%, rgba(0, 14, 40, 0.97) 100%);
+      box-shadow:
+        0 0 16px rgba(60, 180, 255, 0.28),
+        inset 0 1px 0 rgba(140, 220, 255, 0.18);
+    }
+
+    .stage[data-phase="idle"] .player-status {
+      display: none;
+    }
+
+    .stage[data-phase="idle"] .player-name {
+      font-size: 0.78em;
+      letter-spacing: 0.02em;
     }
 
     .player-card[data-status="locked"] {
@@ -680,6 +808,32 @@
     let currentState = null;
     let tickTimer = null;
 
+    const DEMO_PLAYER_COUNT = Math.max(0, parseInt(new URLSearchParams(window.location.search).get("demo") || "0", 10) || 0);
+    const DEMO_PLAYER_NAMES = [
+      "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
+      "BlueJay", "CryptoKat", "NeonWave", "TurboTurtle", "Glitch",
+      "MoonLite", "StarForge", "VibeCheck", "ChillPill", "ZeroCool",
+      "HyperBeam", "CosmicRay", "DramaQueen", "SnackAttack", "BigBrain",
+    ];
+
+    function buildDemoPlayers(count) {
+      return Array.from({ length: count }, (_value, index) => ({
+        displayName: DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length],
+        status: "waiting",
+        statusText: "In lobby",
+      }));
+    }
+
+    function applyDemoState(state) {
+      if (!DEMO_PLAYER_COUNT) return state;
+      return {
+        ...state,
+        phase: "idle",
+        playerCount: DEMO_PLAYER_COUNT,
+        players: buildDemoPlayers(DEMO_PLAYER_COUNT),
+      };
+    }
+
     function secondsRemaining(openedAtIso, windowSeconds) {
       if (!openedAtIso || !windowSeconds) return null;
       const end = new Date(openedAtIso).getTime() + Number(windowSeconds) * 1000;
@@ -812,7 +966,7 @@
       players.forEach((player) => {
         const card = document.createElement("article");
         card.className = "player-card";
-        card.dataset.status = player.isWinner ? "winner" : (player.status || "waiting");
+        card.dataset.status = player.isWinner ? "winner" : (player.status || (phase === "idle" ? "waiting" : "waiting"));
 
         const name = document.createElement("div");
         name.className = "player-name";
@@ -863,32 +1017,39 @@
     }
 
     function renderState(state) {
-      currentState = state;
-      const phase = state.phase || "idle";
+      currentState = applyDemoState(state);
+      const phase = currentState.phase || "idle";
       els.stage.dataset.phase = phase;
 
+      const playerCount = Number(currentState.playerCount || 0);
+      if (phase === "idle" && playerCount >= 12) {
+        els.stage.dataset.lobbySize = "full";
+      } else {
+        delete els.stage.dataset.lobbySize;
+      }
+
       els.playerBoardHeader.textContent = phase === "idle"
-        ? lobbyHeaderLabel(state.playerCount)
+        ? lobbyHeaderLabel(playerCount)
         : "Player board";
 
-      const copy = phaseCopy(phase, state);
+      const copy = phaseCopy(phase, currentState);
       els.statusText.textContent = copy.badge;
       els.subtitle.textContent = copy.subtitle;
 
       if (phase === "idle") {
-        renderIdleInfo(state);
+        renderIdleInfo(currentState);
       }
 
-      els.statRound.textContent = String(state.roundNumber || 0);
-      els.statBalls.textContent = String(state.ballsRemaining || 0);
-      els.statMult.textContent = `${state.ballMultiplier || 1}x`;
-      els.statPlayers.textContent = String(state.playerCount || 0);
-      els.statSubmitted.textContent = String(state.submittedThisRound || 0);
+      els.statRound.textContent = String(currentState.roundNumber || 0);
+      els.statBalls.textContent = String(currentState.ballsRemaining || 0);
+      els.statMult.textContent = `${currentState.ballMultiplier || 1}x`;
+      els.statPlayers.textContent = String(playerCount);
+      els.statSubmitted.textContent = String(currentState.submittedThisRound || 0);
 
-      renderTopLine(state);
-      renderTimer(state);
-      renderWordClue(state);
-      renderPlayerBoard(state);
+      renderTopLine(currentState);
+      renderTimer(currentState);
+      renderWordClue(currentState);
+      renderPlayerBoard(currentState);
     }
 
     function startTickTimer() {
@@ -913,6 +1074,17 @@
 
     async function boot() {
       renderIdleInfo();
+      if (DEMO_PLAYER_COUNT > 0) {
+        renderState({
+          phase: "idle",
+          roundNumber: 0,
+          ballsRemaining: 0,
+          ballMultiplier: 1,
+          playerCount: DEMO_PLAYER_COUNT,
+          submittedThisRound: 0,
+          players: buildDemoPlayers(DEMO_PLAYER_COUNT),
+        });
+      }
       startTickTimer();
       try {
         await fetchPublicState();
