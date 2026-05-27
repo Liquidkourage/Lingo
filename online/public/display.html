@@ -23,6 +23,14 @@
       --show-black: #000008;
       --show-panel: #020818;
       --show-navy: #010818;
+      --feedback-correct: #00b826;
+      --feedback-correct-border: #007a1a;
+      --feedback-correct-text: #ffffff;
+      --feedback-correct-glow: rgba(0, 184, 38, 0.7);
+      --feedback-present: #fff200;
+      --feedback-present-border: #c4ad00;
+      --feedback-present-text: #141100;
+      --feedback-present-glow: rgba(255, 242, 0, 0.6);
       --contrast-stroke: 3px;
       /* Live UI starts just under visible logo foot (PNG has bottom transparency) */
       --live-logo-reserve: 11.5%;
@@ -2876,15 +2884,23 @@
     }
 
     .pattern-cell[data-mark="!"] {
-      background: var(--show-green);
-      border-color: rgba(0, 120, 50, 0.9);
-      box-shadow: 0 0 14px rgba(0, 255, 85, 0.85);
+      background: var(--feedback-correct);
+      border-color: var(--feedback-correct-border);
+      box-shadow: 0 0 14px var(--feedback-correct-glow);
+    }
+
+    .pattern-cell[data-mark="!"] .pattern-letter {
+      color: var(--feedback-correct-text);
     }
 
     .pattern-cell[data-mark="?"] {
-      background: var(--show-gold);
-      border-color: rgba(140, 90, 0, 0.85);
-      box-shadow: 0 0 14px rgba(255, 204, 0, 0.85);
+      background: var(--feedback-present);
+      border-color: var(--feedback-present-border);
+      box-shadow: 0 0 14px var(--feedback-present-glow);
+    }
+
+    .pattern-cell[data-mark="?"] .pattern-letter {
+      color: var(--feedback-present-text);
     }
 
     .pattern-cell[data-mark="/"] {

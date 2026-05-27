@@ -20,6 +20,14 @@
       --show-black: #000008;
       --show-panel: #020818;
       --contrast-stroke: 3px;
+      --feedback-correct: #00b826;
+      --feedback-correct-border: #007a1a;
+      --feedback-correct-text: #ffffff;
+      --feedback-correct-glow: rgba(0, 184, 38, 0.7);
+      --feedback-present: #fff200;
+      --feedback-present-border: #c4ad00;
+      --feedback-present-text: #141100;
+      --feedback-present-glow: rgba(255, 242, 0, 0.6);
     }
 
     * { box-sizing: border-box; }
@@ -698,17 +706,17 @@
     }
 
     .result-tile[data-mark="!"] {
-      border-color: var(--show-green);
-      background: var(--show-green);
-      color: #001808;
-      box-shadow: 0 0 18px rgba(0, 255, 85, 0.55);
+      border-color: var(--feedback-correct-border);
+      background: var(--feedback-correct);
+      color: var(--feedback-correct-text);
+      box-shadow: 0 0 18px var(--feedback-correct-glow);
     }
 
     .result-tile[data-mark="?"] {
-      border-color: var(--show-gold);
-      background: var(--show-gold);
-      color: #1a1000;
-      box-shadow: 0 0 18px rgba(255, 204, 0, 0.55);
+      border-color: var(--feedback-present-border);
+      background: var(--feedback-present);
+      color: var(--feedback-present-text);
+      box-shadow: 0 0 18px var(--feedback-present-glow);
     }
 
     .result-tile[data-mark="/"] {
@@ -838,17 +846,17 @@
     }
 
     .history-cell[data-mark="!"] {
-      border-color: var(--show-green);
-      background: var(--show-green);
-      color: #001808;
-      box-shadow: 0 0 12px rgba(0, 255, 85, 0.45);
+      border-color: var(--feedback-correct-border);
+      background: var(--feedback-correct);
+      color: var(--feedback-correct-text);
+      box-shadow: 0 0 12px var(--feedback-correct-glow);
     }
 
     .history-cell[data-mark="?"] {
-      border-color: var(--show-gold);
-      background: var(--show-gold);
-      color: #1a1000;
-      box-shadow: 0 0 12px rgba(255, 204, 0, 0.45);
+      border-color: var(--feedback-present-border);
+      background: var(--feedback-present);
+      color: var(--feedback-present-text);
+      box-shadow: 0 0 12px var(--feedback-present-glow);
     }
 
     .history-cell[data-mark="/"] {
@@ -927,17 +935,17 @@
     }
 
     .keyboard-key[data-state="correct"] {
-      background: var(--show-green);
-      border-color: rgba(0, 120, 50, 0.9);
-      color: #001808;
-      box-shadow: 0 0 12px rgba(0, 255, 85, 0.55);
+      background: var(--feedback-correct);
+      border-color: var(--feedback-correct-border);
+      color: var(--feedback-correct-text);
+      box-shadow: 0 0 12px var(--feedback-correct-glow);
     }
 
     .keyboard-key[data-state="present"] {
-      background: var(--show-gold);
-      border-color: rgba(140, 90, 0, 0.85);
-      color: #1a1000;
-      box-shadow: 0 0 12px rgba(255, 204, 0, 0.55);
+      background: var(--feedback-present);
+      border-color: var(--feedback-present-border);
+      color: var(--feedback-present-text);
+      box-shadow: 0 0 12px var(--feedback-present-glow);
     }
 
     .keyboard-key[data-state="absent"] {
