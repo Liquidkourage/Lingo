@@ -296,14 +296,15 @@
     }
 
     .idle-url {
-      margin: 0 0 0.55em;
-      font-size: 1.45em;
+      margin: 0;
+      font-size: 1.2em;
       font-weight: 900;
-      line-height: 1.15;
+      line-height: 1.2;
       letter-spacing: 0.02em;
       color: #8fe0ff;
       text-shadow: 0 0 24px rgba(80, 200, 255, 0.65);
       animation: url-glow 3s ease-in-out infinite;
+      word-break: break-word;
     }
 
     @keyframes url-glow {
@@ -311,38 +312,32 @@
       50% { text-shadow: 0 0 36px rgba(120, 230, 255, 0.95); }
     }
 
-    .idle-lobby {
-      display: inline-block;
-      margin: 0;
-      padding: 0.35em 0.9em;
-      border-radius: 999px;
-      border: 1px solid rgba(152, 40, 168, 0.55);
-      background: rgba(40, 0, 50, 0.45);
-      font-size: 0.82em;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: #e0a8ff;
-    }
-
     .stage[data-phase="idle"] .subtitle {
-      top: 34.5%;
-      font-size: 0.78em;
+      top: 32%;
+      font-size: 0.85em;
     }
 
     .stage[data-phase="idle"] .status-badge {
-      top: 28.5%;
+      top: 27%;
       font-size: 1.05em;
     }
 
+    .stage[data-phase="idle"] .idle-info {
+      top: 37%;
+    }
+
     .stage[data-phase="idle"] .player-board {
-      top: 60%;
-      height: 36%;
+      top: 67%;
+      height: 31%;
     }
 
     .stage[data-phase="idle"] .player-board-header {
       font-size: 0.95em;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.14em;
+    }
+
+    .stage[data-phase="idle"] .player-board-empty {
+      font-size: 1.1em;
     }
 
     .stats-row {
@@ -568,7 +563,6 @@
           <div class="idle-callout">
             <p class="idle-kicker">Play at</p>
             <p class="idle-url" id="playUrl"></p>
-            <p class="idle-lobby" id="idleLobby">0 players in the lobby</p>
           </div>
         </div>
 
@@ -622,7 +616,6 @@
       statusText: document.getElementById("statusText"),
       subtitle: document.getElementById("subtitle"),
       playUrl: document.getElementById("playUrl"),
-      idleLobby: document.getElementById("idleLobby"),
       playerBoardHeader: document.getElementById("playerBoardHeader"),
       wordClue: document.getElementById("wordClue"),
       wordClueLabel: document.getElementById("wordClueLabel"),
@@ -653,10 +646,18 @@
       return window.location.origin.replace(/\/$/, "");
     }
 
-    function lobbyLabel(count) {
+    function playSiteUrlDisplay() {
+      try {
+        return new URL(playSiteUrl()).host;
+      } catch (_error) {
+        return playSiteUrl().replace(/^https?:\/\//, "");
+      }
+    }
+
+    function lobbyHeaderLabel(count) {
       const n = Number(count || 0);
-      if (n === 1) return "1 player in the lobby";
-      return `${n} players in the lobby`;
+      if (n === 1) return "Lobby · 1 player";
+      return `Lobby · ${n} players`;
     }
 
     function phaseCopy(phase, state) {
@@ -692,8 +693,7 @@
     }
 
     function renderIdleInfo(state) {
-      els.playUrl.textContent = playSiteUrl();
-      els.idleLobby.textContent = lobbyLabel(state.playerCount);
+      els.playUrl.textContent = playSiteUrlDisplay();
     }
 
     function renderWordClue(state) {
@@ -817,7 +817,9 @@
       const phase = state.phase || "idle";
       els.stage.dataset.phase = phase;
 
-      els.playerBoardHeader.textContent = phase === "idle" ? "Lobby" : "Player board";
+      els.playerBoardHeader.textContent = phase === "idle"
+        ? lobbyHeaderLabel(state.playerCount)
+        : "Player board";
 
       const copy = phaseCopy(phase, state);
       els.statusText.textContent = copy.badge;
@@ -860,7 +862,7 @@
     }
 
     async function boot() {
-      els.playUrl.textContent = playSiteUrl();
+      els.playUrl.textContent = playSiteUrlDisplay();
       startTickTimer();
       try {
         await fetchPublicState();
