@@ -325,16 +325,67 @@
       box-shadow: 0 0 18px rgba(0, 212, 255, 0.2);
     }
 
+    .play-identity[data-name-mode="locked"] {
+      padding: 0.5rem 0.7rem 0.55rem;
+      border-color: rgba(255, 204, 0, 0.45);
+      background: rgba(0, 0, 0, 0.35);
+      box-shadow: none;
+    }
+
+    .play-identity[data-name-mode="editing"] .name-locked {
+      display: none;
+    }
+
+    .play-identity[data-name-mode="locked"] .name-edit {
+      display: none;
+    }
+
+    .name-locked-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    .name-display {
+      font-size: 1.12rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: var(--show-cyan);
+      text-shadow: 0 0 14px rgba(0, 212, 255, 0.45);
+    }
+
+    .name-change {
+      padding: 0.32rem 0.55rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: rgba(220, 235, 255, 0.88);
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.32);
+      border-style: solid;
+      box-shadow: none;
+    }
+
+    .name-confirm {
+      flex: 0 0 auto;
+      padding: 0.55rem 0.7rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
     .name-row {
       display: flex;
       gap: 0.45rem;
       align-items: stretch;
+      flex-wrap: wrap;
       margin-bottom: 0.35rem;
     }
 
     .name-row #playerName {
-      flex: 1 1 auto;
-      min-width: 0;
+      flex: 1 1 10rem;
+      min-width: min(100%, 10rem);
     }
 
     .name-shuffle {
@@ -750,13 +801,23 @@
         </div>
       </section>
 
-      <section class="play-identity" id="playIdentity" aria-label="Your user name">
-        <label class="field-label" for="playerName">Your user name</label>
-        <div class="name-row">
-          <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="SwiftTiger" />
-          <button id="shuffleNameBtn" class="secondary name-shuffle" type="button" title="Another suggestion" aria-label="Another name suggestion">↻</button>
+      <section class="play-identity" id="playIdentity" data-name-mode="editing" aria-label="Your user name">
+        <div class="name-edit" id="nameEdit">
+          <label class="field-label" for="playerName">Your user name</label>
+          <div class="name-row">
+            <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="SwiftTiger" />
+            <button id="shuffleNameBtn" class="secondary name-shuffle" type="button" title="Another suggestion" aria-label="Another name suggestion">↻</button>
+            <button id="confirmNameBtn" class="good name-confirm" type="button">Use name</button>
+          </div>
+          <p class="name-hint" id="nameHint">Suggested name — keep it or pick another.</p>
         </div>
-        <p class="name-hint" id="nameHint">Suggested name — keep it or change it.</p>
+        <div class="name-locked" id="nameLocked">
+          <span class="field-label">Your user name</span>
+          <div class="name-locked-row">
+            <span class="name-display" id="playerNameDisplay"></span>
+            <button id="changeNameBtn" class="name-change" type="button">Change</button>
+          </div>
+        </div>
       </section>
 
       <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
@@ -945,25 +1006,54 @@
       return `${titleCasePart(adjective)}${titleCasePart(animal)}`;
     }
 
+    let skipNameBlurConfirm = false;
+
+    function isNameLocked() {
+      return els.playIdentity.dataset.nameMode === 'locked';
+    }
+
+    function activeUserName() {
+      if (isNameLocked()) return els.playerNameDisplay.textContent.trim();
+      return els.playerName.value.trim();
+    }
+
     function setNameHintMode(mode) {
       if (mode === 'saved') {
-        els.nameHint.textContent = 'Saved on this device — edit anytime.';
+        els.nameHint.textContent = 'Tap Use name when you are ready.';
         return;
       }
       if (mode === 'custom') {
-        els.nameHint.textContent = 'Custom name — looks good.';
+        els.nameHint.textContent = 'Tap Use name to lock it in.';
         return;
       }
-      els.nameHint.textContent = 'Suggested name — keep it or change it.';
+      els.nameHint.textContent = 'Suggested name — keep it or pick another.';
+    }
+
+    function lockUserName() {
+      const name = els.playerName.value.trim();
+      if (!name) return false;
+      els.playerNameDisplay.textContent = name;
+      els.playerName.value = name;
+      els.playIdentity.dataset.nameMode = 'locked';
+      storeDisplayName(name);
+      scheduleTypingFocus();
+      return true;
+    }
+
+    function openNameEditor() {
+      els.playIdentity.dataset.nameMode = 'editing';
+      els.playerName.value = els.playerNameDisplay.textContent || els.playerName.value;
+      window.requestAnimationFrame(() => els.playerName.focus());
     }
 
     async function applySuggestedName(forceNew = false) {
       const stored = getStoredDisplayName();
       if (!forceNew && stored) {
         els.playerName.value = stored;
-        setNameHintMode('saved');
+        lockUserName();
         return stored;
       }
+      openNameEditor();
       const parts = await loadUsernameParts();
       const suggestion = randomSuggestedName(parts);
       els.playerName.value = suggestion;
@@ -1008,7 +1098,7 @@
     }
 
     function hasUserName() {
-      return Boolean(els.playerName.value.trim());
+      return Boolean(activeUserName());
     }
 
     function canTypeGuess() {
@@ -1021,8 +1111,8 @@
 
     function scheduleTypingFocus() {
       window.requestAnimationFrame(() => {
-        if (!hasUserName()) {
-          els.playerName.focus();
+        if (!hasUserName() || !isNameLocked()) {
+          if (!isNameLocked()) els.playerName.focus();
           return;
         }
         if (!canTypeGuess()) return;
@@ -1399,7 +1489,7 @@
         : copy.line;
 
       els.metaRound.textContent = String(state.roundNumber || 0);
-      els.metaYours.textContent = !els.playerName.value.trim()
+      els.metaYours.textContent = !activeUserName()
         ? '—'
         : String(viewer && viewer.found ? viewer.balls : 0);
 
@@ -1421,10 +1511,15 @@
     }
 
     async function joinLobby() {
-      const displayName = els.playerName.value.trim();
+      if (!isNameLocked() && !lockUserName()) {
+        setMessage('Choose a user name and tap Use name first.', 'error');
+        els.playerName.focus();
+        return;
+      }
+      const displayName = activeUserName();
       if (!displayName) {
         setMessage('Enter your user name above first.', 'error');
-        els.playerName.focus();
+        openNameEditor();
         return;
       }
 
@@ -1449,7 +1544,7 @@
     }
 
     async function leaveLobby() {
-      const displayName = els.playerName.value.trim();
+      const displayName = activeUserName();
       if (!displayName) {
         setMessage('Enter your user name above first.', 'error');
         els.playerName.focus();
@@ -1476,7 +1571,7 @@
     }
 
     function publicStateUrl() {
-      const displayName = els.playerName.value.trim();
+      const displayName = activeUserName();
       if (!displayName) return '/api/public-state';
       return `/api/public-state?displayName=${encodeURIComponent(displayName)}`;
     }
@@ -1491,12 +1586,17 @@
     }
 
     async function submitGuess() {
-      const displayName = els.playerName.value.trim();
+      if (!isNameLocked() && !lockUserName()) {
+        setMessage('Choose a user name and tap Use name first.', 'error');
+        els.playerName.focus();
+        return;
+      }
+      const displayName = activeUserName();
       const guess = currentGuess();
 
       if (!displayName) {
         setMessage('Enter your user name above first.', 'error');
-        els.playerName.focus();
+        openNameEditor();
         return;
       }
       if (guess.length !== 5) {
@@ -1583,30 +1683,55 @@
         setMessage('Could not load another suggestion.', 'error');
       });
     });
+    els.confirmName.addEventListener('click', () => {
+      if (!lockUserName()) {
+        setMessage('Enter a user name first.', 'error');
+        els.playerName.focus();
+        return;
+      }
+      setMessage('');
+      fetchPublicState().catch(() => {});
+    });
+    els.changeName.addEventListener('mousedown', () => {
+      skipNameBlurConfirm = true;
+    });
+    els.changeName.addEventListener('click', () => {
+      openNameEditor();
+    });
 
     let nameSuggestionSeed = '';
     els.playerName.addEventListener('input', () => {
       const value = els.playerName.value.trim();
       if (!value) {
         setNameHintMode('suggested');
+        els.playerName.focus();
         return;
       }
       if (nameSuggestionSeed && value !== nameSuggestionSeed) {
         setNameHintMode('custom');
       }
     });
-    els.playerName.addEventListener('change', () => {
-      const displayName = els.playerName.value.trim();
-      if (displayName) storeDisplayName(displayName);
-      setNameHintMode('saved');
-      fetchPublicState().catch(() => {});
+    els.playerName.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (lockUserName()) {
+          setMessage('');
+          fetchPublicState().catch(() => {});
+        }
+      }
     });
     els.playerName.addEventListener('blur', () => {
-      const displayName = els.playerName.value.trim();
-      if (displayName) {
-        storeDisplayName(displayName);
-        setNameHintMode('saved');
+      if (skipNameBlurConfirm) {
+        skipNameBlurConfirm = false;
+        return;
       }
+      if (els.playIdentity.dataset.nameMode !== 'editing') return;
+      lockUserName();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      routeLetterKeyToGuess(event);
     });
 
     wireInputBehavior();
@@ -1617,7 +1742,7 @@
       if (IS_DEMO) {
         els.playerName.value = 'NightOwl';
         nameSuggestionSeed = 'NightOwl';
-        setNameHintMode('suggested');
+        lockUserName();
       } else {
         try {
           nameSuggestionSeed = await applySuggestedName(false);
@@ -1635,7 +1760,9 @@
         window.setInterval(refreshTimerBadge, 1000);
         return;
       }
-      fetchPublicState().catch((err) => setMessage(err.message || 'Could not load game state.', 'error'));
+      fetchPublicState()
+        .catch((err) => setMessage(err.message || 'Could not load game state.', 'error'))
+        .finally(() => scheduleTypingFocus());
       window.setInterval(refreshTimerBadge, 1000);
     }
 
