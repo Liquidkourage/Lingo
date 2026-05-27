@@ -69,6 +69,20 @@ async function runRehearsalBotSubmissions(client = pool) {
 }
 
 app.use(express.json());
+
+app.use((req, res, next) => {
+  if (req.method !== "GET") {
+    next();
+    return;
+  }
+  const htmlPaths = new Set(["/", "/host", "/display", "/rehearsal"]);
+  if (htmlPaths.has(req.path) || req.path.endsWith(".html")) {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+  }
+  next();
+});
+
 app.use(express.static(staticDir));
 
 function nowIso() {
