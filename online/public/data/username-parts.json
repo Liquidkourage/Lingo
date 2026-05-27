@@ -1,0 +1,27 @@
+{
+  "adjectives": [
+    "acute", "adept", "agile", "alert", "alive", "alone", "angry", "aware", "awned", "basic",
+    "beige", "black", "bland", "blank", "bleak", "blind", "blond", "blunt", "bored", "brave",
+    "brief", "brisk", "broad", "brown", "brusk", "cheap", "chief", "chill", "clean", "clear",
+    "close", "comic", "corny", "crazy", "crisp", "cruel", "curly", "curvy", "daily", "dandy",
+    "dense", "dirty", "dizzy", "dodgy", "drawn", "dying", "eager", "early", "elite", "empty",
+    "equal", "every", "faint", "false", "fancy", "fatal", "foggy", "frank", "fresh", "front",
+    "funny", "fussy", "fuzzy", "gaudy", "gaunt", "grand", "grave", "great", "green", "gross",
+    "gruff", "hardy", "harsh", "hasty", "heady", "hefty", "hoary", "hotly", "human", "humid",
+    "hunky", "inept", "inner", "irate", "jaded", "jazzy", "jolly", "juicy", "khaki", "kooky",
+    "lanky", "large", "leafy", "leery", "legal", "legit", "level", "lithe", "livid", "loath",
+    "loopy", "lousy", "lowly", "lucid", "lucky", "lurid", "lusty", "lyric", "mangy", "manic"
+  ],
+  "animals": [
+    "adder", "agama", "akita", "anole", "aphid", "bilby", "bison", "bongo", "brant", "bream",
+    "bunny", "camel", "carib", "chimp", "civet", "coati", "cobra", "conch", "corgi", "coypu",
+    "crabs", "crane", "dhole", "dingo", "drake", "eagle", "egret", "eider", "eland", "equid",
+    "finch", "flies", "fluke", "foals", "frogs", "gator", "gecko", "geese", "genet", "gnats",
+    "goose", "goral", "grebe", "grubs", "guans", "guppy", "heron", "hippo", "horse", "husky",
+    "hyena", "hyrax", "indri", "junco", "koala", "krill", "lemur", "liger", "llama", "loris",
+    "macaw", "magot", "manta", "midge", "moose", "moray", "mouse", "murre", "nasua", "newts",
+    "nymph", "okapi", "orang", "orcas", "oribi", "otter", "ouzel", "owlet", "panda", "perch",
+    "piper", "polyp", "pooch", "porgy", "poult", "prawn", "puppy", "quail", "quoll", "raven",
+    "rhino", "roach", "robin", "sable", "saiga", "seals", "shark", "sheep", "shrew", "skink"
+  ]
+}

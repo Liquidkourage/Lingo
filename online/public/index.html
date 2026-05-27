@@ -326,7 +326,31 @@
     }
 
     .name-row {
-      margin-bottom: 0;
+      display: flex;
+      gap: 0.45rem;
+      align-items: stretch;
+      margin-bottom: 0.35rem;
+    }
+
+    .name-row #playerName {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .name-shuffle {
+      flex: 0 0 auto;
+      padding: 0.55rem 0.7rem;
+      font-size: 1rem;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .name-hint {
+      margin: 0;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgba(200, 220, 245, 0.72);
     }
 
     #playerName {
@@ -729,8 +753,10 @@
       <section class="play-identity" id="playIdentity" aria-label="Your user name">
         <label class="field-label" for="playerName">Your user name</label>
         <div class="name-row">
-          <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="e.g. NightOwl" />
+          <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="SwiftTiger" />
+          <button id="shuffleNameBtn" class="secondary name-shuffle" type="button" title="Another suggestion" aria-label="Another name suggestion">↻</button>
         </div>
+        <p class="name-hint" id="nameHint">Suggested name — keep it or change it.</p>
       </section>
 
       <section class="play-lobby" id="playLobby" aria-label="Lobby signup">
@@ -783,6 +809,8 @@
       resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
       playerName: document.getElementById('playerName'),
+      shuffleName: document.getElementById('shuffleNameBtn'),
+      nameHint: document.getElementById('nameHint'),
       message: document.getElementById('message'),
       join: document.getElementById('joinButton'),
       leave: document.getElementById('leaveButton'),
@@ -891,6 +919,56 @@
       const ts = parseInt(localStorage.getItem('lingo_display_name_ts') || '', 10);
       if (!name || Number.isNaN(ts) || Date.now() - ts > 24 * 60 * 60 * 1000) return '';
       return name;
+    }
+
+    let usernameParts = null;
+
+    async function loadUsernameParts() {
+      if (usernameParts) return usernameParts;
+      const response = await fetch('/data/username-parts.json');
+      if (!response.ok) throw new Error('Could not load name suggestions.');
+      usernameParts = await response.json();
+      return usernameParts;
+    }
+
+    function titleCasePart(word) {
+      const normalized = String(word || '').toLowerCase();
+      if (!normalized) return '';
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    }
+
+    function randomSuggestedName(parts) {
+      const adjectives = parts.adjectives || [];
+      const animals = parts.animals || [];
+      const adjective = adjectives[Math.floor(Math.random() * adjectives.length)] || 'swift';
+      const animal = animals[Math.floor(Math.random() * animals.length)] || 'tiger';
+      return `${titleCasePart(adjective)}${titleCasePart(animal)}`;
+    }
+
+    function setNameHintMode(mode) {
+      if (mode === 'saved') {
+        els.nameHint.textContent = 'Saved on this device — edit anytime.';
+        return;
+      }
+      if (mode === 'custom') {
+        els.nameHint.textContent = 'Custom name — looks good.';
+        return;
+      }
+      els.nameHint.textContent = 'Suggested name — keep it or change it.';
+    }
+
+    async function applySuggestedName(forceNew = false) {
+      const stored = getStoredDisplayName();
+      if (!forceNew && stored) {
+        els.playerName.value = stored;
+        setNameHintMode('saved');
+        return stored;
+      }
+      const parts = await loadUsernameParts();
+      const suggestion = randomSuggestedName(parts);
+      els.playerName.value = suggestion;
+      setNameHintMode('suggested');
+      return suggestion;
     }
 
     function currentGuess() {
@@ -1474,27 +1552,68 @@
       clearInputs(true);
       setMessage('');
     });
-    els.playerName.value = getStoredDisplayName();
+    els.shuffleName.addEventListener('click', () => {
+      applySuggestedName(true).catch(() => {
+        setMessage('Could not load another suggestion.', 'error');
+      });
+    });
+
+    let nameSuggestionSeed = '';
+    els.playerName.addEventListener('input', () => {
+      const value = els.playerName.value.trim();
+      if (!value) {
+        setNameHintMode('suggested');
+        return;
+      }
+      if (nameSuggestionSeed && value !== nameSuggestionSeed) {
+        setNameHintMode('custom');
+      }
+    });
     els.playerName.addEventListener('change', () => {
       const displayName = els.playerName.value.trim();
       if (displayName) storeDisplayName(displayName);
+      setNameHintMode('saved');
       fetchPublicState().catch(() => {});
     });
     els.playerName.addEventListener('blur', () => {
       const displayName = els.playerName.value.trim();
-      if (displayName) storeDisplayName(displayName);
+      if (displayName) {
+        storeDisplayName(displayName);
+        setNameHintMode('saved');
+      }
     });
+
     wireInputBehavior();
     buildKeyboard();
     clearInputs(false);
 
-    if (IS_DEMO) {
-      renderPublicState(buildDemoState());
-      window.setInterval(refreshTimerBadge, 1000);
-    } else {
-      fetchPublicState().catch((error) => setMessage(error.message || 'Could not load game state.', 'error'));
+    async function bootPlayerPage() {
+      if (IS_DEMO) {
+        els.playerName.value = 'NightOwl';
+        nameSuggestionSeed = 'NightOwl';
+        setNameHintMode('suggested');
+      } else {
+        try {
+          nameSuggestionSeed = await applySuggestedName(false);
+        } catch (error) {
+          if (!getStoredDisplayName()) {
+            els.playerName.value = 'NightOwl';
+            nameSuggestionSeed = 'NightOwl';
+            setNameHintMode('suggested');
+          }
+        }
+      }
+
+      if (IS_DEMO) {
+        renderPublicState(buildDemoState());
+        window.setInterval(refreshTimerBadge, 1000);
+        return;
+      }
+      fetchPublicState().catch((err) => setMessage(err.message || 'Could not load game state.', 'error'));
       window.setInterval(refreshTimerBadge, 1000);
     }
+
+    bootPlayerPage();
   </script>
 </body>
 </html>
