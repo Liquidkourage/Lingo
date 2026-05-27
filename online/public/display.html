@@ -662,13 +662,13 @@
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto minmax(58cqh, 1fr);
+      grid-template-rows: auto minmax(60cqh, 1fr);
       grid-template-areas:
         "chrome"
         "board";
       justify-items: center;
       align-content: start;
-      gap: 0.14em;
+      gap: 0.1em;
       padding: var(--live-logo-reserve) 2.5% 0.25% 2.5%;
       overflow: visible;
       font-size: clamp(14px, 2.4cqh, 32px);
@@ -1054,7 +1054,7 @@
       padding: 0.12em 0;
       overflow: hidden;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: 1.35fr 0.75fr 0.75fr;
       background: linear-gradient(180deg, rgba(0, 16, 42, 0.98) 0%, rgba(0, 8, 24, 0.99) 100%);
       box-shadow: 0 0 16px rgba(0, 120, 255, 0.18);
     }
@@ -1087,6 +1087,49 @@
       font-size: 1.05em;
       font-weight: 800;
       text-shadow: 0 0 8px currentColor;
+    }
+
+    .stat-cell--unsubmitted {
+      min-width: 0;
+    }
+
+    .unsubmitted-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.16em;
+      width: 100%;
+      max-width: 100%;
+      padding: 0.04em 0.1em 0.08em;
+      min-height: 1.05em;
+    }
+
+    .unsubmitted-chip {
+      font-size: var(--chip-name-size, 0.38em);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      padding: 0.2em 0.44em;
+      border-radius: 999px;
+      border: 1px solid rgba(240, 168, 48, 0.58);
+      background: linear-gradient(180deg, rgba(48, 28, 0, 0.72) 0%, rgba(24, 14, 0, 0.88) 100%);
+      color: rgba(255, 232, 190, 0.96);
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow:
+        0 0 8px rgba(240, 160, 40, 0.16),
+        inset 0 1px 0 rgba(255, 220, 140, 0.12);
+      text-shadow: 0 0 6px rgba(240, 180, 80, 0.35);
+    }
+
+    .unsubmitted-chips.is-empty::after {
+      content: "—";
+      font-size: 0.9em;
+      font-weight: 800;
+      line-height: 1;
+      color: rgba(200, 220, 245, 0.42);
     }
 
     .stage[data-phase="guessing"] .player-board,
@@ -2451,6 +2494,7 @@
 
     .stage[data-layout-debug="true"] .word-tile,
     .stage[data-layout-debug="true"] .stat-cell,
+    .stage[data-layout-debug="true"] .unsubmitted-chip,
     .stage[data-layout-debug="true"] .score-slot,
     .stage[data-layout-debug="true"] .player-card {
       outline-width: 2px !important;
@@ -2541,10 +2585,10 @@
           </div>
 
           <div class="stats-row" aria-label="Game stats">
-            <div class="stat-cell">
-              <svg class="stat-icon" viewBox="0 0 24 24" fill="#24b04c" aria-hidden="true"><path d="M4 18h16M7 14l3-4 3 3 4-6" stroke="#24b04c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="stat-label">Multiplier</span>
-              <span class="stat-value mult" id="statMult">1x</span>
+            <div class="stat-cell stat-cell--unsubmitted">
+              <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="#f0a830" stroke-width="2" stroke-dasharray="3.5 2.5"/><path d="M8.5 12h7M12 8.5v7" stroke="#f0a830" stroke-width="2" stroke-linecap="round"/></svg>
+              <span class="stat-label">Unsubmitted</span>
+              <div class="unsubmitted-chips is-empty" id="statUnsubmitted" aria-live="polite"></div>
             </div>
             <div class="stat-cell">
               <svg class="stat-icon" viewBox="0 0 24 24" fill="#9828a8" aria-hidden="true"><circle cx="9" cy="10" r="3" fill="#9828a8"/><circle cx="16" cy="11" r="2.5" fill="#9828a8"/><path d="M4 18c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#9828a8" stroke-width="2" fill="none"/><path d="M13 17c0-1.8 1.5-3.2 3.2-3.2" stroke="#9828a8" stroke-width="2" fill="none"/></svg>
@@ -2632,7 +2676,7 @@
       wordClueValue: document.getElementById("wordClueValue"),
       statRound: document.getElementById("statRound"),
       statBalls: document.getElementById("statBalls"),
-      statMult: document.getElementById("statMult"),
+      statUnsubmitted: document.getElementById("statUnsubmitted"),
       statPlayers: document.getElementById("statPlayers"),
       statSubmitted: document.getElementById("statSubmitted"),
       playerBoardBody: document.getElementById("playerBoardBody"),
@@ -3123,6 +3167,38 @@
       return "0.52em";
     }
 
+    function unsubmittedChipSize(name) {
+      const len = (name || "").length;
+      if (len <= 9) return "0.42em";
+      if (len <= 13) return "0.38em";
+      if (len <= 17) return "0.34em";
+      return "0.3em";
+    }
+
+    function renderUnsubmittedStat(state) {
+      const phase = state.phase || "idle";
+      els.statUnsubmitted.replaceChildren();
+      els.statUnsubmitted.classList.toggle("is-empty", true);
+
+      if (phase === "idle") return;
+
+      const players = Array.isArray(state.players) ? state.players : [];
+      const waiting = players.filter((player) => !player.hasSubmitted);
+
+      if (!waiting.length) return;
+
+      els.statUnsubmitted.classList.remove("is-empty");
+      waiting.forEach((player) => {
+        const chip = document.createElement("span");
+        chip.className = "unsubmitted-chip";
+        const label = player.displayName || player.lobbyLabel || "Player";
+        chip.textContent = label;
+        chip.style.setProperty("--chip-name-size", unsubmittedChipSize(label));
+        if (label.length > 13) chip.title = label;
+        els.statUnsubmitted.appendChild(chip);
+      });
+    }
+
     function phaseCopy(phase, state) {
       switch (phase) {
         case "guessing":
@@ -3459,9 +3535,9 @@
 
       els.statRound.textContent = String(currentState.roundNumber || 0);
       els.statBalls.textContent = String(currentState.ballsRemaining || 0);
-      els.statMult.textContent = `${currentState.ballMultiplier || 1}x`;
       els.statPlayers.textContent = String(playerCount);
       els.statSubmitted.textContent = String(currentState.submittedThisRound || 0);
+      renderUnsubmittedStat(currentState);
 
       renderTopLine(currentState);
       renderTimer(currentState);
