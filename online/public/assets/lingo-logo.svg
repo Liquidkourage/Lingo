@@ -1,182 +1,168 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 118" role="img" aria-label="Lingo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 148" overflow="visible" role="img" aria-label="Lingo">
   <style type="text/css"><![CDATA[
     @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap");
   ]]></style>
   <defs>
-    <!-- Pearlescent white-silver face (NOT blue) -->
     <linearGradient id="silverFace" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="16%" stop-color="#f6f8fc" />
-      <stop offset="48%" stop-color="#dce2ea" />
-      <stop offset="100%" stop-color="#98a8b8" />
+      <stop offset="18%" stop-color="#f4f6fa" />
+      <stop offset="50%" stop-color="#d8dee8" />
+      <stop offset="100%" stop-color="#90a0b0" />
     </linearGradient>
     <linearGradient id="faceShine" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
-      <stop offset="32%" stop-color="#ffffff" stop-opacity="0.1" />
+      <stop offset="30%" stop-color="#ffffff" stop-opacity="0.08" />
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
     </linearGradient>
-    <linearGradient id="faceSheen" x1="0" y1="0" x2="1" y2="0.35">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45" />
-      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.06" />
+    <linearGradient id="faceSheen" x1="0" y1="0" x2="1" y2="0.4">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.4" />
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
     </linearGradient>
-
-    <!-- Thin gold trim ring -->
     <linearGradient id="goldTrim" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#fff0a0" />
-      <stop offset="35%" stop-color="#f4c030" />
-      <stop offset="100%" stop-color="#a07018" />
+      <stop offset="40%" stop-color="#f0b830" />
+      <stop offset="100%" stop-color="#986818" />
     </linearGradient>
-
-    <!-- Navy extrusion sides -->
     <linearGradient id="navySide" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#3a6898" />
-      <stop offset="45%" stop-color="#1a3858" />
+      <stop offset="0%" stop-color="#4070a0" />
+      <stop offset="50%" stop-color="#1a3858" />
       <stop offset="100%" stop-color="#060c18" />
     </linearGradient>
     <linearGradient id="navyStreak" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#5898d0" stop-opacity="0.45" />
+      <stop offset="0%" stop-color="#68a8e0" stop-opacity="0.5" />
       <stop offset="100%" stop-color="#142840" stop-opacity="0" />
     </linearGradient>
-
-    <!-- Electric blue outer aura -->
-    <linearGradient id="blueAura" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%" stop-color="#80d0ff" stop-opacity="0.15" />
-      <stop offset="50%" stop-color="#2898ff" stop-opacity="0.95" />
-      <stop offset="100%" stop-color="#0a58e8" stop-opacity="0.5" />
-    </linearGradient>
-    <radialGradient id="floorGlow" cx="0.5" cy="1" r="0.58">
-      <stop offset="0%" stop-color="#48b8ff" stop-opacity="0.75" />
-      <stop offset="100%" stop-color="#48b8ff" stop-opacity="0" />
+    <radialGradient id="floorGlow" cx="0.5" cy="1" r="0.55">
+      <stop offset="0%" stop-color="#40b0ff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#40b0ff" stop-opacity="0" />
     </radialGradient>
 
-    <filter id="neonWide" x="-70%" y="-100%" width="240%" height="300%">
-      <feGaussianBlur stdDeviation="14" result="blur" />
+    <filter id="neonWide" x="-100%" y="-100%" width="300%" height="300%" filterUnits="objectBoundingBox">
+      <feGaussianBlur stdDeviation="16" result="blur" />
       <feColorMatrix
         in="blur"
         type="matrix"
-        values="0 0 0 0 0.05
-                0 0 0 0 0.52
+        values="0 0 0 0 0.04
+                0 0 0 0 0.55
                 0 0 0 0 1
                 0 0 0 1 0"
       />
     </filter>
-    <filter id="neonTight" x="-45%" y="-65%" width="190%" height="230%">
-      <feGaussianBlur stdDeviation="4.5" result="blur" />
+    <filter id="neonTight" x="-80%" y="-80%" width="260%" height="260%" filterUnits="objectBoundingBox">
+      <feGaussianBlur stdDeviation="5" result="blur" />
       <feColorMatrix
         in="blur"
         type="matrix"
-        values="0 0 0 0 0.12
-                0 0 0 0 0.68
+        values="0 0 0 0 0.1
+                0 0 0 0 0.7
                 0 0 0 0 1
-                0 0 0 0.95 0"
+                0 0 0 1 0"
       />
     </filter>
-    <filter id="silhouetteGlow" x="-80%" y="-80%" width="260%" height="260%">
-      <feGaussianBlur stdDeviation="6" result="blur" />
-      <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
+    <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox">
+      <feDropShadow dx="0" dy="9" stdDeviation="6" flood-color="#000000" flood-opacity="0.55" />
     </filter>
-    <filter id="dropShadow" x="-35%" y="-35%" width="170%" height="210%">
-      <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#000000" flood-opacity="0.6" />
-    </filter>
-    <filter id="sparkleGlow" x="-120%" y="-120%" width="340%" height="340%">
-      <feGaussianBlur stdDeviation="1.4" result="blur" />
+    <filter id="sparkleGlow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="1.5" result="blur" />
       <feMerge>
         <feMergeNode in="blur" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
-
     <clipPath id="faceShineClip">
-      <rect x="0" y="0" width="680" height="36" />
+      <rect x="0" y="0" width="680" height="52" />
     </clipPath>
     <symbol id="sparkle" viewBox="0 0 24 24">
       <path d="M12 0 L13.4 10.4 L24 12 L13.4 13.6 L12 24 L10.6 13.6 L0 12 L10.6 10.4 Z" fill="#ffffff" />
     </symbol>
   </defs>
 
-  <!-- Floor bloom -->
-  <ellipse cx="340" cy="112" rx="310" ry="18" fill="url(#floorGlow)" />
+  <ellipse cx="340" cy="138" rx="300" ry="20" fill="url(#floorGlow)" />
 
-  <g transform="translate(340, 62) scale(1.22, 1) translate(-340, -62)">
+  <g transform="translate(340, 74) scale(1.2, 1) translate(-340, -74)">
     <g
       font-family="Montserrat, Arial Black, Impact, sans-serif"
       font-weight="900"
-      font-size="78"
-      letter-spacing="1.8"
-      textLength="532"
+      font-size="72"
+      letter-spacing="2"
+      textLength="528"
       lengthAdjust="spacingAndGlyphs"
       text-anchor="middle"
-      stroke-linejoin="round"
-      stroke-linecap="round"
+      stroke="none"
     >
-      <!-- 1. Electric blue outer glow (behind entire silhouette) -->
-      <text x="340" y="62" fill="url(#blueAura)" filter="url(#neonWide)">LINGO</text>
-      <text x="340" y="62" fill="#38b0ff" filter="url(#neonTight)">LINGO</text>
-      <text
-        x="340"
-        y="62"
-        fill="none"
-        stroke="#2898ff"
-        stroke-width="22"
-        opacity="0.35"
-        filter="url(#silhouetteGlow)"
-      >LINGO</text>
+      <!-- Electric blue aura (fill only, no stroke) -->
+      <text x="340" y="74" fill="#2898ff" filter="url(#neonWide)">LINGO</text>
+      <text x="340" y="74" fill="#48c0ff" filter="url(#neonTight)">LINGO</text>
 
-      <!-- 2. Navy 3D extrusion — down + forward (isometric) -->
-      <g aria-hidden="true">
-        <text x="340" y="62" fill="#060a10" transform="translate(6.6, 11.55)">LINGO</text>
-        <text x="340" y="62" fill="#0a1018" transform="translate(6, 10.5)">LINGO</text>
-        <text x="340" y="62" fill="#0e1620" transform="translate(5.4, 9.45)">LINGO</text>
-        <text x="340" y="62" fill="#121c28" transform="translate(4.8, 8.4)">LINGO</text>
-        <text x="340" y="62" fill="#162230" transform="translate(4.2, 7.35)">LINGO</text>
-        <text x="340" y="62" fill="#1a2838" transform="translate(3.6, 6.3)">LINGO</text>
-        <text x="340" y="62" fill="#1e3040" transform="translate(3, 5.25)">LINGO</text>
-        <text x="340" y="62" fill="#223848" transform="translate(2.4, 4.2)">LINGO</text>
-        <text x="340" y="62" fill="#264050" transform="translate(1.8, 3.15)">LINGO</text>
-        <text x="340" y="62" fill="#2a4860" transform="translate(1.2, 2.1)">LINGO</text>
-        <text x="340" y="62" fill="url(#navySide)" transform="translate(0.6, 1.05)">LINGO</text>
-        <text x="340" y="62" fill="url(#navyStreak)" transform="translate(0.3, 0.55)">LINGO</text>
+      <!-- Navy isometric extrusion — fill only -->
+      <g aria-hidden="true" filter="url(#dropShadow)">
+        <text x="340" y="74" fill="#050810" transform="translate(6.6, 11.55)">LINGO</text>
+        <text x="340" y="74" fill="#081018" transform="translate(6, 10.5)">LINGO</text>
+        <text x="340" y="74" fill="#0b1820" transform="translate(5.4, 9.45)">LINGO</text>
+        <text x="340" y="74" fill="#0e2028" transform="translate(4.8, 8.4)">LINGO</text>
+        <text x="340" y="74" fill="#112830" transform="translate(4.2, 7.35)">LINGO</text>
+        <text x="340" y="74" fill="#143038" transform="translate(3.6, 6.3)">LINGO</text>
+        <text x="340" y="74" fill="#173840" transform="translate(3, 5.25)">LINGO</text>
+        <text x="340" y="74" fill="#1a4048" transform="translate(2.4, 4.2)">LINGO</text>
+        <text x="340" y="74" fill="#1d4850" transform="translate(1.8, 3.15)">LINGO</text>
+        <text x="340" y="74" fill="#205058" transform="translate(1.2, 2.1)">LINGO</text>
+        <text x="340" y="74" fill="url(#navySide)" transform="translate(0.6, 1.05)">LINGO</text>
+        <text x="340" y="74" fill="url(#navyStreak)" transform="translate(0.3, 0.55)">LINGO</text>
       </g>
 
-      <!-- Gold catch-light on extrusion front edge -->
-      <text x="340" y="62" fill="none" stroke="url(#goldTrim)" stroke-width="2" transform="translate(0.5, 1)">LINGO</text>
-
-      <!-- Dark silhouette rim -->
-      <text x="340" y="62" fill="none" stroke="#040810" stroke-width="13" filter="url(#dropShadow)">LINGO</text>
-
-      <!-- 3. Thin gold trim ring -->
-      <text x="340" y="62" fill="none" stroke="url(#goldTrim)" stroke-width="3.6">LINGO</text>
-
-      <!-- Inner edge definition -->
-      <text x="340" y="62" fill="none" stroke="#142030" stroke-width="1.4">LINGO</text>
-      <text x="340" y="61.5" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.9">LINGO</text>
-
-      <!-- 4. Pearlescent white-silver face -->
+      <!-- Gold edge on extrusion lip -->
       <text
         x="340"
-        y="62"
-        fill="url(#silverFace)"
-        stroke="#283848"
-        stroke-width="0.8"
-        paint-order="stroke fill"
+        y="74"
+        fill="none"
+        stroke="url(#goldTrim)"
+        stroke-width="2.5"
+        stroke-linejoin="round"
+        transform="translate(0.45, 0.9)"
       >LINGO</text>
 
-      <!-- 5. Top specular + horizontal sheen -->
-      <text x="340" y="62" fill="url(#faceSheen)">LINGO</text>
-      <text x="340" y="62" fill="url(#faceShine)" clip-path="url(#faceShineClip)">LINGO</text>
+      <!-- Thin gold trim ring -->
+      <text
+        x="340"
+        y="74"
+        fill="none"
+        stroke="url(#goldTrim)"
+        stroke-width="4"
+        stroke-linejoin="round"
+      >LINGO</text>
+
+      <!-- Silver pearlescent face -->
+      <text x="340" y="74" fill="url(#silverFace)">LINGO</text>
+
+      <!-- Inner edge + top highlight -->
+      <text
+        x="340"
+        y="74"
+        fill="none"
+        stroke="#182838"
+        stroke-width="1.2"
+        stroke-linejoin="round"
+        paint-order="stroke fill"
+      >LINGO</text>
+      <text
+        x="340"
+        y="73.5"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="1.2"
+        stroke-linejoin="round"
+        opacity="0.85"
+      >LINGO</text>
+
+      <!-- Specular overlays -->
+      <text x="340" y="74" fill="url(#faceSheen)">LINGO</text>
+      <text x="340" y="74" fill="url(#faceShine)" clip-path="url(#faceShineClip)">LINGO</text>
     </g>
   </g>
 
-  <!-- 6. Sparkles on metal highlight points -->
   <g filter="url(#sparkleGlow)">
-    <use href="#sparkle" x="98" y="74" width="13" height="13" opacity="0.85" />
-    <use href="#sparkle" x="248" y="10" width="10" height="10" opacity="0.7" />
-    <use href="#sparkle" x="418" y="12" width="11" height="11" opacity="0.75" />
-    <use href="#sparkle" x="558" y="6" width="20" height="20" />
+    <use href="#sparkle" x="104" y="88" width="14" height="14" opacity="0.9" />
+    <use href="#sparkle" x="420" y="24" width="11" height="11" opacity="0.75" />
+    <use href="#sparkle" x="560" y="18" width="20" height="20" />
   </g>
 </svg>

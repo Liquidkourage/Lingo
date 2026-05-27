@@ -43,9 +43,9 @@
     .logo-wrap {
       position: absolute;
       left: 18.359375%;
-      top: 2.782608696%;
+      top: 1.6%;
       width: 63.28125%;
-      height: 17.043478261%;
+      overflow: visible;
       pointer-events: none;
       user-select: none;
     }
@@ -53,7 +53,7 @@
     .lingo-logo {
       display: block;
       width: 100%;
-      height: 100%;
+      height: auto;
       overflow: visible;
     }
   </style>
@@ -70,12 +70,13 @@
       />
 
       <div class="logo-wrap">
-        <object
+        <img
           class="lingo-logo"
-          data="/assets/lingo-logo.svg"
-          type="image/svg+xml"
-          aria-label="Lingo"
-        ></object>
+          src="/assets/lingo-logo.svg"
+          width="680"
+          height="148"
+          alt="Lingo"
+        />
       </div>
     </div>
   </div>
