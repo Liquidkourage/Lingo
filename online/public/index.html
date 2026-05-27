@@ -1680,14 +1680,8 @@
     }
 
     function timerToastWindowKey(state) {
-      const phase = state.phase || 'idle';
-      if (phase === 'guessing') {
-        return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ''}`;
-      }
-      if (phase === 'results') {
-        return `r:${state.roundNumber || 0}:${state.resultsWindowOpenedAtIso || ''}`;
-      }
-      return '';
+      if ((state.phase || 'idle') !== 'guessing') return '';
+      return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ''}`;
     }
 
     function resetTimerToastTracking(windowKey) {
@@ -1711,6 +1705,11 @@
     }
 
     function maybeShowTimerToasts(state) {
+      if ((state.phase || 'idle') !== 'guessing') {
+        resetTimerToastTracking('');
+        return;
+      }
+
       const windowKey = timerToastWindowKey(state);
       if (!windowKey) {
         resetTimerToastTracking('');
