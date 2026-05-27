@@ -147,6 +147,33 @@ function isChampionPlayer(displayName, state) {
   return String(displayName).trim().toLowerCase() === champion.toLowerCase();
 }
 
+function parseRoundBallStakes(state) {
+  const raw = state?.round_ball_stakes ?? state?.roundBallStakes ?? [];
+  if (Array.isArray(raw)) {
+    return raw.map((value) => Number(value)).filter((value) => value > 0);
+  }
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map((value) => Number(value)).filter((value) => value > 0);
+      }
+    } catch (_error) {
+      return [];
+    }
+  }
+  return [];
+}
+
+function isStakeWindowClosed(stake, state) {
+  const phase = String(state.phase || "idle");
+  if (phase === "results" || phase === "ended") return true;
+  if (phase === "guessing") {
+    return Number(stake) !== Number(state.balls_remaining || 0);
+  }
+  return false;
+}
+
 function parseWordListFromState(value) {
   if (Array.isArray(value)) return normalizeWordList(value);
   if (typeof value === "string") {
@@ -313,11 +340,18 @@ async function performContinueRound(client, guessWindowSeconds) {
   if (state.answer_revealed || balls < 2 * multiplier) {
     throw new Error("The round cannot continue in the current state.");
   }
+  const continueStake = Number(state.balls_remaining || 0);
+  const roundBallStakes = [...parseRoundBallStakes(state)];
+  if (continueStake > 0) {
+    roundBallStakes.push(continueStake);
+  }
+
   const nextState = await updateState({
     phase: "guessing",
     guess_window_opened_at: nowIso(),
     guess_window_seconds: Number(guessWindowSeconds || state.guess_window_seconds || 90),
     first_solver_player_id: null,
+    round_ball_stakes: roundBallStakes,
     ...clearTimerPausePatch(),
   }, client);
   await clearSessionGuesses(nextState.session_id, client);
@@ -403,7 +437,7 @@ async function listViewerGuessHistory(playerId, state, client = pool) {
 
   const phase = String(state.phase || "idle");
   const reveal = shouldRevealGuessFeedback(phase);
-  const history = [];
+  const submissionByStake = new Map();
 
   for (const row of result.rows) {
     const guess = normalizeWordInput(row.guess);
@@ -418,14 +452,60 @@ async function listViewerGuessHistory(playerId, state, client = pool) {
       resultLabel = feedback.resultLabel;
     }
 
-    history.push({
+    const ballStake = Number(row.ball_stake || 0);
+    const entry = {
       guess,
       pattern,
       resultLabel,
       isOfficial: Boolean(row.is_official),
-      ballStake: Number(row.ball_stake || 0),
-    });
+      ballStake,
+      status: resultLabel === "Not a word…" ? "invalid" : "guess",
+    };
+    if (ballStake > 0) {
+      submissionByStake.set(ballStake, entry);
+    }
   }
+
+  let roundStakes = parseRoundBallStakes(state);
+  if (!roundStakes.length) {
+    const stakesInOrder = [];
+    result.rows.forEach((row) => {
+      const stake = Number(row.ball_stake || 0);
+      if (stake > 0 && !stakesInOrder.includes(stake)) {
+        stakesInOrder.push(stake);
+      }
+    });
+    if (!stakesInOrder.length) {
+      return [...submissionByStake.values()];
+    }
+    roundStakes = stakesInOrder;
+  }
+
+  const history = [];
+  roundStakes.forEach((ballStake) => {
+    const existing = submissionByStake.get(ballStake);
+    if (existing) {
+      history.push(existing);
+      return;
+    }
+    if (!isStakeWindowClosed(ballStake, state)) {
+      return;
+    }
+    history.push({
+      guess: "",
+      pattern: "",
+      resultLabel: "No guess",
+      isOfficial: false,
+      ballStake,
+      status: "missed",
+    });
+  });
+
+  submissionByStake.forEach((entry, ballStake) => {
+    if (!roundStakes.includes(ballStake)) {
+      history.push(entry);
+    }
+  });
 
   return history;
 }
@@ -533,6 +613,7 @@ function serializeState(row) {
     timerPausedRemainingSeconds: row.timer_paused_remaining_seconds != null
       ? Number(row.timer_paused_remaining_seconds)
       : null,
+    roundBallStakes: parseRoundBallStakes(row),
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
   };
 }
@@ -582,6 +663,7 @@ async function updateState(patch, client = pool) {
     next.first_solver_player_id ?? state.first_solver_player_id ?? null,
     JSON.stringify(parseWordListFromState(next.host_word_suggestions ?? state.host_word_suggestions)),
     JSON.stringify(parseWordListFromState(next.host_word_exclusions ?? state.host_word_exclusions)),
+    JSON.stringify(parseRoundBallStakes(next)),
   ];
 
   const result = await client.query(
@@ -606,6 +688,7 @@ async function updateState(patch, client = pool) {
          first_solver_player_id = $18,
          host_word_suggestions = $19::jsonb,
          host_word_exclusions = $20::jsonb,
+         round_ball_stakes = $21::jsonb,
          updated_at = now()
      where id = 1
      returning *`,
@@ -1168,6 +1251,7 @@ async function handleAdminAction(action, body) {
         first_solver_player_id: null,
         timer_paused: false,
         timer_paused_remaining_seconds: null,
+        round_ball_stakes: [],
         ...wordPool,
       }));
     }
@@ -1196,11 +1280,13 @@ async function handleAdminAction(action, body) {
       const client = await pool.connect();
       try {
         await client.query("begin");
+        const openingStake = 6 * multiplier;
         const nextState = await updateState({
           phase: "guessing",
           round_number: nextRound,
           answer_revealed: false,
-          balls_remaining: 6 * multiplier,
+          balls_remaining: openingStake,
+          round_ball_stakes: [openingStake],
           guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
           results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
           guess_window_opened_at: nowIso(),
@@ -1411,6 +1497,7 @@ async function handleAdminAction(action, body) {
         first_solver_player_id: null,
         timer_paused: false,
         timer_paused_remaining_seconds: null,
+        round_ball_stakes: [],
         ...wordPool,
       }));
     }

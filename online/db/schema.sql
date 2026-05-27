@@ -30,6 +30,7 @@ alter table app_state add column if not exists champion_display_name text not nu
 alter table app_state add column if not exists first_solver_player_id bigint;
 alter table app_state add column if not exists host_word_suggestions jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists host_word_exclusions jsonb not null default '[]'::jsonb;
+alter table app_state add column if not exists round_ball_stakes jsonb not null default '[]'::jsonb;
 
 insert into app_state (
   id,

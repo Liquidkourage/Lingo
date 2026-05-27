@@ -1033,6 +1033,41 @@
       color: rgba(200, 190, 195, 0.88);
     }
 
+    .history-cell[data-mark="missed"] {
+      border-color: rgba(120, 130, 150, 0.45);
+      border-style: dashed;
+      background: rgba(12, 16, 24, 0.85);
+      color: rgba(140, 150, 170, 0.55);
+      box-shadow: none;
+    }
+
+    .history-cell[data-mark="invalid"] {
+      border-color: rgba(255, 136, 0, 0.45);
+      background: rgba(40, 24, 8, 0.65);
+      color: rgba(220, 200, 180, 0.88);
+      box-shadow: none;
+    }
+
+    .history-note {
+      display: block;
+      width: 100%;
+      margin-top: 0.2rem;
+      text-align: center;
+      font-size: 0.52rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.72);
+    }
+
+    .guess-history-item.is-invalid .history-note {
+      color: var(--show-orange);
+    }
+
+    .guess-history-item.is-missed .history-note {
+      color: rgba(160, 175, 195, 0.78);
+    }
+
     .history-cell[data-mark="locked"] {
       border-color: var(--show-green);
       color: var(--show-white);
@@ -1812,11 +1847,14 @@
         isOfficial = false,
         ballStake = null,
         isHint = false,
+        note = '',
+        itemClass = '',
       } = options;
 
       const item = document.createElement('div');
       item.className = 'guess-history-item';
       if (isHint) item.classList.add('is-hint');
+      if (itemClass) item.classList.add(itemClass);
 
       const stakeLabel = document.createElement('span');
       stakeLabel.className = 'history-stake';
@@ -1831,12 +1869,23 @@
         row.appendChild(makeHistoryCell(letter, marks[index] || '/'));
       });
       item.appendChild(row);
+
+      if (note) {
+        const noteEl = document.createElement('span');
+        noteEl.className = 'history-note';
+        noteEl.textContent = note;
+        item.appendChild(noteEl);
+      }
+
       return item;
     }
 
     function historyMarksForEntry(entry, guess, pattern, phase) {
-      if (String(entry.resultLabel || '') === 'Not a word…') {
-        return guess.split('').map(() => '/');
+      if (entry.status === 'missed' || entry.resultLabel === 'No guess') {
+        return ['missed', 'missed', 'missed', 'missed', 'missed'];
+      }
+      if (entry.status === 'invalid' || String(entry.resultLabel || '') === 'Not a word…') {
+        return guess.split('').map(() => 'invalid');
       }
       if (pattern.length === 5) {
         return pattern.split('');
@@ -1888,16 +1937,34 @@
       let guessIndex = 0;
 
       history.forEach((entry, index) => {
+        const ballStake = Number(entry.ballStake || 0) || historyBallStake(entry, state, guessIndex, history);
+        const isOfficial = index === officialIndex;
+
+        if (entry.status === 'missed' || entry.resultLabel === 'No guess') {
+          els.guessHistory.appendChild(makeHistoryRow(
+            ['—', '—', '—', '—', '—'],
+            ['missed', 'missed', 'missed', 'missed', 'missed'],
+            {
+              ballStake,
+              note: 'No guess',
+              itemClass: 'is-missed',
+            },
+          ));
+          guessIndex += 1;
+          return;
+        }
+
         const guess = String(entry.guess || '').toUpperCase();
         if (guess.length !== 5) return;
         const pattern = String(entry.pattern || '');
         const marks = historyMarksForEntry(entry, guess, pattern, phase);
-        const isOfficial = index === officialIndex;
-        const ballStake = historyBallStake(entry, state, guessIndex, history);
+        const isInvalid = entry.status === 'invalid' || entry.resultLabel === 'Not a word…';
         guessIndex += 1;
         els.guessHistory.appendChild(makeHistoryRow(guess.split(''), marks, {
           isOfficial,
           ballStake,
+          note: isInvalid ? 'Not a word' : '',
+          itemClass: isInvalid ? 'is-invalid' : '',
         }));
       });
     }
