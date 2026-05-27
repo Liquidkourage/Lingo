@@ -34,24 +34,46 @@
 
     * { box-sizing: border-box; }
 
+    html {
+      height: 100%;
+    }
+
     html, body {
       margin: 0;
-      min-height: 100%;
       color: var(--show-white);
       font-family: Montserrat, Arial, sans-serif;
       background: var(--show-black);
     }
 
     body {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 20px 16px 28px;
+      min-height: 100dvh;
+      height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding:
+        max(8px, env(safe-area-inset-top, 0px))
+        max(10px, env(safe-area-inset-right, 0px))
+        max(8px, env(safe-area-inset-bottom, 0px))
+        max(10px, env(safe-area-inset-left, 0px));
     }
 
     .play-stage {
       position: relative;
       width: min(100%, 520px);
+      max-height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .play-stage[data-phase="guessing"],
+    .play-stage[data-phase="results"],
+    .play-stage[data-phase="ended"] {
+      --block-gap: 0.7rem;
+      --block-gap-inner: 0.55rem;
     }
 
     .play-stage::before {
@@ -68,6 +90,8 @@
     .play-card {
       position: relative;
       z-index: 1;
+      flex: 1 1 auto;
+      min-height: 0;
       border: var(--contrast-stroke) solid var(--show-gold);
       border-radius: 0.35em;
       background: var(--show-panel);
@@ -76,7 +100,15 @@
         0 0 36px rgba(255, 204, 0, 0.28),
         0 0 48px rgba(0, 212, 255, 0.12);
       padding: 1.25rem 1.1rem 1.1rem;
-      overflow: visible;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .play-stage[data-phase="guessing"] .play-card,
+    .play-stage[data-phase="results"] .play-card,
+    .play-stage[data-phase="ended"] .play-card {
+      padding: 0.75rem 0.7rem 0.65rem;
     }
 
     .play-block {
@@ -113,8 +145,15 @@
     .play-stage[data-phase="guessing"] .play-logo,
     .play-stage[data-phase="results"] .play-logo,
     .play-stage[data-phase="ended"] .play-logo {
-      width: min(58%, 200px);
-      margin-bottom: 0.4rem;
+      width: min(52%, 168px);
+      margin-bottom: 0.25rem;
+    }
+
+    .play-stage[data-phase="guessing"] .play-header,
+    .play-stage[data-phase="results"] .play-header,
+    .play-stage[data-phase="ended"] .play-header {
+      margin-bottom: 0.55rem;
+      padding-bottom: 0.35rem;
     }
 
     .phase-badge {
@@ -233,7 +272,7 @@
       display: none;
       grid-template-columns: repeat(2, 1fr);
       gap: 0;
-      margin-bottom: 1rem;
+      margin-bottom: 0;
       border: var(--contrast-stroke) solid var(--show-gold);
       border-radius: 0.2em;
       background: var(--show-black);
@@ -245,25 +284,6 @@
     .play-stage[data-phase="ended"] .meta-rail {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-    }
-
-    .play-context {
-      display: none;
-      margin: 0;
-      text-align: center;
-      font-size: 0.82rem;
-      font-weight: 700;
-      line-height: 1.45;
-      color: rgba(200, 220, 245, 0.88);
-    }
-
-    .play-context.is-visible {
-      display: block;
-    }
-
-    .play-context .hint-letter {
-      color: var(--show-gold-hot);
-      text-shadow: 0 0 12px rgba(255, 204, 0, 0.55);
     }
 
     .meta-value.pot {
@@ -378,19 +398,25 @@
     }
 
     .prompt {
-      margin: 0 0 0.85rem;
+      margin: 0 0 var(--block-gap-inner);
       text-align: center;
-      font-size: clamp(0.95rem, 3.5vw, 1.15rem);
+      font-size: clamp(0.88rem, 3.2vw, 1.05rem);
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--show-white);
       text-shadow: 0 0 12px rgba(0, 212, 255, 0.35);
+      line-height: 1.2;
     }
 
     .prompt .hint-letter {
+      font-size: 1.35em;
       color: var(--show-gold-hot);
-      text-shadow: 0 0 16px rgba(255, 204, 0, 0.75);
+      text-shadow: 0 0 18px rgba(255, 204, 0, 0.85);
+    }
+
+    .play-stage[data-phase="guessing"] .prompt {
+      font-size: clamp(1rem, 4vw, 1.2rem);
     }
 
     .field-label {
@@ -1035,12 +1061,17 @@
     }
 
     @media (max-width: 420px) {
-      .play-card { padding: 1rem 0.85rem 0.9rem; }
       .word-tiles { gap: 0.35rem; }
-      .play-stage[data-phase="guessing"] .meta-rail,
-      .play-stage[data-phase="results"] .meta-rail,
-      .play-stage[data-phase="ended"] .meta-rail {
-        grid-template-columns: repeat(2, 1fr);
+      .play-stage[data-phase="guessing"] .meta-label,
+      .play-stage[data-phase="results"] .meta-label,
+      .play-stage[data-phase="ended"] .meta-label {
+        font-size: 0.46rem;
+        letter-spacing: 0.05em;
+      }
+      .play-stage[data-phase="guessing"] .meta-value,
+      .play-stage[data-phase="results"] .meta-value,
+      .play-stage[data-phase="ended"] .meta-value {
+        font-size: 1.35rem;
       }
     }
   </style>
@@ -1091,7 +1122,6 @@
             <span class="meta-value balls" id="metaYours">0</span>
           </div>
         </div>
-        <p class="play-context" id="playContext" aria-live="polite"></p>
       </section>
 
       <section class="play-block play-round" id="playRound" aria-label="Round play">
@@ -1681,15 +1711,6 @@
 
       els.playRound.hidden = false;
 
-      const hintLetter = String(state.publicFirstLetter || '').charAt(0).toUpperCase();
-      if (hintLetter) {
-        els.guessHistory.appendChild(makeHistoryRow(
-          [hintLetter, '', '', '', ''],
-          ['!', 'hint', 'hint', 'hint', 'hint'],
-          { isHint: true },
-        ));
-      }
-
       const history = Array.isArray(viewer.guessHistory) ? viewer.guessHistory : [];
       const officialIndex = officialHistoryIndex(history, viewer, phase);
       let guessIndex = 0;
@@ -1841,49 +1862,24 @@
       updateSubmitLabel();
     }
 
-    function renderPlayContext(state) {
-      const phase = state.phase || 'idle';
-      const parts = [];
-
-      if (phase === 'guessing') {
-        const letter = String(state.publicFirstLetter || '').charAt(0).toUpperCase();
-        if (letter) {
-          parts.push(`Word starts with <span class="hint-letter">${letter}</span>`);
-        }
-        const submitted = Number(state.submittedThisRound || 0);
-        const total = Number(state.playerCount || 0);
-        if (total > 0) {
-          parts.push(`${submitted} of ${total} players submitted`);
-        }
-      } else if (phase === 'results') {
-        parts.push('Results are on the venue display');
-      }
-
-      if (!parts.length) {
-        els.playContext.classList.remove('is-visible');
-        els.playContext.textContent = '';
-        return;
-      }
-
-      els.playContext.innerHTML = parts.join(' · ');
-      els.playContext.classList.add('is-visible');
-    }
-
     function renderPrompt(phase, state) {
       if (phase === 'guessing') {
         const letter = String(state?.publicFirstLetter || '').charAt(0).toUpperCase();
-        const hint = letter ? ` (starts with ${letter})` : '';
+        if (letter) {
+          els.promptLine.innerHTML = `Starts with <span class="hint-letter">${letter}</span>`;
+          return;
+        }
         els.promptLine.textContent = hasSubmittedGuess()
-          ? `Change your word below, then tap Update guess${hint}`
-          : `Enter your five-letter word${hint}`;
+          ? 'Update your guess'
+          : 'Enter your five-letter word';
         return;
       }
       if (phase === 'results') {
-        els.promptLine.textContent = 'Hold tight for the next guess window.';
+        els.promptLine.textContent = 'Next guess soon';
         return;
       }
       if (phase === 'ended') {
-        els.promptLine.textContent = 'Waiting for the next round.';
+        els.promptLine.textContent = 'Waiting for next round';
         return;
       }
       els.promptLine.textContent = 'Enter your guess!';
@@ -2080,7 +2076,6 @@
         els.championBadge.classList.remove('is-visible');
       }
 
-      renderPlayContext(state);
       renderPrompt(phase, state);
       renderLockedIn(state);
       renderGuessHistory(state);
