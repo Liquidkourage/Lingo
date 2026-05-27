@@ -1,5 +1,5 @@
 {
-  "referenceImage": "/assets/reference-mockup.png",
-  "stageBackground": "native-css",
-  "note": "Background-only page built with CSS gradients and layers. No PNG assets used."
+  "referenceImage": "/assets/lingo-display-waiting-v2.png",
+  "stageBackground": "/assets/lingo-display-waiting-v2-bg.png",
+  "note": "Background-only layer extracted from waiting v2 graphic. UI to be added incrementally."
 }
