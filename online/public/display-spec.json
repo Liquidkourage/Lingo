@@ -1,6 +1,7 @@
 {
   "referenceImage": "/assets/lingo-display-waiting-v2.png",
   "stageBackground": "/assets/lingo-display-waiting-v2-bg.png",
-  "logo": "native-svg",
-  "note": "Background + native SVG logo. Further UI layers to be added incrementally."
+  "logo": "/assets/lingo-display-waiting-v2-logo.png",
+  "logoSvg": "/assets/lingo-logo.svg",
+  "note": "Background + exact v2 logo extract. Further UI layers to be added incrementally."
 }
