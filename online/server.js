@@ -787,11 +787,11 @@ app.get("/api/public-state", async (req, res) => {
 app.post("/api/public/join", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
   if (!displayName) {
-    res.status(400).json({ ok: false, error: "Display name is required." });
+    res.status(400).json({ ok: false, error: "User name is required." });
     return;
   }
   if (displayName.length > 40) {
-    res.status(400).json({ ok: false, error: "Display name must be 40 characters or fewer." });
+    res.status(400).json({ ok: false, error: "User name must be 40 characters or fewer." });
     return;
   }
 
@@ -827,7 +827,7 @@ app.post("/api/public/join", async (req, res) => {
 app.post("/api/public/leave", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
   if (!displayName) {
-    res.status(400).json({ ok: false, error: "Display name is required." });
+    res.status(400).json({ ok: false, error: "User name is required." });
     return;
   }
 
@@ -865,7 +865,7 @@ app.post("/api/public/submit-guess", async (req, res) => {
   const guess = normalizeWordInput(req.body.guess);
 
   if (!displayName) {
-    res.status(400).json({ ok: false, error: "Display name is required." });
+    res.status(400).json({ ok: false, error: "User name is required." });
     return;
   }
   if (!isFiveLetterWord(guess)) {

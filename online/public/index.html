@@ -726,8 +726,8 @@
         </div>
       </section>
 
-      <section class="play-identity" id="playIdentity" aria-label="Your display name">
-        <label class="field-label" for="playerName">Your display name</label>
+      <section class="play-identity" id="playIdentity" aria-label="Your user name">
+        <label class="field-label" for="playerName">Your user name</label>
         <div class="name-row">
           <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="e.g. NightOwl" />
         </div>
@@ -1319,7 +1319,7 @@
     async function joinLobby() {
       const displayName = els.playerName.value.trim();
       if (!displayName) {
-        setMessage('Enter your display name above first.', 'error');
+        setMessage('Enter your user name above first.', 'error');
         els.playerName.focus();
         return;
       }
@@ -1347,7 +1347,7 @@
     async function leaveLobby() {
       const displayName = els.playerName.value.trim();
       if (!displayName) {
-        setMessage('Enter your display name above first.', 'error');
+        setMessage('Enter your user name above first.', 'error');
         els.playerName.focus();
         return;
       }
@@ -1391,7 +1391,7 @@
       const guess = currentGuess();
 
       if (!displayName) {
-        setMessage('Enter your display name above first.', 'error');
+        setMessage('Enter your user name above first.', 'error');
         els.playerName.focus();
         return;
       }
