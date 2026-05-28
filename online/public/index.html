@@ -20,6 +20,7 @@
       --show-black: #000008;
       --show-panel: #020818;
       --contrast-stroke: 3px;
+      --play-viewport-top: clamp(1.5rem, 5vh, 2.75rem);
       --feedback-correct: #00b826;
       --feedback-correct-border: #007a1a;
       --feedback-correct-text: #ffffff;
@@ -55,7 +56,7 @@
       align-items: center;
       justify-content: flex-start;
       padding:
-        max(1rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))
+        max(var(--play-viewport-top), calc(env(safe-area-inset-top, 0px) + 1rem))
         max(10px, env(safe-area-inset-right, 0px))
         max(8px, env(safe-area-inset-bottom, 0px))
         max(10px, env(safe-area-inset-left, 0px));
@@ -65,7 +66,7 @@
       position: relative;
       width: min(100%, 520px);
       flex: 1 1 auto;
-      max-height: 100%;
+      max-height: calc(100% - var(--play-viewport-top));
       min-height: 0;
       display: flex;
       flex-direction: column;
