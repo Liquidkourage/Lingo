@@ -1562,6 +1562,14 @@
       box-shadow: 0 0 0 1px #000, 0 0 28px rgba(0, 255, 85, 0.45);
     }
 
+    .stage[data-phase="guessing"] .player-card[data-card-tone="solved"] {
+      border-color: rgba(190, 165, 255, 0.62);
+      box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.34),
+        0 0 20px rgba(100, 60, 180, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before,
     .stage[data-phase="results"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before,
     .stage[data-phase="ended"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before {
@@ -2945,6 +2953,11 @@
         0 0 48px rgba(40, 180, 90, 0.2),
         inset 0 1px 0 rgba(140, 255, 180, 0.25);
       animation: winner-pop 1.4s ease-in-out infinite;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-status="solved"],
+    .stage[data-phase="guessing"] .player-card[data-status="winner"] {
+      animation: none;
     }
 
     @keyframes winner-pop {
@@ -4781,7 +4794,9 @@
       visiblePlayers.forEach((player, index) => {
         const card = document.createElement("article");
         card.className = "player-card";
-        card.dataset.status = player.isWinner ? "winner" : (player.status || (phase === "idle" ? "waiting" : "waiting"));
+        card.dataset.status = phase === "guessing"
+          ? (player.status || "waiting")
+          : (player.isWinner ? "winner" : (player.status || "waiting"));
 
         if (phase !== "idle") {
           card.dataset.cardSkin = LIVE_PLAYER_CARD_SKIN;

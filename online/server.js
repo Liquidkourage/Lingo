@@ -292,18 +292,36 @@ function capTimerRemainingSeconds(remaining, windowSeconds) {
   return Math.min(total, value);
 }
 
+function configuredGuessWindowSeconds(stored) {
+  const value = Number(stored || 0);
+  if (Number.isFinite(value) && value >= 60) {
+    return Math.floor(value);
+  }
+  return DEFAULT_GUESS_WINDOW_SECONDS;
+}
+
+function configuredResultsWindowSeconds(stored) {
+  const value = Number(stored || 0);
+  if (Number.isFinite(value) && value >= MIN_RESULTS_WINDOW_SECONDS) {
+    return Math.floor(value);
+  }
+  return DEFAULT_RESULTS_WINDOW_SECONDS;
+}
+
 function normalizedGuessWindowSeconds(value, fallback = DEFAULT_GUESS_WINDOW_SECONDS) {
   const parsed = Number(value);
-  const base = Number.isFinite(parsed) && parsed > 0 ? parsed : Number(fallback);
-  const safeBase = Number.isFinite(base) && base > 0 ? base : DEFAULT_GUESS_WINDOW_SECONDS;
-  return Math.max(MIN_GUESS_WINDOW_SECONDS, Math.floor(safeBase));
+  if (Number.isFinite(parsed) && parsed >= MIN_GUESS_WINDOW_SECONDS) {
+    return Math.floor(parsed);
+  }
+  return configuredGuessWindowSeconds(fallback);
 }
 
 function normalizedResultsWindowSeconds(value, fallback = DEFAULT_RESULTS_WINDOW_SECONDS) {
   const parsed = Number(value);
-  const base = Number.isFinite(parsed) && parsed > 0 ? parsed : Number(fallback);
-  const safeBase = Number.isFinite(base) && base > 0 ? base : DEFAULT_RESULTS_WINDOW_SECONDS;
-  return Math.max(MIN_RESULTS_WINDOW_SECONDS, Math.floor(safeBase));
+  if (Number.isFinite(parsed) && parsed >= MIN_RESULTS_WINDOW_SECONDS) {
+    return Math.floor(parsed);
+  }
+  return configuredResultsWindowSeconds(fallback);
 }
 
 function windowOpenedAtForRemaining(windowSeconds, remainingSeconds) {
@@ -684,7 +702,7 @@ async function maybeAdvanceTimedPhase(client = pool) {
       if (!state.answer_revealed && balls >= 2 * multiplier) {
         state = await performContinueRound(
           db,
-          normalizedGuessWindowSeconds(state.guess_window_seconds),
+          configuredGuessWindowSeconds(state.guess_window_seconds),
         );
       } else if (!state.answer_revealed) {
         state = await updateState(endCurrentWordPatch(), db);
@@ -1001,8 +1019,8 @@ function serializeState(row) {
     answerRevealed: row.answer_revealed,
     ballMultiplier: row.ball_multiplier,
     ballsRemaining: row.balls_remaining,
-    guessWindowSeconds: row.guess_window_seconds,
-    resultsWindowSeconds: row.results_window_seconds,
+    guessWindowSeconds: configuredGuessWindowSeconds(row.guess_window_seconds),
+    resultsWindowSeconds: configuredResultsWindowSeconds(row.results_window_seconds),
     hostNote: row.host_note,
     championDisplayName: getEffectiveChampion(row),
     firstSolverPlayerId: row.first_solver_player_id ? Number(row.first_solver_player_id) : null,
@@ -1321,7 +1339,7 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
     statusText,
     cardTone,
     resultPattern: (phase === "results" || phase === "ended") && guessIsLegal ? resultPattern : "",
-    isWinner: confirmedSolve || revealedPerfect,
+    isWinner: (phase === "results" || phase === "ended") && (confirmedSolve || revealedPerfect),
     submissionCount: Number(player.submissionCount || 0),
     submittedAtIso: player.submittedAtIso,
     joinedAtIso: player.createdAtIso || player.updatedAtIso || null,
@@ -1797,6 +1815,12 @@ async function handleAdminAction(action, body) {
         balls_remaining: balls,
       }));
     }
+    case "set-timers": {
+      return serializeState(await updateState({
+        guess_window_seconds: normalizedGuessWindowSeconds(body.guessWindowSeconds),
+        results_window_seconds: normalizedResultsWindowSeconds(body.resultsWindowSeconds),
+      }));
+    }
     case "refresh-word-suggestions": {
       const exclusions = parseWordListFromState(state.host_word_exclusions);
       const count = Math.max(1, Number(body.count) || HOST_WORD_SUGGESTION_COUNT);
@@ -1880,14 +1904,14 @@ async function handleAdminAction(action, body) {
       if (state.timer_paused) {
         const remaining = Math.max(0, Number(state.timer_paused_remaining_seconds || 0));
         if (state.phase === "guessing") {
-          const guessWindowSeconds = normalizedGuessWindowSeconds(state.guess_window_seconds);
+          const guessWindowSeconds = configuredGuessWindowSeconds(state.guess_window_seconds);
           return serializeState(await updateState({
             ...clearTimerPausePatch(),
             guess_window_seconds: guessWindowSeconds,
             guess_window_opened_at: windowOpenedAtForRemaining(guessWindowSeconds, remaining),
           }));
         }
-        const resultsWindowSeconds = normalizedResultsWindowSeconds(state.results_window_seconds);
+        const resultsWindowSeconds = configuredResultsWindowSeconds(state.results_window_seconds);
         return serializeState(await updateState({
           ...clearTimerPausePatch(),
           results_window_seconds: resultsWindowSeconds,

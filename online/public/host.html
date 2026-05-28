@@ -825,6 +825,7 @@
             </div>
             <div class="tuning-actions">
               <button id="toggleDoubleBtn" class="secondary" type="button">Toggle 2×</button>
+              <button id="setTimersBtn" class="secondary" type="button">Apply timers</button>
               <button id="setBallsBtn" class="secondary" type="button">Apply balls</button>
             </div>
           </div>
@@ -944,6 +945,7 @@
       continueRoundBtn: document.getElementById('continueRoundBtn'),
       toggleDoubleBtn: document.getElementById('toggleDoubleBtn'),
       setBallsBtn: document.getElementById('setBallsBtn'),
+      setTimersBtn: document.getElementById('setTimersBtn'),
       revealAnswerBtn: document.getElementById('revealAnswerBtn'),
       resetSessionBtn: document.getElementById('resetSessionBtn'),
       pauseTimerBtn: document.getElementById('pauseTimerBtn'),
@@ -992,11 +994,14 @@
       ['championInput', 'champion'],
     ];
 
+    const hostStickyDirtyFields = new Set(['guessSeconds', 'resultsSeconds']);
+
     function bindHostFieldGuard(el, key) {
       if (!el) return;
       el.addEventListener('focus', () => hostDirtyFields.add(key));
       el.addEventListener('input', () => hostDirtyFields.add(key));
       el.addEventListener('blur', () => {
+        if (hostStickyDirtyFields.has(key)) return;
         window.setTimeout(() => {
           if (document.activeElement !== el) {
             hostDirtyFields.delete(key);
@@ -1391,6 +1396,12 @@
       ballsRemaining: Number(els.ballsInput.value),
     }, 'Balls remaining updated.').catch((error) => {
       setStatus(els.actionStatus, error.message || 'Could not update balls.', 'error');
+    }));
+    els.setTimersBtn.addEventListener('click', () => runAction('set-timers', {
+      guessWindowSeconds: Number(els.guessSecondsInput.value),
+      resultsWindowSeconds: Number(els.resultsSecondsInput.value),
+    }, 'Timer settings saved.').catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not update timers.', 'error');
     }));
     els.revealAnswerBtn.addEventListener('click', () => runAction(
       'reveal-answer',
