@@ -192,6 +192,33 @@
       line-height: 1;
     }
 
+    .phase-badge-paused {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 14px rgba(255, 204, 0, 0.55);
+      line-height: 1.1;
+    }
+
+    @keyframes timer-pause-pulse {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 1; }
+    }
+
+    .play-stage[data-timer-paused="true"] .phase-badge-timer {
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 18px rgba(255, 204, 0, 0.65);
+      animation: timer-pause-pulse 1.2s ease-in-out infinite;
+    }
+
+    .play-stage[data-timer-paused="true"] .phase-badge::before {
+      background: var(--show-gold-hot);
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.85);
+      animation: none;
+    }
+
     .phase-badge::before {
       content: "";
       width: 0.55em;
@@ -1731,7 +1758,23 @@
     }
 
     function hasSubmittedGuess() {
-      return Boolean(currentState && currentState.viewer && currentState.viewer.lockedIn);
+      return viewerGuessSettledDuringGuessing(currentState);
+    }
+
+    function viewerGuessSettledDuringGuessing(state) {
+      const viewer = state?.viewer;
+      if ((state?.phase || 'idle') !== 'guessing' || !viewer) {
+        return false;
+      }
+      return Boolean(
+        viewer.lockedIn
+        || viewer.isSolved
+        || String(viewer.roundGuess || '').length === 5,
+      );
+    }
+
+    function shouldEmphasizeTimerPause(state) {
+      return isTimerPaused(state) && !viewerGuessSettledDuringGuessing(state);
     }
 
     function guessWindowKey(state) {
@@ -1894,6 +1937,10 @@
       return true;
     }
 
+    function isTimerPaused(state) {
+      return Boolean(state?.timerPaused) || timerDisplay.windowKey.startsWith('paused:');
+    }
+
     function timerDisplayWindowKey(state) {
       const phase = state.phase || 'idle';
       if (state.timerPaused) {
@@ -1996,7 +2043,7 @@
         timerZeroFetchPending = false;
       }
 
-      if (state.timerPaused) {
+      if (isTimerPaused(state)) {
         const serverRemaining = serverPhaseSecondsRemaining(state);
         timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
         timerDisplay.deadlineMs = null;
@@ -2030,8 +2077,11 @@
     function phaseSecondsRemaining(state) {
       const phase = state.phase || 'idle';
       if (phase === 'idle') return null;
-      if (state.timerPaused) {
-        return timerDisplay.baseRemaining;
+      if (isTimerPaused(state)) {
+        if (timerDisplay.baseRemaining != null) {
+          return timerDisplay.baseRemaining;
+        }
+        return capPhaseSecondsRemaining(state, serverPhaseSecondsRemaining(state));
       }
 
       const deadlineMs = timerDisplay.deadlineMs ?? phaseDeadlineMs(state);
@@ -2064,7 +2114,7 @@
     function phaseTimerText(state) {
       const remaining = phaseSecondsRemaining(state);
       if (remaining == null) return '';
-      return state.timerPaused ? 'paused' : `${remaining}s`;
+      return isTimerPaused(state) ? 'paused' : `${remaining}s`;
     }
 
     function timerToastWindowKey(state) {
@@ -2080,7 +2130,7 @@
 
     function shouldShowTimerFlashes(state) {
       if ((state.phase || 'idle') !== 'guessing') return false;
-      if (state.timerPaused) return false;
+      if (isTimerPaused(state)) return false;
       if (!isViewerJoined(state)) return false;
       if (state.viewer?.isSolved) return false;
       if (hasSubmittedGuess()) return false;
@@ -2125,7 +2175,7 @@
       }
 
       const remaining = phaseSecondsRemaining(state);
-      if (remaining == null || state.timerPaused) {
+      if (remaining == null || isTimerPaused(state)) {
         timerToastLastRemaining = remaining;
         return;
       }
@@ -2159,9 +2209,21 @@
     function renderPhaseBadge(state) {
       const phase = state.phase || 'idle';
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
+      const paused = shouldEmphasizeTimerPause(state);
       const remaining = phaseSecondsRemaining(state);
       maybeFetchOnTimerZero(state, remaining);
-      const timerText = remaining == null ? '' : (state.timerPaused ? 'paused' : `${remaining}s`);
+
+      if (paused) {
+        els.phaseBadge.innerHTML = [
+          `<span class="phase-badge-label">${copy.badge}</span>`,
+          `<span class="phase-badge-timer">${remaining != null ? remaining : '—'}</span>`,
+          '<span class="phase-badge-paused">Paused</span>',
+        ].join('');
+        maybeShowTimerToasts(state);
+        return;
+      }
+
+      const timerText = remaining == null ? '' : `${remaining}s`;
 
       if (!timerText) {
         els.phaseBadge.textContent = copy.badge;
@@ -2648,6 +2710,11 @@
       const viewer = state.viewer;
 
       els.stage.dataset.phase = phase;
+      if (shouldEmphasizeTimerPause(state)) {
+        els.stage.dataset.timerPaused = 'true';
+      } else {
+        delete els.stage.dataset.timerPaused;
+      }
       els.stage.dataset.guessLocked = phase === 'guessing' && viewer?.isSolved ? 'true' : 'false';
       els.stage.dataset.solved = (phase === 'results' || phase === 'ended') && viewer?.isSolved ? 'true' : 'false';
       renderPhaseBadge(state);
@@ -2690,6 +2757,7 @@
 
     function refreshTimerBadge() {
       if (!currentState || currentState.phase === 'idle') return;
+      syncTimerDisplay(currentState);
       renderPhaseBadge(currentState);
     }
 
