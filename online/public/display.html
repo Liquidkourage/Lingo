@@ -3494,7 +3494,7 @@
     let displayShellReady = false;
     let pendingDisplayState = null;
     let lastLiveLayoutApplyKey = "";
-    /** Ball counts frozen at end of guessing — held through results/ended until next guess window. */
+    /** Pot ball count snapshotted during guessing; refreshed when results begin (after scoring). */
     let displayBallSnapshot = null;
 
     const LOBBY_PAGE_COLS = 4;
@@ -4679,20 +4679,18 @@
       return displayPotBalls(state);
     }
 
-    function displayPlayerBallsPublic(player, phase) {
-      if (shouldHoldDisplayBalls(phase) && displayBallSnapshot) {
-        const frozen = displayBallSnapshot.playerBalls.get(playerBallSnapshotKey(player));
-        if (frozen != null) {
-          return frozen;
-        }
-      }
+    function displayPlayerBallsPublic(player) {
       return Math.max(0, Number(player?.balls || 0));
     }
 
-    function syncDisplayBallSnapshot(state) {
+    function syncDisplayBallSnapshot(state, previousPhase) {
       const phase = state?.phase || "idle";
       if (phase === "guessing") {
         captureDisplayBallSnapshot(state);
+      } else if (phase === "results" || phase === "ended") {
+        if (previousPhase === "guessing") {
+          captureDisplayBallSnapshot(state);
+        }
       } else if (phase === "idle") {
         clearDisplayBallSnapshot();
       }
@@ -4827,7 +4825,7 @@
           ballsEl.className = "player-balls";
           nameEl.insertAdjacentElement("afterend", ballsEl);
         }
-        ballsEl.textContent = formatPlayerBalls(displayPlayerBallsPublic(player, phase));
+        ballsEl.textContent = formatPlayerBalls(displayPlayerBallsPublic(player));
       } else if (ballsEl) {
         ballsEl.remove();
       }
@@ -4958,9 +4956,6 @@
     }
 
     function patchPlayerBoardBalls(players, phase) {
-      if (shouldHoldDisplayBalls(phase)) {
-        return;
-      }
       const cards = els.playerBoardBody.querySelectorAll(".player-card");
       if (!cards.length) return;
       const byName = new Map(
@@ -4972,7 +4967,7 @@
         if (!nameEl || !ballsEl) return;
         const player = byName.get(String(nameEl.textContent || "").toLowerCase());
         if (!player) return;
-        ballsEl.textContent = formatPlayerBalls(displayPlayerBallsPublic(player, phase));
+        ballsEl.textContent = formatPlayerBalls(displayPlayerBallsPublic(player));
       });
     }
 
@@ -5007,7 +5002,7 @@
       const structureKey = buildPlayerBoardStructureKey(state);
 
       if (!options.force && signature === lastPlayerBoardSignature) {
-        if (phase === "guessing" && players.length) {
+        if ((phase === "guessing" || phase === "results") && players.length) {
           patchPlayerBoardBalls(players, phase);
         }
         return;
@@ -5187,9 +5182,9 @@
         renderSubtitle(currentState);
       }
 
+      syncDisplayBallSnapshot(currentState, previousPhase);
       els.statRound.textContent = String(currentState.roundNumber || 0);
       els.statBalls.textContent = String(displayPotBallsPublic(currentState));
-      syncDisplayBallSnapshot(currentState);
       els.statPlayers.textContent = String(playerCount);
       els.statSubmitted.textContent = String(currentState.submittedThisRound || 0);
       renderUnsubmittedStat(currentState);
