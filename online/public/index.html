@@ -1737,24 +1737,44 @@
 
     function statusContextKey(state) {
       const phase = state.phase || 'idle';
+      const round = Number(state.roundNumber || 0);
+      const windowSeq = Number(state.guessWindowSeq || 0);
       if (phase === 'guessing') {
         return `guessing:${guessWindowKey(state)}`;
       }
-      return `${phase}:${Number(state.roundNumber || 0)}`;
+      if (phase === 'results') {
+        return `results:${round}:${state.resultsWindowOpenedAtIso || ''}:${windowSeq}`;
+      }
+      if (phase === 'ended') {
+        return `ended:${round}:${windowSeq}:${state.revealedWord || ''}`;
+      }
+      return `${phase}:${round}`;
+    }
+
+    function isGuessingPhaseMessage(text) {
+      const value = String(text || '');
+      return value.includes('Guess saved')
+        || value.includes('Guess locked in')
+        || value.includes('you can still change it');
     }
 
     function syncStatusMessage(state) {
       const key = statusContextKey(state);
-      if (key === lastStatusContextKey) return;
-      lastStatusContextKey = key;
-
       const phase = state.phase || 'idle';
+      const keyChanged = key !== lastStatusContextKey;
+      if (keyChanged) {
+        lastStatusContextKey = key;
+      }
+
       const needsRejoin = isLiveRound(phase) && isNameLocked() && activeUserName() && !isViewerJoined(state);
       if (needsRejoin) {
         setMessage('Tap Re-join game to continue playing on this device.', 'error');
         return;
       }
-      setMessage('');
+
+      if (keyChanged || (phase !== 'guessing' && isGuessingPhaseMessage(els.message.textContent))) {
+        setMessage('');
+      }
     }
 
     function syncGuessDraftFromState(state) {
