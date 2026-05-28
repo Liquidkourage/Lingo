@@ -1637,6 +1637,8 @@
         #008040 75%,
         #002010 100%
       );
+      background-size: 240% 240%;
+      animation: card-liquid-flow 18s ease-in-out infinite;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after,
@@ -1645,6 +1647,7 @@
       background:
         radial-gradient(ellipse 85% 65% at 20% 25%, rgba(0, 255, 85, 0.35), transparent 58%),
         radial-gradient(ellipse 75% 60% at 80% 75%, rgba(255, 204, 0, 0.15), transparent 52%);
+      animation: card-liquid-bloom 22s ease-in-out infinite;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"] .player-name,
@@ -1680,6 +1683,14 @@
         #aa0028 75%,
         #300008 100%
       );
+      background-size: 240% 240%;
+      animation: card-liquid-flow 18s ease-in-out infinite;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::after,
+    .stage[data-phase="results"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::after,
+    .stage[data-phase="ended"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::after {
+      animation: card-liquid-bloom 22s ease-in-out infinite;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"] .player-name,
@@ -3446,10 +3457,13 @@
     let lobbyRotateTimer = null;
     let lobbyRotateSignature = "";
     let lastPlayerBoardSignature = "";
+    let lastPlayerBoardStructureKey = "";
     let lastWordTilesSignature = "";
     let lastWordClueSignature = "";
     let knownLobbyPlayerIds = null;
     let apiConnected = false;
+    let displayShellReady = false;
+    let pendingDisplayState = null;
     let lastLiveLayoutApplyKey = "";
     /** Ball counts frozen at end of guessing — held through results/ended until next guess window. */
     let displayBallSnapshot = null;
@@ -4641,6 +4655,186 @@
       }
     }
 
+    function playerBoardPlayerKey(player) {
+      if (player?.id != null && player.id !== "") {
+        return `id:${player.id}`;
+      }
+      return `name:${playerLobbyKey(player)}`;
+    }
+
+    function visiblePlayersForBoard(state) {
+      const phase = state.phase || "idle";
+      const players = Array.isArray(state.players) ? state.players : [];
+      if (phase === "idle") {
+        const sortedPlayers = prepareLobbyPlayers(players);
+        return getLobbyPageInfo(sortedPlayers).slice;
+      }
+      return players;
+    }
+
+    function buildPlayerBoardStructureKey(state) {
+      const phase = state.phase || "idle";
+      const players = Array.isArray(state.players) ? state.players : [];
+      const visiblePlayers = visiblePlayersForBoard(state);
+      const structure = {
+        phase,
+        keys: visiblePlayers.map((player) => playerBoardPlayerKey(player)),
+      };
+
+      if (phase === "idle") {
+        const sortedPlayers = prepareLobbyPlayers(players);
+        const pageInfo = getLobbyPageInfo(sortedPlayers);
+        structure.pageIndex = pageInfo.pageIndex;
+        structure.rotating = players.length > LOBBY_PAGE_SIZE;
+      } else {
+        const layout = resolveLivePlayerLayout(visiblePlayers.length, phase);
+        structure.layout = `${layout.cols}x${layout.rows}`;
+      }
+
+      return JSON.stringify(structure);
+    }
+
+    function applyPlayerCardContent(card, player, index, phase, state, options) {
+      card.dataset.playerKey = playerBoardPlayerKey(player);
+      card.dataset.status = phase === "guessing"
+        ? (player.status || "waiting")
+        : (player.isWinner ? "winner" : (player.status || "waiting"));
+
+      if (phase !== "idle") {
+        card.dataset.cardSkin = LIVE_PLAYER_CARD_SKIN;
+        card.dataset.cardTone = player.cardTone || "default";
+        if (player.isFirstSolver) {
+          card.dataset.firstSolve = "true";
+        } else {
+          delete card.dataset.firstSolve;
+        }
+      } else {
+        delete card.dataset.cardSkin;
+        delete card.dataset.cardTone;
+        delete card.dataset.firstSolve;
+      }
+
+      const lobbyLabel = player.lobbyLabel || player.displayName || "Player";
+      if (isLingoAmbassador(player)) {
+        card.dataset.lingoAmbassador = "true";
+        if (!card.querySelector(".player-ambassador-kicker")) {
+          card.insertBefore(renderAmbassadorKicker(), card.firstChild);
+        }
+      } else {
+        delete card.dataset.lingoAmbassador;
+        card.querySelector(".player-ambassador-kicker")?.remove();
+      }
+
+      let nameEl = card.querySelector(".player-name");
+      if (!nameEl) {
+        nameEl = document.createElement("div");
+        nameEl.className = "player-name";
+        card.appendChild(nameEl);
+      }
+      nameEl.textContent = lobbyLabel;
+      if (player.displayName && lobbyLabel !== player.displayName) {
+        nameEl.title = player.displayName;
+      } else {
+        nameEl.removeAttribute("title");
+      }
+      if (phase === "idle") {
+        nameEl.style.setProperty("--chip-name-size", chipNameSize(lobbyLabel));
+      } else {
+        nameEl.style.removeProperty("--chip-name-size");
+      }
+
+      let ballsEl = card.querySelector(".player-balls");
+      if (phase !== "idle") {
+        if (!ballsEl) {
+          ballsEl = document.createElement("div");
+          ballsEl.className = "player-balls";
+          nameEl.insertAdjacentElement("afterend", ballsEl);
+        }
+        ballsEl.textContent = formatPlayerBalls(displayPlayerBallsPublic(player, phase));
+      } else if (ballsEl) {
+        ballsEl.remove();
+      }
+
+      const showRevealBoxes = (phase === "results" || phase === "ended")
+        && player.hasSubmitted
+        && (player.resultPattern || player.guessIsLegal === false);
+      const revealPattern = player.resultPattern
+        || (player.guessIsLegal === false ? "/////" : "");
+
+      let statusEl = card.querySelector(".player-status");
+      if (!statusEl) {
+        statusEl = document.createElement("div");
+        statusEl.className = "player-status";
+        card.appendChild(statusEl);
+      }
+      statusEl.classList.toggle(
+        "is-redundant",
+        showRevealBoxes && player.statusText === "Round result",
+      );
+      if (phase === "idle") {
+        statusEl.textContent = "In lobby";
+      } else if (showRevealBoxes && player.statusText === "Round result") {
+        statusEl.textContent = "";
+      } else {
+        statusEl.textContent = player.statusText || "";
+      }
+
+      const existingPattern = card.querySelector(".pattern-row.reveal-letter-row");
+      const normalizedPattern = revealPattern ? revealPattern.padEnd(5, "/").slice(0, 5) : "";
+      if (showRevealBoxes && normalizedPattern) {
+        if (!existingPattern || existingPattern.dataset.pattern !== normalizedPattern) {
+          existingPattern?.remove();
+          card.appendChild(renderRevealPatternBoxes(normalizedPattern, {
+            animate: Boolean(options.animateGuessReveal),
+          }));
+        }
+      } else if (existingPattern) {
+        existingPattern.remove();
+      }
+    }
+
+    function createPlayerCard(player, index, phase, state, options, newArrivals) {
+      const card = document.createElement("article");
+      card.className = "player-card";
+      if (phase === "idle") {
+        const lobbyKey = playerLobbyKey(player);
+        if (newArrivals.has(lobbyKey)) {
+          card.classList.add("is-new-arrival");
+        } else {
+          card.style.setProperty("--chip-enter-delay", `${index * 45}ms`);
+        }
+      }
+      applyPlayerCardContent(card, player, index, phase, state, options);
+      return card;
+    }
+
+    function patchPlayerBoardCards(state, options) {
+      const phase = state.phase || "idle";
+      const visiblePlayers = visiblePlayersForBoard(state);
+      const grid = els.playerBoardBody.querySelector(".player-grid");
+      if (!grid) {
+        return false;
+      }
+
+      const cards = [...grid.querySelectorAll(".player-card")];
+      if (cards.length !== visiblePlayers.length) {
+        return false;
+      }
+
+      for (let index = 0; index < visiblePlayers.length; index += 1) {
+        const player = visiblePlayers[index];
+        const card = cards[index];
+        if (card.dataset.playerKey !== playerBoardPlayerKey(player)) {
+          return false;
+        }
+      }
+
+      visiblePlayers.forEach((player, index) => {
+        applyPlayerCardContent(cards[index], player, index, phase, state, options);
+      });
+      return true;
+    }
+
     function buildPlayerBoardSignature(state) {
       const phase = state.phase || "idle";
       const players = Array.isArray(state.players) ? state.players : [];
@@ -4715,6 +4909,7 @@
     function renderRevealPatternBoxes(pattern, options = {}) {
       const row = document.createElement("div");
       row.className = `pattern-row reveal-letter-row${options.animate ? " is-revealing" : ""}`;
+      row.dataset.pattern = (pattern || "").padEnd(5, "/").slice(0, 5);
       row.setAttribute("aria-label", "Guess result colors");
       const marks = (pattern || "").padEnd(5, "/").slice(0, 5).split("");
       marks.forEach((mark, index) => {
@@ -4732,13 +4927,26 @@
       const phase = state.phase || "idle";
       const players = Array.isArray(state.players) ? state.players : [];
       const signature = buildPlayerBoardSignature(state);
+      const structureKey = buildPlayerBoardStructureKey(state);
+
       if (!options.force && signature === lastPlayerBoardSignature) {
         if (phase === "guessing" && players.length) {
           patchPlayerBoardBalls(players, phase);
         }
         return;
       }
+
+      if (
+        !options.force
+        && structureKey === lastPlayerBoardStructureKey
+        && patchPlayerBoardCards(state, options)
+      ) {
+        lastPlayerBoardSignature = signature;
+        return;
+      }
+
       lastPlayerBoardSignature = signature;
+      lastPlayerBoardStructureKey = structureKey;
 
       els.playerBoardBody.innerHTML = "";
 
@@ -4758,11 +4966,9 @@
         return;
       }
 
-      let visiblePlayers = players;
+      const visiblePlayers = visiblePlayersForBoard(state);
       if (phase === "idle") {
         const sortedPlayers = prepareLobbyPlayers(players);
-        const pageInfo = getLobbyPageInfo(sortedPlayers);
-        visiblePlayers = pageInfo.slice;
         applyIdleLobbyLayout(visiblePlayers.length, sortedPlayers.length);
       } else {
         syncLiveBoardLayout(players.length, phase);
@@ -4777,77 +4983,7 @@
       const newArrivals = phase === "idle" ? detectNewLobbyArrivals(players, phase) : new Set();
 
       visiblePlayers.forEach((player, index) => {
-        const card = document.createElement("article");
-        card.className = "player-card";
-        card.dataset.status = phase === "guessing"
-          ? (player.status || "waiting")
-          : (player.isWinner ? "winner" : (player.status || "waiting"));
-
-        if (phase !== "idle") {
-          card.dataset.cardSkin = LIVE_PLAYER_CARD_SKIN;
-          card.dataset.cardTone = player.cardTone || "default";
-          if (player.isFirstSolver) {
-            card.dataset.firstSolve = "true";
-          }
-        }
-
-        if (phase === "idle") {
-          const lobbyKey = playerLobbyKey(player);
-          if (newArrivals.has(lobbyKey)) {
-            card.classList.add("is-new-arrival");
-          } else {
-            card.style.setProperty("--chip-enter-delay", `${index * 45}ms`);
-          }
-        }
-
-        const name = document.createElement("div");
-        name.className = "player-name";
-        const lobbyLabel = player.lobbyLabel || player.displayName || "Player";
-        if (isLingoAmbassador(player)) {
-          card.dataset.lingoAmbassador = "true";
-          card.appendChild(renderAmbassadorKicker());
-        }
-        name.textContent = lobbyLabel;
-        if (player.displayName && lobbyLabel !== player.displayName) {
-          name.title = player.displayName;
-        }
-        if (phase === "idle") {
-          name.style.setProperty("--chip-name-size", chipNameSize(lobbyLabel));
-        }
-        card.appendChild(name);
-
-        if (phase !== "idle") {
-          const balls = document.createElement("div");
-          balls.className = "player-balls";
-          balls.textContent = formatPlayerBalls(displayPlayerBallsPublic(player, phase));
-          card.appendChild(balls);
-        }
-
-        const showRevealBoxes = (phase === "results" || phase === "ended")
-          && player.hasSubmitted
-          && (player.resultPattern || player.guessIsLegal === false);
-        const revealPattern = player.resultPattern
-          || (player.guessIsLegal === false ? "/////" : "");
-
-        const status = document.createElement("div");
-        status.className = "player-status";
-        if (phase === "idle") {
-          status.textContent = "In lobby";
-        } else if (showRevealBoxes && player.statusText === "Round result") {
-          status.classList.add("is-redundant");
-          status.textContent = "";
-        } else {
-          status.textContent = player.statusText || "";
-        }
-        card.appendChild(status);
-
-        if (showRevealBoxes && revealPattern) {
-          card.appendChild(renderRevealPatternBoxes(revealPattern, {
-            animate: Boolean(options.animateGuessReveal),
-          }));
-        }
-
-        fragment.appendChild(card);
+        fragment.appendChild(createPlayerCard(player, index, phase, state, options, newArrivals));
       });
 
       grid.appendChild(fragment);
@@ -4900,6 +5036,11 @@
     }
 
     function renderState(state) {
+      if (!IS_DEMO && !displayShellReady) {
+        pendingDisplayState = state;
+        return;
+      }
+
       currentState = applyDemoState(state);
       syncTimerDisplay(currentState);
       const phase = currentState.phase || "idle";
@@ -4913,6 +5054,7 @@
         els.stage.classList.add("is-phase-flash");
         window.setTimeout(() => els.stage.classList.remove("is-phase-flash"), 700);
         lastPlayerBoardSignature = "";
+        lastPlayerBoardStructureKey = "";
         lastWordTilesSignature = "";
         lastWordClueSignature = "";
       }
@@ -5048,6 +5190,40 @@
       }, 8000);
     }
 
+    function waitForImage(img) {
+      if (!img) {
+        return Promise.resolve();
+      }
+      if (img.complete) {
+        return img.decode?.().catch(() => {}) ?? Promise.resolve();
+      }
+      return new Promise((resolve) => {
+        const done = () => {
+          img.decode?.().catch(() => {}).finally(resolve);
+        };
+        img.addEventListener("load", done, { once: true });
+        img.addEventListener("error", done, { once: true });
+      });
+    }
+
+    async function prepareDisplayShell() {
+      const images = [
+        document.querySelector(".stage-bg"),
+        document.querySelector(".lingo-logo"),
+        document.getElementById("playQr"),
+      ].filter(Boolean);
+      await Promise.all([
+        document.fonts.ready,
+        ...images.map((img) => waitForImage(img)),
+      ]);
+      displayShellReady = true;
+      if (pendingDisplayState) {
+        const queued = pendingDisplayState;
+        pendingDisplayState = null;
+        renderState(queued);
+      }
+    }
+
     async function fetchPublicState() {
       if (IS_DEMO) return;
 
@@ -5087,12 +5263,15 @@
       };
 
       if (IS_DEMO) {
+        displayShellReady = true;
         renderState(buildDemoState());
         initKioskMode();
         return;
       }
 
-      renderState(emptyIdleState);
+      setStandby(true, "Loading display…");
+      await prepareDisplayShell();
+      setStandby(true, "Connecting to the game server…");
 
       try {
         await fetchPublicState();
