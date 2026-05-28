@@ -36,6 +36,10 @@ const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
 const HOST_WORD_SUGGESTION_COUNT = 100;
 const ALL_SUBMITTED_GRACE_SECONDS = 10;
+const MIN_GUESS_WINDOW_SECONDS = 30;
+const DEFAULT_GUESS_WINDOW_SECONDS = 90;
+const MIN_RESULTS_WINDOW_SECONDS = 15;
+const DEFAULT_RESULTS_WINDOW_SECONDS = 45;
 let rehearsalAutoSubmitEnabled = false;
 let appReady = false;
 let shuttingDown = false;
@@ -286,6 +290,28 @@ function capTimerRemainingSeconds(remaining, windowSeconds) {
   const value = Math.max(0, Number(remaining || 0));
   if (!total) return value;
   return Math.min(total, value);
+}
+
+function normalizedGuessWindowSeconds(value, fallback = DEFAULT_GUESS_WINDOW_SECONDS) {
+  const parsed = Number(value);
+  const base = Number.isFinite(parsed) && parsed > 0 ? parsed : Number(fallback);
+  const safeBase = Number.isFinite(base) && base > 0 ? base : DEFAULT_GUESS_WINDOW_SECONDS;
+  return Math.max(MIN_GUESS_WINDOW_SECONDS, Math.floor(safeBase));
+}
+
+function normalizedResultsWindowSeconds(value, fallback = DEFAULT_RESULTS_WINDOW_SECONDS) {
+  const parsed = Number(value);
+  const base = Number.isFinite(parsed) && parsed > 0 ? parsed : Number(fallback);
+  const safeBase = Number.isFinite(base) && base > 0 ? base : DEFAULT_RESULTS_WINDOW_SECONDS;
+  return Math.max(MIN_RESULTS_WINDOW_SECONDS, Math.floor(safeBase));
+}
+
+function windowOpenedAtForRemaining(windowSeconds, remainingSeconds) {
+  const total = Number(windowSeconds || 0);
+  const remaining = Math.max(0, Number(remainingSeconds || 0));
+  if (!total) return windowOpenedAtIso();
+  const elapsed = Math.max(0, total - remaining);
+  return new Date(Date.now() - elapsed * 1000).toISOString();
 }
 
 function timerRemainingForState(row) {
@@ -580,7 +606,10 @@ async function performContinueRound(client, guessWindowSeconds) {
   const nextState = await updateState({
     phase: "guessing",
     guess_window_opened_at: windowOpenedAtIso(),
-    guess_window_seconds: Number(guessWindowSeconds || state.guess_window_seconds || 90),
+    guess_window_seconds: normalizedGuessWindowSeconds(
+      guessWindowSeconds,
+      state.guess_window_seconds,
+    ),
     first_solver_player_id: null,
     guess_window_seq: nextWindowSeq,
     round_ball_stakes: roundBallStakes,
@@ -653,7 +682,10 @@ async function maybeAdvanceTimedPhase(client = pool) {
       const multiplier = Number(state.ball_multiplier || 1);
       const balls = Number(state.balls_remaining || 0);
       if (!state.answer_revealed && balls >= 2 * multiplier) {
-        state = await performContinueRound(db, state.guess_window_seconds);
+        state = await performContinueRound(
+          db,
+          normalizedGuessWindowSeconds(state.guess_window_seconds),
+        );
       } else if (!state.answer_revealed) {
         state = await updateState(endCurrentWordPatch(), db);
       }
@@ -1697,8 +1729,14 @@ async function handleAdminAction(action, body) {
           balls_remaining: openingStake,
           guess_window_seq: 1,
           round_ball_stakes: [openingStake],
-          guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
-          results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
+          guess_window_seconds: normalizedGuessWindowSeconds(
+            body.guessWindowSeconds,
+            state.guess_window_seconds,
+          ),
+          results_window_seconds: normalizedResultsWindowSeconds(
+            body.resultsWindowSeconds,
+            state.results_window_seconds,
+          ),
           guess_window_opened_at: windowOpenedAtIso(),
           first_solver_player_id: null,
           ...clearTimerPausePatch(),
@@ -1735,7 +1773,7 @@ async function handleAdminAction(action, body) {
         await client.query("begin");
         const nextState = await performContinueRound(
           client,
-          Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
+          normalizedGuessWindowSeconds(body.guessWindowSeconds, state.guess_window_seconds),
         );
         await client.query("commit");
         return serializeState(nextState);
@@ -1842,16 +1880,18 @@ async function handleAdminAction(action, body) {
       if (state.timer_paused) {
         const remaining = Math.max(0, Number(state.timer_paused_remaining_seconds || 0));
         if (state.phase === "guessing") {
+          const guessWindowSeconds = normalizedGuessWindowSeconds(state.guess_window_seconds);
           return serializeState(await updateState({
             ...clearTimerPausePatch(),
-            guess_window_seconds: remaining,
-            guess_window_opened_at: windowOpenedAtIso(),
+            guess_window_seconds: guessWindowSeconds,
+            guess_window_opened_at: windowOpenedAtForRemaining(guessWindowSeconds, remaining),
           }));
         }
+        const resultsWindowSeconds = normalizedResultsWindowSeconds(state.results_window_seconds);
         return serializeState(await updateState({
           ...clearTimerPausePatch(),
-          results_window_seconds: remaining,
-          results_window_opened_at: windowOpenedAtIso(),
+          results_window_seconds: resultsWindowSeconds,
+          results_window_opened_at: windowOpenedAtForRemaining(resultsWindowSeconds, remaining),
         }));
       }
 
@@ -1983,8 +2023,14 @@ app.post("/api/admin/rehearsal/:command", requireAdmin, async (req, res) => {
               balls_remaining: openingStake,
               guess_window_seq: 1,
               round_ball_stakes: [openingStake],
-              guess_window_seconds: Number(body.guessWindowSeconds || state.guess_window_seconds || 90),
-              results_window_seconds: Number(body.resultsWindowSeconds || state.results_window_seconds || 45),
+              guess_window_seconds: normalizedGuessWindowSeconds(
+                body.guessWindowSeconds,
+                state.guess_window_seconds,
+              ),
+              results_window_seconds: normalizedResultsWindowSeconds(
+                body.resultsWindowSeconds,
+                state.results_window_seconds,
+              ),
               guess_window_opened_at: windowOpenedAtIso(),
               first_solver_player_id: null,
               ...clearTimerPausePatch(),
