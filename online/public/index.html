@@ -810,12 +810,21 @@
       display: block;
     }
 
+    .play-stage[data-phase="results"]:not([data-solved="true"]) .word-entry {
+      display: block;
+      margin-top: 0.65rem;
+    }
+
     .guess-actions {
       display: none;
       margin-top: 0.55rem;
     }
 
     .play-stage[data-phase="guessing"] .guess-actions {
+      display: block;
+    }
+
+    .play-stage[data-phase="results"]:not([data-solved="true"]) .guess-actions {
       display: block;
     }
 
@@ -1339,6 +1348,7 @@
     let pollTimer = null;
     let tickTimer = null;
     let guessDraftDirty = false;
+    let lastPlayPhase = 'idle';
     let guessCaretIndex = null;
     let lastGuessWindowKey = '';
     let lastStatusContextKey = '';
@@ -1651,7 +1661,7 @@
     }
 
     function focusGuessSlot(index) {
-      if (!canTypeGuess() || !els.guessCapture) return;
+      if (!canDraftGuess() || !els.guessCapture) return;
       if (index < 0 || index > 4) return;
       if (els.inputs[index]?.classList.contains('is-revealed')) return;
 
@@ -1674,7 +1684,7 @@
     }
 
     function backspaceGuess() {
-      if (!canTypeGuess() || !els.guessCapture) return;
+      if (!canDraftGuess() || !els.guessCapture) return;
       guessDraftDirty = true;
 
       const input = els.guessCapture;
@@ -1748,12 +1758,22 @@
       return Boolean(currentState?.viewer?.isSolved);
     }
 
-    function canTypeGuess() {
+    function canDraftGuess(state = currentState) {
+      const phase = state?.phase || 'idle';
       return Boolean(
-        currentState
-        && currentState.phase === 'guessing'
-        && isViewerJoined(currentState)
-        && !viewerSolvedCurrentWord(),
+        state
+        && isViewerJoined(state)
+        && !Boolean(state?.viewer?.isSolved)
+        && (phase === 'guessing' || phase === 'results'),
+      );
+    }
+
+    function canSubmitGuess(state = currentState) {
+      return Boolean(
+        state
+        && (state.phase || 'idle') === 'guessing'
+        && isViewerJoined(state)
+        && !Boolean(state?.viewer?.isSolved),
       );
     }
 
@@ -1825,21 +1845,32 @@
 
     function syncGuessDraftFromState(state) {
       if (!state.viewer) return;
-      if (!canTypeGuess()) {
-        if (viewerSolvedCurrentWord() && state.phase === 'guessing') {
-          setGuessText('');
-        }
+      const phase = state.phase || 'idle';
+
+      if (phase === 'guessing' && state.viewer.isSolved) {
+        setGuessText('');
+        return;
+      }
+
+      if (!canDraftGuess(state)) {
+        return;
+      }
+
+      if (phase === 'results') {
         return;
       }
 
       const windowKey = guessWindowKey(state);
       if (windowKey !== lastGuessWindowKey) {
         lastGuessWindowKey = windowKey;
-        guessDraftDirty = false;
-        const saved = normalizedGuessText(state.viewer.roundGuess || '');
-        setGuessText(saved.length === 5 ? saved : '');
-        guessCaretIndex = null;
-        paintGuessSelection();
+        const preserveDraft = guessDraftDirty && currentGuess().length > 0;
+        if (!preserveDraft) {
+          guessDraftDirty = false;
+          const saved = normalizedGuessText(state.viewer.roundGuess || '');
+          setGuessText(saved.length === 5 ? saved : '');
+          guessCaretIndex = null;
+          paintGuessSelection();
+        }
         return;
       }
 
@@ -1871,7 +1902,7 @@
     }
 
     function focusGuessCapture() {
-      if (!canTypeGuess() || !els.guessCapture) return;
+      if (!canDraftGuess() || !els.guessCapture) return;
       els.guessCapture.focus({ preventScroll: true });
     }
 
@@ -1883,7 +1914,7 @@
     }
 
     function insertGuessLetter(letter) {
-      if (!canTypeGuess() || !els.guessCapture) return;
+      if (!canDraftGuess() || !els.guessCapture) return;
       const ch = normalizedGuessText(letter);
       if (!ch) return;
 
@@ -1913,13 +1944,15 @@
     }
 
     function handleGuessKeydown(event) {
-      if (!canTypeGuess()) return false;
+      if (!canDraftGuess()) return false;
       if (!hasUserName() || !isNameLocked()) return false;
 
       const key = event.key;
       if (key === 'Enter') {
         event.preventDefault();
-        submitGuess();
+        if (canSubmitGuess()) {
+          submitGuess();
+        }
         return true;
       }
       if (key === 'Backspace') {
@@ -2527,13 +2560,15 @@
     }
 
     function updateSubmitEnabled() {
-      const canGuess = canTypeGuess();
-      els.submit.disabled = !canGuess;
+      const canDraft = canDraftGuess();
+      const canSubmit = canSubmitGuess();
+      els.submit.disabled = !canSubmit;
+      els.clear.disabled = !canDraft;
       els.inputs.forEach((input) => {
-        input.disabled = !canGuess;
+        input.disabled = !canDraft;
       });
       if (els.guessCapture) {
-        els.guessCapture.disabled = !canGuess;
+        els.guessCapture.disabled = !canDraft;
       }
       updateSubmitLabel();
     }
@@ -2559,7 +2594,9 @@
         return;
       }
       if (phase === 'results') {
-        els.promptLine.textContent = 'Next guess soon';
+        els.promptLine.textContent = canDraftGuess(state)
+          ? 'Try your next guess — submit when guessing opens'
+          : 'Next guess soon';
         return;
       }
       if (phase === 'ended') {
@@ -2613,7 +2650,9 @@
 
     function handleKeyboardPress(action) {
       if (action === 'ENTER') {
-        submitGuess();
+        if (canSubmitGuess()) {
+          submitGuess();
+        }
         return;
       }
       if (action === 'BACK') {
@@ -2644,8 +2683,11 @@
     }
 
     function updateKeyboardEnabled(phase) {
-      const enabled = canTypeGuess();
+      const canDraft = canDraftGuess();
+      const canSubmit = canSubmitGuess();
       els.keyboard.querySelectorAll('.keyboard-key').forEach((button) => {
+        const action = button.dataset.action;
+        const enabled = action === 'ENTER' ? canSubmit : canDraft;
         button.disabled = !enabled;
         button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
       });
@@ -2706,6 +2748,13 @@
       syncTimerDisplay(state);
       syncStatusMessage(state);
       const phase = state.phase || 'idle';
+      if (phase === 'results' && lastPlayPhase === 'guessing') {
+        setGuessText('');
+        guessDraftDirty = false;
+        guessCaretIndex = null;
+        paintGuessSelection();
+      }
+      lastPlayPhase = phase;
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
       const viewer = state.viewer;
 
@@ -2867,6 +2916,9 @@
     }
 
     async function submitGuess() {
+      if (!canSubmitGuess()) {
+        return;
+      }
       if (!isNameLocked()) {
         setMessage('Tap Use name & join first.', 'error');
         openNameEditor();
@@ -2944,7 +2996,9 @@
       els.guessCapture.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
-          submitGuess();
+          if (canSubmitGuess()) {
+            submitGuess();
+          }
         }
       });
 
@@ -2956,7 +3010,7 @@
 
       if (els.wordTiles) {
         els.wordTiles.addEventListener('pointerdown', (event) => {
-          if (!canTypeGuess()) return;
+          if (!canDraftGuess()) return;
           if (event.target.closest('.letter-input')) return;
           focusGuessCapture();
         });
@@ -2965,7 +3019,7 @@
       els.inputs.forEach((input, index) => {
         input.addEventListener('pointerdown', (event) => {
           event.preventDefault();
-          if (!canTypeGuess()) return;
+          if (!canDraftGuess()) return;
           focusGuessSlot(index);
         });
       });

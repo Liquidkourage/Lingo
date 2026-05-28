@@ -2161,7 +2161,11 @@ app.use((req, res, next) => {
       ? "display.html"
       : req.path === "/rehearsal"
         ? "rehearsal.html"
-        : "index.html";
+        : req.path === "/bingo" || req.path === "/bingo.html"
+          ? "bingo.html"
+          : req.path === "/bingo/calls" || req.path === "/bingo-calls.html"
+            ? "bingo-calls.html"
+            : "index.html";
   res.sendFile(path.join(staticDir, fileName));
 });
 

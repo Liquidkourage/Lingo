@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lingo Bingo — Your card</title>
+  <style>
+    :root {
+      --bg: #05070a;
+      --panel: #0d6efd;
+      --panel-dark: #0849a6;
+      --marked: #4caf50;
+      --text: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      padding: 16px;
+    }
+    .wrap { max-width: 520px; margin: 0 auto; }
+    h1 { text-align: center; font-size: 1.6rem; margin: 0 0 8px; }
+    .sub { text-align: center; color: #b8d4ff; margin-bottom: 16px; font-size: 0.95rem; }
+    .panel {
+      background: linear-gradient(180deg, #3a8cff, var(--panel));
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    label { display: block; margin-bottom: 6px; font-weight: 700; }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+    }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    button {
+      flex: 1;
+      min-width: 120px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(180deg, #0850bb, var(--panel-dark));
+      color: #fff;
+    }
+    button.secondary { background: linear-gradient(180deg, #5c6f8a, #40536f); }
+    .message { text-align: center; min-height: 1.2em; font-weight: 700; margin: 8px 0; }
+    .message.error { color: #ffcdd2; }
+    .message.success { color: #d8ffea; }
+    table.bingo {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+    table.bingo th {
+      background: rgba(0, 0, 0, 0.25);
+      padding: 8px;
+      font-size: 1.2rem;
+    }
+    table.bingo td {
+      width: 20%;
+      aspect-ratio: 1;
+      text-align: center;
+      vertical-align: middle;
+      font-size: clamp(1rem, 4vw, 1.4rem);
+      font-weight: 800;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    table.bingo td.free {
+      background: rgba(255, 255, 255, 0.2);
+      cursor: default;
+      font-size: 0.85rem;
+    }
+    table.bingo td.marked {
+      background: var(--marked);
+      color: #042;
+      transform: scale(0.96);
+    }
+    .game-id { text-align: center; font-size: 0.85rem; color: #b8d4ff; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Lingo Bingo</h1>
+    <p class="sub">Standard 5×5 card. Tap numbers as they are called.</p>
+
+    <div class="panel">
+      <label for="playerName">Your name</label>
+      <input id="playerName" type="text" maxlength="40" autocomplete="nickname" />
+      <div class="row">
+        <button type="button" id="loadCardBtn">Show my card</button>
+        <button type="button" id="clearMarksBtn" class="secondary">Clear marks</button>
+      </div>
+      <p id="status" class="message" aria-live="polite"></p>
+      <p class="game-id" id="gameIdLine"></p>
+    </div>
+
+    <div class="panel" id="cardPanel" hidden>
+      <table class="bingo" aria-label="Your bingo card">
+        <thead>
+          <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
+        </thead>
+        <tbody id="bingoBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/bingo-shared.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const gameId = params.get("game") || "";
+
+    const els = {
+      playerName: document.getElementById("playerName"),
+      loadCardBtn: document.getElementById("loadCardBtn"),
+      clearMarksBtn: document.getElementById("clearMarksBtn"),
+      status: document.getElementById("status"),
+      gameIdLine: document.getElementById("gameIdLine"),
+      cardPanel: document.getElementById("cardPanel"),
+      bingoBody: document.getElementById("bingoBody"),
+    };
+
+    let grid = [];
+    let marked = [];
+
+    function setStatus(text, type = "") {
+      els.status.textContent = text || "";
+      els.status.className = "message" + (type ? ` ${type}` : "");
+    }
+
+    function marksStorageKey(displayName) {
+      return `bingo_marks_${gameId}_${displayName.trim().toLowerCase()}`;
+    }
+
+    function nameStorageKey() {
+      return "bingo_player_name";
+    }
+
+    function loadMarks(displayName) {
+      try {
+        const raw = localStorage.getItem(marksStorageKey(displayName));
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    function saveMarks(displayName) {
+      try {
+        localStorage.setItem(marksStorageKey(displayName), JSON.stringify(marked));
+      } catch (_error) {
+        // Ignore storage failures.
+      }
+    }
+
+    function renderCard() {
+      els.bingoBody.replaceChildren();
+      for (let row = 0; row < 5; row += 1) {
+        const tr = document.createElement("tr");
+        for (let column = 0; column < 5; column += 1) {
+          const td = document.createElement("td");
+          const value = grid[row][column];
+          const isFree = row === 2 && column === 2;
+          td.textContent = isFree ? "FREE" : String(value);
+          if (isFree) td.classList.add("free");
+          if (marked[row][column]) td.classList.add("marked");
+          if (!isFree) {
+            td.addEventListener("click", () => {
+              marked[row][column] = !marked[row][column];
+              td.classList.toggle("marked", marked[row][column]);
+              saveMarks(els.playerName.value.trim());
+            });
+          }
+          tr.appendChild(td);
+        }
+        els.bingoBody.appendChild(tr);
+      }
+      els.cardPanel.hidden = false;
+    }
+
+    function showCard() {
+      if (!gameId) {
+        setStatus("Missing ?game= in the link. Ask the host for the bingo URL.", "error");
+        return;
+      }
+      const displayName = els.playerName.value.trim();
+      if (!displayName) {
+        setStatus("Enter your name first.", "error");
+        return;
+      }
+
+      localStorage.setItem(nameStorageKey(), displayName);
+      const card = BingoShared.generateBingoCard(gameId, displayName);
+      grid = card.grid;
+      marked = card.marked;
+
+      const savedMarks = loadMarks(displayName);
+      if (Array.isArray(savedMarks) && savedMarks.length === 5) {
+        marked = savedMarks;
+        marked[2][2] = true;
+      }
+
+      renderCard();
+      setStatus("Card ready — mark numbers as you hear them.", "success");
+    }
+
+    function clearMarks() {
+      if (!grid.length) return;
+      marked = Array.from({ length: 5 }, () => Array(5).fill(false));
+      marked[2][2] = true;
+      saveMarks(els.playerName.value.trim());
+      renderCard();
+      setStatus("Marks cleared.", "success");
+    }
+
+    els.loadCardBtn.addEventListener("click", showCard);
+    els.clearMarksBtn.addEventListener("click", clearMarks);
+    els.playerName.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") showCard();
+    });
+
+    if (gameId) {
+      els.gameIdLine.textContent = `Game: ${gameId}`;
+    } else {
+      els.gameIdLine.textContent = "Waiting for host link…";
+      setStatus("Ask the host for the player bingo link.", "error");
+    }
+
+    const storedName = localStorage.getItem(nameStorageKey());
+    if (storedName) els.playerName.value = storedName;
+  </script>
+</body>
+</html>
