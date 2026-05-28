@@ -271,16 +271,15 @@
       position: relative;
       z-index: 1;
       width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.04em;
       text-align: center;
       font-size: 0.88em;
       font-weight: 900;
       letter-spacing: 0.05em;
-      line-height: 1.05;
+      line-height: 1.1;
       text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       color: var(--show-gold-hot);
       text-shadow:
         0 2px 0 #000,
@@ -315,11 +314,6 @@
 
     .player-card[data-lingo-ambassador="true"] {
       overflow: visible;
-    }
-
-    .player-ambassador-line {
-      display: block;
-      white-space: nowrap;
     }
 
     .stage[data-phase="idle"] .player-ambassador-kicker {
@@ -3774,10 +3768,7 @@
     function renderAmbassadorKicker() {
       const kicker = document.createElement("div");
       kicker.className = "player-ambassador-kicker";
-      kicker.innerHTML = [
-        '<span class="player-ambassador-line">Lingo</span>',
-        '<span class="player-ambassador-line">Ambassador:</span>',
-      ].join("");
+      kicker.textContent = "Lingo Ambassador:";
       return kicker;
     }
 
@@ -3796,6 +3787,9 @@
         card.insertBefore(renderAmbassadorKicker(), card.firstChild);
       } else {
         kicker.querySelector(".player-ambassador-icon")?.remove();
+        if (kicker.textContent !== "Lingo Ambassador:") {
+          kicker.textContent = "Lingo Ambassador:";
+        }
       }
       if (!card.querySelector(".player-ambassador-badge")) {
         card.appendChild(renderAmbassadorBadge());
