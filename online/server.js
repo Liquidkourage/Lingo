@@ -21,6 +21,7 @@ const port = Number(process.env.PORT || 3000);
 const adminKey = String(process.env.LINGO_ADMIN_KEY || "").trim();
 const databaseUrl = String(process.env.DATABASE_URL || "").trim();
 const defaultChampion = String(process.env.LINGO_CHAMPION || "").trim();
+const DEFAULT_PLAY_SITE_URL = "https://lingo.liquidkourage.com";
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required.");
@@ -998,6 +999,7 @@ function serializePublicState(row) {
   return {
     ...state,
     publicFirstLetter,
+    playSiteUrl: getPlaySiteUrl(),
     revealedWord: state.answerRevealed ? state.currentWord : "",
     currentWord: state.answerRevealed ? state.currentWord : "",
   };
@@ -1319,17 +1321,18 @@ async function clearSessionPlayers(sessionId, client = pool) {
   );
 }
 
-function playPageUrl(req) {
-  const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https")
-    .split(",")[0]
-    .trim();
-  const host = req.headers["x-forwarded-host"] || req.get("host");
-  return `${proto}://${host}/`;
+function getPlaySiteUrl() {
+  const configured = String(process.env.PLAY_SITE_URL || DEFAULT_PLAY_SITE_URL).trim();
+  return (configured || DEFAULT_PLAY_SITE_URL).replace(/\/$/, "");
+}
+
+function playPageUrl() {
+  return `${getPlaySiteUrl()}/`;
 }
 
 app.get("/api/play-qr", async (req, res) => {
   try {
-    const url = playPageUrl(req);
+    const url = playPageUrl();
     const png = await QRCode.toBuffer(url, {
       type: "png",
       width: 400,

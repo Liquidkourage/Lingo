@@ -4053,15 +4053,17 @@
       return String(value);
     }
 
-    function playSiteUrl() {
-      return window.location.origin.replace(/\/$/, "");
+    function playSiteUrl(state = currentState) {
+      const configured = String(state?.playSiteUrl || "").trim();
+      if (configured) return configured.replace(/\/$/, "");
+      return "https://lingo.liquidkourage.com";
     }
 
-    function playSiteUrlDisplay() {
+    function playSiteUrlDisplay(state = currentState) {
       try {
-        return new URL(playSiteUrl()).host;
+        return new URL(playSiteUrl(state)).host;
       } catch (_error) {
-        return playSiteUrl().replace(/^https?:\/\//, "");
+        return playSiteUrl(state).replace(/^https?:\/\//, "");
       }
     }
 
@@ -4607,9 +4609,9 @@
     }
 
     function renderIdleInfo(state = {}) {
-      els.playUrl.textContent = playSiteUrlDisplay();
-      els.playQr.src = `${playSiteUrl()}/api/play-qr`;
-      els.playQr.alt = `QR code for ${playSiteUrlDisplay()}`;
+      els.playUrl.textContent = playSiteUrlDisplay(state);
+      els.playQr.src = `${playSiteUrl(state)}/api/play-qr`;
+      els.playQr.alt = `QR code for ${playSiteUrlDisplay(state)}`;
 
       const hostNote = state.hostNote?.trim();
       if (hostNote) {
