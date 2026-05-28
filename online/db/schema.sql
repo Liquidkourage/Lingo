@@ -34,9 +34,6 @@ alter table app_state add column if not exists round_ball_stakes jsonb not null 
 alter table app_state add column if not exists guess_window_seq integer not null default 0;
 alter table app_state add column if not exists all_players_submitted_at timestamptz;
 
-alter table players add column if not exists player_token text;
-create unique index if not exists idx_players_player_token on players(player_token) where player_token is not null;
-
 insert into app_state (
   id,
   version,
@@ -87,6 +84,8 @@ create table if not exists players (
 
 alter table players add column if not exists balls integer not null default 0;
 alter table players add column if not exists solved_current_word boolean not null default false;
+alter table players add column if not exists player_token text;
+create unique index if not exists idx_players_player_token on players(player_token) where player_token is not null;
 
 create table if not exists guess_submissions (
   id bigserial primary key,

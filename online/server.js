@@ -37,6 +37,11 @@ const HOST_WORD_SUGGESTION_COUNT = 100;
 const ALL_SUBMITTED_GRACE_SECONDS = 10;
 let rehearsalAutoSubmitEnabled = false;
 let appReady = false;
+let shuttingDown = false;
+let httpServer = null;
+let timerTickHandle = null;
+let rehearsalTickHandle = null;
+const SHUTDOWN_FORCE_MS = 20000;
 
 function rehearsalDeps() {
   return {
@@ -921,7 +926,10 @@ function requireAdmin(req, res, next) {
 async function ensureSchema() {
   const sql = fs.readFileSync(schemaPath, "utf8");
   await pool.query(sql);
-  await seedWordsTable(pool);
+  const totalWords = await countWords(pool);
+  if (totalWords === 0) {
+    await seedWordsTable(pool);
+  }
 }
 
 function serializeState(row) {
@@ -1314,6 +1322,10 @@ app.get("/api/play-qr", async (req, res) => {
 });
 
 app.get("/health/live", (_req, res) => {
+  if (shuttingDown) {
+    res.status(503).json({ ok: false, status: "draining" });
+    return;
+  }
   res.json({ ok: true });
 });
 
@@ -2054,32 +2066,112 @@ app.use((req, res, next) => {
   res.sendFile(path.join(staticDir, fileName));
 });
 
-async function bootstrap() {
-  await ensureSchema();
-  const state = await getState();
-  const totalWords = await countWords(pool);
-  appReady = true;
-  console.log(`Lingo online app ready on port ${port}. Session: ${state.session_id}. Words: ${totalWords}`);
+function startBackgroundTimers() {
+  timerTickHandle = setInterval(() => {
+    if (shuttingDown || !appReady) return;
+    maybeAdvanceTimedPhase().catch((error) => {
+      if (!shuttingDown) {
+        console.error("timer tick", error.message);
+      }
+    });
+  }, 1000);
+  rehearsalTickHandle = setInterval(() => {
+    if (shuttingDown || !rehearsalAutoSubmitEnabled) return;
+    runRehearsalBotSubmissions().catch((error) => {
+      if (!shuttingDown) {
+        console.error("rehearsal bots", error.message);
+      }
+    });
+  }, 2500);
 }
 
-app.listen(port, () => {
-  console.log(`Listening on http://localhost:${port}`);
-  bootstrap()
-    .then(() => {
-      setInterval(() => {
-        maybeAdvanceTimedPhase().catch((error) => {
-          console.error("timer tick", error.message);
+function stopBackgroundTimers() {
+  if (timerTickHandle) {
+    clearInterval(timerTickHandle);
+    timerTickHandle = null;
+  }
+  if (rehearsalTickHandle) {
+    clearInterval(rehearsalTickHandle);
+    rehearsalTickHandle = null;
+  }
+}
+
+async function bootstrapWithRetry(maxAttempts = 5) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await ensureSchema();
+      const state = await getState();
+      const totalWords = await countWords(pool);
+      appReady = true;
+      console.log(`Lingo online app ready. Session: ${state.session_id}. Words: ${totalWords}`);
+      return;
+    } catch (error) {
+      console.error(`Bootstrap attempt ${attempt}/${maxAttempts} failed:`, error.message);
+      if (attempt >= maxAttempts) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1500 * attempt));
+    }
+  }
+}
+
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  appReady = false;
+  console.log(`${signal} received — shutting down gracefully`);
+
+  stopBackgroundTimers();
+
+  const forceExitTimer = setTimeout(() => {
+    console.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, SHUTDOWN_FORCE_MS);
+  forceExitTimer.unref();
+
+  try {
+    if (httpServer) {
+      await new Promise((resolve, reject) => {
+        httpServer.close((error) => {
+          if (error) reject(error);
+          else resolve();
         });
-      }, 1000);
-      setInterval(() => {
-        if (!rehearsalAutoSubmitEnabled) return;
-        runRehearsalBotSubmissions().catch((error) => {
-          console.error("rehearsal bots", error.message);
-        });
-      }, 2500);
-    })
-    .catch((error) => {
-      console.error("Failed to initialize app:", error);
+      });
+    }
+    await pool.end();
+    clearTimeout(forceExitTimer);
+    console.log("Shutdown complete");
+    process.exit(0);
+  } catch (error) {
+    clearTimeout(forceExitTimer);
+    console.error("Shutdown error:", error.message);
+    process.exit(1);
+  }
+}
+
+async function startServer() {
+  process.on("SIGTERM", () => {
+    shutdown("SIGTERM").catch((error) => {
+      console.error("SIGTERM handler failed:", error.message);
       process.exit(1);
     });
+  });
+  process.on("SIGINT", () => {
+    shutdown("SIGINT").catch((error) => {
+      console.error("SIGINT handler failed:", error.message);
+      process.exit(1);
+    });
+  });
+
+  await bootstrapWithRetry();
+
+  httpServer = app.listen(port, "0.0.0.0", () => {
+    console.log(`Listening on http://0.0.0.0:${port}`);
+    startBackgroundTimers();
+  });
+}
+
+startServer().catch((error) => {
+  console.error("Failed to start app:", error);
+  process.exit(1);
 });

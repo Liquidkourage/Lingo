@@ -57,8 +57,10 @@ If the service root is still `/`, the repo-root `railway.toml` builds only `onli
 Railway runs:
 
 ```bash
-npm start
+node server.js
 ```
+
+(Configured in `railway.toml` — do not use `npm start` on Railway; npm intercepts SIGTERM and the previous deploy crashes during rollout.)
 
 That startup also auto-imports the bundled legal word list into Postgres.
 

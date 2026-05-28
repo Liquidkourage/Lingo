@@ -6,7 +6,8 @@ buildCommand = "npm ci --prefix online --omit=dev"
 watchPatterns = ["online/**"]
 
 [deploy]
-startCommand = "npm run online:start"
+startCommand = "node online/server.js"
 healthcheckPath = "/health/live"
 healthcheckTimeout = 180
+drainingSeconds = 15
 restartPolicyType = "ON_FAILURE"

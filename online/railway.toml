@@ -3,7 +3,8 @@ builder = "RAILPACK"
 buildCommand = "npm ci --omit=dev"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "node server.js"
 healthcheckPath = "/health/live"
 healthcheckTimeout = 180
+drainingSeconds = 15
 restartPolicyType = "ON_FAILURE"
