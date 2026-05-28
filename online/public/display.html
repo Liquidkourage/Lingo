@@ -3340,7 +3340,9 @@
       windowKey: "",
       baseRemaining: null,
       syncedAtMs: 0,
+      deadlineMs: null,
     };
+    let timerZeroFetchPending = false;
     let lastPhase = null;
     let tickTimer = null;
     let lobbyPageIndex = 0;
@@ -3950,24 +3952,40 @@
       if (!key) {
         timerDisplay.windowKey = "";
         timerDisplay.baseRemaining = null;
+        timerDisplay.deadlineMs = null;
         return;
       }
 
       const keyChanged = key !== timerDisplay.windowKey;
       timerDisplay.windowKey = key;
+      if (keyChanged) {
+        timerZeroFetchPending = false;
+      }
 
       if (state.timerPaused) {
         const serverRemaining = serverPhaseSecondsRemaining(state);
         timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
+        timerDisplay.deadlineMs = null;
         return;
       }
 
-      const deadlineMs = phaseDeadlineMs(state);
-      if (deadlineMs != null) {
+      const openedDeadlineMs = phaseDeadlineMs(state);
+      if (openedDeadlineMs != null) {
+        if (keyChanged) {
+          const serverRemaining = serverPhaseSecondsRemaining(state);
+          if (serverRemaining != null && serverRemaining >= 0) {
+            timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
+          } else {
+            timerDisplay.deadlineMs = openedDeadlineMs;
+          }
+        } else if (timerDisplay.deadlineMs == null) {
+          timerDisplay.deadlineMs = openedDeadlineMs;
+        }
         timerDisplay.baseRemaining = null;
         return;
       }
 
+      timerDisplay.deadlineMs = null;
       const serverRemaining = serverPhaseSecondsRemaining(state);
       if (keyChanged || timerDisplay.baseRemaining == null || serverRemaining == null) {
         timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
@@ -3982,7 +4000,7 @@
         return timerDisplay.baseRemaining;
       }
 
-      const deadlineMs = phaseDeadlineMs(state);
+      const deadlineMs = timerDisplay.deadlineMs ?? phaseDeadlineMs(state);
       if (deadlineMs != null) {
         const maxSeconds = phase === "guessing"
           ? Number(state.guessWindowSeconds || 0)
@@ -3993,6 +4011,17 @@
       if (timerDisplay.baseRemaining == null) return null;
       const elapsed = Math.floor((Date.now() - timerDisplay.syncedAtMs) / 1000);
       return capPhaseSecondsRemaining(state, timerDisplay.baseRemaining - elapsed);
+    }
+
+    function maybeFetchOnTimerZero(state, remaining) {
+      if (IS_DEMO || timerZeroFetchPending) return;
+      if (remaining !== 0) return;
+      const phase = state.phase || "idle";
+      if (phase !== "guessing" && phase !== "results") return;
+      timerZeroFetchPending = true;
+      fetchPublicState().finally(() => {
+        timerZeroFetchPending = false;
+      });
     }
 
     function formatTimerValue(value) {
@@ -4805,6 +4834,7 @@
       }
 
       syncSealedGuessDots(state);
+      maybeFetchOnTimerZero(state, remaining);
     }
 
     function renderState(state) {
@@ -4816,7 +4846,8 @@
         setStandby(false);
       }
 
-      if (lastPhase && lastPhase !== phase) {
+      const phaseChanged = Boolean(lastPhase && lastPhase !== phase);
+      if (phaseChanged) {
         els.stage.classList.add("is-phase-flash");
         window.setTimeout(() => els.stage.classList.remove("is-phase-flash"), 700);
         lastPlayerBoardSignature = "";
@@ -4827,6 +4858,7 @@
       lastPhase = phase;
 
       els.stage.dataset.phase = phase;
+      renderTimer(currentState);
 
       const players = Array.isArray(currentState.players) ? currentState.players : [];
       const playerCount = Math.max(Number(currentState.playerCount || 0), players.length);
@@ -4878,20 +4910,30 @@
       els.statSubmitted.textContent = String(currentState.submittedThisRound || 0);
       renderUnsubmittedStat(currentState);
 
-      renderTimer(currentState);
       renderAnswerFanfare(currentState);
       renderWordTiles(currentState);
       renderWordClue(currentState);
-      renderPlayerBoard(currentState, {
+      const boardOptions = {
         animateGuessReveal: previousPhase === "guessing"
           && (phase === "results" || phase === "ended"),
-      });
-      syncSealedGuessDots(currentState);
+      };
+      const renderBoard = () => {
+        renderPlayerBoard(currentState, boardOptions);
+        syncSealedGuessDots(currentState);
+      };
+      if (phaseChanged && phase !== "idle") {
+        window.requestAnimationFrame(renderBoard);
+      } else {
+        renderBoard();
+      }
       syncLobbyRotation(currentState);
     }
 
     function scheduleTimerTick() {
-      const delay = Math.max(1, 1000 - (Date.now() % 1000));
+      const phase = currentState?.phase || "idle";
+      const delay = (phase === "guessing" || phase === "results")
+        ? 250
+        : Math.max(1, 1000 - (Date.now() % 1000));
       tickTimer = window.setTimeout(() => {
         tickTimer = null;
         if (currentState) {

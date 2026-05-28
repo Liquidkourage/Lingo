@@ -1317,7 +1317,9 @@
       windowKey: '',
       baseRemaining: null,
       syncedAtMs: 0,
+      deadlineMs: null,
     };
+    let timerZeroFetchPending = false;
     let keyboardWordKey = '';
     const keyboardLetterStates = new Map();
 
@@ -1935,24 +1937,40 @@
       if (!key) {
         timerDisplay.windowKey = '';
         timerDisplay.baseRemaining = null;
+        timerDisplay.deadlineMs = null;
         return;
       }
 
       const keyChanged = key !== timerDisplay.windowKey;
       timerDisplay.windowKey = key;
+      if (keyChanged) {
+        timerZeroFetchPending = false;
+      }
 
       if (state.timerPaused) {
         const serverRemaining = serverPhaseSecondsRemaining(state);
         timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
+        timerDisplay.deadlineMs = null;
         return;
       }
 
-      const deadlineMs = phaseDeadlineMs(state);
-      if (deadlineMs != null) {
+      const openedDeadlineMs = phaseDeadlineMs(state);
+      if (openedDeadlineMs != null) {
+        if (keyChanged) {
+          const serverRemaining = serverPhaseSecondsRemaining(state);
+          if (serverRemaining != null && serverRemaining >= 0) {
+            timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
+          } else {
+            timerDisplay.deadlineMs = openedDeadlineMs;
+          }
+        } else if (timerDisplay.deadlineMs == null) {
+          timerDisplay.deadlineMs = openedDeadlineMs;
+        }
         timerDisplay.baseRemaining = null;
         return;
       }
 
+      timerDisplay.deadlineMs = null;
       const serverRemaining = serverPhaseSecondsRemaining(state);
       if (keyChanged || timerDisplay.baseRemaining == null || serverRemaining == null) {
         timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
@@ -1967,7 +1985,7 @@
         return timerDisplay.baseRemaining;
       }
 
-      const deadlineMs = phaseDeadlineMs(state);
+      const deadlineMs = timerDisplay.deadlineMs ?? phaseDeadlineMs(state);
       if (deadlineMs != null) {
         const maxSeconds = phase === 'guessing'
           ? Number(state.guessWindowSeconds || 0)
@@ -1981,6 +1999,17 @@
         state,
         timerDisplay.baseRemaining - elapsed,
       );
+    }
+
+    function maybeFetchOnTimerZero(state, remaining) {
+      if (IS_DEMO || timerZeroFetchPending) return;
+      if (remaining !== 0) return;
+      const phase = state.phase || 'idle';
+      if (phase !== 'guessing' && phase !== 'results') return;
+      timerZeroFetchPending = true;
+      fetchPublicState().finally(() => {
+        timerZeroFetchPending = false;
+      });
     }
 
     function phaseTimerText(state) {
@@ -2081,7 +2110,9 @@
     function renderPhaseBadge(state) {
       const phase = state.phase || 'idle';
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
-      const timerText = phaseTimerText(state);
+      const remaining = phaseSecondsRemaining(state);
+      maybeFetchOnTimerZero(state, remaining);
+      const timerText = remaining == null ? '' : (state.timerPaused ? 'paused' : `${remaining}s`);
 
       if (!timerText) {
         els.phaseBadge.textContent = copy.badge;
@@ -2607,7 +2638,10 @@
     }
 
     function scheduleTimerTick() {
-      const delay = Math.max(1, 1000 - (Date.now() % 1000));
+      const phase = currentState?.phase || 'idle';
+      const delay = (phase === 'guessing' || phase === 'results')
+        ? 250
+        : Math.max(1, 1000 - (Date.now() % 1000));
       tickTimer = window.setTimeout(() => {
         tickTimer = null;
         refreshTimerBadge();
