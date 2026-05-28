@@ -497,7 +497,9 @@ async function allActivePlayersSubmitted(state, client = pool) {
   const round = Number(state.round_number || 0);
   const awaiting = [];
   for (const player of players) {
-    if (player.solvedCurrentWord || await playerHasPerfectSolveForRound(state, player, client)) {
+    // Skip players who already solved this word in an earlier window (continue-round).
+    // In-window perfect guesses still count as submitted — do not skip them here.
+    if (player.solvedCurrentWord) {
       continue;
     }
     awaiting.push(player);
