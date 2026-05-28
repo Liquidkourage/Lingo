@@ -1367,6 +1367,7 @@
       max-width: 100%;
       max-height: 100%;
       min-height: 0;
+      /* Grid structure: LIVE_LAYOUT_TIERS in display.html (data-live-layout e.g. "5x3") */
       grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
       grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
       place-content: stretch;
@@ -1747,7 +1748,10 @@
       opacity: 1;
       filter: none;
       border-style: solid;
-      transform: scale(1.02);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 18px rgba(187, 68, 255, 0.45),
+        0 0 12px rgba(255, 204, 0, 0.35);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin] .player-name,
@@ -3390,14 +3394,46 @@
     let lastWordClueSignature = "";
     let knownLobbyPlayerIds = null;
     let apiConnected = false;
+    let lastLiveLayoutStructureKey = "";
 
     const LOBBY_PAGE_COLS = 4;
     const LOBBY_PAGE_ROWS = 5;
     const LOBBY_PAGE_SIZE = LOBBY_PAGE_COLS * LOBBY_PAGE_ROWS;
     const LOBBY_ROTATE_MS = 4000;
     const LIVE_DENSE_THRESHOLD = 12;
-    const LIVE_CARD_SCALE_MIN = 0.92;
+    const LIVE_CARD_SCALE_MIN = 0.58;
     const LIVE_CARD_SCALE_MAX = 1.22;
+    /**
+     * Definitive public-display player card grid (live phases only).
+     * Columns and gap are fixed per player-count band; rows = ceil(players / cols).
+     * Grid structure changes only when player count crosses a tier — never from
+     * viewport width, resize, or per-card content updates.
+     */
+    const LIVE_LAYOUT_TIERS = [
+      { maxPlayers: 5, cols: 5, gapPx: 12 },
+      { maxPlayers: 10, cols: 5, gapPx: 12 },
+      { maxPlayers: 15, cols: 5, gapPx: 10 },
+      { maxPlayers: 20, cols: 5, gapPx: 10 },
+      { maxPlayers: 25, cols: 5, gapPx: 9 },
+      { maxPlayers: 30, cols: 6, gapPx: 9 },
+      { maxPlayers: 36, cols: 6, gapPx: 8 },
+      { maxPlayers: 42, cols: 7, gapPx: 8 },
+      { maxPlayers: 49, cols: 7, gapPx: 7 },
+      { maxPlayers: 56, cols: 8, gapPx: 7 },
+      { maxPlayers: 64, cols: 8, gapPx: 6 },
+      { maxPlayers: Infinity, cols: 8, gapPx: 6 },
+    ];
+    /** Base card text scale by row count — shrink-only pass may go lower to fit viewport. */
+    const LIVE_CARD_SCALE_BY_ROWS = {
+      1: 1.10,
+      2: 1.00,
+      3: 0.92,
+      4: 0.84,
+      5: 0.76,
+      6: 0.70,
+      7: 0.64,
+      8: 0.60,
+    };
     const ALL_SUBMITTED_GRACE_SECONDS = 10;
     const SEALED_GUESS_DOTS_SECONDS = 10;
 
@@ -3629,39 +3665,36 @@
       };
     }
 
-    function computeLiveGridColumns(playerCount) {
-      if (playerCount <= LIVE_DENSE_THRESHOLD) return Math.min(5, Math.max(1, playerCount));
-      return Math.max(1, Math.floor(Math.sqrt(playerCount * 0.85)));
-    }
-
-    function liveGridCellSize(width, height, cols, rows, gap) {
-      return {
-        cellW: (width - gap * (cols - 1)) / cols,
-        cellH: (height - gap * (rows - 1)) / rows,
-      };
-    }
-
-    function liveGridLayoutFits(cellW, cellH, minCellW, minCellH) {
-      return cellW >= minCellW && cellH >= minCellH;
-    }
-
-    function estimateLiveChipMinimums(phase) {
-      const isReveal = phase === "results" || phase === "ended";
-      return {
-        width: isReveal ? 88 : 72,
-        height: isReveal ? 52 : 44,
-      };
-    }
-
-    function liveBoardGap(width, height, playerCount) {
-      const base = Math.round(Math.min(width, height) * 0.024);
-      if (playerCount >= 40) {
-        return Math.max(6, Math.min(10, base));
+    function resolveLivePlayerLayout(playerCount, phase) {
+      const count = Math.max(1, Math.floor(Number(playerCount) || 0));
+      const tier = LIVE_LAYOUT_TIERS.find((entry) => count <= entry.maxPlayers)
+        || LIVE_LAYOUT_TIERS[LIVE_LAYOUT_TIERS.length - 1];
+      const cols = Math.min(tier.cols, count);
+      const rows = Math.ceil(count / cols);
+      const gap = tier.gapPx;
+      let scale = LIVE_CARD_SCALE_BY_ROWS[rows] || LIVE_CARD_SCALE_MIN;
+      if (phase === "results" || phase === "ended") {
+        scale = Math.max(LIVE_CARD_SCALE_MIN, scale * 0.94);
       }
-      if (playerCount >= 20) {
-        return Math.max(7, Math.min(12, base));
+      scale = Math.min(LIVE_CARD_SCALE_MAX, Math.max(LIVE_CARD_SCALE_MIN, scale));
+      return { cols, rows, gap, scale, count };
+    }
+
+    function liveLayoutStructureKey(playerCount, phase) {
+      const layout = resolveLivePlayerLayout(playerCount, phase);
+      return `${layout.cols}x${layout.rows}:${layout.gap}`;
+    }
+
+    function applyLiveLayoutDensity(playerCount) {
+      if (playerCount >= 50) {
+        els.stage.dataset.liveDensity = "xl";
+      } else if (playerCount >= 24) {
+        els.stage.dataset.liveDensity = "lg";
+      } else if (playerCount >= LIVE_DENSE_THRESHOLD) {
+        els.stage.dataset.liveDensity = "md";
+      } else {
+        delete els.stage.dataset.liveDensity;
       }
-      return Math.max(8, Math.min(14, base));
     }
 
     function measureLiveChipContentBounds(forcedScale = null, restoreScale = true) {
@@ -3716,144 +3749,112 @@
       };
     }
 
+    function liveBoardInnerSize() {
+      const boardBody = els.playerBoardBody;
+      const style = getComputedStyle(boardBody);
+      const padH = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
+      const padV = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
+      const width = Math.max(0, boardBody.clientWidth - padH);
+      const height = Math.max(
+        0,
+        (boardBody.clientHeight || Math.max(240, Math.floor(window.innerHeight * 0.38))) - padV,
+      );
+      return { width, height };
+    }
+
     function liveBoardCellSize() {
+      const grid = els.playerBoardBody.querySelector(".player-grid");
+      const inner = liveBoardInnerSize();
       const cols = Number.parseInt(getComputedStyle(els.stage).getPropertyValue("--live-cols"), 10) || 1;
       const rows = Number.parseInt(getComputedStyle(els.stage).getPropertyValue("--live-rows"), 10) || 1;
       const gap = Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-gap")) || 8;
-      const boardW = els.playerBoardBody.clientWidth;
-      const boardH = els.playerBoardBody.clientHeight;
+      const boardW = grid?.clientWidth || inner.width;
+      const boardH = grid?.clientHeight || inner.height;
       return {
         cellW: (boardW - gap * (cols - 1)) / cols,
         cellH: (boardH - gap * (rows - 1)) / rows,
       };
     }
 
-    function fitLiveCardTextScale(cellH) {
+    function readLiveCardScale() {
+      return Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-card-scale")) || 1;
+    }
+
+    function setLiveCardScale(scale) {
+      const clamped = Math.min(LIVE_CARD_SCALE_MAX, Math.max(LIVE_CARD_SCALE_MIN, scale));
+      els.stage.style.setProperty("--live-card-scale", clamped.toFixed(3));
+      return clamped;
+    }
+
+    function applyLiveCardTextScale(cellH, schemaScale = null) {
       if (!cellH || cellH <= 0) {
         return;
       }
-      const targetFill = cellH * 0.96;
-      let lo = LIVE_CARD_SCALE_MIN;
-      let hi = LIVE_CARD_SCALE_MAX;
-      let best = lo;
+      const scaleCeiling = schemaScale == null
+        ? readLiveCardScale()
+        : Math.min(LIVE_CARD_SCALE_MAX, Math.max(LIVE_CARD_SCALE_MIN, schemaScale));
+      setLiveCardScale(scaleCeiling);
 
-      for (let attempt = 0; attempt < 14; attempt += 1) {
-        const mid = (lo + hi) / 2;
-        const bounds = measureLiveChipContentBounds(mid, false);
+      let bounds = measureLiveChipContentBounds();
+      if (!bounds) {
+        return;
+      }
+      let scale = readLiveCardScale();
+      const targetFill = cellH * 0.96;
+      for (let attempt = 0; attempt < 8 && (bounds.requiredHeight > cellH || bounds.height > targetFill); attempt += 1) {
+        const ratio = Math.min(cellH / bounds.requiredHeight, targetFill / bounds.height, 0.98);
+        scale = setLiveCardScale(scale * ratio);
+        bounds = measureLiveChipContentBounds();
         if (!bounds) {
           break;
         }
-        const requiredFits = bounds.requiredHeight <= cellH;
-        const totalFits = bounds.height <= targetFill;
-        if (requiredFits && totalFits) {
-          best = mid;
-          lo = mid;
-        } else {
-          hi = mid;
-        }
       }
-
-      els.stage.style.setProperty("--live-card-scale", best.toFixed(3));
+      if (scale > scaleCeiling) {
+        setLiveCardScale(scaleCeiling);
+      }
     }
 
-    function liveCardScaleFloor(cellH) {
-      if (!cellH || cellH <= 0) {
-        return LIVE_CARD_SCALE_MIN;
+    function enforceLiveBoardViewportFit(schemaScale = null) {
+      const grid = els.playerBoardBody.querySelector(".player-grid");
+      if (!grid) {
+        return;
       }
-      return Math.min(
-        LIVE_CARD_SCALE_MAX,
-        Math.max(LIVE_CARD_SCALE_MIN, cellH / 48),
-      );
+      const boardH = els.playerBoardBody.clientHeight;
+      const gridH = grid.getBoundingClientRect().height;
+      if (boardH <= 0 || gridH <= boardH + 1) {
+        return;
+      }
+      const { cellH } = liveBoardCellSize();
+      if (cellH > 0) {
+        applyLiveCardTextScale(cellH * (boardH / gridH) * 0.98, schemaScale);
+      }
     }
 
-    function applyLiveCardTextScale(cellH) {
-      fitLiveCardTextScale(cellH);
-      const floor = liveCardScaleFloor(cellH);
-      const current = Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-card-scale")) || floor;
-      els.stage.style.setProperty("--live-card-scale", Math.max(current, floor).toFixed(3));
-    }
+    function applyLivePlayerGridLayout(playerCount, phase) {
+      const layout = resolveLivePlayerLayout(playerCount, phase);
 
-    function fitLivePlayerGrid(playerCount, phase, contentBounds = null) {
-      if (phase !== "guessing" && phase !== "results" && phase !== "ended") {
-        return;
-      }
-      if (playerCount <= 0) {
-        return;
-      }
-
-      const boardBody = els.playerBoardBody;
-      const width = boardBody.clientWidth;
-      const height = boardBody.clientHeight || Math.max(240, Math.floor(window.innerHeight * 0.38));
-      if (width <= 0 || height <= 0) {
-        return;
-      }
-
-      const isReveal = phase === "results" || phase === "ended";
-      const estimated = estimateLiveChipMinimums(phase);
-      const minCellH = Math.max(estimated.height, Number(contentBounds?.height || 0));
-      const minCellW = Math.max(estimated.width, Number(contentBounds?.width || 0));
-      const gap = liveBoardGap(width, height, playerCount);
-
-      let best = null;
-      const maxCols = Math.min(
-        playerCount,
-        Math.max(1, Math.floor((width + gap) / (minCellW + gap))),
-      );
-
-      // Prefer fewer columns (more rows) so chips stay wide; only add columns when rows get too short.
-      for (let cols = 1; cols <= maxCols; cols += 1) {
-        const rows = Math.ceil(playerCount / cols);
-        const { cellW, cellH } = liveGridCellSize(width, height, cols, rows, gap);
-        if (!liveGridLayoutFits(cellW, cellH, minCellW, minCellH)) {
-          continue;
-        }
-        best = { cols, rows, gap, cellW, cellH };
-        break;
-      }
-
-      if (!best) {
-        for (let cols = maxCols; cols >= 1; cols -= 1) {
-          const rows = Math.ceil(playerCount / cols);
-          const { cellW, cellH } = liveGridCellSize(width, height, cols, rows, gap);
-          if (!liveGridLayoutFits(cellW, cellH, minCellW, minCellH)) {
-            continue;
-          }
-          best = { cols, rows, gap, cellW, cellH };
-          break;
-        }
-      }
-
-      if (!best) {
-        const cols = Math.max(1, computeLiveGridColumns(playerCount));
-        const rows = Math.ceil(playerCount / cols);
-        const { cellW, cellH } = liveGridCellSize(width, height, cols, rows, gap);
-        best = { cols, rows, gap, cellW, cellH };
-      }
-
-      const contentRef = Math.max(minCellH, isReveal ? 52 : 44);
-      const scale = Math.min(
-        LIVE_CARD_SCALE_MAX,
-        Math.max(LIVE_CARD_SCALE_MIN, Math.min(best.cellW / 92, best.cellH / (contentRef * 0.78))),
-      );
-
-      els.stage.style.setProperty("--live-cols", String(best.cols));
-      els.stage.style.setProperty("--live-rows", String(best.rows));
-      els.stage.style.setProperty("--live-gap", `${best.gap}px`);
+      els.stage.style.setProperty("--live-cols", String(layout.cols));
+      els.stage.style.setProperty("--live-rows", String(layout.rows));
+      els.stage.style.setProperty("--live-gap", `${layout.gap}px`);
       els.stage.style.removeProperty("--live-chip-width");
       els.stage.style.removeProperty("--live-chip-height");
       els.stage.style.removeProperty("--live-grid-width");
       els.stage.style.removeProperty("--live-grid-height");
-      els.stage.style.setProperty("--live-card-scale", scale.toFixed(3));
+      els.stage.style.setProperty("--live-card-scale", layout.scale.toFixed(3));
+      els.stage.dataset.liveLayout = `${layout.cols}x${layout.rows}`;
 
-      if (playerCount >= 50) {
-        els.stage.dataset.liveDensity = "xl";
-      } else if (playerCount >= 24) {
-        els.stage.dataset.liveDensity = "lg";
-      } else if (playerCount >= LIVE_DENSE_THRESHOLD) {
-        els.stage.dataset.liveDensity = "md";
-      } else {
-        delete els.stage.dataset.liveDensity;
+      applyLiveLayoutDensity(playerCount);
+      return layout;
+    }
+
+    function fitLivePlayerGrid(playerCount, phase) {
+      if (phase !== "guessing" && phase !== "results" && phase !== "ended") {
+        return null;
       }
+      if (playerCount <= 0) {
+        return null;
+      }
+      return applyLivePlayerGridLayout(playerCount, phase);
     }
 
     function scheduleLiveBoardFit() {
@@ -3869,26 +3870,20 @@
       if (!playerCount) {
         return;
       }
+      const structureKey = liveLayoutStructureKey(playerCount, phase);
       window.requestAnimationFrame(() => {
-        fitLivePlayerGrid(playerCount, phase);
+        let layout;
+        if (structureKey !== lastLiveLayoutStructureKey) {
+          layout = fitLivePlayerGrid(playerCount, phase);
+          lastLiveLayoutStructureKey = structureKey;
+        } else {
+          layout = resolveLivePlayerLayout(playerCount, phase);
+          els.stage.style.setProperty("--live-card-scale", layout.scale.toFixed(3));
+        }
         window.requestAnimationFrame(() => {
-          const bounds = measureLiveChipContentBounds();
-          if (bounds) {
-            const cols = Number.parseInt(getComputedStyle(els.stage).getPropertyValue("--live-cols"), 10) || 1;
-            const rows = Number.parseInt(getComputedStyle(els.stage).getPropertyValue("--live-rows"), 10) || 1;
-            const gap = Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-gap")) || 8;
-            const boardW = els.playerBoardBody.clientWidth;
-            const boardH = els.playerBoardBody.clientHeight;
-            const cellW = (boardW - gap * (cols - 1)) / cols;
-            const cellH = (boardH - gap * (rows - 1)) / rows;
-            if (bounds.height > cellH + 1 || bounds.width > cellW + 1) {
-              fitLivePlayerGrid(playerCount, phase, bounds);
-            }
-            applyLiveCardTextScale(cellH);
-          } else {
-            const { cellH } = liveBoardCellSize();
-            applyLiveCardTextScale(cellH);
-          }
+          const { cellH } = liveBoardCellSize();
+          applyLiveCardTextScale(cellH, layout?.scale);
+          enforceLiveBoardViewportFit(layout?.scale);
         });
       });
     }
@@ -4954,6 +4949,8 @@
         els.stage.style.removeProperty("--lobby-rows");
       } else {
         delete els.stage.dataset.liveDensity;
+        delete els.stage.dataset.liveLayout;
+        lastLiveLayoutStructureKey = "";
         els.stage.style.removeProperty("--live-cols");
         els.stage.style.removeProperty("--live-rows");
         els.stage.style.removeProperty("--live-gap");
