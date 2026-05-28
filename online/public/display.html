@@ -268,15 +268,40 @@
       position: relative;
       z-index: 1;
       width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.02em;
       text-align: center;
-      font-size: 0.38em;
+      font-size: 0.56em;
       font-weight: 900;
-      letter-spacing: 0.1em;
-      line-height: 1.12;
+      letter-spacing: 0.06em;
+      line-height: 1.05;
       text-transform: uppercase;
       color: var(--show-gold-hot);
-      text-shadow: 0 1px 0 #000, 0 0 10px rgba(255, 204, 0, 0.45);
+      text-shadow:
+        0 2px 0 #000,
+        0 0 16px rgba(255, 204, 0, 0.65),
+        0 0 28px rgba(255, 180, 0, 0.35);
       flex-shrink: 0;
+      margin-bottom: 0.04em;
+    }
+
+    .player-ambassador-line {
+      display: block;
+      white-space: nowrap;
+    }
+
+    .stage[data-phase="idle"] .player-ambassador-kicker {
+      font-size: 0.62em;
+      letter-spacing: 0.07em;
+    }
+
+    .stage[data-live-density="md"] .player-ambassador-kicker,
+    .stage[data-live-density="lg"] .player-ambassador-kicker,
+    .stage[data-live-density="xl"] .player-ambassador-kicker {
+      font-size: 0.5em;
+      letter-spacing: 0.05em;
     }
 
     .stage[data-phase="guessing"] .player-card[data-lingo-ambassador="true"],
@@ -3683,7 +3708,7 @@
     function renderAmbassadorKicker() {
       const kicker = document.createElement("div");
       kicker.className = "player-ambassador-kicker";
-      kicker.textContent = "LINGO Ambassador:";
+      kicker.innerHTML = '<span class="player-ambassador-line">Lingo</span><span class="player-ambassador-line">Ambassador:</span>';
       return kicker;
     }
 
