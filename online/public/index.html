@@ -2216,15 +2216,15 @@
 
       const history = Array.isArray(viewer.guessHistory) ? viewer.guessHistory : [];
       const officialIndex = officialHistoryIndex(history, viewer, phase);
+      const rows = [];
       let guessIndex = 0;
-      let rowCount = 0;
 
       history.forEach((entry, index) => {
         const ballStake = Number(entry.ballStake || 0) || historyBallStake(entry, state, guessIndex, history);
         const isOfficial = index === officialIndex;
 
         if (entry.status === 'missed' || entry.resultLabel === 'No guess') {
-          els.guessHistory.appendChild(makeHistoryRow(
+          rows.push(makeHistoryRow(
             ['—', '—', '—', '—', '—'],
             ['missed', 'missed', 'missed', 'missed', 'missed'],
             {
@@ -2234,7 +2234,6 @@
             },
           ));
           guessIndex += 1;
-          rowCount += 1;
           return;
         }
 
@@ -2244,8 +2243,7 @@
         const marks = historyMarksForEntry(entry, guess, pattern, phase);
         const isInvalid = entry.status === 'invalid' || entry.resultLabel === 'Not a word…';
         guessIndex += 1;
-        rowCount += 1;
-        els.guessHistory.appendChild(makeHistoryRow(guess.split(''), marks, {
+        rows.push(makeHistoryRow(guess.split(''), marks, {
           isOfficial,
           ballStake,
           note: isInvalid ? 'Not a word' : '',
@@ -2253,12 +2251,17 @@
         }));
       });
 
-      if (rowCount === 0) {
+      if (rows.length === 0) {
         const empty = document.createElement('p');
         empty.className = 'history-empty';
         empty.textContent = 'No guesses to show';
         els.guessHistory.appendChild(empty);
+        return;
       }
+
+      rows.reverse().forEach((row) => {
+        els.guessHistory.appendChild(row);
+      });
     }
 
     function officialHistoryEntry(viewer, phase) {

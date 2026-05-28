@@ -836,6 +836,11 @@
       text-shadow: 0 0 18px rgba(255, 210, 60, 0.65);
     }
 
+    .timer-panel[data-countdown="false"] .timer-value,
+    .timer-panel[data-countdown="false"] .timer-unit {
+      display: none;
+    }
+
     .timer-panel[data-paused="true"] .timer-value {
       color: var(--show-gold-hot);
       animation: timer-pause-pulse 1.2s ease-in-out infinite;
@@ -1749,7 +1754,7 @@
     .stage[data-phase="guessing"] .player-name,
     .stage[data-phase="results"] .player-name,
     .stage[data-phase="ended"] .player-name {
-      font-size: clamp(0.68em, 18cqmin, 0.94em);
+      font-size: clamp(0.72em, 22cqmin, 0.98em);
       max-width: 100%;
       line-height: 1.08;
       flex: 0 0 auto;
@@ -1764,7 +1769,7 @@
     .stage[data-phase="guessing"] .player-balls,
     .stage[data-phase="results"] .player-balls,
     .stage[data-phase="ended"] .player-balls {
-      font-size: clamp(0.5em, 13cqmin, 0.74em);
+      font-size: clamp(0.56em, 16cqmin, 0.78em);
       line-height: 1.08;
       flex: 0 0 auto;
     }
@@ -3203,9 +3208,9 @@
         </aside>
 
         <aside class="timer-panel" aria-live="polite">
-          <p class="timer-label" id="timerLabel">Next round starts in</p>
-          <p class="timer-value" id="timerValue">--</p>
-          <p class="timer-unit">seconds</p>
+          <p class="timer-label" id="timerLabel">Next round starts soon</p>
+          <p class="timer-value" id="timerValue"></p>
+          <p class="timer-unit" id="timerUnit">seconds</p>
         </aside>
 
         <div class="live-chrome" id="liveChrome">
@@ -3296,6 +3301,7 @@
       timerPanel: document.querySelector(".timer-panel"),
       timerLabel: document.getElementById("timerLabel"),
       timerValue: document.getElementById("timerValue"),
+      timerUnit: document.getElementById("timerUnit"),
       liveHud: document.getElementById("liveHud"),
       statusText: document.getElementById("statusText"),
       subtitle: document.getElementById("subtitle"),
@@ -3351,8 +3357,8 @@
     const LOBBY_PAGE_SIZE = LOBBY_PAGE_COLS * LOBBY_PAGE_ROWS;
     const LOBBY_ROTATE_MS = 4000;
     const LIVE_DENSE_THRESHOLD = 12;
-    const LIVE_CARD_SCALE_MIN = 0.9;
-    const LIVE_CARD_SCALE_MAX = 1.28;
+    const LIVE_CARD_SCALE_MIN = 0.92;
+    const LIVE_CARD_SCALE_MAX = 1.22;
     const ALL_SUBMITTED_GRACE_SECONDS = 10;
     const SEALED_GUESS_DOTS_SECONDS = 10;
 
@@ -3711,6 +3717,23 @@
       els.stage.style.setProperty("--live-card-scale", best.toFixed(3));
     }
 
+    function liveCardScaleFloor(cellH) {
+      if (!cellH || cellH <= 0) {
+        return LIVE_CARD_SCALE_MIN;
+      }
+      return Math.min(
+        LIVE_CARD_SCALE_MAX,
+        Math.max(LIVE_CARD_SCALE_MIN, cellH / 48),
+      );
+    }
+
+    function applyLiveCardTextScale(cellH) {
+      fitLiveCardTextScale(cellH);
+      const floor = liveCardScaleFloor(cellH);
+      const current = Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-card-scale")) || floor;
+      els.stage.style.setProperty("--live-card-scale", Math.max(current, floor).toFixed(3));
+    }
+
     function fitLivePlayerGrid(playerCount, phase, contentBounds = null) {
       if (phase !== "guessing" && phase !== "results" && phase !== "ended") {
         return;
@@ -3822,10 +3845,10 @@
             if (bounds.height > cellH + 1 || bounds.width > cellW + 1) {
               fitLivePlayerGrid(playerCount, phase, bounds);
             }
-            fitLiveCardTextScale(cellH);
+            applyLiveCardTextScale(cellH);
           } else {
             const { cellH } = liveBoardCellSize();
-            fitLiveCardTextScale(cellH);
+            applyLiveCardTextScale(cellH);
           }
         });
       });
@@ -4307,13 +4330,13 @@
           return {
             badge: "Round ended",
             subtitle: state.answerRevealed ? "Do not guess now!" : "Waiting for the next round.",
-            timerLabel: "Next round starts in",
+            timerLabel: "Next round starts soon",
           };
         default:
           return {
             badge: "Sign up — game starts soon",
             subtitle: state.hostNote?.trim() || "",
-            timerLabel: "Next round starts in",
+            timerLabel: "Next round starts soon",
           };
       }
     }
@@ -4760,9 +4783,16 @@
         remaining = phaseSecondsRemaining(state);
       }
 
-      els.timerValue.textContent = formatTimerValue(remaining);
+      const hasCountdown = (phase === "guessing" || phase === "results")
+        && remaining !== null
+        && remaining >= 0;
+      els.timerPanel.dataset.countdown = hasCountdown ? "true" : "false";
+      els.timerValue.textContent = hasCountdown ? formatTimerValue(remaining) : "";
+      if (els.timerUnit) {
+        els.timerUnit.hidden = !hasCountdown;
+      }
 
-      if ((phase === "guessing" || phase === "results") && remaining !== null && remaining >= 0) {
+      if (hasCountdown) {
         if (remaining <= 10) {
           els.timerPanel.dataset.urgency = "critical";
         } else if (remaining <= 30) {

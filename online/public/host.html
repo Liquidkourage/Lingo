@@ -981,6 +981,66 @@
       });
     }
 
+    const hostDirtyFields = new Set();
+
+    const hostFieldBindings = [
+      ['wordInput', 'word'],
+      ['guessSecondsInput', 'guessSeconds'],
+      ['resultsSecondsInput', 'resultsSeconds'],
+      ['ballsInput', 'balls'],
+      ['hostNoteInput', 'hostNote'],
+      ['championInput', 'champion'],
+    ];
+
+    function bindHostFieldGuard(el, key) {
+      if (!el) return;
+      el.addEventListener('focus', () => hostDirtyFields.add(key));
+      el.addEventListener('input', () => hostDirtyFields.add(key));
+      el.addEventListener('blur', () => {
+        window.setTimeout(() => {
+          if (document.activeElement !== el) {
+            hostDirtyFields.delete(key);
+          }
+        }, 120);
+      });
+    }
+
+    hostFieldBindings.forEach(([elKey, dirtyKey]) => bindHostFieldGuard(els[elKey], dirtyKey));
+
+    function assignHostField(el, key, value) {
+      if (!el) return;
+      if (hostDirtyFields.has(key) || document.activeElement === el) return;
+      el.value = value;
+    }
+
+    function rosterHasFocus() {
+      return Boolean(els.playerRosterBody.querySelector('input:focus'));
+    }
+
+    function confirmHostAction(message) {
+      return window.confirm(message);
+    }
+
+    async function runAction(action, body = {}, successText = 'Saved.', options = {}) {
+      if (options.confirmMessage && !confirmHostAction(options.confirmMessage)) {
+        return;
+      }
+      setStatus(els.actionStatus, '');
+      const response = await adminFetch(`/api/admin/${action}`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || `Action failed: ${action}`);
+      }
+      currentState = payload.state;
+      hostDirtyFields.clear();
+      renderState();
+      await loadPlayers(true);
+      setStatus(els.actionStatus, successText, 'success');
+    }
+
     async function loadState(showStatus = false) {
       const response = await adminFetch('/api/admin/state');
       const payload = await response.json();
@@ -994,7 +1054,7 @@
       }
     }
 
-    async function loadPlayers() {
+    async function loadPlayers(forceRender = false) {
       const response = await adminFetch('/api/admin/players');
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
@@ -1007,7 +1067,9 @@
 
       els.playerCountValue.textContent = String(players.length);
       els.submittedCountValue.textContent = String(submittedThisRound.length);
-      renderPlayerRoster(players, currentRound);
+      if (forceRender || !rosterHasFocus()) {
+        renderPlayerRoster(players, currentRound);
+      }
     }
 
     function formatHostHistoryLine(entry) {
@@ -1126,15 +1188,18 @@
       els.phaseValue.textContent = phase;
       els.roundValue.textContent = String(state.roundNumber ?? 0);
       els.ballsValue.textContent = String(state.ballsRemaining ?? 0);
-      els.wordInput.value = state.currentWord || '';
-      els.guessSecondsInput.value = String(state.guessWindowSeconds || 90);
-      els.resultsSecondsInput.value = String(state.resultsWindowSeconds || 45);
-      els.ballsInput.value = String(state.ballsRemaining ?? 0);
-      els.hostNoteInput.value = state.hostNote || '';
-      els.championInput.value = state.championDisplayName || '';
+      assignHostField(els.wordInput, 'word', state.currentWord || '');
+      assignHostField(els.guessSecondsInput, 'guessSeconds', String(state.guessWindowSeconds || 90));
+      assignHostField(els.resultsSecondsInput, 'resultsSeconds', String(state.resultsWindowSeconds || 45));
+      assignHostField(els.ballsInput, 'balls', String(state.ballsRemaining ?? 0));
+      assignHostField(els.hostNoteInput, 'hostNote', state.hostNote || '');
+      assignHostField(els.championInput, 'champion', state.championDisplayName || '');
       const canPause = phase === 'guessing' || phase === 'results';
       els.pauseTimerBtn.disabled = !canPause;
       els.pauseTimerBtn.textContent = state.timerPaused ? 'Resume timer' : 'Pause timer';
+      els.startRoundBtn.disabled = phase === 'guessing' || phase === 'results';
+      els.revealResultsBtn.disabled = phase !== 'guessing';
+      els.continueRoundBtn.disabled = phase !== 'results';
       updateFlowEmphasis(phase);
       renderWordPool();
     }
@@ -1198,7 +1263,11 @@
 
     async function selectSuggestedWord(word) {
       els.wordInput.value = word;
-      await runAction('set-word', { word }, `Selected ${word}.`);
+      const phase = currentState?.phase || 'idle';
+      const confirmMessage = (phase === 'guessing' || phase === 'results')
+        ? 'Change the word during an active round? Players may see inconsistent results.'
+        : '';
+      await runAction('set-word', { word }, `Selected ${word}.`, { confirmMessage });
     }
 
     async function excludeSuggestedWord(word) {
@@ -1220,20 +1289,12 @@
       }
     }
 
-    async function runAction(action, body = {}, successText = 'Saved.') {
-      setStatus(els.actionStatus, '');
-      const response = await adminFetch(`/api/admin/${action}`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-      const payload = await response.json();
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || `Action failed: ${action}`);
-      }
-      currentState = payload.state;
-      renderState();
-      await loadPlayers();
-      setStatus(els.actionStatus, successText, 'success');
+    function setWordFromHost() {
+      const phase = currentState?.phase || 'idle';
+      const confirmMessage = (phase === 'guessing' || phase === 'results')
+        ? 'Change the word during an active round? Players may see inconsistent results.'
+        : '';
+      return runAction('set-word', { word: els.wordInput.value }, 'Current word updated.', { confirmMessage });
     }
 
     els.connectBtn.addEventListener('click', async () => {
@@ -1265,12 +1326,21 @@
       }
     });
 
-    els.newSessionBtn.addEventListener('click', () => runAction('create-session', {}, 'Created a fresh online session.'));
-    els.setWordBtn.addEventListener('click', () => runAction('set-word', { word: els.wordInput.value }, 'Current word updated.'));
+    els.newSessionBtn.addEventListener('click', () => runAction(
+      'create-session',
+      {},
+      'Created a fresh online session.',
+      { confirmMessage: 'Create a new session? Players must re-join on their phones.' },
+    ));
+    els.setWordBtn.addEventListener('click', () => setWordFromHost().catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not set word.', 'error');
+    }));
     els.wordInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        runAction('set-word', { word: els.wordInput.value }, 'Current word updated.');
+        setWordFromHost().catch((error) => {
+          setStatus(els.actionStatus, error.message || 'Could not set word.', 'error');
+        });
       }
     });
     els.refreshWordPoolBtn.addEventListener('click', () => runAction(
@@ -1281,21 +1351,48 @@
     els.startRoundBtn.addEventListener('click', () => runAction('start-round', {
       guessWindowSeconds: Number(els.guessSecondsInput.value),
       resultsWindowSeconds: Number(els.resultsSecondsInput.value),
-    }, 'Round started.'));
-    els.revealResultsBtn.addEventListener('click', () => runAction('reveal-results', {}, 'Results phase opened.'));
+    }, 'Round started.').catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not start round.', 'error');
+    }));
+    els.revealResultsBtn.addEventListener('click', () => runAction(
+      'reveal-results',
+      {},
+      'Results phase opened.',
+      { confirmMessage: 'Reveal results now? This ends the current guessing window.' },
+    ).catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not reveal results.', 'error');
+    }));
     els.continueRoundBtn.addEventListener('click', () => runAction('continue-round', {
       guessWindowSeconds: Number(els.guessSecondsInput.value),
-    }, 'Guessing resumed.'));
+    }, 'Guessing resumed.').catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not continue round.', 'error');
+    }));
     els.pauseTimerBtn.addEventListener('click', () => runAction(
       'toggle-timer-pause',
       {},
       els.pauseTimerBtn.textContent === 'Pause timer' ? 'Timer paused.' : 'Timer resumed.',
     ));
-    els.toggleDoubleBtn.addEventListener('click', () => runAction('toggle-double-balls', {}, 'Updated ball multiplier.'));
+    els.toggleDoubleBtn.addEventListener('click', () => runAction(
+      'toggle-double-balls',
+      {},
+      'Updated ball multiplier.',
+      { confirmMessage: 'Toggle double balls for the rest of this session?' },
+    ).catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not update ball multiplier.', 'error');
+    }));
     els.setBallsBtn.addEventListener('click', () => runAction('set-balls', {
       ballsRemaining: Number(els.ballsInput.value),
-    }, 'Balls remaining updated.'));
-    els.revealAnswerBtn.addEventListener('click', () => runAction('reveal-answer', {}, 'Answer reveal flagged.'));
+    }, 'Balls remaining updated.').catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not update balls.', 'error');
+    }));
+    els.revealAnswerBtn.addEventListener('click', () => runAction(
+      'reveal-answer',
+      {},
+      'Answer reveal flagged.',
+      { confirmMessage: 'Reveal the answer and end this word now? This skips remaining guess windows.' },
+    ).catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not reveal answer.', 'error');
+    }));
     els.resetSessionBtn.addEventListener('click', async () => {
       if (!window.confirm('Hard reset the backend session?')) return;
       await runAction('reset-session', {}, 'Session reset.');

@@ -428,6 +428,17 @@ async function upsertLobbyPlayer(sessionId, displayName, playerToken, client = p
     }
   }
 
+  const existingByName = await client.query(
+    `select id, player_token
+     from players
+     where session_id = $1
+       and normalized_display_name = $2`,
+    [sessionId, normalized],
+  );
+  if (existingByName.rows.length) {
+    throw new Error("That name is already taken.");
+  }
+
   const result = await client.query(
     `insert into players (
        session_id,
@@ -437,10 +448,6 @@ async function upsertLobbyPlayer(sessionId, displayName, playerToken, client = p
        updated_at
      )
      values ($1, $2, $3, $4, now())
-     on conflict (session_id, normalized_display_name)
-     do update set
-       display_name = excluded.display_name,
-       updated_at = now()
      returning *`,
     [sessionId, displayName, normalized, newPlayerToken()],
   );
@@ -1613,6 +1620,9 @@ async function handleAdminAction(action, body) {
       }
       if (word && !(await isLegalWord(pool, word))) {
         throw new Error("Word must be a legal 5-letter Scrabble word.");
+      }
+      if (word && (state.phase === "guessing" || state.phase === "results")) {
+        throw new Error("Cannot change the word during an active round.");
       }
       const patch = {
         current_word: word,
