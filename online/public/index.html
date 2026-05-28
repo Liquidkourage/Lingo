@@ -1311,6 +1311,7 @@
     let guessDraftDirty = false;
     let guessCaretIndex = null;
     let lastGuessWindowKey = '';
+    let lastStatusContextKey = '';
     let lastTimerToastWindowKey = '';
     let timerToastLastRemaining = null;
     let timerToastFired = { warn30: false, warn10: false };
@@ -1731,7 +1732,29 @@
     }
 
     function guessWindowKey(state) {
-      return `${Number(state.roundNumber || 0)}:${state.guessWindowOpenedAtIso || ''}`;
+      return `${Number(state.roundNumber || 0)}:${state.guessWindowOpenedAtIso || ''}:${Number(state.guessWindowSeq || 0)}`;
+    }
+
+    function statusContextKey(state) {
+      const phase = state.phase || 'idle';
+      if (phase === 'guessing') {
+        return `guessing:${guessWindowKey(state)}`;
+      }
+      return `${phase}:${Number(state.roundNumber || 0)}`;
+    }
+
+    function syncStatusMessage(state) {
+      const key = statusContextKey(state);
+      if (key === lastStatusContextKey) return;
+      lastStatusContextKey = key;
+
+      const phase = state.phase || 'idle';
+      const needsRejoin = isLiveRound(phase) && isNameLocked() && activeUserName() && !isViewerJoined(state);
+      if (needsRejoin) {
+        setMessage('Tap Re-join game to continue playing on this device.', 'error');
+        return;
+      }
+      setMessage('');
     }
 
     function syncGuessDraftFromState(state) {
@@ -2597,6 +2620,7 @@
     function renderPublicState(state) {
       currentState = state;
       syncTimerDisplay(state);
+      syncStatusMessage(state);
       const phase = state.phase || 'idle';
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
       const viewer = state.viewer;

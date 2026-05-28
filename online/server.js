@@ -809,6 +809,26 @@ async function listViewerGuessHistory(playerId, state, client = pool, options = 
   return trimHistoryAfterSolve([...submissionBySeq.values()]);
 }
 
+async function playerSubmittedCurrentWindow(state, player, client = pool) {
+  const round = Number(state.round_number || 0);
+  const windowSeq = Number(state.guess_window_seq || 0);
+  if (!round || !windowSeq) return false;
+  if (Number(player.roundNumber || 0) !== round || !player.currentGuess) {
+    return false;
+  }
+  const result = await client.query(
+    `select 1
+     from guess_submissions
+     where session_id = $1
+       and player_id = $2
+       and round_number = $3
+       and guess_window_seq = $4
+     limit 1`,
+    [state.session_id, player.id, round, windowSeq],
+  );
+  return result.rows.length > 0;
+}
+
 async function buildViewerContext(displayName, playerToken, state, client = pool) {
   const normalized = normalizeDisplayName(displayName);
   const token = normalizePlayerToken(playerToken);
@@ -856,7 +876,9 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
     };
   }
 
-  const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
+  const submitted = phase === "guessing"
+    ? await playerSubmittedCurrentWindow(state, player, client)
+    : Number(player.roundNumber) === round && !!player.currentGuess;
   const guess = submitted ? normalizeWordInput(player.currentGuess) : "";
   let resultPattern = "";
   let resultLabel = "";
