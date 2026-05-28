@@ -1212,8 +1212,15 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
   let statusText = "Waiting for guess";
   let cardTone = "default";
 
+  const perfectSolve = solvedCurrentWord
+    || (guess && guessIsLegal && resultPattern === "!!!!!");
+
   if (phase === "guessing") {
-    if (submittedThisRound) {
+    if (perfectSolve) {
+      status = "solved";
+      statusText = "Congratulations!";
+      cardTone = "solved";
+    } else if (submittedThisRound) {
       status = "locked";
       statusText = "Locked in";
     }
@@ -1247,7 +1254,7 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
     statusText,
     cardTone,
     resultPattern: (phase === "results" || phase === "ended") && guessIsLegal ? resultPattern : "",
-    isWinner: resultPattern === "!!!!!",
+    isWinner: perfectSolve,
     submissionCount: Number(player.submissionCount || 0),
     submittedAtIso: player.submittedAtIso,
     joinedAtIso: player.createdAtIso || player.updatedAtIso || null,
