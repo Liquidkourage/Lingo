@@ -785,18 +785,7 @@
     }
 
     .answer-fanfare {
-      position: absolute;
-      left: 50%;
-      top: 42%;
-      transform: translate(-50%, -50%);
-      z-index: 40;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.2em;
-      text-align: center;
-      pointer-events: none;
-      width: 92%;
+      display: none !important;
     }
 
     .answer-fanfare[hidden] {
@@ -1145,6 +1134,41 @@
       max-width: calc(var(--live-tile-size) * 0.93);
       max-height: calc(var(--live-tile-size) * 0.93);
       font-size: calc(var(--live-tile-font) * 0.9);
+    }
+
+    .stage[data-phase="ended"] .word-tiles {
+      margin: 0;
+      gap: var(--live-tile-gap);
+      flex: 0 1 auto;
+    }
+
+    .stage[data-phase="ended"] .word-tile {
+      flex: 0 0 var(--live-tile-size);
+      width: var(--live-tile-size);
+      height: var(--live-tile-size);
+      min-width: var(--live-tile-size);
+      min-height: var(--live-tile-size);
+      max-width: var(--live-tile-size);
+      max-height: var(--live-tile-size);
+      font-size: var(--live-tile-font);
+      line-height: 1;
+    }
+
+    .stage[data-phase="ended"] .word-tile.is-revealed {
+      border-color: var(--feedback-correct-border);
+      background: var(--feedback-correct);
+      color: var(--feedback-correct-text);
+      box-shadow: 0 0 18px var(--feedback-correct-glow);
+      animation: clue-reveal 0.55s cubic-bezier(0.22, 1.35, 0.36, 1) both;
+      animation-delay: calc(var(--tile-index, 0) * 0.07s);
+    }
+
+    .stage[data-phase="ended"] .subtitle.is-word-reveal {
+      font-size: 0.58em;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(210, 228, 248, 0.92);
     }
 
     .stage[data-phase="ended"] .word-clue:not([hidden]) {
@@ -4375,14 +4399,18 @@
       if (phase === "idle") {
         els.subtitle.hidden = true;
         els.subtitle.textContent = "";
+        els.subtitle.classList.remove("is-word-reveal");
         return;
       }
 
       if (phase === "ended" && state.answerRevealed) {
-        els.subtitle.hidden = true;
-        els.subtitle.textContent = "";
+        els.subtitle.hidden = false;
+        els.subtitle.textContent = "The word was";
+        els.subtitle.classList.add("is-word-reveal");
         return;
       }
+
+      els.subtitle.classList.remove("is-word-reveal");
 
       const copy = phaseCopy(phase, state);
       if (!copy.subtitle) {
@@ -4398,6 +4426,9 @@
     function shouldShowHudWordTiles(state) {
       const phase = state.phase || "idle";
       if (phase === "guessing" || phase === "results") return true;
+      if (phase === "ended" && state.answerRevealed) {
+        return String(state.revealedWord || "").trim().length === 5;
+      }
       if (phase === "ended" && !state.answerRevealed && state.publicFirstLetter) return true;
       return false;
     }
@@ -4410,6 +4441,37 @@
           lastWordTilesSignature = "hidden";
           els.wordTiles.hidden = true;
           els.wordTiles.replaceChildren();
+        }
+        return;
+      }
+
+      if (phase === "ended" && state.answerRevealed) {
+        const word = String(state.revealedWord || "").trim().toUpperCase();
+        if (word.length !== 5) {
+          if (lastWordTilesSignature !== "hidden") {
+            lastWordTilesSignature = "hidden";
+            els.wordTiles.hidden = true;
+            els.wordTiles.replaceChildren();
+          }
+          return;
+        }
+
+        const tilesSignature = `ended:${word}`;
+        els.wordTiles.hidden = false;
+        els.wordTiles.dataset.livePhase = "ended";
+        els.wordTiles.setAttribute("aria-label", `The word was ${word}`);
+        if (tilesSignature === lastWordTilesSignature && els.wordTiles.childElementCount === 5) {
+          return;
+        }
+
+        lastWordTilesSignature = tilesSignature;
+        els.wordTiles.replaceChildren();
+        for (let index = 0; index < 5; index += 1) {
+          const tile = document.createElement("div");
+          tile.className = "word-tile is-letter is-revealed";
+          tile.style.setProperty("--tile-index", String(index));
+          tile.textContent = word.charAt(index);
+          els.wordTiles.appendChild(tile);
         }
         return;
       }
@@ -4783,18 +4845,8 @@
     }
 
     function renderAnswerFanfare(state) {
-      const phase = state.phase || "idle";
-      const word = String(state.revealedWord || "").trim().toUpperCase();
-      const show = phase === "ended" && state.answerRevealed && word;
-
-      if (!show) {
-        els.answerFanfare.hidden = true;
-        els.answerFanfareWord.textContent = "";
-        return;
-      }
-
-      els.answerFanfare.hidden = false;
-      els.answerFanfareWord.textContent = word;
+      els.answerFanfare.hidden = true;
+      els.answerFanfareWord.textContent = "";
     }
 
     function renderTimer(state) {
