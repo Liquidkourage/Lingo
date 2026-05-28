@@ -264,6 +264,94 @@
       white-space: normal;
     }
 
+    @keyframes ambassador-shimmer {
+      0%, 100% { opacity: 0.82; filter: brightness(1); }
+      50% { opacity: 1; filter: brightness(1.12); }
+    }
+
+    .lingo-ambassador-plaque {
+      position: absolute;
+      left: 2.2%;
+      bottom: 1.6%;
+      z-index: 24;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.08em;
+      padding: 0.42em 0.72em 0.48em;
+      border-radius: 0.42em;
+      border: 2px solid var(--show-gold);
+      background:
+        linear-gradient(135deg, rgba(26, 0, 72, 0.94) 0%, rgba(10, 0, 32, 0.96) 100%);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 22px rgba(255, 204, 0, 0.35),
+        0 0 28px rgba(187, 68, 255, 0.28);
+      pointer-events: none;
+      animation: ambassador-shimmer 4.8s ease-in-out infinite;
+    }
+
+    .lingo-ambassador-plaque[hidden] {
+      display: none !important;
+    }
+
+    .lingo-ambassador-kicker {
+      font-size: 0.46em;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      line-height: 1.1;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      text-shadow: 0 1px 0 #000, 0 0 12px rgba(255, 204, 0, 0.55);
+    }
+
+    .lingo-ambassador-name {
+      font-size: 0.72em;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      line-height: 1.05;
+      color: #fff;
+      text-shadow: 0 2px 0 #000, 0 0 16px rgba(0, 212, 255, 0.55);
+    }
+
+    .player-ambassador-kicker {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      text-align: center;
+      font-size: 0.34em;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      line-height: 1.15;
+      text-transform: uppercase;
+      color: var(--show-gold-hot);
+      text-shadow: 0 1px 0 #000, 0 0 10px rgba(255, 204, 0, 0.5);
+      flex-shrink: 0;
+    }
+
+    .player-card[data-lingo-ambassador="true"] {
+      border-color: var(--show-gold) !important;
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 20px rgba(255, 204, 0, 0.42),
+        0 0 24px rgba(187, 68, 255, 0.35) !important;
+    }
+
+    .player-card[data-lingo-ambassador="true"] .player-name {
+      color: var(--show-gold-hot);
+      text-shadow: 0 2px 0 #000, 0 0 14px rgba(255, 204, 0, 0.75);
+    }
+
+    .stage[data-phase="idle"] .lingo-ambassador-plaque {
+      bottom: 2.4%;
+    }
+
+    .stage[data-phase="guessing"] .lingo-ambassador-plaque,
+    .stage[data-phase="results"] .lingo-ambassador-plaque,
+    .stage[data-phase="ended"] .lingo-ambassador-plaque {
+      bottom: 1.2%;
+    }
+
     .idle-signup-block {
       display: flex;
       flex-direction: column;
@@ -1409,7 +1497,6 @@
       gap: 0.04em;
       overflow: hidden;
       font-size: calc(1em * var(--live-card-scale, 1));
-      container-type: size;
     }
 
     .stage[data-phase="results"] .player-card,
@@ -1428,7 +1515,6 @@
       gap: 0.04em;
       overflow: hidden;
       font-size: calc(1em * var(--live-card-scale, 1));
-      container-type: size;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin],
@@ -1790,7 +1876,7 @@
     .stage[data-phase="guessing"] .player-name,
     .stage[data-phase="results"] .player-name,
     .stage[data-phase="ended"] .player-name {
-      font-size: clamp(0.72em, 22cqmin, 0.98em);
+      font-size: 0.88em;
       max-width: 100%;
       line-height: 1.08;
       flex: 0 0 auto;
@@ -1805,7 +1891,7 @@
     .stage[data-phase="guessing"] .player-balls,
     .stage[data-phase="results"] .player-balls,
     .stage[data-phase="ended"] .player-balls {
-      font-size: clamp(0.56em, 16cqmin, 0.78em);
+      font-size: 0.62em;
       line-height: 1.08;
       flex: 0 0 auto;
     }
@@ -1813,7 +1899,7 @@
     .stage[data-phase="guessing"] .player-status,
     .stage[data-phase="results"] .player-status,
     .stage[data-phase="ended"] .player-status {
-      font-size: clamp(0.44em, 11cqmin, 0.64em);
+      font-size: 0.48em;
       line-height: 1.1;
       margin-top: 0;
       white-space: normal;
@@ -1865,8 +1951,8 @@
     }
 
     .stage[data-phase="guessing"] .pending-row.is-sealed-guess .pending-dot {
-      width: clamp(0.34em, 6.5cqmin, 0.72em);
-      height: clamp(0.34em, 6.5cqmin, 0.72em);
+      width: 0.52em;
+      height: 0.52em;
     }
 
     .stage[data-phase="guessing"] .pending-row.is-sealed-guess.is-urgent .pending-dot {
@@ -3016,8 +3102,8 @@
     .stage[data-phase="guessing"] .pattern-cell,
     .stage[data-phase="results"] .pattern-cell,
     .stage[data-phase="ended"] .pattern-cell {
-      width: clamp(0.72em, 11cqmin, 1.2em);
-      height: clamp(0.72em, 11cqmin, 1.2em);
+      width: 0.92em;
+      height: 0.92em;
       min-width: 0;
       min-height: 0;
     }
@@ -3228,6 +3314,11 @@
 
       <p class="kiosk-hint" id="kioskHint" hidden>Fullscreen venue display · press F11 or tap to expand</p>
 
+      <div class="lingo-ambassador-plaque" id="lingoAmbassadorPlaque" hidden aria-hidden="true">
+        <span class="lingo-ambassador-kicker">LINGO Ambassador:</span>
+        <span class="lingo-ambassador-name" id="lingoAmbassadorName"></span>
+      </div>
+
       <div class="stage-ui">
         <div class="ui-topline" id="topLine" hidden aria-hidden="true"></div>
 
@@ -3362,6 +3453,8 @@
       lobbyPagerLabel: document.getElementById("lobbyPagerLabel"),
       standbySlate: document.getElementById("standbySlate"),
       standbyMessage: document.getElementById("standbyMessage"),
+      lingoAmbassadorPlaque: document.getElementById("lingoAmbassadorPlaque"),
+      lingoAmbassadorName: document.getElementById("lingoAmbassadorName"),
       kioskHint: document.getElementById("kioskHint"),
       viewport: document.querySelector(".viewport"),
       wordClue: document.getElementById("wordClue"),
@@ -3394,7 +3487,9 @@
     let lastWordClueSignature = "";
     let knownLobbyPlayerIds = null;
     let apiConnected = false;
-    let lastLiveLayoutStructureKey = "";
+    let lastLiveLayoutApplyKey = "";
+    /** Ball counts frozen at end of guessing — held through results/ended until next guess window. */
+    let displayBallSnapshot = null;
 
     const LOBBY_PAGE_COLS = 4;
     const LOBBY_PAGE_ROWS = 5;
@@ -3423,7 +3518,7 @@
       { maxPlayers: 64, cols: 8, gapPx: 6 },
       { maxPlayers: Infinity, cols: 8, gapPx: 6 },
     ];
-    /** Base card text scale by row count — shrink-only pass may go lower to fit viewport. */
+    /** Fixed card text scale by row count — set once per layout tier / phase. */
     const LIVE_CARD_SCALE_BY_ROWS = {
       1: 1.10,
       2: 1.00,
@@ -3447,6 +3542,8 @@
     const LAYOUT_DEBUG = ["borders", "layout", "1", "true", "yes"].includes((urlParams.get("debug") || "").toLowerCase());
     const LIVE_PLAYER_CARD_SKIN = "liquid";
     const DEMO_CHAMPION = "NightOwl";
+    const LINGO_AMBASSADOR_ALIASES = new Set(["jeewee"]);
+    const LINGO_AMBASSADOR_DISPLAY = "Jeewee";
     const DEMO_BALL_TOTALS = [18, 12, 24, 6, 30, 9, 15, 21, 14, 27, 11, 19, 8, 22, 16, 13, 25, 10, 20, 7];
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
@@ -3468,9 +3565,12 @@
     function buildDemoPlayers(count) {
       const now = Date.now();
       return Array.from({ length: count }, (_value, index) => {
-        const displayName = count > DEMO_PLAYER_NAMES.length
+        let displayName = count > DEMO_PLAYER_NAMES.length
           ? `${DEMO_PLAYER_NAMES[index % DEMO_PLAYER_NAMES.length]}${Math.floor(index / DEMO_PLAYER_NAMES.length) + 1}`
           : DEMO_PLAYER_NAMES[index];
+        if (IS_DEMO && index === 8 && count > 8) {
+          displayName = LINGO_AMBASSADOR_DISPLAY;
+        }
         const extras = demoPlayerExtras(index);
         return {
           id: `demo-${index + 1}`,
@@ -3625,6 +3725,40 @@
       return (player.displayName || "player").trim().toLowerCase();
     }
 
+    function normalizePlayerAlias(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function isLingoAmbassador(player) {
+      if (!player) {
+        return false;
+      }
+      const aliases = [player.displayName, player.lobbyLabel].map(normalizePlayerAlias);
+      return aliases.some((alias) => LINGO_AMBASSADOR_ALIASES.has(alias));
+    }
+
+    function findLingoAmbassador(players) {
+      return (Array.isArray(players) ? players : []).find(isLingoAmbassador) || null;
+    }
+
+    function lingoAmbassadorDisplayName(player) {
+      return (player?.displayName || player?.lobbyLabel || LINGO_AMBASSADOR_DISPLAY).trim();
+    }
+
+    function syncLingoAmbassadorPlaque(state) {
+      const ambassador = findLingoAmbassador(state?.players);
+      if (!ambassador) {
+        els.lingoAmbassadorPlaque.hidden = true;
+        els.lingoAmbassadorPlaque.setAttribute("aria-hidden", "true");
+        delete els.stage.dataset.lingoAmbassador;
+        return;
+      }
+      els.lingoAmbassadorPlaque.hidden = false;
+      els.lingoAmbassadorPlaque.setAttribute("aria-hidden", "false");
+      els.lingoAmbassadorName.textContent = lingoAmbassadorDisplayName(ambassador);
+      els.stage.dataset.lingoAmbassador = "true";
+    }
+
     function detectNewLobbyArrivals(players, phase) {
       if (phase !== "idle") {
         knownLobbyPlayerIds = null;
@@ -3680,11 +3814,6 @@
       return { cols, rows, gap, scale, count };
     }
 
-    function liveLayoutStructureKey(playerCount, phase) {
-      const layout = resolveLivePlayerLayout(playerCount, phase);
-      return `${layout.cols}x${layout.rows}:${layout.gap}`;
-    }
-
     function applyLiveLayoutDensity(playerCount) {
       if (playerCount >= 50) {
         els.stage.dataset.liveDensity = "xl";
@@ -3697,137 +3826,24 @@
       }
     }
 
-    function measureLiveChipContentBounds(forcedScale = null, restoreScale = true) {
-      const cards = els.playerBoardBody.querySelectorAll(".player-card");
-      if (!cards.length) {
+    function liveLayoutApplyKey(playerCount, phase) {
+      const layout = resolveLivePlayerLayout(playerCount, phase);
+      return `${layout.cols}x${layout.rows}:${layout.gap}:${layout.scale.toFixed(3)}`;
+    }
+
+    function syncLiveBoardLayout(playerCount, phase) {
+      if (phase !== "guessing" && phase !== "results" && phase !== "ended") {
         return null;
       }
-
-      const previousScale = els.stage.style.getPropertyValue("--live-card-scale");
-      if (forcedScale != null) {
-        els.stage.style.setProperty("--live-card-scale", forcedScale.toFixed(3));
+      if (playerCount <= 0) {
+        return null;
       }
-
-      let maxHeight = 0;
-      let maxRequiredHeight = 0;
-      let maxWidth = 0;
-      cards.forEach((card) => {
-        let contentH = 0;
-        let requiredH = 0;
-        let contentW = 0;
-        card.querySelectorAll(".player-name, .player-balls").forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          requiredH += rect.height;
-          contentH += rect.height;
-          contentW = Math.max(contentW, rect.width);
-        });
-        card.querySelectorAll(".player-status, .pending-row, .pattern-row").forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          contentH += rect.height;
-          contentW = Math.max(contentW, rect.width);
-        });
-        const style = getComputedStyle(card);
-        const padV = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
-        const padH = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
-        maxRequiredHeight = Math.max(maxRequiredHeight, requiredH + padV + 2);
-        maxHeight = Math.max(maxHeight, contentH + padV + 2);
-        maxWidth = Math.max(maxWidth, contentW + padH + 4);
-      });
-
-      if (forcedScale != null && restoreScale) {
-        if (previousScale) {
-          els.stage.style.setProperty("--live-card-scale", previousScale);
-        } else {
-          els.stage.style.removeProperty("--live-card-scale");
-        }
+      const applyKey = liveLayoutApplyKey(playerCount, phase);
+      if (applyKey === lastLiveLayoutApplyKey) {
+        return null;
       }
-
-      return {
-        height: Math.ceil(maxHeight),
-        requiredHeight: Math.ceil(maxRequiredHeight),
-        width: Math.ceil(maxWidth),
-      };
-    }
-
-    function liveBoardInnerSize() {
-      const boardBody = els.playerBoardBody;
-      const style = getComputedStyle(boardBody);
-      const padH = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
-      const padV = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
-      const width = Math.max(0, boardBody.clientWidth - padH);
-      const height = Math.max(
-        0,
-        (boardBody.clientHeight || Math.max(240, Math.floor(window.innerHeight * 0.38))) - padV,
-      );
-      return { width, height };
-    }
-
-    function liveBoardCellSize() {
-      const grid = els.playerBoardBody.querySelector(".player-grid");
-      const inner = liveBoardInnerSize();
-      const cols = Number.parseInt(getComputedStyle(els.stage).getPropertyValue("--live-cols"), 10) || 1;
-      const rows = Number.parseInt(getComputedStyle(els.stage).getPropertyValue("--live-rows"), 10) || 1;
-      const gap = Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-gap")) || 8;
-      const boardW = grid?.clientWidth || inner.width;
-      const boardH = grid?.clientHeight || inner.height;
-      return {
-        cellW: (boardW - gap * (cols - 1)) / cols,
-        cellH: (boardH - gap * (rows - 1)) / rows,
-      };
-    }
-
-    function readLiveCardScale() {
-      return Number.parseFloat(getComputedStyle(els.stage).getPropertyValue("--live-card-scale")) || 1;
-    }
-
-    function setLiveCardScale(scale) {
-      const clamped = Math.min(LIVE_CARD_SCALE_MAX, Math.max(LIVE_CARD_SCALE_MIN, scale));
-      els.stage.style.setProperty("--live-card-scale", clamped.toFixed(3));
-      return clamped;
-    }
-
-    function applyLiveCardTextScale(cellH, schemaScale = null) {
-      if (!cellH || cellH <= 0) {
-        return;
-      }
-      const scaleCeiling = schemaScale == null
-        ? readLiveCardScale()
-        : Math.min(LIVE_CARD_SCALE_MAX, Math.max(LIVE_CARD_SCALE_MIN, schemaScale));
-      setLiveCardScale(scaleCeiling);
-
-      let bounds = measureLiveChipContentBounds();
-      if (!bounds) {
-        return;
-      }
-      let scale = readLiveCardScale();
-      const targetFill = cellH * 0.96;
-      for (let attempt = 0; attempt < 8 && (bounds.requiredHeight > cellH || bounds.height > targetFill); attempt += 1) {
-        const ratio = Math.min(cellH / bounds.requiredHeight, targetFill / bounds.height, 0.98);
-        scale = setLiveCardScale(scale * ratio);
-        bounds = measureLiveChipContentBounds();
-        if (!bounds) {
-          break;
-        }
-      }
-      if (scale > scaleCeiling) {
-        setLiveCardScale(scaleCeiling);
-      }
-    }
-
-    function enforceLiveBoardViewportFit(schemaScale = null) {
-      const grid = els.playerBoardBody.querySelector(".player-grid");
-      if (!grid) {
-        return;
-      }
-      const boardH = els.playerBoardBody.clientHeight;
-      const gridH = grid.getBoundingClientRect().height;
-      if (boardH <= 0 || gridH <= boardH + 1) {
-        return;
-      }
-      const { cellH } = liveBoardCellSize();
-      if (cellH > 0) {
-        applyLiveCardTextScale(cellH * (boardH / gridH) * 0.98, schemaScale);
-      }
+      lastLiveLayoutApplyKey = applyKey;
+      return applyLivePlayerGridLayout(playerCount, phase);
     }
 
     function applyLivePlayerGridLayout(playerCount, phase) {
@@ -3847,16 +3863,6 @@
       return layout;
     }
 
-    function fitLivePlayerGrid(playerCount, phase) {
-      if (phase !== "guessing" && phase !== "results" && phase !== "ended") {
-        return null;
-      }
-      if (playerCount <= 0) {
-        return null;
-      }
-      return applyLivePlayerGridLayout(playerCount, phase);
-    }
-
     function scheduleLiveBoardFit() {
       if (!currentState) {
         return;
@@ -3870,26 +3876,7 @@
       if (!playerCount) {
         return;
       }
-      const structureKey = liveLayoutStructureKey(playerCount, phase);
-      window.requestAnimationFrame(() => {
-        let layout;
-        if (structureKey !== lastLiveLayoutStructureKey) {
-          layout = fitLivePlayerGrid(playerCount, phase);
-          lastLiveLayoutStructureKey = structureKey;
-        } else {
-          layout = resolveLivePlayerLayout(playerCount, phase);
-          els.stage.style.setProperty("--live-card-scale", layout.scale.toFixed(3));
-        }
-        window.requestAnimationFrame(() => {
-          const { cellH } = liveBoardCellSize();
-          applyLiveCardTextScale(cellH, layout?.scale);
-          enforceLiveBoardViewportFit(layout?.scale);
-        });
-      });
-    }
-
-    function applyLiveBoardLayout(playerCount, phase) {
-      fitLivePlayerGrid(playerCount, phase);
+      syncLiveBoardLayout(playerCount, phase);
     }
 
     function timerDisplayWindowKey(state) {
@@ -4488,7 +4475,7 @@
 
       const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
       const roundNum = Number(state.roundNumber || 0);
-      const balls = displayPotBalls(state);
+      const balls = displayPotBallsPublic(state);
       if (letter && letter !== ".") {
         const tilesSignature = `${roundNum}:${letter}`;
         els.wordTiles.hidden = false;
@@ -4616,6 +4603,58 @@
       return balls;
     }
 
+    function playerBallSnapshotKey(player) {
+      if (player?.id != null && player.id !== "") {
+        return `id:${player.id}`;
+      }
+      return `name:${normalizePlayerAlias(player?.displayName || player?.lobbyLabel)}`;
+    }
+
+    function captureDisplayBallSnapshot(state) {
+      const players = Array.isArray(state?.players) ? state.players : [];
+      displayBallSnapshot = {
+        potBalls: displayPotBalls(state),
+        playerBalls: new Map(
+          players.map((player) => [playerBallSnapshotKey(player), Math.max(0, Number(player.balls || 0))]),
+        ),
+      };
+    }
+
+    function clearDisplayBallSnapshot() {
+      displayBallSnapshot = null;
+    }
+
+    function shouldHoldDisplayBalls(phase) {
+      return phase === "results" || phase === "ended";
+    }
+
+    function displayPotBallsPublic(state) {
+      const phase = state?.phase || "idle";
+      if (shouldHoldDisplayBalls(phase) && displayBallSnapshot) {
+        return displayBallSnapshot.potBalls;
+      }
+      return displayPotBalls(state);
+    }
+
+    function displayPlayerBallsPublic(player, phase) {
+      if (shouldHoldDisplayBalls(phase) && displayBallSnapshot) {
+        const frozen = displayBallSnapshot.playerBalls.get(playerBallSnapshotKey(player));
+        if (frozen != null) {
+          return frozen;
+        }
+      }
+      return Math.max(0, Number(player?.balls || 0));
+    }
+
+    function syncDisplayBallSnapshot(state) {
+      const phase = state?.phase || "idle";
+      if (phase === "guessing") {
+        captureDisplayBallSnapshot(state);
+      } else if (phase === "idle") {
+        clearDisplayBallSnapshot();
+      }
+    }
+
     function renderIdleInfo(state = {}) {
       els.playUrl.textContent = playSiteUrlDisplay(state);
       els.playQr.src = `${playSiteUrl(state)}/api/play-qr`;
@@ -4699,7 +4738,10 @@
       });
     }
 
-    function patchPlayerBoardBalls(players) {
+    function patchPlayerBoardBalls(players, phase) {
+      if (shouldHoldDisplayBalls(phase)) {
+        return;
+      }
       const cards = els.playerBoardBody.querySelectorAll(".player-card");
       if (!cards.length) return;
       const byName = new Map(
@@ -4711,7 +4753,7 @@
         if (!nameEl || !ballsEl) return;
         const player = byName.get(String(nameEl.textContent || "").toLowerCase());
         if (!player) return;
-        ballsEl.textContent = formatPlayerBalls(player.balls);
+        ballsEl.textContent = formatPlayerBalls(displayPlayerBallsPublic(player, phase));
       });
     }
 
@@ -4743,8 +4785,8 @@
       const players = Array.isArray(state.players) ? state.players : [];
       const signature = buildPlayerBoardSignature(state);
       if (!options.force && signature === lastPlayerBoardSignature) {
-        if ((phase === "results" || phase === "ended") && players.length) {
-          patchPlayerBoardBalls(players);
+        if (phase === "guessing" && players.length) {
+          patchPlayerBoardBalls(players, phase);
         }
         return;
       }
@@ -4775,7 +4817,7 @@
         visiblePlayers = pageInfo.slice;
         applyIdleLobbyLayout(visiblePlayers.length, sortedPlayers.length);
       } else {
-        applyLiveBoardLayout(players.length, phase);
+        syncLiveBoardLayout(players.length, phase);
       }
 
       const grid = document.createElement("div");
@@ -4820,12 +4862,19 @@
         if (phase === "idle") {
           name.style.setProperty("--chip-name-size", chipNameSize(lobbyLabel));
         }
+        if (isLingoAmbassador(player)) {
+          card.dataset.lingoAmbassador = "true";
+          const ambassadorKicker = document.createElement("div");
+          ambassadorKicker.className = "player-ambassador-kicker";
+          ambassadorKicker.textContent = "LINGO Ambassador:";
+          card.appendChild(ambassadorKicker);
+        }
         card.appendChild(name);
 
         if (phase !== "idle") {
           const balls = document.createElement("div");
           balls.className = "player-balls";
-          balls.textContent = formatPlayerBalls(player.balls);
+          balls.textContent = formatPlayerBalls(displayPlayerBallsPublic(player, phase));
           card.appendChild(balls);
         }
 
@@ -4858,9 +4907,6 @@
 
       grid.appendChild(fragment);
       els.playerBoardBody.appendChild(grid);
-      if (phase !== "idle") {
-        scheduleLiveBoardFit();
-      }
     }
 
     function renderAnswerFanfare(state) {
@@ -4950,7 +4996,7 @@
       } else {
         delete els.stage.dataset.liveDensity;
         delete els.stage.dataset.liveLayout;
-        lastLiveLayoutStructureKey = "";
+        lastLiveLayoutApplyKey = "";
         els.stage.style.removeProperty("--live-cols");
         els.stage.style.removeProperty("--live-rows");
         els.stage.style.removeProperty("--live-gap");
@@ -4978,10 +5024,12 @@
       }
 
       els.statRound.textContent = String(currentState.roundNumber || 0);
-      els.statBalls.textContent = String(displayPotBalls(currentState));
+      els.statBalls.textContent = String(displayPotBallsPublic(currentState));
+      syncDisplayBallSnapshot(currentState);
       els.statPlayers.textContent = String(playerCount);
       els.statSubmitted.textContent = String(currentState.submittedThisRound || 0);
       renderUnsubmittedStat(currentState);
+      syncLingoAmbassadorPlaque(currentState);
 
       renderAnswerFanfare(currentState);
       renderWordTiles(currentState);
