@@ -44,8 +44,10 @@
       --live-tile-gap: 0.54em;
       --live-tile-font: 2.05em;
       --live-chrome-side-inset: max(calc(var(--live-score-rail-width) + 0.8em), calc(10.5em + 1.2em));
-      --live-stats-min-height: 3.75em;
+      --live-stats-min-height: 3.5em;
       --live-stat-label-size: 0.62em;
+      --live-player-board-font: clamp(18px, 4.6cqh, 56px);
+      --live-board-pad: 0.28em;
       --live-chrome-stack-gap: var(--live-v-gap);
       --live-chrome-board-gap: var(--live-v-gap);
       --live-board-bottom-inset: 2px;
@@ -273,9 +275,9 @@
       align-items: center;
       gap: 0.02em;
       text-align: center;
-      font-size: 0.56em;
+      font-size: 0.88em;
       font-weight: 900;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       line-height: 1.05;
       text-transform: uppercase;
       color: var(--show-gold-hot);
@@ -293,15 +295,15 @@
     }
 
     .stage[data-phase="idle"] .player-ambassador-kicker {
-      font-size: 0.62em;
-      letter-spacing: 0.07em;
+      font-size: 0.96em;
+      letter-spacing: 0.06em;
     }
 
     .stage[data-live-density="md"] .player-ambassador-kicker,
     .stage[data-live-density="lg"] .player-ambassador-kicker,
     .stage[data-live-density="xl"] .player-ambassador-kicker {
-      font-size: 0.5em;
-      letter-spacing: 0.05em;
+      font-size: 0.82em;
+      letter-spacing: 0.04em;
     }
 
     .stage[data-phase="guessing"] .player-card[data-lingo-ambassador="true"],
@@ -1337,7 +1339,7 @@
     }
 
     .unsubmitted-chip {
-      font-size: var(--chip-name-size, 0.52em);
+      font-size: var(--chip-name-size, 0.62em);
       font-weight: 900;
       letter-spacing: 0.03em;
       padding: 0.24em 0.52em;
@@ -1400,20 +1402,11 @@
       font-size: 0.48em;
     }
 
-    .stage[data-phase="guessing"] .player-board-body {
-      padding: var(--live-board-pad, 0.42em);
-      min-height: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: stretch;
-    }
-
+    .stage[data-phase="guessing"] .player-board-body,
     .stage[data-phase="results"] .player-board-body,
     .stage[data-phase="ended"] .player-board-body {
-      padding: var(--live-board-pad, 0.42em);
+      font-size: var(--live-player-board-font);
+      padding: var(--live-board-pad);
       min-height: 0;
       flex: 1 1 auto;
       overflow: hidden;
@@ -1602,7 +1595,7 @@
       position: relative;
       z-index: 1;
       margin-top: 0.04em;
-      font-size: 0.52em;
+      font-size: 0.58em;
       font-weight: 900;
       letter-spacing: 0.05em;
       color: var(--show-cyan);
@@ -1851,7 +1844,7 @@
     .stage[data-phase="guessing"] .player-name,
     .stage[data-phase="results"] .player-name,
     .stage[data-phase="ended"] .player-name {
-      font-size: 0.88em;
+      font-size: 1.02em;
       max-width: 100%;
       line-height: 1.08;
       flex: 0 0 auto;
@@ -1866,7 +1859,7 @@
     .stage[data-phase="guessing"] .player-balls,
     .stage[data-phase="results"] .player-balls,
     .stage[data-phase="ended"] .player-balls {
-      font-size: 0.62em;
+      font-size: 0.78em;
       line-height: 1.08;
       flex: 0 0 auto;
     }
@@ -1874,8 +1867,9 @@
     .stage[data-phase="guessing"] .player-status,
     .stage[data-phase="results"] .player-status,
     .stage[data-phase="ended"] .player-status {
-      font-size: 0.48em;
-      line-height: 1.1;
+      font-size: 0.72em;
+      font-weight: 800;
+      line-height: 1.12;
       margin-top: 0;
       white-space: normal;
       text-align: center;
@@ -3464,8 +3458,8 @@
     const LOBBY_PAGE_SIZE = LOBBY_PAGE_COLS * LOBBY_PAGE_ROWS;
     const LOBBY_ROTATE_MS = 4000;
     const LIVE_DENSE_THRESHOLD = 12;
-    const LIVE_CARD_SCALE_MIN = 0.58;
-    const LIVE_CARD_SCALE_MAX = 1.22;
+    const LIVE_CARD_SCALE_MIN = 0.68;
+    const LIVE_CARD_SCALE_MAX = 1.32;
     /**
      * Definitive public-display player card grid (live phases only).
      * Columns and gap are fixed per player-count band; rows = ceil(players / cols).
@@ -3488,14 +3482,14 @@
     ];
     /** Fixed card text scale by row count — set once per layout tier / phase. */
     const LIVE_CARD_SCALE_BY_ROWS = {
-      1: 1.10,
-      2: 1.00,
-      3: 0.92,
-      4: 0.84,
-      5: 0.76,
-      6: 0.70,
-      7: 0.64,
-      8: 0.60,
+      1: 1.18,
+      2: 1.08,
+      3: 1.02,
+      4: 0.96,
+      5: 0.90,
+      6: 0.84,
+      7: 0.78,
+      8: 0.74,
     };
     const ALL_SUBMITTED_GRACE_SECONDS = 10;
     const SEALED_GUESS_DOTS_SECONDS = 10;
@@ -4279,10 +4273,10 @@
 
     function unsubmittedChipSize(name) {
       const len = (name || "").length;
-      if (len <= 9) return "0.56em";
-      if (len <= 13) return "0.5em";
-      if (len <= 17) return "0.44em";
-      return "0.38em";
+      if (len <= 9) return "0.68em";
+      if (len <= 13) return "0.6em";
+      if (len <= 17) return "0.54em";
+      return "0.48em";
     }
 
     function renderUnsubmittedStat(state) {
