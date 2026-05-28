@@ -4478,7 +4478,7 @@
 
       const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
       const roundNum = Number(state.roundNumber || 0);
-      const balls = Number(state.ballsRemaining || 0);
+      const balls = displayPotBalls(state);
       if (letter && letter !== ".") {
         const tilesSignature = `${roundNum}:${letter}`;
         els.wordTiles.hidden = false;
@@ -4597,6 +4597,13 @@
     function formatPlayerBalls(balls) {
       const total = Math.max(0, Number(balls || 0));
       return `${total} Ball${total === 1 ? "" : "s"}`;
+    }
+
+    function displayPotBalls(state) {
+      const balls = Math.max(0, Number(state.ballsRemaining || 0));
+      const multiplier = Math.max(1, Number(state.ballMultiplier || 1));
+      if (balls < 2 * multiplier) return 0;
+      return balls;
     }
 
     function renderIdleInfo(state = {}) {
@@ -4957,7 +4964,7 @@
       }
 
       els.statRound.textContent = String(currentState.roundNumber || 0);
-      els.statBalls.textContent = String(currentState.ballsRemaining || 0);
+      els.statBalls.textContent = String(displayPotBalls(currentState));
       els.statPlayers.textContent = String(playerCount);
       els.statSubmitted.textContent = String(currentState.submittedThisRound || 0);
       renderUnsubmittedStat(currentState);

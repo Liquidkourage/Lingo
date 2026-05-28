@@ -1013,6 +1013,13 @@
       el.value = value;
     }
 
+    function displayPotBalls(state) {
+      const balls = Math.max(0, Number(state?.ballsRemaining || 0));
+      const multiplier = Math.max(1, Number(state?.ballMultiplier || 1));
+      if (balls < 2 * multiplier) return 0;
+      return balls;
+    }
+
     function rosterHasFocus() {
       return Boolean(els.playerRosterBody.querySelector('input:focus'));
     }
@@ -1187,7 +1194,7 @@
       els.phaseBadge.textContent = PHASE_LABELS[phase] || PHASE_LABELS.idle;
       els.phaseValue.textContent = phase;
       els.roundValue.textContent = String(state.roundNumber ?? 0);
-      els.ballsValue.textContent = String(state.ballsRemaining ?? 0);
+      els.ballsValue.textContent = String(displayPotBalls(state));
       assignHostField(els.wordInput, 'word', state.currentWord || '');
       assignHostField(els.guessSecondsInput, 'guessSeconds', String(state.guessWindowSeconds || 90));
       assignHostField(els.resultsSecondsInput, 'resultsSeconds', String(state.resultsWindowSeconds || 45));

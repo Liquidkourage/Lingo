@@ -338,6 +338,7 @@ function endCurrentWordPatch() {
   return {
     phase: "ended",
     answer_revealed: true,
+    balls_remaining: 0,
     ...clearTimerPausePatch(),
     ...clearAllSubmittedGracePatch(),
   };
@@ -1187,6 +1188,7 @@ async function applyRevealResultsScoring(state, client) {
   if (lastGuessWasTwoBall || everyoneSolved) {
     patch.phase = "ended";
     patch.answer_revealed = true;
+    patch.balls_remaining = 0;
   } else {
     patch.phase = "results";
   }
@@ -1850,6 +1852,7 @@ async function handleAdminAction(action, body) {
       return serializeState(await updateState({
         answer_revealed: true,
         phase: "ended",
+        balls_remaining: 0,
         ...clearTimerPausePatch(),
       }));
     case "reset-session": {

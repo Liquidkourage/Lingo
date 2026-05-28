@@ -2135,6 +2135,13 @@
       return phase === 'guessing' || phase === 'results' || phase === 'ended';
     }
 
+    function displayPotBalls(state) {
+      const balls = Math.max(0, Number(state.ballsRemaining || 0));
+      const multiplier = Math.max(1, Number(state.ballMultiplier || 1));
+      if (balls < 2 * multiplier) return 0;
+      return balls;
+    }
+
     function renderLockedIn(state) {
       els.stage.dataset.locked = 'false';
     }
@@ -2607,7 +2614,7 @@
       }
 
       els.metaRound.textContent = String(state.roundNumber || 0);
-      els.metaPot.textContent = String(state.ballsRemaining || 0);
+      els.metaPot.textContent = String(displayPotBalls(state));
       els.metaYours.textContent = !activeUserName()
         ? '—'
         : String(isViewerJoined(state) ? viewer.balls : 0);
