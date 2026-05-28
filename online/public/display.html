@@ -264,92 +264,42 @@
       white-space: normal;
     }
 
-    @keyframes ambassador-shimmer {
-      0%, 100% { opacity: 0.82; filter: brightness(1); }
-      50% { opacity: 1; filter: brightness(1.12); }
-    }
-
-    .lingo-ambassador-plaque {
-      position: absolute;
-      left: 2.2%;
-      bottom: 1.6%;
-      z-index: 24;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.08em;
-      padding: 0.42em 0.72em 0.48em;
-      border-radius: 0.42em;
-      border: 2px solid var(--show-gold);
-      background:
-        linear-gradient(135deg, rgba(26, 0, 72, 0.94) 0%, rgba(10, 0, 32, 0.96) 100%);
-      box-shadow:
-        0 0 0 1px #000,
-        0 0 22px rgba(255, 204, 0, 0.35),
-        0 0 28px rgba(187, 68, 255, 0.28);
-      pointer-events: none;
-      animation: ambassador-shimmer 4.8s ease-in-out infinite;
-    }
-
-    .lingo-ambassador-plaque[hidden] {
-      display: none !important;
-    }
-
-    .lingo-ambassador-kicker {
-      font-size: 0.46em;
-      font-weight: 900;
-      letter-spacing: 0.14em;
-      line-height: 1.1;
-      text-transform: uppercase;
-      color: var(--show-gold-hot);
-      text-shadow: 0 1px 0 #000, 0 0 12px rgba(255, 204, 0, 0.55);
-    }
-
-    .lingo-ambassador-name {
-      font-size: 0.72em;
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      line-height: 1.05;
-      color: #fff;
-      text-shadow: 0 2px 0 #000, 0 0 16px rgba(0, 212, 255, 0.55);
-    }
-
     .player-ambassador-kicker {
       position: relative;
       z-index: 1;
       width: 100%;
       text-align: center;
-      font-size: 0.34em;
+      font-size: 0.38em;
       font-weight: 900;
       letter-spacing: 0.1em;
-      line-height: 1.15;
+      line-height: 1.12;
       text-transform: uppercase;
       color: var(--show-gold-hot);
-      text-shadow: 0 1px 0 #000, 0 0 10px rgba(255, 204, 0, 0.5);
+      text-shadow: 0 1px 0 #000, 0 0 10px rgba(255, 204, 0, 0.45);
       flex-shrink: 0;
     }
 
-    .player-card[data-lingo-ambassador="true"] {
+    .stage[data-phase="guessing"] .player-card[data-lingo-ambassador="true"],
+    .stage[data-phase="results"] .player-card[data-lingo-ambassador="true"],
+    .stage[data-phase="ended"] .player-card[data-lingo-ambassador="true"] {
       border-color: var(--show-gold) !important;
+      border-style: dashed !important;
       box-shadow:
         0 0 0 1px #000,
-        0 0 20px rgba(255, 204, 0, 0.42),
-        0 0 24px rgba(187, 68, 255, 0.35) !important;
+        0 0 16px rgba(255, 204, 0, 0.38) !important;
+    }
+
+    .stage[data-phase="idle"] .player-card[data-lingo-ambassador="true"] {
+      border-color: var(--show-gold) !important;
+      border-style: dashed !important;
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 16px rgba(255, 204, 0, 0.38) !important;
     }
 
     .player-card[data-lingo-ambassador="true"] .player-name {
-      color: var(--show-gold-hot);
-      text-shadow: 0 2px 0 #000, 0 0 14px rgba(255, 204, 0, 0.75);
-    }
-
-    .stage[data-phase="idle"] .lingo-ambassador-plaque {
-      bottom: 2.4%;
-    }
-
-    .stage[data-phase="guessing"] .lingo-ambassador-plaque,
-    .stage[data-phase="results"] .lingo-ambassador-plaque,
-    .stage[data-phase="ended"] .lingo-ambassador-plaque {
-      bottom: 1.2%;
+      color: var(--show-white) !important;
+      text-shadow: 0 2px 0 #000, 0 0 12px rgba(255, 255, 255, 0.22);
     }
 
     .idle-signup-block {
@@ -3314,11 +3264,6 @@
 
       <p class="kiosk-hint" id="kioskHint" hidden>Fullscreen venue display · press F11 or tap to expand</p>
 
-      <div class="lingo-ambassador-plaque" id="lingoAmbassadorPlaque" hidden aria-hidden="true">
-        <span class="lingo-ambassador-kicker">LINGO Ambassador:</span>
-        <span class="lingo-ambassador-name" id="lingoAmbassadorName"></span>
-      </div>
-
       <div class="stage-ui">
         <div class="ui-topline" id="topLine" hidden aria-hidden="true"></div>
 
@@ -3453,8 +3398,6 @@
       lobbyPagerLabel: document.getElementById("lobbyPagerLabel"),
       standbySlate: document.getElementById("standbySlate"),
       standbyMessage: document.getElementById("standbyMessage"),
-      lingoAmbassadorPlaque: document.getElementById("lingoAmbassadorPlaque"),
-      lingoAmbassadorName: document.getElementById("lingoAmbassadorName"),
       kioskHint: document.getElementById("kioskHint"),
       viewport: document.querySelector(".viewport"),
       wordClue: document.getElementById("wordClue"),
@@ -3737,26 +3680,11 @@
       return aliases.some((alias) => LINGO_AMBASSADOR_ALIASES.has(alias));
     }
 
-    function findLingoAmbassador(players) {
-      return (Array.isArray(players) ? players : []).find(isLingoAmbassador) || null;
-    }
-
-    function lingoAmbassadorDisplayName(player) {
-      return (player?.displayName || player?.lobbyLabel || LINGO_AMBASSADOR_DISPLAY).trim();
-    }
-
-    function syncLingoAmbassadorPlaque(state) {
-      const ambassador = findLingoAmbassador(state?.players);
-      if (!ambassador) {
-        els.lingoAmbassadorPlaque.hidden = true;
-        els.lingoAmbassadorPlaque.setAttribute("aria-hidden", "true");
-        delete els.stage.dataset.lingoAmbassador;
-        return;
-      }
-      els.lingoAmbassadorPlaque.hidden = false;
-      els.lingoAmbassadorPlaque.setAttribute("aria-hidden", "false");
-      els.lingoAmbassadorName.textContent = lingoAmbassadorDisplayName(ambassador);
-      els.stage.dataset.lingoAmbassador = "true";
+    function renderAmbassadorKicker() {
+      const kicker = document.createElement("div");
+      kicker.className = "player-ambassador-kicker";
+      kicker.textContent = "LINGO Ambassador:";
+      return kicker;
     }
 
     function detectNewLobbyArrivals(players, phase) {
@@ -4855,19 +4783,16 @@
         const name = document.createElement("div");
         name.className = "player-name";
         const lobbyLabel = player.lobbyLabel || player.displayName || "Player";
+        if (isLingoAmbassador(player)) {
+          card.dataset.lingoAmbassador = "true";
+          card.appendChild(renderAmbassadorKicker());
+        }
         name.textContent = lobbyLabel;
         if (player.displayName && lobbyLabel !== player.displayName) {
           name.title = player.displayName;
         }
         if (phase === "idle") {
           name.style.setProperty("--chip-name-size", chipNameSize(lobbyLabel));
-        }
-        if (isLingoAmbassador(player)) {
-          card.dataset.lingoAmbassador = "true";
-          const ambassadorKicker = document.createElement("div");
-          ambassadorKicker.className = "player-ambassador-kicker";
-          ambassadorKicker.textContent = "LINGO Ambassador:";
-          card.appendChild(ambassadorKicker);
         }
         card.appendChild(name);
 
@@ -5029,7 +4954,6 @@
       els.statPlayers.textContent = String(playerCount);
       els.statSubmitted.textContent = String(currentState.submittedThisRound || 0);
       renderUnsubmittedStat(currentState);
-      syncLingoAmbassadorPlaque(currentState);
 
       renderAnswerFanfare(currentState);
       renderWordTiles(currentState);
