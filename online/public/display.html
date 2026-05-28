@@ -47,6 +47,7 @@
       --live-stats-min-height: 3.5em;
       --live-stat-label-size: 0.62em;
       --live-player-board-font: clamp(18px, 4.6cqh, 56px);
+      --live-player-card-text-scale: 0.5;
       --live-board-pad: 0.28em;
       --live-chrome-stack-gap: var(--live-v-gap);
       --live-chrome-board-gap: var(--live-v-gap);
@@ -1339,7 +1340,7 @@
     }
 
     .unsubmitted-chip {
-      font-size: var(--chip-name-size, 0.62em);
+      font-size: calc(var(--chip-name-size, 0.62em) * var(--live-player-card-text-scale, 1));
       font-weight: 900;
       letter-spacing: 0.03em;
       padding: 0.24em 0.52em;
@@ -1405,7 +1406,7 @@
     .stage[data-phase="guessing"] .player-board-body,
     .stage[data-phase="results"] .player-board-body,
     .stage[data-phase="ended"] .player-board-body {
-      font-size: var(--live-player-board-font);
+      font-size: calc(var(--live-player-board-font) * var(--live-player-card-text-scale, 1));
       padding: var(--live-board-pad);
       min-height: 0;
       flex: 1 1 auto;
