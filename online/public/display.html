@@ -290,26 +290,6 @@
       margin-bottom: 0.04em;
     }
 
-    .player-ambassador-icon {
-      display: block;
-      width: 1.45em;
-      height: 1.45em;
-      margin-bottom: 0.02em;
-      filter: drop-shadow(0 2px 0 #000) drop-shadow(0 0 10px rgba(255, 204, 0, 0.75));
-      animation: ambassador-icon-sparkle 2.4s ease-in-out infinite;
-    }
-
-    .player-ambassador-icon svg {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    @keyframes ambassador-icon-sparkle {
-      0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 2px 0 #000) drop-shadow(0 0 10px rgba(255, 204, 0, 0.75)); }
-      50% { transform: scale(1.08) rotate(-4deg); filter: drop-shadow(0 2px 0 #000) drop-shadow(0 0 18px rgba(255, 230, 120, 1)); }
-    }
-
     .player-ambassador-badge {
       position: absolute;
       top: 0.06em;
@@ -375,6 +355,13 @@
     .player-card[data-lingo-ambassador="true"] .player-name {
       color: var(--show-white) !important;
       text-shadow: 0 2px 0 #000, 0 0 12px rgba(255, 255, 255, 0.22);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-lingo-ambassador="true"][data-status="locked"] .player-name,
+    .stage[data-phase="results"] .player-card[data-lingo-ambassador="true"][data-status="locked"] .player-name,
+    .stage[data-phase="ended"] .player-card[data-lingo-ambassador="true"][data-status="locked"] .player-name {
+      color: var(--show-gold-hot) !important;
+      text-shadow: 0 2px 0 #000, 0 0 16px rgba(255, 204, 0, 0.85) !important;
     }
 
     .idle-signup-block {
@@ -3267,7 +3254,6 @@
       .stage[data-phase="idle"] .player-board,
       .stage[data-phase="idle"] .player-card,
       .stage[data-phase="idle"] .player-card.is-new-arrival,
-      .player-ambassador-icon,
       .player-ambassador-badge {
         animation: none !important;
       }
@@ -3789,7 +3775,6 @@
       const kicker = document.createElement("div");
       kicker.className = "player-ambassador-kicker";
       kicker.innerHTML = [
-        `<span class="player-ambassador-icon">${ambassadorIconSvg()}</span>`,
         '<span class="player-ambassador-line">Lingo</span>',
         '<span class="player-ambassador-line">Ambassador:</span>',
       ].join("");
@@ -3809,11 +3794,8 @@
       let kicker = card.querySelector(".player-ambassador-kicker");
       if (!kicker) {
         card.insertBefore(renderAmbassadorKicker(), card.firstChild);
-      } else if (!kicker.querySelector(".player-ambassador-icon")) {
-        kicker.insertAdjacentHTML(
-          "afterbegin",
-          `<span class="player-ambassador-icon">${ambassadorIconSvg()}</span>`,
-        );
+      } else {
+        kicker.querySelector(".player-ambassador-icon")?.remove();
       }
       if (!card.querySelector(".player-ambassador-badge")) {
         card.appendChild(renderAmbassadorBadge());
