@@ -51,10 +51,11 @@
       max-height: 100dvh;
       overflow: hidden;
       display: flex;
-      align-items: stretch;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
       padding:
-        max(8px, env(safe-area-inset-top, 0px))
+        max(1rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))
         max(10px, env(safe-area-inset-right, 0px))
         max(8px, env(safe-area-inset-bottom, 0px))
         max(10px, env(safe-area-inset-left, 0px));
@@ -63,6 +64,7 @@
     .play-stage {
       position: relative;
       width: min(100%, 520px);
+      flex: 1 1 auto;
       max-height: 100%;
       min-height: 0;
       display: flex;
