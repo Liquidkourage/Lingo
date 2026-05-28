@@ -855,7 +855,6 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
 
   const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
   const guess = submitted ? normalizeWordInput(player.currentGuess) : "";
-  const hasPerfectSolve = await playerHasPerfectSolveForRound(state, player, client);
   let resultPattern = "";
   let resultLabel = "";
 
@@ -892,12 +891,12 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
     sessionValid,
     displayName: player.displayName,
     balls: Number(player.balls || 0),
-    lockedIn: phase === "guessing" && submitted && !hasPerfectSolve,
+    lockedIn: phase === "guessing" && submitted && !player.solvedCurrentWord,
     resultPattern: viewerResultPattern,
     roundGuess,
     resultLabel: viewerResultLabel,
     guessHistory,
-    isSolved: Boolean(player.solvedCurrentWord) || (phase === "guessing" && hasPerfectSolve),
+    isSolved: Boolean(player.solvedCurrentWord),
     isChampion: isChampionPlayer(player.displayName, state),
   };
 }
@@ -1220,11 +1219,11 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
   let statusText = "Waiting for guess";
   let cardTone = "default";
 
-  const perfectSolve = solvedCurrentWord
-    || (guess && guessIsLegal && resultPattern === "!!!!!");
+  const revealedPerfect = submittedThisRound && guess && guessIsLegal && resultPattern === "!!!!!";
+  const confirmedSolve = solvedCurrentWord;
 
   if (phase === "guessing") {
-    if (perfectSolve) {
+    if (confirmedSolve) {
       status = "solved";
       statusText = "Congratulations!";
       cardTone = "solved";
@@ -1233,16 +1232,16 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
       statusText = "Locked in";
     }
   } else if (phase === "results" || phase === "ended") {
-    if (!submittedThisRound) {
+    if (confirmedSolve || revealedPerfect) {
+      status = "solved";
+      statusText = "Congratulations!";
+      cardTone = "solved";
+    } else if (!submittedThisRound) {
       statusText = "No guess this round";
     } else if (!guessIsLegal) {
       status = "invalid";
       statusText = "Not a word…";
       cardTone = "invalid";
-    } else if (resultPattern === "!!!!!") {
-      status = "solved";
-      statusText = "Congratulations!";
-      cardTone = "solved";
     } else {
       status = "resolved";
       statusText = "Round result";
@@ -1262,7 +1261,7 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
     statusText,
     cardTone,
     resultPattern: (phase === "results" || phase === "ended") && guessIsLegal ? resultPattern : "",
-    isWinner: perfectSolve,
+    isWinner: confirmedSolve || revealedPerfect,
     submissionCount: Number(player.submissionCount || 0),
     submittedAtIso: player.submittedAtIso,
     joinedAtIso: player.createdAtIso || player.updatedAtIso || null,
