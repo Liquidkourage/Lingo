@@ -1749,7 +1749,7 @@
     .stage[data-phase="guessing"] .player-name,
     .stage[data-phase="results"] .player-name,
     .stage[data-phase="ended"] .player-name {
-      font-size: clamp(0.62em, 24cqmin, 1.05em);
+      font-size: clamp(0.68em, 18cqmin, 0.94em);
       max-width: 100%;
       line-height: 1.08;
       flex: 0 0 auto;
@@ -1764,7 +1764,7 @@
     .stage[data-phase="guessing"] .player-balls,
     .stage[data-phase="results"] .player-balls,
     .stage[data-phase="ended"] .player-balls {
-      font-size: clamp(0.46em, 16cqmin, 0.82em);
+      font-size: clamp(0.5em, 13cqmin, 0.74em);
       line-height: 1.08;
       flex: 0 0 auto;
     }
@@ -1772,7 +1772,7 @@
     .stage[data-phase="guessing"] .player-status,
     .stage[data-phase="results"] .player-status,
     .stage[data-phase="ended"] .player-status {
-      font-size: clamp(0.4em, 13cqmin, 0.72em);
+      font-size: clamp(0.44em, 11cqmin, 0.64em);
       line-height: 1.1;
       margin-top: 0;
       white-space: normal;
@@ -3351,6 +3351,8 @@
     const LOBBY_PAGE_SIZE = LOBBY_PAGE_COLS * LOBBY_PAGE_ROWS;
     const LOBBY_ROTATE_MS = 4000;
     const LIVE_DENSE_THRESHOLD = 12;
+    const LIVE_CARD_SCALE_MIN = 0.9;
+    const LIVE_CARD_SCALE_MAX = 1.28;
     const ALL_SUBMITTED_GRACE_SECONDS = 10;
     const SEALED_GUESS_DOTS_SECONDS = 10;
 
@@ -3686,8 +3688,8 @@
         return;
       }
       const targetFill = cellH * 0.96;
-      let lo = 0.72;
-      let hi = 2.6;
+      let lo = LIVE_CARD_SCALE_MIN;
+      let hi = LIVE_CARD_SCALE_MAX;
       let best = lo;
 
       for (let attempt = 0; attempt < 14; attempt += 1) {
@@ -3767,7 +3769,10 @@
       }
 
       const contentRef = Math.max(minCellH, isReveal ? 52 : 44);
-      const scale = Math.min(2.2, Math.max(0.75, Math.min(best.cellW / 92, best.cellH / (contentRef * 0.78))));
+      const scale = Math.min(
+        LIVE_CARD_SCALE_MAX,
+        Math.max(LIVE_CARD_SCALE_MIN, Math.min(best.cellW / 92, best.cellH / (contentRef * 0.78))),
+      );
 
       els.stage.style.setProperty("--live-cols", String(best.cols));
       els.stage.style.setProperty("--live-rows", String(best.rows));

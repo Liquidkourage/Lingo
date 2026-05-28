@@ -1807,7 +1807,7 @@
 
       setGuessText(next);
       const caret = Math.min(start + 1, next.length);
-      guessCaretIndex = Math.min(start, 4);
+      guessCaretIndex = Math.min(caret, 4);
       window.requestAnimationFrame(() => {
         input.setSelectionRange(caret, caret);
         paintGuessSelection();
