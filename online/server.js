@@ -25,16 +25,43 @@ require("dotenv").config();
 
 const QRCode = require("qrcode");
 
+function resolveDatabaseUrl() {
+  const direct = [
+    process.env.DATABASE_URL,
+    process.env.DATABASE_PRIVATE_URL,
+    process.env.POSTGRES_URL,
+    process.env.POSTGRESQL_URL,
+  ]
+    .map((value) => String(value || "").trim())
+    .find(Boolean);
+  if (direct) {
+    return direct;
+  }
+
+  const user = process.env.PGUSER || process.env.POSTGRES_USER;
+  const password = process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD;
+  const host = process.env.PGHOST || process.env.POSTGRES_HOST;
+  const port = process.env.PGPORT || process.env.POSTGRES_PORT || "5432";
+  const database = process.env.PGDATABASE || process.env.POSTGRES_DB;
+  if (user && password && host && database) {
+    return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
+  }
+
+  return "";
+}
+
 const app = express();
 app.set("trust proxy", 1);
 const port = Number(process.env.PORT || 3000);
 const adminKey = String(process.env.LINGO_ADMIN_KEY || "").trim();
-const databaseUrl = String(process.env.DATABASE_URL || "").trim();
+const databaseUrl = resolveDatabaseUrl();
 const defaultChampion = String(process.env.LINGO_CHAMPION || "").trim();
 const DEFAULT_PLAY_SITE_URL = "https://lingo.liquidkourage.com";
 
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required.");
+  throw new Error(
+    "DATABASE_URL is required. On Railway, open your web service → Variables → add a reference to the Postgres plugin's DATABASE_URL (or DATABASE_PRIVATE_URL).",
+  );
 }
 
 const pool = new Pool({
