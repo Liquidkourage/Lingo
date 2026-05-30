@@ -344,6 +344,33 @@
       box-shadow:
         0 0 0 1px #000,
         0 0 16px rgba(255, 204, 0, 0.38) !important;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 0.05em;
+      overflow: visible;
+      min-height: 2.55em;
+      padding: 0.2em 0.42em 0.24em;
+    }
+
+    .stage[data-phase="idle"] .player-card[data-lingo-ambassador="true"] .player-ambassador-kicker {
+      flex-shrink: 0;
+      width: 100%;
+      margin-bottom: 0;
+      font-size: 0.56em;
+      letter-spacing: 0.04em;
+      line-height: 1.05;
+    }
+
+    .stage[data-phase="idle"] .player-card[data-lingo-ambassador="true"] .player-name {
+      color: var(--show-gold-hot) !important;
+      flex-shrink: 0;
+      -webkit-line-clamp: 1;
+      font-size: var(--chip-name-size, 0.8em) !important;
+      text-shadow:
+        0 2px 0 #000,
+        0 0 14px rgba(255, 204, 0, 0.75),
+        0 0 24px rgba(255, 180, 0, 0.35) !important;
     }
 
     .player-card[data-lingo-ambassador="true"] .player-name {
@@ -1620,6 +1647,191 @@
       height: 100%;
     }
 
+    .player-card[data-monarch="true"] {
+      border-color: var(--show-gold) !important;
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 22px rgba(255, 204, 0, 0.42) !important;
+    }
+
+    .player-card[data-monarch="true"] .player-name {
+      color: var(--show-gold-hot) !important;
+      text-shadow: 0 2px 0 #000, 0 0 16px rgba(255, 204, 0, 0.85) !important;
+    }
+
+    .stage[data-phase="idle"] .player-card[data-monarch="true"] .player-name {
+      color: var(--show-gold-hot) !important;
+    }
+
+    .player-card.is-monarch-fanfare {
+      animation: monarch-crown-pop 1.35s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+      z-index: 4;
+    }
+
+    @keyframes monarch-crown-pop {
+      0% { transform: scale(1); box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.35); }
+      35% { transform: scale(1.08); box-shadow: 0 0 0 1px #000, 0 0 48px rgba(255, 220, 80, 0.95); }
+      100% { transform: scale(1); }
+    }
+
+    .champion-fanfare {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 4, 14, 0.72);
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      animation: champion-fanfare-in 0.55s ease both;
+    }
+
+    .champion-fanfare[hidden] {
+      display: none !important;
+    }
+
+    @keyframes champion-fanfare-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .champion-fanfare-inner {
+      text-align: center;
+      padding: 1.2em 1.8em;
+      border-radius: 0.45em;
+      border: 2px solid rgba(255, 204, 0, 0.75);
+      background: linear-gradient(180deg, rgba(40, 18, 0, 0.94) 0%, rgba(10, 4, 0, 0.98) 100%);
+      box-shadow:
+        0 0 48px rgba(255, 204, 0, 0.45),
+        0 0 80px rgba(255, 160, 0, 0.25);
+      animation: monarch-crown-pop 1.1s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+    }
+
+    .champion-fanfare-kicker {
+      margin: 0 0 0.25em;
+      font-size: 0.72em;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255, 220, 140, 0.92);
+    }
+
+    .champion-fanfare-name {
+      margin: 0;
+      font-size: clamp(2.4em, 8cqw, 4.8em);
+      font-weight: 900;
+      line-height: 1.05;
+      color: var(--show-gold-hot);
+      text-shadow:
+        0 3px 0 #000,
+        0 0 32px rgba(255, 204, 0, 0.95);
+    }
+
+    .champion-fanfare-crown {
+      display: block;
+      width: 1.4em;
+      height: 1.4em;
+      margin: 0 auto 0.35em;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+    }
+
+    .bingo-display {
+      position: absolute;
+      inset: 0;
+      z-index: 45;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      align-items: center;
+      justify-items: center;
+      padding: 4% 5% 5%;
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 42%, rgba(0, 48, 120, 0.92) 0%, rgba(0, 6, 18, 0.97) 72%);
+      text-align: center;
+    }
+
+    .bingo-display[hidden] {
+      display: none !important;
+    }
+
+    .bingo-display-kicker {
+      margin: 0;
+      font-size: 0.62em;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(180, 220, 255, 0.88);
+    }
+
+    .bingo-display-last {
+      margin: 0.08em 0 0;
+      font-size: clamp(4em, 16cqw, 9em);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.06em;
+      color: var(--show-gold-hot);
+      text-shadow:
+        0 4px 0 #000,
+        0 0 48px rgba(255, 204, 0, 0.85);
+    }
+
+    .bingo-display-progress {
+      margin: 0.35em 0 0;
+      font-size: 0.72em;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--show-cyan);
+    }
+
+    .bingo-display-history {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35em;
+      justify-content: center;
+      max-width: 92%;
+      margin-top: 0.8em;
+    }
+
+    .bingo-display-history span {
+      padding: 0.22em 0.55em;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 204, 0, 0.35);
+      background: rgba(0, 0, 0, 0.35);
+      font-size: 0.58em;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #f2f9ff;
+    }
+
+    .bingo-display-history span.is-latest {
+      border-color: rgba(255, 220, 80, 0.95);
+      background: rgba(255, 204, 0, 0.22);
+      color: var(--show-gold-hot);
+    }
+
+    .bingo-display-winner {
+      margin: 0.65em 0 0;
+      font-size: clamp(1.4em, 4.5cqw, 2.6em);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: var(--show-green);
+      text-shadow: 0 2px 0 #000, 0 0 24px rgba(61, 217, 122, 0.75);
+      animation: monarch-crown-pop 1.2s ease-in-out infinite;
+    }
+
+    .bingo-display-winner[hidden] {
+      display: none !important;
+    }
+
+    .stage[data-show-bingo="true"] .live-chrome,
+    .stage[data-show-bingo="true"] .timer-panel,
+    .stage[data-show-bingo="true"] .live-score-rail,
+    .stage[data-show-bingo="true"] .stats-row,
+    .stage[data-show-bingo="true"] .player-board,
+    .stage[data-show-bingo="true"] .ui-topline {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
     .player-balls {
       position: relative;
       z-index: 1;
@@ -2625,6 +2837,10 @@
       font-size: var(--chip-name-size, 0.9em) !important;
     }
 
+    .stage[data-lobby-density="tiny"] .player-card[data-lingo-ambassador="true"] {
+      min-height: 2.85em;
+    }
+
     .standby-slate {
       position: absolute;
       inset: 0;
@@ -3333,6 +3549,22 @@
           <p class="answer-fanfare-foot">Do not guess now!</p>
         </div>
 
+        <div class="champion-fanfare" id="championFanfare" hidden aria-live="polite">
+          <div class="champion-fanfare-inner">
+            <svg class="champion-fanfare-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16v2H4v-2zm2.2-7.8 2.8 3.6 2.8-6.4 2.8 6.4 2.8-3.6L18 16H6l.2-5.8z" fill="#ffd040" stroke="#b8860b" stroke-width="0.6" stroke-linejoin="round"/></svg>
+            <p class="champion-fanfare-kicker">Monarch crowned</p>
+            <p class="champion-fanfare-name" id="championFanfareName"></p>
+          </div>
+        </div>
+
+        <div class="bingo-display" id="bingoDisplay" hidden aria-live="polite">
+          <p class="bingo-display-kicker">Lingo Bingo</p>
+          <p class="bingo-display-last" id="bingoLastCall">—</p>
+          <p class="bingo-display-progress" id="bingoProgress">0 / 75 calls</p>
+          <div class="bingo-display-history" id="bingoHistory"></div>
+          <p class="bingo-display-winner" id="bingoWinner" hidden></p>
+        </div>
+
         <aside class="live-score-rail" id="liveScoreRail" aria-label="Round and balls">
           <div class="score-slot score-slot--round">
             <span class="score-label">Round</span>
@@ -3435,6 +3667,13 @@
       topLine: document.getElementById("topLine"),
       answerFanfare: document.getElementById("answerFanfare"),
       answerFanfareWord: document.getElementById("answerFanfareWord"),
+      championFanfare: document.getElementById("championFanfare"),
+      championFanfareName: document.getElementById("championFanfareName"),
+      bingoDisplay: document.getElementById("bingoDisplay"),
+      bingoLastCall: document.getElementById("bingoLastCall"),
+      bingoProgress: document.getElementById("bingoProgress"),
+      bingoHistory: document.getElementById("bingoHistory"),
+      bingoWinner: document.getElementById("bingoWinner"),
       timerPanel: document.querySelector(".timer-panel"),
       timerLabel: document.getElementById("timerLabel"),
       timerValue: document.getElementById("timerValue"),
@@ -3481,6 +3720,10 @@
     };
     let timerZeroFetchPending = false;
     let lastPhase = null;
+    let lastChampionDisplayName = null;
+    let championFanfareTimer = null;
+    let championFanfareActive = false;
+    let championFanfareInitialized = false;
     let tickTimer = null;
     let lobbyPageIndex = 0;
     let lobbyRotateTimer = null;
@@ -4793,11 +5036,27 @@
         delete card.dataset.firstSolve;
       }
 
-      const lobbyLabel = player.lobbyLabel || player.displayName || "Player";
+      const lobbyLabel = isLingoAmbassador(player)
+        ? LINGO_AMBASSADOR_DISPLAY
+        : (player.lobbyLabel || player.displayName || "Player");
       if (isLingoAmbassador(player)) {
         ensureAmbassadorChrome(card);
       } else {
         clearAmbassadorChrome(card);
+      }
+
+      let crownEl = card.querySelector(".player-crown");
+      if (player.isChampion) {
+        if (!crownEl) {
+          crownEl = renderPlayerCrown();
+          card.insertBefore(crownEl, card.firstChild);
+        }
+        card.dataset.monarch = "true";
+        card.classList.toggle("is-monarch-fanfare", championFanfareActive);
+      } else {
+        crownEl?.remove();
+        delete card.dataset.monarch;
+        card.classList.remove("is-monarch-fanfare");
       }
 
       let nameEl = card.querySelector(".player-name");
@@ -5062,6 +5321,78 @@
       els.playerBoardBody.appendChild(grid);
     }
 
+    function shouldShowBingo(state) {
+      return Boolean(state?.bingo?.gameId) && state.mode === "bingo";
+    }
+
+    function renderBingo(state) {
+      const show = shouldShowBingo(state);
+      els.bingoDisplay.hidden = !show;
+      if (show) {
+        els.stage.dataset.showBingo = "true";
+      } else {
+        delete els.stage.dataset.showBingo;
+      }
+      if (!show) {
+        return;
+      }
+
+      const bingo = state.bingo;
+      els.bingoLastCall.textContent = bingo.lastCall || "—";
+      els.bingoProgress.textContent = `${bingo.callsMade || 0} / ${bingo.totalCalls || 75} calls`;
+
+      els.bingoHistory.replaceChildren();
+      const called = Array.isArray(bingo.called) ? bingo.called : [];
+      const recent = called.slice(-10).reverse();
+      recent.forEach((label, index) => {
+        const chip = document.createElement("span");
+        chip.textContent = label;
+        if (index === 0) {
+          chip.classList.add("is-latest");
+        }
+        els.bingoHistory.appendChild(chip);
+      });
+
+      if (bingo.hasWinner && bingo.winnerDisplayName) {
+        els.bingoWinner.hidden = false;
+        els.bingoWinner.textContent = `${bingo.winnerDisplayName} wins Bingo!`;
+      } else {
+        els.bingoWinner.hidden = true;
+        els.bingoWinner.textContent = "";
+      }
+    }
+
+    function renderChampionFanfare(state) {
+      const champion = String(state.championDisplayName || "").trim();
+      const previous = lastChampionDisplayName;
+      lastChampionDisplayName = champion;
+
+      if (!championFanfareInitialized) {
+        championFanfareInitialized = true;
+        return;
+      }
+
+      if (!champion || champion === previous) {
+        return;
+      }
+
+      els.championFanfareName.textContent = champion;
+      els.championFanfare.hidden = false;
+      championFanfareActive = true;
+
+      if (championFanfareTimer) {
+        window.clearTimeout(championFanfareTimer);
+      }
+      championFanfareTimer = window.setTimeout(() => {
+        els.championFanfare.hidden = true;
+        championFanfareActive = false;
+        championFanfareTimer = null;
+        if (currentState) {
+          renderPlayerBoard(currentState, {});
+        }
+      }, 4200);
+    }
+
     function renderAnswerFanfare(state) {
       els.answerFanfare.hidden = true;
       els.answerFanfareWord.textContent = "";
@@ -5190,6 +5521,8 @@
       renderUnsubmittedStat(currentState);
 
       renderAnswerFanfare(currentState);
+      renderChampionFanfare(currentState);
+      renderBingo(currentState);
       renderWordTiles(currentState);
       renderWordClue(currentState);
       const boardOptions = {

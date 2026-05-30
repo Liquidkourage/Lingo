@@ -1014,15 +1014,29 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
   };
 }
 
+async function getLatestBingoGameForSession(sessionId, client = pool) {
+  const result = await client.query(
+    `select *
+     from bingo_games
+     where session_id = $1
+     order by created_at desc
+     limit 1`,
+    [sessionId],
+  );
+  return result.rows[0] || null;
+}
+
 async function buildPublicStatePayload(state, displayName, playerToken, client = pool) {
   const metrics = await getPublicMetrics(state.session_id, state.round_number, client);
   const players = await getPublicDisplayPlayers(state, client);
   const viewer = await buildViewerContext(displayName, playerToken, state, client);
+  const bingoRow = await getLatestBingoGameForSession(state.session_id, client);
   return {
     ...serializePublicState(state),
     ...metrics,
     players,
     viewer,
+    bingo: bingoRow ? serializeBingoPublicState(bingoRow) : null,
   };
 }
 
@@ -1824,6 +1838,7 @@ async function handleAdminAction(action, body) {
         await client.query("begin");
         const openingStake = 6 * multiplier;
         const nextState = await updateState({
+          mode: "lingo",
           phase: "guessing",
           round_number: nextRound,
           answer_revealed: false,
@@ -2029,10 +2044,49 @@ async function handleAdminAction(action, body) {
         balls_remaining: 0,
         ...clearTimerPausePatch(),
       }));
+    case "reset-round": {
+      if (state.phase === "idle" && Number(state.round_number || 0) === 0) {
+        throw new Error("No active round to reset.");
+      }
+      const client = await pool.connect();
+      try {
+        await client.query("begin");
+        await clearSessionGuesses(state.session_id, client);
+        await resetWordProgress(state.session_id, client);
+        await client.query(
+          `delete from guess_submissions
+           where session_id = $1`,
+          [state.session_id],
+        );
+        const nextState = await updateState({
+          mode: "lingo",
+          phase: "idle",
+          round_number: 0,
+          current_word: "",
+          answer_revealed: false,
+          balls_remaining: 0,
+          guess_window_opened_at: null,
+          results_window_opened_at: null,
+          first_solver_player_id: null,
+          round_ball_stakes: [],
+          guess_window_seq: 0,
+          all_players_submitted_at: null,
+          ...clearTimerPausePatch(),
+        }, client);
+        await client.query("commit");
+        return serializeState(nextState);
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
     case "reset-session": {
       const wordPool = await resetHostWordPool();
       await clearSessionPlayers(state.session_id);
       return serializeState(await updateState({
+        mode: "lingo",
         phase: "idle",
         round_number: 0,
         current_word: "",
@@ -2311,6 +2365,7 @@ app.post("/api/admin/bingo/start", requireAdmin, async (_req, res) => {
   try {
     const state = await getState();
     const row = await startBingoGameForSession(state.session_id);
+    await updateState({ mode: "bingo" });
     const publicState = serializeBingoPublicState(row);
     const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
     res.json({

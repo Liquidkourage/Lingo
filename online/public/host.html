@@ -645,9 +645,177 @@
 
     .roster-table-wrap {
       overflow-x: auto;
+      overflow-y: auto;
+      max-height: min(52vh, 460px);
       border: var(--stroke) solid rgba(230, 184, 0, 0.22);
       border-radius: calc(var(--radius) - 2px);
       background: var(--show-black);
+    }
+
+    .roster-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.65rem;
+      align-items: end;
+      margin-bottom: 0.75rem;
+    }
+
+    .roster-search-field input {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .roster-filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      justify-content: flex-end;
+    }
+
+    .roster-filter-pill {
+      padding: 0.38rem 0.62rem;
+      border-radius: 999px;
+      border: 1px solid rgba(230, 184, 0, 0.28);
+      background: rgba(0, 0, 0, 0.35);
+      color: rgba(200, 214, 232, 0.88);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .roster-filter-pill.is-active {
+      border-color: rgba(62, 200, 232, 0.55);
+      background: rgba(62, 200, 232, 0.12);
+      color: var(--show-cyan);
+    }
+
+    .roster-name-cell {
+      font-weight: 700;
+      color: var(--show-white);
+      white-space: nowrap;
+    }
+
+    .roster-name-cell .roster-champion-mark {
+      margin-left: 0.35rem;
+      color: var(--show-gold);
+      font-size: 0.85em;
+    }
+
+    .roster-status-pill {
+      display: inline-block;
+      padding: 0.22rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .roster-status-pill.is-waiting {
+      color: rgba(255, 220, 120, 0.92);
+      border-color: rgba(255, 204, 0, 0.35);
+      background: rgba(255, 204, 0, 0.08);
+    }
+
+    .roster-status-pill.is-locked {
+      color: var(--show-green);
+      border-color: rgba(61, 217, 122, 0.45);
+      background: rgba(61, 217, 122, 0.12);
+    }
+
+    .roster-status-pill.is-solved {
+      color: var(--show-cyan);
+      border-color: rgba(62, 200, 232, 0.45);
+      background: rgba(62, 200, 232, 0.12);
+    }
+
+    .roster-windows {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      min-width: 10rem;
+      max-width: 22rem;
+    }
+
+    .roster-window-chip {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.12rem;
+      padding: 0.28rem 0.38rem;
+      border-radius: 0.35rem;
+      border: 1px solid rgba(230, 184, 0, 0.18);
+      background: rgba(0, 0, 0, 0.35);
+      min-width: 3.4rem;
+    }
+
+    .roster-window-chip.is-missed {
+      border-style: dashed;
+      opacity: 0.72;
+    }
+
+    .roster-window-stake {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(180, 198, 220, 0.72);
+      text-transform: uppercase;
+    }
+
+    .roster-window-guess {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--show-cyan);
+    }
+
+    .roster-pattern-row {
+      display: flex;
+      gap: 0.12rem;
+    }
+
+    .roster-pattern-dot {
+      width: 0.42rem;
+      height: 0.42rem;
+      border-radius: 50%;
+      background: rgba(120, 140, 170, 0.45);
+    }
+
+    .roster-pattern-dot.is-hit {
+      background: var(--show-green);
+      box-shadow: 0 0 6px rgba(61, 217, 122, 0.65);
+    }
+
+    .roster-pattern-dot.is-present {
+      background: var(--show-gold);
+      box-shadow: 0 0 6px rgba(255, 204, 0, 0.55);
+    }
+
+    .roster-table tbody tr[data-roster-status="locked"] td {
+      background: rgba(61, 217, 122, 0.04);
+    }
+
+    .roster-table tbody tr[data-roster-status="solved"] td {
+      box-shadow: inset 3px 0 0 rgba(62, 200, 232, 0.55);
+    }
+
+    .roster-table input[type="number"].is-dirty {
+      border-color: var(--show-gold);
+      box-shadow: 0 0 0 1px rgba(255, 204, 0, 0.25);
+    }
+
+    @media (max-width: 960px) {
+      .roster-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .roster-filter-pills {
+        justify-content: flex-start;
+      }
     }
 
     .roster-table {
@@ -806,6 +974,7 @@
               <button id="revealResultsBtn" class="warning btn-flow" type="button">Reveal results</button>
               <button id="continueRoundBtn" class="good btn-flow" type="button">Continue guessing</button>
               <button id="revealAnswerBtn" class="warning btn-flow" type="button">Reveal answer</button>
+              <button id="resetRoundBtn" class="danger btn-flow" type="button">Reset round</button>
               <button id="pauseTimerBtn" class="secondary btn-flow" type="button">Pause timer</button>
             </div>
           </div>
@@ -864,23 +1033,44 @@
                 <span class="value" id="playerCountValue">0</span>
               </div>
               <div class="stat-chip">
-                <span class="label">Submitted</span>
+                <span class="label">Waiting</span>
+                <span class="value" id="waitingCountValue">0</span>
+              </div>
+              <div class="stat-chip">
+                <span class="label">Locked in</span>
                 <span class="value" id="submittedCountValue">0</span>
+              </div>
+              <div class="stat-chip">
+                <span class="label">Solved</span>
+                <span class="value" id="solvedCountValue">0</span>
+              </div>
+            </div>
+            <div class="roster-toolbar">
+              <div class="field roster-search-field">
+                <label for="rosterSearchInput">Find player</label>
+                <input id="rosterSearchInput" type="search" placeholder="Search names…" autocomplete="off" />
+              </div>
+              <div class="roster-filter-pills" role="group" aria-label="Filter roster">
+                <button type="button" class="roster-filter-pill is-active" data-roster-filter="all">All</button>
+                <button type="button" class="roster-filter-pill" data-roster-filter="waiting">Waiting</button>
+                <button type="button" class="roster-filter-pill" data-roster-filter="locked">Locked in</button>
+                <button type="button" class="roster-filter-pill" data-roster-filter="solved">Solved</button>
               </div>
             </div>
             <div class="roster-table-wrap">
               <table class="roster-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th>Player</th>
+                    <th>Status</th>
                     <th>Balls</th>
                     <th>Current</th>
-                    <th>History</th>
+                    <th>Windows</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody id="playerRosterBody">
-                  <tr><td colspan="5" class="muted">Connect to load players.</td></tr>
+                  <tr><td colspan="6" class="muted">Connect to load players.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -942,7 +1132,10 @@
       ballsValue: document.getElementById('ballsValue'),
       playerRosterBody: document.getElementById('playerRosterBody'),
       playerCountValue: document.getElementById('playerCountValue'),
+      waitingCountValue: document.getElementById('waitingCountValue'),
       submittedCountValue: document.getElementById('submittedCountValue'),
+      solvedCountValue: document.getElementById('solvedCountValue'),
+      rosterSearchInput: document.getElementById('rosterSearchInput'),
       hostNoteInput: document.getElementById('hostNoteInput'),
       saveHostNoteBtn: document.getElementById('saveHostNoteBtn'),
       championInput: document.getElementById('championInput'),
@@ -958,6 +1151,7 @@
       setBallsBtn: document.getElementById('setBallsBtn'),
       setTimersBtn: document.getElementById('setTimersBtn'),
       revealAnswerBtn: document.getElementById('revealAnswerBtn'),
+      resetRoundBtn: document.getElementById('resetRoundBtn'),
       resetSessionBtn: document.getElementById('resetSessionBtn'),
       pauseTimerBtn: document.getElementById('pauseTimerBtn'),
       wordSuggestionList: document.getElementById('wordSuggestionList'),
@@ -972,6 +1166,9 @@
 
     let currentState = null;
     let pollHandle = null;
+    let rosterPlayers = [];
+    let rosterFilter = 'all';
+    let rosterSearchQuery = '';
 
     function storedKey() {
       return localStorage.getItem('lingo_host_admin_key') || '';
@@ -1081,6 +1278,83 @@
       }
     }
 
+    function rosterStatusForPlayer(player, currentRound, phase) {
+      if (player.solvedCurrentWord) {
+        return 'solved';
+      }
+      const submitted = Number(player.roundNumber || 0) === currentRound && !!player.currentGuess;
+      if (phase === 'guessing' && submitted) {
+        return 'locked';
+      }
+      if ((phase === 'results' || phase === 'ended') && submitted) {
+        return 'locked';
+      }
+      return 'waiting';
+    }
+
+    function rosterStatusLabel(status) {
+      if (status === 'locked') return 'Locked in';
+      if (status === 'solved') return 'Solved';
+      return 'Waiting';
+    }
+
+    function renderHostPatternDots(pattern) {
+      const row = document.createElement('div');
+      row.className = 'roster-pattern-row';
+      const marks = String(pattern || '/////').slice(0, 5).split('');
+      marks.forEach((mark) => {
+        const dot = document.createElement('span');
+        dot.className = 'roster-pattern-dot';
+        if (mark === '!') {
+          dot.classList.add('is-hit');
+        } else if (mark === '?' || mark === '-') {
+          dot.classList.add('is-present');
+        }
+        row.appendChild(dot);
+      });
+      return row;
+    }
+
+    function renderHostWindowChip(entry) {
+      const chip = document.createElement('div');
+      chip.className = 'roster-window-chip';
+      const stake = Number(entry.ballStake || 0);
+      const stakeLabel = document.createElement('span');
+      stakeLabel.className = 'roster-window-stake';
+      stakeLabel.textContent = stake > 0 ? `${stake}b` : '—';
+      chip.appendChild(stakeLabel);
+
+      if (entry.status === 'missed' || entry.resultLabel === 'No guess') {
+        chip.classList.add('is-missed');
+        const missed = document.createElement('span');
+        missed.className = 'roster-window-guess';
+        missed.textContent = '—';
+        chip.appendChild(missed);
+        return chip;
+      }
+
+      const guess = document.createElement('span');
+      guess.className = 'roster-window-guess';
+      guess.textContent = String(entry.guess || '—').toUpperCase();
+      chip.appendChild(guess);
+      if (entry.pattern) {
+        chip.appendChild(renderHostPatternDots(entry.pattern));
+      }
+      return chip;
+    }
+
+    function filteredRosterPlayers(players, currentRound, phase) {
+      const query = rosterSearchQuery.trim().toLowerCase();
+      return players.filter((player) => {
+        const status = rosterStatusForPlayer(player, currentRound, phase);
+        if (rosterFilter !== 'all' && status !== rosterFilter) {
+          return false;
+        }
+        if (!query) return true;
+        return String(player.displayName || '').toLowerCase().includes(query);
+      });
+    }
+
     async function loadPlayers(forceRender = false) {
       const response = await adminFetch('/api/admin/players');
       const payload = await response.json();
@@ -1089,46 +1363,69 @@
       }
       const state = payload.state || {};
       const players = state.players || [];
+      rosterPlayers = players;
       const currentRound = Number((state.session && state.session.roundNumber) || (currentState && currentState.roundNumber) || 0);
-      const submittedThisRound = players.filter((player) => Number(player.roundNumber || 0) === currentRound && !!player.currentGuess);
+      const phase = (state.session && state.session.phase) || (currentState && currentState.phase) || 'idle';
+      const championName = String((state.session && state.session.championDisplayName) || (currentState && currentState.championDisplayName) || '').trim().toLowerCase();
 
+      const statuses = players.map((player) => rosterStatusForPlayer(player, currentRound, phase));
       els.playerCountValue.textContent = String(players.length);
-      els.submittedCountValue.textContent = String(submittedThisRound.length);
+      els.waitingCountValue.textContent = String(statuses.filter((item) => item === 'waiting').length);
+      els.submittedCountValue.textContent = String(statuses.filter((item) => item === 'locked').length);
+      els.solvedCountValue.textContent = String(statuses.filter((item) => item === 'solved').length);
+
       if (forceRender || !rosterHasFocus()) {
-        renderPlayerRoster(players, currentRound);
+        renderPlayerRoster(players, currentRound, phase, championName);
       }
     }
 
-    function formatHostHistoryLine(entry) {
-      const stake = Number(entry.ballStake || 0);
-      const stakeLabel = stake > 0 ? `${stake} balls` : '—';
-      if (entry.status === 'missed' || entry.resultLabel === 'No guess') {
-        return `${stakeLabel}: No guess`;
-      }
-      const guess = String(entry.guess || '').toUpperCase();
-      const detail = entry.resultLabel || (guess ? 'Pending' : '');
-      return `${stakeLabel}: ${guess || '—'}${detail ? ` (${detail})` : ''}`;
-    }
-
-    function renderPlayerRoster(players, currentRound) {
+    function renderPlayerRoster(players, currentRound, phase, championName) {
+      const visiblePlayers = filteredRosterPlayers(players, currentRound, phase);
       els.playerRosterBody.innerHTML = '';
       if (!players.length) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 5;
+        cell.colSpan = 6;
         cell.className = 'muted';
         cell.textContent = 'No players in the session yet.';
         row.appendChild(cell);
         els.playerRosterBody.appendChild(row);
         return;
       }
-
-      players.forEach((player) => {
+      if (!visiblePlayers.length) {
         const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 6;
+        cell.className = 'muted';
+        cell.textContent = 'No players match this filter.';
+        row.appendChild(cell);
+        els.playerRosterBody.appendChild(row);
+        return;
+      }
+
+      visiblePlayers.forEach((player) => {
+        const status = rosterStatusForPlayer(player, currentRound, phase);
+        const row = document.createElement('tr');
+        row.dataset.rosterStatus = status;
 
         const nameCell = document.createElement('td');
+        nameCell.className = 'roster-name-cell';
         nameCell.textContent = player.displayName || 'Player';
+        if (championName && String(player.displayName || '').trim().toLowerCase() === championName) {
+          const crown = document.createElement('span');
+          crown.className = 'roster-champion-mark';
+          crown.textContent = '♛';
+          crown.title = 'Reigning champion';
+          nameCell.appendChild(crown);
+        }
         row.appendChild(nameCell);
+
+        const statusCell = document.createElement('td');
+        const statusPill = document.createElement('span');
+        statusPill.className = `roster-status-pill is-${status}`;
+        statusPill.textContent = rosterStatusLabel(status);
+        statusCell.appendChild(statusPill);
+        row.appendChild(statusCell);
 
         const ballsCell = document.createElement('td');
         const ballsInput = document.createElement('input');
@@ -1136,42 +1433,38 @@
         ballsInput.min = '0';
         ballsInput.step = '1';
         ballsInput.value = String(player.balls ?? 0);
+        ballsInput.dataset.playerId = String(player.id);
+        ballsInput.addEventListener('input', () => {
+          ballsInput.classList.add('is-dirty');
+        });
+        ballsInput.addEventListener('blur', () => {
+          if (!ballsInput.classList.contains('is-dirty')) return;
+          savePlayerBalls(player.id, Number(ballsInput.value), ballsInput);
+        });
         ballsCell.appendChild(ballsInput);
         row.appendChild(ballsCell);
 
         const guessCell = document.createElement('td');
         guessCell.className = 'guess-cell';
-        const submitted = Number(player.roundNumber || 0) === currentRound && !!player.currentGuess;
+        const submitted = status === 'locked' || status === 'solved';
         guessCell.textContent = submitted ? String(player.currentGuess || '').toUpperCase() : '—';
         row.appendChild(guessCell);
 
         const historyCell = document.createElement('td');
-        historyCell.className = 'roster-history-cell';
+        const windows = document.createElement('div');
+        windows.className = 'roster-windows';
         const history = Array.isArray(player.guessHistory) ? player.guessHistory : [];
         if (!history.length) {
-          historyCell.textContent = '—';
+          windows.textContent = '—';
         } else {
           history.forEach((entry) => {
-            const line = document.createElement('div');
-            line.className = 'roster-history-line';
-            line.textContent = formatHostHistoryLine(entry);
-            historyCell.appendChild(line);
+            windows.appendChild(renderHostWindowChip(entry));
           });
         }
+        historyCell.appendChild(windows);
         row.appendChild(historyCell);
 
         const actionsCell = document.createElement('td');
-        const actions = document.createElement('div');
-        actions.className = 'roster-actions';
-
-        const saveBtn = document.createElement('button');
-        saveBtn.type = 'button';
-        saveBtn.className = 'secondary';
-        saveBtn.textContent = 'Save';
-        saveBtn.addEventListener('click', () => {
-          savePlayerBalls(player.id, Number(ballsInput.value));
-        });
-
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'danger';
@@ -1179,19 +1472,17 @@
         removeBtn.addEventListener('click', () => {
           removePlayer(player.id, player.displayName);
         });
-
-        actions.appendChild(saveBtn);
-        actions.appendChild(removeBtn);
-        actionsCell.appendChild(actions);
+        actionsCell.appendChild(removeBtn);
         row.appendChild(actionsCell);
 
         els.playerRosterBody.appendChild(row);
       });
     }
 
-    async function savePlayerBalls(playerId, balls) {
+    async function savePlayerBalls(playerId, balls, inputEl) {
       try {
         await runAction('set-player-balls', { playerId, balls }, 'Player balls updated.');
+        inputEl?.classList.remove('is-dirty');
       } catch (error) {
         setStatus(els.actionStatus, error.message || 'Could not update player balls.', 'error');
       }
@@ -1227,6 +1518,7 @@
       els.startRoundBtn.disabled = phase === 'guessing' || phase === 'results';
       els.revealResultsBtn.disabled = phase !== 'guessing';
       els.continueRoundBtn.disabled = phase !== 'results';
+      els.resetRoundBtn.disabled = phase === 'idle' && Number(state.roundNumber || 0) === 0;
       updateFlowEmphasis(phase);
       renderWordPool();
     }
@@ -1426,6 +1718,14 @@
     ).catch((error) => {
       setStatus(els.actionStatus, error.message || 'Could not reveal answer.', 'error');
     }));
+    els.resetRoundBtn.addEventListener('click', () => runAction(
+      'reset-round',
+      {},
+      'Round reset — players kept, pick a new word.',
+      { confirmMessage: 'Reset this round? Players stay in the session but guesses and the current word are cleared.' },
+    ).catch((error) => {
+      setStatus(els.actionStatus, error.message || 'Could not reset round.', 'error');
+    }));
     els.resetSessionBtn.addEventListener('click', async () => {
       if (!window.confirm('Hard reset the backend session?')) return;
       await runAction('reset-session', {}, 'Session reset.');
@@ -1470,10 +1770,31 @@
         }
         els.bingoPlayerLink.textContent = payload.playerUrl || '';
         els.bingoCallsLink.href = payload.hostCallsUrl || '/bingo/calls';
-        setStatus(els.bingoHostStatus, 'Bingo game started. Share the player link.', 'success');
+        setStatus(els.bingoHostStatus, 'Bingo game started — venue display will show calls.', 'success');
       } catch (error) {
         setStatus(els.bingoHostStatus, error.message || 'Could not start bingo.', 'error');
       }
+    });
+
+    els.rosterSearchInput.addEventListener('input', () => {
+      rosterSearchQuery = els.rosterSearchInput.value || '';
+      const phase = currentState?.phase || 'idle';
+      const currentRound = Number(currentState?.roundNumber || 0);
+      const championName = String(currentState?.championDisplayName || '').trim().toLowerCase();
+      renderPlayerRoster(rosterPlayers, currentRound, phase, championName);
+    });
+
+    document.querySelectorAll('[data-roster-filter]').forEach((button) => {
+      button.addEventListener('click', () => {
+        rosterFilter = button.dataset.rosterFilter || 'all';
+        document.querySelectorAll('[data-roster-filter]').forEach((pill) => {
+          pill.classList.toggle('is-active', pill === button);
+        });
+        const phase = currentState?.phase || 'idle';
+        const currentRound = Number(currentState?.roundNumber || 0);
+        const championName = String(currentState?.championDisplayName || '').trim().toLowerCase();
+        renderPlayerRoster(rosterPlayers, currentRound, phase, championName);
+      });
     });
 
     els.adminKey.value = storedKey();
