@@ -1004,7 +1004,7 @@
 
         <section class="host-panel" aria-label="Bingo endgame">
           <h2 class="panel-kicker">Bingo endgame</h2>
-          <p class="panel-copy">First valid BINGO wins. Players must complete a line by their Lingo ball count; they can tap BINGO a little late.</p>
+          <p class="panel-copy">Finale after Lingo. Players stay on the main play link — their phones switch to bingo automatically. Cards mark themselves when numbers are called; players only tap BINGO!</p>
           <div class="flow-actions">
             <button id="startBingoBtn" class="good btn-flow" type="button">Start bingo game</button>
             <a id="bingoCallsLink" class="secondary btn-flow" href="/bingo/calls" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Open call sheet</a>
@@ -1768,9 +1768,9 @@
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || 'Could not start bingo.');
         }
-        els.bingoPlayerLink.textContent = payload.playerUrl || '';
+        els.bingoPlayerLink.textContent = 'Players on / — no new link needed. Cards auto-mark; they tap BINGO! when ready.';
         els.bingoCallsLink.href = payload.hostCallsUrl || '/bingo/calls';
-        setStatus(els.bingoHostStatus, 'Bingo game started — venue display will show calls.', 'success');
+        setStatus(els.bingoHostStatus, 'Bingo started — player phones and venue display switched to bingo.', 'success');
       } catch (error) {
         setStatus(els.bingoHostStatus, error.message || 'Could not start bingo.', 'error');
       }

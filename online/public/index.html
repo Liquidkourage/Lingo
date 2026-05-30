@@ -780,6 +780,151 @@
       display: none;
     }
 
+    .play-stage[data-bingo-mode="true"] .play-stats,
+    .play-stage[data-bingo-mode="true"] .play-round,
+    .play-stage[data-bingo-mode="true"] .lobby-toggle {
+      display: none !important;
+    }
+
+    .play-stage[data-bingo-mode="true"] .play-bingo {
+      display: block;
+    }
+
+    .play-bingo {
+      display: none;
+      padding: 0.85rem 0.65rem 1rem;
+      border: 2px solid rgba(255, 204, 0, 0.45);
+      border-radius: 0.2em;
+      background: linear-gradient(180deg, rgba(0, 28, 64, 0.72) 0%, rgba(0, 8, 22, 0.92) 100%);
+      box-shadow: 0 0 24px rgba(255, 204, 0, 0.12);
+    }
+
+    .bingo-auto-note {
+      margin: 0 0 0.85rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.35em;
+      border: 1px solid rgba(255, 204, 0, 0.4);
+      background: rgba(255, 204, 0, 0.1);
+      color: rgba(255, 235, 170, 0.95);
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .bingo-auto-note strong {
+      color: var(--show-gold-hot);
+    }
+
+    .bingo-budget {
+      margin: 0 0 0.45rem;
+      text-align: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.4;
+      color: rgba(220, 235, 255, 0.95);
+    }
+
+    .bingo-budget strong {
+      color: var(--show-gold-hot);
+    }
+
+    .bingo-last-call {
+      margin: 0;
+      text-align: center;
+      font-size: 1.55rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      color: var(--show-gold-hot);
+      text-shadow: 0 0 18px rgba(255, 204, 0, 0.45);
+    }
+
+    .bingo-last-call-label {
+      display: block;
+      margin-bottom: 0.15rem;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(180, 210, 240, 0.82);
+    }
+
+    .bingo-status {
+      margin: 0.55rem 0 0.75rem;
+      min-height: 1.2em;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: rgba(200, 225, 255, 0.92);
+    }
+
+    .bingo-status.success { color: var(--show-green); }
+    .bingo-status.error { color: #ff8a9a; }
+
+    table.bingo-card {
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto 0.85rem;
+      border-collapse: collapse;
+    }
+
+    table.bingo-card th {
+      padding: 0.45rem;
+      font-size: 0.95rem;
+      font-weight: 900;
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--show-cyan);
+    }
+
+    table.bingo-card td {
+      width: 20%;
+      aspect-ratio: 1;
+      text-align: center;
+      vertical-align: middle;
+      font-size: clamp(0.85rem, 3.6vw, 1.15rem);
+      font-weight: 800;
+      border: 2px solid rgba(0, 212, 255, 0.28);
+      pointer-events: none;
+      cursor: default;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    table.bingo-card td.free {
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 0.62rem;
+      letter-spacing: 0.04em;
+    }
+
+    table.bingo-card td.called {
+      background: rgba(255, 204, 0, 0.42);
+      color: #141100;
+      box-shadow: inset 0 0 0 3px var(--show-gold-hot);
+    }
+
+    .bingo-claim-btn {
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
+      display: block;
+      font-size: 1.05rem;
+      background: linear-gradient(180deg, #ffe566 0%, #ffcc00 100%);
+      color: #141100;
+      border-color: rgba(255, 220, 80, 0.8);
+    }
+
+    .bingo-winner-banner {
+      margin: 0.65rem 0 0;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--show-gold-hot);
+    }
+
+    .bingo-winner-banner[hidden] {
+      display: none !important;
+    }
+
     .play-round {
       display: none;
       padding: 0.75rem 0.55rem 0.85rem;
@@ -1227,7 +1372,7 @@
         </section>
       </div>
 
-      <section class="play-block play-stats" aria-label="Live stats">
+      <section class="play-block play-stats" id="playStats" aria-label="Live stats">
         <div class="meta-rail" aria-label="Game stats">
           <div class="meta-slot">
             <span class="meta-label">Round</span>
@@ -1242,6 +1387,24 @@
             <span class="meta-value balls" id="metaYours">0</span>
           </div>
         </div>
+      </section>
+
+      <section class="play-block play-bingo" id="playBingo" hidden aria-label="Bingo finale">
+        <p class="bingo-auto-note" id="bingoAutoNote"></p>
+        <p class="bingo-budget" id="bingoBudgetLine">Loading your bingo card…</p>
+        <p class="bingo-last-call">
+          <span class="bingo-last-call-label">Last call</span>
+          <span id="bingoLastCall">—</span>
+        </p>
+        <p class="bingo-status" id="bingoStatus" aria-live="polite"></p>
+        <table class="bingo-card" aria-label="Your bingo card — numbers mark automatically when called">
+          <thead>
+            <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
+          </thead>
+          <tbody id="bingoBody"></tbody>
+        </table>
+        <button id="bingoClaimBtn" class="btn-primary bingo-claim-btn" type="button" disabled>BINGO!</button>
+        <p class="bingo-winner-banner" id="bingoWinnerBanner" hidden></p>
       </section>
 
       <section class="play-block play-round" id="playRound" aria-label="Round play">
@@ -1302,6 +1465,8 @@
     </main>
   </div>
 
+  <script src="/bingo-shared.js"></script>
+  <script src="/bingo-player.js"></script>
   <script>
     const els = {
       stage: document.getElementById('playStage'),
@@ -1320,6 +1485,15 @@
       resultFeedbackValue: document.getElementById('resultFeedbackValue'),
       promptLine: document.getElementById('promptLine'),
       playRound: document.getElementById('playRound'),
+      playStats: document.getElementById('playStats'),
+      playBingo: document.getElementById('playBingo'),
+      bingoAutoNote: document.getElementById('bingoAutoNote'),
+      bingoBudgetLine: document.getElementById('bingoBudgetLine'),
+      bingoLastCall: document.getElementById('bingoLastCall'),
+      bingoStatus: document.getElementById('bingoStatus'),
+      bingoBody: document.getElementById('bingoBody'),
+      bingoClaimBtn: document.getElementById('bingoClaimBtn'),
+      bingoWinnerBanner: document.getElementById('bingoWinnerBanner'),
       roundHistory: document.getElementById('roundHistory'),
       wordTiles: document.getElementById('wordTiles'),
       guessCapture: document.getElementById('guessCapture'),
@@ -1352,6 +1526,49 @@
     let guessCaretIndex = null;
     let lastGuessWindowKey = '';
     let lastStatusContextKey = '';
+
+    function isBingoMode(state) {
+      return state?.mode === 'bingo' && Boolean(state?.bingo?.gameId);
+    }
+
+    const bingoPlayer = BingoPlayerUi.create({
+      els: {
+        budgetLine: els.bingoBudgetLine,
+        lastCall: els.bingoLastCall,
+        status: els.bingoStatus,
+        statusClassBase: 'bingo-status',
+        bingoBtn: els.bingoClaimBtn,
+        bingoBody: els.bingoBody,
+        winnerBanner: els.bingoWinnerBanner,
+      },
+      getGameId: () => currentState?.bingo?.gameId || '',
+      getPlayerToken: () => getPlayerToken(),
+      BingoShared,
+    });
+
+    els.bingoAutoNote.textContent = BingoPlayerUi.AUTO_MARK_COPY;
+    els.bingoClaimBtn.addEventListener('click', () => {
+      bingoPlayer.claim().catch(() => {});
+    });
+
+    function renderBingoMode(state) {
+      const active = isBingoMode(state);
+      els.playBingo.hidden = !active;
+      if (active) {
+        els.stage.dataset.bingoMode = 'true';
+        els.phaseBadge.textContent = 'Final: Bingo';
+        els.phaseLine.textContent = 'Lingo is done — this is the finale. Watch your card light up as numbers are called.';
+        els.playRound.hidden = true;
+        els.playStats.hidden = true;
+        bingoPlayer.refreshFromPublicState(state).catch((error) => {
+          els.bingoStatus.textContent = error.message || 'Could not load bingo.';
+          els.bingoStatus.className = 'bingo-status error';
+        });
+        return true;
+      }
+      delete els.stage.dataset.bingoMode;
+      return false;
+    }
     let lastTimerToastWindowKey = '';
     let timerToastLastRemaining = null;
     let timerToastFired = { warn30: false, warn10: false };
@@ -2553,7 +2770,9 @@
       if (pollTimer) window.clearInterval(pollTimer);
       if (IS_DEMO) return;
       const phase = currentState && currentState.phase;
-      const ms = phase === 'guessing' || phase === 'results' ? 1000 : 5000;
+      const ms = isBingoMode(currentState)
+        ? 1000
+        : (phase === 'guessing' || phase === 'results' ? 1000 : 5000);
       pollTimer = window.setInterval(() => {
         fetchPublicState().catch(() => {});
       }, ms);
@@ -2745,6 +2964,10 @@
 
     function renderPublicState(state) {
       currentState = state;
+      if (renderBingoMode(state)) {
+        schedulePolling();
+        return;
+      }
       syncTimerDisplay(state);
       syncStatusMessage(state);
       const phase = state.phase || 'idle';
