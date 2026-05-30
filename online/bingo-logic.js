@@ -127,6 +127,21 @@ function hasBingoLine(grid, calledNumbers) {
   return false;
 }
 
+function bingoAchievedWithinBudget(callSheet, callIndex, ballsEarned, grid) {
+  const balls = Math.max(0, Number(ballsEarned || 0));
+  if (balls < 1 || callIndex < 0) {
+    return false;
+  }
+  const lastInBudgetIndex = Math.min(callIndex, balls - 1);
+  for (let index = 0; index <= lastInBudgetIndex; index += 1) {
+    const called = calledNumbersFromSheet(callSheet, index);
+    if (hasBingoLine(grid, called)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function evaluateBingoClaim({ gameId, displayName, callSheet, callIndex, ballsEarned }) {
   const made = callsMade(callIndex);
   const balls = Math.max(0, Number(ballsEarned || 0));
@@ -137,17 +152,17 @@ function evaluateBingoClaim({ gameId, displayName, callSheet, callIndex, ballsEa
   if (made < 1) {
     return { ok: false, error: "No numbers have been called yet." };
   }
-  if (made > balls) {
-    return {
-      ok: false,
-      error: `Too late — you earned ${balls} ball${balls === 1 ? "" : "s"} but ${made} have been called.`,
-    };
-  }
 
   const { grid } = generateBingoCard(gameId, displayName);
-  const called = calledNumbersFromSheet(callSheet, callIndex);
-  if (!hasBingoLine(grid, called)) {
-    return { ok: false, error: "No completed line on your card yet." };
+  if (!bingoAchievedWithinBudget(callSheet, callIndex, balls, grid)) {
+    const called = calledNumbersFromSheet(callSheet, callIndex);
+    if (!hasBingoLine(grid, called)) {
+      return { ok: false, error: "No completed line on your card yet." };
+    }
+    return {
+      ok: false,
+      error: `You got bingo after your ${balls}-ball window — you needed a line by call ${balls}.`,
+    };
   }
 
   return { ok: true, callsMade: made, ballsEarned: balls };
@@ -160,6 +175,7 @@ module.exports = {
   callsMade,
   calledNumbersFromSheet,
   hasBingoLine,
+  bingoAchievedWithinBudget,
   evaluateBingoClaim,
   callLabel,
 };

@@ -19,6 +19,7 @@ const {
   hasBingoLine,
   generateBingoCard,
   evaluateBingoClaim,
+  bingoAchievedWithinBudget,
 } = require("./bingo-logic");
 require("dotenv").config();
 
@@ -2391,7 +2392,12 @@ app.get("/api/bingo/player-state", async (req, res) => {
     const called = calledNumbersFromSheet(callSheet, callIndex);
     const hasLine = hasBingoLine(grid, called);
     const made = callsMade(callIndex);
-    const withinBudget = made > 0 && made <= ballsEarned;
+    const earnedBingoInBudget = bingoAchievedWithinBudget(
+      callSheet,
+      callIndex,
+      ballsEarned,
+      grid,
+    );
     const isWinner = Boolean(row.winner_display_name)
       && String(row.winner_display_name).toLowerCase()
         === String(playerRow.display_name).toLowerCase();
@@ -2404,8 +2410,8 @@ app.get("/api/bingo/player-state", async (req, res) => {
         ballsEarned,
         callsMade: made,
         hasLine,
-        withinBudget,
-        canClaim: hasLine && withinBudget && !publicState.hasWinner,
+        earnedBingoInBudget,
+        canClaim: earnedBingoInBudget && !publicState.hasWinner,
         isWinner,
         budgetRemaining: Math.max(0, ballsEarned - made),
       },
