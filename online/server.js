@@ -1272,11 +1272,21 @@ async function applyRevealResultsScoring(state, client) {
   return patch;
 }
 
-async function serializePublicDisplayPlayer(player, state, client = pool) {
+async function serializePublicDisplayPlayer(player, state, client = pool, context = {}) {
   const currentRound = Number(state.round_number || 0);
-  const submittedThisRound = Number(player.roundNumber || 0) === currentRound && !!player.currentGuess;
   const phase = String(state.phase || "idle");
-  const guess = submittedThisRound ? normalizeWordInput(player.currentGuess) : "";
+  const windowSubmission = context.windowSubmission || null;
+  const hasAnyRoundSubmission = Boolean(context.hasAnyRoundSubmission);
+  const useWindowSubmission = (phase === "results" || phase === "ended") && windowSubmission;
+
+  let submittedThisRound = Number(player.roundNumber || 0) === currentRound && !!player.currentGuess;
+  let guess = submittedThisRound ? normalizeWordInput(player.currentGuess) : "";
+
+  if (useWindowSubmission) {
+    submittedThisRound = Boolean(windowSubmission.guess);
+    guess = submittedThisRound ? normalizeWordInput(windowSubmission.guess) : "";
+  }
+
   const balls = Number(player.balls || 0);
   const solvedCurrentWord = Boolean(player.solvedCurrentWord);
   const isChampion = isChampionPlayer(player.displayName, state);
@@ -1289,7 +1299,12 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
   }
 
   let resultPattern = "";
-  if (guess && guessIsLegal) {
+  if (useWindowSubmission && windowSubmission.result_pattern) {
+    resultPattern = String(windowSubmission.result_pattern);
+    if (windowSubmission.result_label === "Not a word…") {
+      guessIsLegal = false;
+    }
+  } else if (guess && guessIsLegal) {
     resultPattern = getLingoResultPattern(state.current_word, guess);
   }
 
@@ -1315,7 +1330,7 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
       statusText = "Congratulations!";
       cardTone = "solved";
     } else if (!submittedThisRound) {
-      statusText = "No guess this round";
+      statusText = hasAnyRoundSubmission ? "Missed this guess" : "No guess this round";
     } else if (!guessIsLegal) {
       status = "invalid";
       statusText = "Not a word…";
@@ -1346,9 +1361,40 @@ async function serializePublicDisplayPlayer(player, state, client = pool) {
   };
 }
 
+async function loadDisplayPlayerSubmissionContext(state, client = pool) {
+  const phase = String(state.phase || "idle");
+  const round = Number(state.round_number || 0);
+  const windowSeq = Number(state.guess_window_seq || 0);
+  const windowSubmissions = new Map();
+  const roundSubmissionCounts = new Map();
+
+  if ((phase === "results" || phase === "ended") && round && windowSeq) {
+    const result = await client.query(
+      `select player_id, guess, result_pattern, result_label, guess_window_seq
+       from guess_submissions
+       where session_id = $1
+         and round_number = $2`,
+      [state.session_id, round],
+    );
+    for (const row of result.rows) {
+      const playerId = Number(row.player_id);
+      roundSubmissionCounts.set(playerId, (roundSubmissionCounts.get(playerId) || 0) + 1);
+      if (Number(row.guess_window_seq || 0) === windowSeq) {
+        windowSubmissions.set(playerId, row);
+      }
+    }
+  }
+
+  return { windowSubmissions, roundSubmissionCounts };
+}
+
 async function getPublicDisplayPlayers(state, client = pool) {
   const players = await listPlayers(state.session_id, client);
-  return Promise.all(players.map((player) => serializePublicDisplayPlayer(player, state, client)));
+  const { windowSubmissions, roundSubmissionCounts } = await loadDisplayPlayerSubmissionContext(state, client);
+  return Promise.all(players.map((player) => serializePublicDisplayPlayer(player, state, client, {
+    windowSubmission: windowSubmissions.get(Number(player.id)) || null,
+    hasAnyRoundSubmission: (roundSubmissionCounts.get(Number(player.id)) || 0) > 0,
+  })));
 }
 
 async function clearSessionGuesses(sessionId, client = pool) {
