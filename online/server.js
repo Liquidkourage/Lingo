@@ -11,6 +11,15 @@ const {
   seedRehearsalBots,
   submitRehearsalBotGuesses,
 } = require("./rehearsal-bots");
+const {
+  generateCallSheet,
+  createGameId,
+  callsMade,
+  calledNumbersFromSheet,
+  hasBingoLine,
+  generateBingoCard,
+  evaluateBingoClaim,
+} = require("./bingo-logic");
 require("dotenv").config();
 
 const QRCode = require("qrcode");
@@ -2189,6 +2198,289 @@ app.post("/api/admin/:action", requireAdmin, async (req, res) => {
     res.json({ ok: true, state: await enrichStateWithWordPool(state) });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+function serializeBingoPublicState(row) {
+  const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
+  const callIndex = Number(row.call_index ?? -1);
+  const current = callIndex >= 0 ? callSheet[callIndex] : null;
+  const called = callIndex >= 0 ? callSheet.slice(0, callIndex + 1) : [];
+  return {
+    gameId: row.id,
+    callIndex,
+    callsMade: callsMade(callIndex),
+    lastCall: current?.label || null,
+    called: called.map((entry) => entry.label),
+    calledNumbers: called.map((entry) => entry.number),
+    winnerDisplayName: row.winner_display_name || "",
+    hasWinner: Boolean(row.winner_display_name),
+    totalCalls: callSheet.length,
+  };
+}
+
+async function getBingoGameRow(gameId, client = pool) {
+  const result = await client.query(
+    `select *
+     from bingo_games
+     where id = $1`,
+    [String(gameId || "").trim()],
+  );
+  return result.rows[0] || null;
+}
+
+async function startBingoGameForSession(sessionId, client = pool) {
+  const gameId = createGameId();
+  const callSheet = generateCallSheet(gameId);
+  await client.query(
+    `insert into bingo_games (id, session_id, call_sheet, call_index, winner_display_name)
+     values ($1, $2, $3::jsonb, -1, '')`,
+    [gameId, sessionId, JSON.stringify(callSheet)],
+  );
+  return getBingoGameRow(gameId, client);
+}
+
+async function advanceBingoGame(gameId, action, client = pool) {
+  const row = await getBingoGameRow(gameId, client);
+  if (!row) {
+    throw new Error("Bingo game not found.");
+  }
+  if (row.winner_display_name) {
+    throw new Error("This bingo game already has a winner.");
+  }
+
+  const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
+  let callIndex = Number(row.call_index ?? -1);
+
+  if (action === "next") {
+    if (callIndex >= callSheet.length - 1) {
+      throw new Error("All balls have already been called.");
+    }
+    callIndex += 1;
+  } else if (action === "prev") {
+    if (callIndex < 0) {
+      throw new Error("No calls to undo yet.");
+    }
+    callIndex -= 1;
+  } else if (action === "reset") {
+    callIndex = -1;
+  } else {
+    throw new Error("Unknown bingo call action.");
+  }
+
+  const updated = await client.query(
+    `update bingo_games
+     set call_index = $1,
+         updated_at = now()
+     where id = $2
+     returning *`,
+    [callIndex, gameId],
+  );
+  return updated.rows[0];
+}
+
+app.post("/api/admin/bingo/start", requireAdmin, async (_req, res) => {
+  try {
+    const state = await getState();
+    const row = await startBingoGameForSession(state.session_id);
+    const publicState = serializeBingoPublicState(row);
+    const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
+    res.json({
+      ok: true,
+      bingo: {
+        ...publicState,
+        callOrder: callSheet.map((entry) => entry.label),
+      },
+      playerUrl: `${getPlaySiteUrl()}/bingo?game=${encodeURIComponent(publicState.gameId)}`,
+      hostCallsUrl: `${getPlaySiteUrl()}/bingo/calls?game=${encodeURIComponent(publicState.gameId)}`,
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/admin/bingo/advance", requireAdmin, async (req, res) => {
+  try {
+    const gameId = String(req.body.gameId || "").trim();
+    const action = String(req.body.action || "next").trim();
+    if (!gameId) {
+      throw new Error("gameId is required.");
+    }
+    const row = await advanceBingoGame(gameId, action);
+    const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
+    res.json({
+      ok: true,
+      bingo: {
+        ...serializeBingoPublicState(row),
+        callOrder: callSheet.map((entry) => entry.label),
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/admin/bingo/state", requireAdmin, async (req, res) => {
+  try {
+    const gameId = String(req.query.game || req.query.gameId || "").trim();
+    if (!gameId) {
+      throw new Error("game is required.");
+    }
+    const row = await getBingoGameRow(gameId);
+    if (!row) {
+      res.status(404).json({ ok: false, error: "Bingo game not found." });
+      return;
+    }
+    const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
+    res.json({
+      ok: true,
+      bingo: {
+        ...serializeBingoPublicState(row),
+        callOrder: callSheet.map((entry) => entry.label),
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/bingo/state", async (req, res) => {
+  try {
+    const gameId = String(req.query.game || req.query.gameId || "").trim();
+    if (!gameId) {
+      res.status(400).json({ ok: false, error: "game is required." });
+      return;
+    }
+    const row = await getBingoGameRow(gameId);
+    if (!row) {
+      res.status(404).json({ ok: false, error: "Bingo game not found." });
+      return;
+    }
+    res.json({ ok: true, bingo: serializeBingoPublicState(row) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/bingo/player-state", async (req, res) => {
+  try {
+    const gameId = String(req.query.game || req.query.gameId || "").trim();
+    const playerToken = normalizePlayerToken(req.query.playerToken);
+    if (!gameId || !playerToken) {
+      res.status(400).json({ ok: false, error: "game and playerToken are required." });
+      return;
+    }
+
+    const row = await getBingoGameRow(gameId);
+    if (!row) {
+      res.status(404).json({ ok: false, error: "Bingo game not found." });
+      return;
+    }
+
+    const playerRow = await getPlayerByToken(row.session_id, playerToken);
+    if (!playerRow) {
+      res.status(404).json({ ok: false, error: "Join the Lingo game on this device first." });
+      return;
+    }
+
+    const publicState = serializeBingoPublicState(row);
+    const ballsEarned = Number(playerRow.balls || 0);
+    const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
+    const callIndex = Number(row.call_index ?? -1);
+    const { grid } = generateBingoCard(gameId, playerRow.display_name);
+    const called = calledNumbersFromSheet(callSheet, callIndex);
+    const hasLine = hasBingoLine(grid, called);
+    const made = callsMade(callIndex);
+    const withinBudget = made > 0 && made <= ballsEarned;
+    const isWinner = Boolean(row.winner_display_name)
+      && String(row.winner_display_name).toLowerCase()
+        === String(playerRow.display_name).toLowerCase();
+
+    res.json({
+      ok: true,
+      bingo: publicState,
+      player: {
+        displayName: playerRow.display_name,
+        ballsEarned,
+        callsMade: made,
+        hasLine,
+        withinBudget,
+        canClaim: hasLine && withinBudget && !publicState.hasWinner,
+        isWinner,
+        budgetRemaining: Math.max(0, ballsEarned - made),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/bingo/claim", async (req, res) => {
+  const gameId = String(req.body.gameId || req.body.game || "").trim();
+  const playerToken = normalizePlayerToken(req.body.playerToken);
+  if (!gameId || !playerToken) {
+    res.status(400).json({ ok: false, error: "gameId and playerToken are required." });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+
+    const locked = await client.query(
+      `select *
+       from bingo_games
+       where id = $1
+       for update`,
+      [gameId],
+    );
+    const row = locked.rows[0];
+    if (!row) {
+      throw new Error("Bingo game not found.");
+    }
+    if (row.winner_display_name) {
+      throw new Error(`${row.winner_display_name} already won this bingo game.`);
+    }
+
+    const playerRow = await getPlayerByToken(row.session_id, playerToken, client);
+    if (!playerRow) {
+      throw new Error("Join the Lingo game on this device first.");
+    }
+
+    const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
+    const callIndex = Number(row.call_index ?? -1);
+    const evaluation = evaluateBingoClaim({
+      gameId,
+      displayName: playerRow.display_name,
+      callSheet,
+      callIndex,
+      ballsEarned: playerRow.balls,
+    });
+    if (!evaluation.ok) {
+      throw new Error(evaluation.error);
+    }
+
+    const updated = await client.query(
+      `update bingo_games
+       set winner_player_id = $1,
+           winner_display_name = $2,
+           updated_at = now()
+       where id = $3
+       returning *`,
+      [playerRow.id, playerRow.display_name, gameId],
+    );
+
+    await client.query("commit");
+    res.json({
+      ok: true,
+      winner: playerRow.display_name,
+      bingo: serializeBingoPublicState(updated.rows[0]),
+    });
+  } catch (error) {
+    await client.query("rollback");
+    res.status(400).json({ ok: false, error: error.message });
+  } finally {
+    client.release();
   }
 });
 

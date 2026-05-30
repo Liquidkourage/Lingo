@@ -113,3 +113,16 @@ create table if not exists words (
 
 create index if not exists idx_players_session on players(session_id);
 create index if not exists idx_guess_submissions_session_round on guess_submissions(session_id, round_number);
+
+create table if not exists bingo_games (
+  id text primary key,
+  session_id text not null,
+  call_sheet jsonb not null,
+  call_index integer not null default -1,
+  winner_player_id bigint references players(id) on delete set null,
+  winner_display_name text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_bingo_games_session on bingo_games(session_id);

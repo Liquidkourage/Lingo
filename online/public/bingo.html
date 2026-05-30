@@ -9,7 +9,9 @@
       --bg: #05070a;
       --panel: #0d6efd;
       --panel-dark: #0849a6;
+      --called: #ffd54f;
       --marked: #4caf50;
+      --gold: #ffcc00;
       --text: #fff;
     }
     * { box-sizing: border-box; }
@@ -23,7 +25,7 @@
     }
     .wrap { max-width: 520px; margin: 0 auto; }
     h1 { text-align: center; font-size: 1.6rem; margin: 0 0 8px; }
-    .sub { text-align: center; color: #b8d4ff; margin-bottom: 16px; font-size: 0.95rem; }
+    .sub { text-align: center; color: #b8d4ff; margin-bottom: 16px; font-size: 0.95rem; line-height: 1.4; }
     .panel {
       background: linear-gradient(180deg, #3a8cff, var(--panel));
       border-radius: 16px;
@@ -31,13 +33,19 @@
       margin-bottom: 16px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
-    label { display: block; margin-bottom: 6px; font-weight: 700; }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 1rem;
+    .budget {
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.05rem;
+      margin: 0 0 8px;
+    }
+    .budget strong { color: var(--gold); }
+    .last-call {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--called);
+      margin: 6px 0;
     }
     .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     button {
@@ -52,6 +60,12 @@
       color: #fff;
     }
     button.secondary { background: linear-gradient(180deg, #5c6f8a, #40536f); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    button.bingo-btn {
+      background: linear-gradient(180deg, #ffd54f, #ffb300);
+      color: #111;
+      font-size: 1.05rem;
+    }
     .message { text-align: center; min-height: 1.2em; font-weight: 700; margin: 8px 0; }
     .message.error { color: #ffcdd2; }
     .message.success { color: #d8ffea; }
@@ -74,40 +88,51 @@
       font-size: clamp(1rem, 4vw, 1.4rem);
       font-weight: 800;
       border: 2px solid rgba(255, 255, 255, 0.35);
-      cursor: pointer;
       user-select: none;
       transition: background 0.15s, transform 0.1s;
     }
     table.bingo td.free {
       background: rgba(255, 255, 255, 0.2);
-      cursor: default;
       font-size: 0.85rem;
+    }
+    table.bingo td.called {
+      background: rgba(255, 213, 79, 0.45);
+      color: #111;
     }
     table.bingo td.marked {
       background: var(--marked);
       color: #042;
       transform: scale(0.96);
     }
-    .game-id { text-align: center; font-size: 0.85rem; color: #b8d4ff; margin-top: 8px; }
+    table.bingo td.called.marked {
+      box-shadow: inset 0 0 0 3px var(--called);
+    }
+    .winner-banner {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Lingo Bingo</h1>
-    <p class="sub">Standard 5×5 card. Tap numbers as they are called.</p>
+    <p class="sub">Get bingo within the number of balls you earned in Lingo. First valid BINGO wins.</p>
 
-    <div class="panel">
-      <label for="playerName">Your name</label>
-      <input id="playerName" type="text" maxlength="40" autocomplete="nickname" />
-      <div class="row">
-        <button type="button" id="loadCardBtn">Show my card</button>
-        <button type="button" id="clearMarksBtn" class="secondary">Clear marks</button>
-      </div>
+    <div class="panel" id="infoPanel">
+      <p class="budget" id="budgetLine">Join Lingo first to load your ball budget.</p>
+      <div class="last-call" id="lastCall">—</div>
       <p id="status" class="message" aria-live="polite"></p>
-      <p class="game-id" id="gameIdLine"></p>
+      <div class="row">
+        <button type="button" id="bingoBtn" class="bingo-btn" disabled>BINGO!</button>
+        <button type="button" id="reloadBtn" class="secondary">Refresh</button>
+      </div>
     </div>
 
     <div class="panel" id="cardPanel" hidden>
+      <p class="winner-banner" id="winnerBanner" hidden></p>
       <table class="bingo" aria-label="Your bingo card">
         <thead>
           <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
@@ -123,50 +148,32 @@
     const gameId = params.get("game") || "";
 
     const els = {
-      playerName: document.getElementById("playerName"),
-      loadCardBtn: document.getElementById("loadCardBtn"),
-      clearMarksBtn: document.getElementById("clearMarksBtn"),
+      budgetLine: document.getElementById("budgetLine"),
+      lastCall: document.getElementById("lastCall"),
       status: document.getElementById("status"),
-      gameIdLine: document.getElementById("gameIdLine"),
+      bingoBtn: document.getElementById("bingoBtn"),
+      reloadBtn: document.getElementById("reloadBtn"),
       cardPanel: document.getElementById("cardPanel"),
       bingoBody: document.getElementById("bingoBody"),
+      winnerBanner: document.getElementById("winnerBanner"),
     };
 
     let grid = [];
-    let marked = [];
+    let pollTimer = null;
+    let playerState = null;
+    let bingoState = null;
+
+    function getPlayerToken() {
+      return localStorage.getItem("lingo_player_token") || "";
+    }
 
     function setStatus(text, type = "") {
       els.status.textContent = text || "";
       els.status.className = "message" + (type ? ` ${type}` : "");
     }
 
-    function marksStorageKey(displayName) {
-      return `bingo_marks_${gameId}_${displayName.trim().toLowerCase()}`;
-    }
-
-    function nameStorageKey() {
-      return "bingo_player_name";
-    }
-
-    function loadMarks(displayName) {
-      try {
-        const raw = localStorage.getItem(marksStorageKey(displayName));
-        if (!raw) return null;
-        return JSON.parse(raw);
-      } catch (_error) {
-        return null;
-      }
-    }
-
-    function saveMarks(displayName) {
-      try {
-        localStorage.setItem(marksStorageKey(displayName), JSON.stringify(marked));
-      } catch (_error) {
-        // Ignore storage failures.
-      }
-    }
-
-    function renderCard() {
+    function renderCard(calledNumbers) {
+      const called = new Set(Array.isArray(calledNumbers) ? calledNumbers : []);
       els.bingoBody.replaceChildren();
       for (let row = 0; row < 5; row += 1) {
         const tr = document.createElement("tr");
@@ -176,14 +183,7 @@
           const isFree = row === 2 && column === 2;
           td.textContent = isFree ? "FREE" : String(value);
           if (isFree) td.classList.add("free");
-          if (marked[row][column]) td.classList.add("marked");
-          if (!isFree) {
-            td.addEventListener("click", () => {
-              marked[row][column] = !marked[row][column];
-              td.classList.toggle("marked", marked[row][column]);
-              saveMarks(els.playerName.value.trim());
-            });
-          }
+          if (!isFree && called.has(value)) td.classList.add("called");
           tr.appendChild(td);
         }
         els.bingoBody.appendChild(tr);
@@ -191,56 +191,134 @@
       els.cardPanel.hidden = false;
     }
 
-    function showCard() {
+    function updateUi() {
+      if (!bingoState) return;
+
+      els.lastCall.textContent = bingoState.lastCall || "—";
+
+      if (bingoState.hasWinner) {
+        els.winnerBanner.hidden = false;
+        els.winnerBanner.textContent = `${bingoState.winnerDisplayName} won bingo!`;
+        els.bingoBtn.disabled = true;
+      } else {
+        els.winnerBanner.hidden = true;
+      }
+
+      if (!playerState) {
+        els.budgetLine.innerHTML = "Open Lingo, join the game, then return here.";
+        els.bingoBtn.disabled = true;
+        return;
+      }
+
+      const { ballsEarned, callsMade, hasLine, withinBudget, canClaim, isWinner, budgetRemaining } = playerState;
+      if (isWinner) {
+        els.budgetLine.innerHTML = `<strong>You won bingo!</strong> (${ballsEarned} balls earned)`;
+        els.bingoBtn.disabled = true;
+        setStatus("Congratulations!", "success");
+      } else if (ballsEarned < 1) {
+        els.budgetLine.innerHTML = "You need at least <strong>1 ball</strong> from Lingo to win.";
+        els.bingoBtn.disabled = true;
+      } else if (bingoState.hasWinner) {
+        els.budgetLine.innerHTML = `You earned <strong>${ballsEarned}</strong> balls.`;
+        setStatus(`${bingoState.winnerDisplayName} got bingo first.`, "error");
+      } else {
+        els.budgetLine.innerHTML = [
+          `You earned <strong>${ballsEarned}</strong> ball${ballsEarned === 1 ? "" : "s"}.`,
+          `Need bingo within <strong>${ballsEarned}</strong> calls`,
+          `(${callsMade} called${budgetRemaining >= 0 ? `, ${budgetRemaining} left` : ""}).`,
+        ].join(" ");
+        if (callsMade > ballsEarned) {
+          setStatus(`Your ${ballsEarned}-ball window has passed — you can't win this game.`, "error");
+          els.bingoBtn.disabled = true;
+        } else if (canClaim) {
+          setStatus("You have bingo within your ball budget — tap BINGO!", "success");
+          els.bingoBtn.disabled = false;
+        } else if (hasLine && !withinBudget) {
+          setStatus("You have a line, but too many balls were called for your budget.", "error");
+          els.bingoBtn.disabled = true;
+        } else {
+          setStatus("", "");
+          els.bingoBtn.disabled = true;
+        }
+      }
+
+      renderCard(bingoState.calledNumbers);
+    }
+
+    async function refreshState() {
       if (!gameId) {
         setStatus("Missing ?game= in the link. Ask the host for the bingo URL.", "error");
         return;
       }
-      const displayName = els.playerName.value.trim();
-      if (!displayName) {
-        setStatus("Enter your name first.", "error");
+
+      const token = getPlayerToken();
+      const bingoRes = await fetch(`/api/bingo/state?game=${encodeURIComponent(gameId)}`);
+      const bingoPayload = await bingoRes.json();
+      if (!bingoRes.ok || !bingoPayload.ok) {
+        throw new Error(bingoPayload.error || "Could not load bingo game.");
+      }
+      bingoState = bingoPayload.bingo;
+
+      if (token) {
+        const playerRes = await fetch(
+          `/api/bingo/player-state?game=${encodeURIComponent(gameId)}&playerToken=${encodeURIComponent(token)}`,
+        );
+        const playerPayload = await playerRes.json();
+        if (playerRes.ok && playerPayload.ok) {
+          playerState = playerPayload.player;
+          const card = BingoShared.generateBingoCard(gameId, playerState.displayName);
+          grid = card.grid;
+        } else {
+          playerState = null;
+          setStatus(playerPayload.error || "Re-join Lingo on this device.", "error");
+        }
+      } else {
+        playerState = null;
+      }
+
+      updateUi();
+    }
+
+    async function claimBingo() {
+      const token = getPlayerToken();
+      if (!token) {
+        setStatus("Join Lingo on this device first.", "error");
         return;
       }
-
-      localStorage.setItem(nameStorageKey(), displayName);
-      const card = BingoShared.generateBingoCard(gameId, displayName);
-      grid = card.grid;
-      marked = card.marked;
-
-      const savedMarks = loadMarks(displayName);
-      if (Array.isArray(savedMarks) && savedMarks.length === 5) {
-        marked = savedMarks;
-        marked[2][2] = true;
+      els.bingoBtn.disabled = true;
+      try {
+        const response = await fetch("/api/bingo/claim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gameId, playerToken: token }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || "Claim rejected.");
+        }
+        setStatus(`BINGO accepted — you win! (${payload.bingo.callsMade} calls, ${playerState?.ballsEarned || "?"} balls)`, "success");
+        await refreshState();
+      } catch (error) {
+        setStatus(error.message || "Could not claim bingo.", "error");
+        updateUi();
       }
-
-      renderCard();
-      setStatus("Card ready — mark numbers as you hear them.", "success");
     }
 
-    function clearMarks() {
-      if (!grid.length) return;
-      marked = Array.from({ length: 5 }, () => Array(5).fill(false));
-      marked[2][2] = true;
-      saveMarks(els.playerName.value.trim());
-      renderCard();
-      setStatus("Marks cleared.", "success");
+    function schedulePolling() {
+      if (pollTimer) window.clearInterval(pollTimer);
+      pollTimer = window.setInterval(() => {
+        refreshState().catch(() => {});
+      }, 1000);
     }
 
-    els.loadCardBtn.addEventListener("click", showCard);
-    els.clearMarksBtn.addEventListener("click", clearMarks);
-    els.playerName.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") showCard();
+    els.bingoBtn.addEventListener("click", claimBingo);
+    els.reloadBtn.addEventListener("click", () => {
+      refreshState().catch((error) => setStatus(error.message, "error"));
     });
 
-    if (gameId) {
-      els.gameIdLine.textContent = `Game: ${gameId}`;
-    } else {
-      els.gameIdLine.textContent = "Waiting for host link…";
-      setStatus("Ask the host for the player bingo link.", "error");
-    }
-
-    const storedName = localStorage.getItem(nameStorageKey());
-    if (storedName) els.playerName.value = storedName;
+    refreshState()
+      .then(schedulePolling)
+      .catch((error) => setStatus(error.message, "error"));
   </script>
 </body>
 </html>

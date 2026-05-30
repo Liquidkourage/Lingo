@@ -770,7 +770,7 @@
         </div>
       </div>
 
-      <p class="host-links">Players <strong>/</strong> · Venue <strong>/display</strong> · Rehearsal <strong><a href="/rehearsal" style="color:inherit;">/rehearsal</a></strong> (20 bots)</p>
+      <p class="host-links">Players <strong>/</strong> · Venue <strong>/display</strong> · Bingo <strong><a href="/bingo/calls" style="color:inherit;">/bingo/calls</a></strong> · Rehearsal <strong><a href="/rehearsal" style="color:inherit;">/rehearsal</a></strong></p>
 
       <div class="host-status" aria-label="Live session">
         <div class="meta-slot">
@@ -831,6 +831,17 @@
           </div>
 
           <div id="actionStatus" class="status"></div>
+        </section>
+
+        <section class="host-panel" aria-label="Bingo endgame">
+          <h2 class="panel-kicker">Bingo endgame</h2>
+          <p class="panel-copy">First valid BINGO wins — but only within the balls each player earned in Lingo.</p>
+          <div class="flow-actions">
+            <button id="startBingoBtn" class="good btn-flow" type="button">Start bingo game</button>
+            <a id="bingoCallsLink" class="secondary btn-flow" href="/bingo/calls" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Open call sheet</a>
+          </div>
+          <div id="bingoHostStatus" class="status"></div>
+          <p id="bingoPlayerLink" class="panel-copy" style="word-break:break-all;margin-top:0.5rem;"></p>
         </section>
 
         <div class="host-workspace">
@@ -953,6 +964,10 @@
       wordPoolMeta: document.getElementById('wordPoolMeta'),
       wordPoolStatus: document.getElementById('wordPoolStatus'),
       refreshWordPoolBtn: document.getElementById('refreshWordPoolBtn'),
+      startBingoBtn: document.getElementById('startBingoBtn'),
+      bingoCallsLink: document.getElementById('bingoCallsLink'),
+      bingoHostStatus: document.getElementById('bingoHostStatus'),
+      bingoPlayerLink: document.getElementById('bingoPlayerLink'),
     };
 
     let currentState = null;
@@ -1440,6 +1455,24 @@
         setStatus(els.showToolsStatus, 'Every player received +1 ball.', 'success');
       } catch (error) {
         setStatus(els.showToolsStatus, error.message || 'Could not award balls.', 'error');
+      }
+    });
+    els.startBingoBtn.addEventListener('click', async () => {
+      setStatus(els.bingoHostStatus, '');
+      try {
+        const response = await adminFetch('/api/admin/bingo/start', {
+          method: 'POST',
+          body: JSON.stringify({}),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not start bingo.');
+        }
+        els.bingoPlayerLink.textContent = payload.playerUrl || '';
+        els.bingoCallsLink.href = payload.hostCallsUrl || '/bingo/calls';
+        setStatus(els.bingoHostStatus, 'Bingo game started. Share the player link.', 'success');
+      } catch (error) {
+        setStatus(els.bingoHostStatus, error.message || 'Could not start bingo.', 'error');
       }
     });
 
