@@ -357,36 +357,112 @@
       margin-left: auto;
     }
 
-    .host-workspace {
-      display: grid;
-      grid-template-columns: 5fr 7fr;
-      gap: 14px;
-      margin-bottom: 14px;
+    .host-tools-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
     }
 
-    .host-workspace .host-panel {
-      margin: 0;
-      min-height: 280px;
+    .host-tools-bar button {
+      min-height: 40px;
+    }
+
+    .host-roster-panel {
+      margin-bottom: 14px;
       display: flex;
       flex-direction: column;
+      min-height: 280px;
     }
 
-    .host-workspace .word-suggestion-list {
+    .host-roster-panel .roster-table-wrap {
       flex: 1;
-      min-height: 200px;
-    }
-
-    .host-workspace .roster-table-wrap {
-      flex: 1;
-      max-height: min(50vh, 420px);
+      max-height: min(58vh, 520px);
       overflow-y: auto;
     }
 
-    .host-footer {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 14px;
-      align-items: start;
+    .host-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 220;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1.25rem;
+      overflow-y: auto;
+    }
+
+    .host-modal.is-open {
+      display: flex;
+    }
+
+    body.host-modal-open {
+      overflow: hidden;
+    }
+
+    .host-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.74);
+    }
+
+    .host-modal-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(680px, 100%);
+      max-height: calc(100vh - 2.5rem);
+      display: flex;
+      flex-direction: column;
+      border: var(--stroke) solid rgba(230, 184, 0, 0.35);
+      border-radius: var(--radius);
+      background: var(--show-panel);
+      box-shadow: var(--glow-gold), 0 24px 64px rgba(0, 0, 0, 0.55);
+    }
+
+    .host-modal-dialog--wide {
+      width: min(920px, 100%);
+    }
+
+    .host-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(230, 184, 0, 0.15);
+      flex-shrink: 0;
+    }
+
+    .host-modal-header h2 {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--show-gold);
+    }
+
+    .host-modal-body {
+      padding: 1rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .host-modal-body .word-suggestion-list {
+      max-height: min(42vh, 360px);
+    }
+
+    .host-modal-section + .host-modal-section {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(230, 184, 0, 0.12);
+    }
+
+    .host-modal-session {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.65rem;
     }
 
     .show-tools-grid {
@@ -966,13 +1042,10 @@
     .muted { color: rgba(180, 198, 220, 0.55); }
 
     @media (max-width: 960px) {
-      .host-workspace { grid-template-columns: 1fr; }
-      .host-footer { grid-template-columns: 1fr; }
       .show-tools-grid { grid-template-columns: 1fr; }
-      .session-danger { align-items: stretch; }
-      .session-danger .flow-section-label { text-align: left; }
       .word-hero-row { grid-template-columns: 1fr; }
       .tuning-row .tuning-actions { margin-left: 0; width: 100%; }
+      .host-modal { padding: 0.65rem; }
     }
 
     @media (max-width: 900px) {
@@ -1181,6 +1254,13 @@
         <div class="host-message-queue is-empty" id="hostMessageQueue">No messages yet.</div>
       </section>
 
+      <div class="host-tools-bar" aria-label="Setup and extras">
+        <button id="toolsWordsBtn" class="secondary" type="button" data-open-modal="wordsModal">Words</button>
+        <button class="secondary" type="button" data-open-modal="settingsModal">Settings</button>
+        <button class="secondary" type="button" data-open-modal="venueModal">Venue</button>
+        <button class="secondary" type="button" data-open-modal="bingoModal">Bingo</button>
+      </div>
+
       <div class="host-solve-fanfare" id="hostSolveFanfare" hidden aria-live="polite">
         <div class="host-solve-fanfare-inner">
           <p class="host-solve-fanfare-kicker">Correct guess!</p>
@@ -1212,138 +1292,175 @@
             </div>
           </div>
 
-          <div class="tuning-row">
-            <div class="field">
-              <label for="guessSecondsInput">Guess (sec)</label>
-              <input id="guessSecondsInput" type="number" min="10" step="5" value="100" />
-            </div>
-            <div class="field">
-              <label for="resultsSecondsInput">Results (sec)</label>
-              <input id="resultsSecondsInput" type="number" min="10" step="5" value="20" />
-            </div>
-            <div class="field field-balls">
-              <label for="ballsInput">Balls left</label>
-              <input id="ballsInput" type="number" min="0" step="1" value="0" />
-            </div>
-            <div class="tuning-actions">
-              <button id="toggleDoubleBtn" class="secondary" type="button">Toggle 2×</button>
-              <button id="setTimersBtn" class="secondary" type="button">Apply timers</button>
-              <button id="setBallsBtn" class="secondary" type="button">Apply balls</button>
-            </div>
-          </div>
-
           <div id="actionStatus" class="status"></div>
         </section>
 
-        <section class="host-panel" aria-label="Bingo endgame">
-          <h2 class="panel-kicker">Bingo endgame</h2>
-          <p class="panel-copy">Finale after Lingo. Players stay on the main play link — their phones switch to bingo automatically. Cards mark themselves when numbers are called; players only tap BINGO!</p>
-          <div class="flow-actions">
-            <button id="startBingoBtn" class="good btn-flow" type="button">Start bingo game</button>
-            <a id="bingoCallsLink" class="secondary btn-flow" href="/bingo/calls" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Open call sheet</a>
+        <section class="host-panel host-roster-panel" aria-label="Player roster">
+          <h2 class="panel-kicker">Players live</h2>
+          <div class="roster-stats">
+            <div class="stat-chip">
+              <span class="label">In session</span>
+              <span class="value" id="playerCountValue">0</span>
+            </div>
+            <div class="stat-chip">
+              <span class="label">Waiting</span>
+              <span class="value" id="waitingCountValue">0</span>
+            </div>
+            <div class="stat-chip">
+              <span class="label">Locked in</span>
+              <span class="value" id="submittedCountValue">0</span>
+            </div>
+            <div class="stat-chip">
+              <span class="label">Solved</span>
+              <span class="value" id="solvedCountValue">0</span>
+            </div>
           </div>
-          <div id="bingoHostStatus" class="status"></div>
-          <p id="bingoPlayerLink" class="panel-copy" style="word-break:break-all;margin-top:0.5rem;"></p>
+          <div class="roster-toolbar">
+            <div class="field roster-search-field">
+              <label for="rosterSearchInput">Find player</label>
+              <input id="rosterSearchInput" type="search" placeholder="Search names…" autocomplete="off" />
+            </div>
+            <div class="roster-filter-pills" role="group" aria-label="Filter roster">
+              <button type="button" class="roster-filter-pill is-active" data-roster-filter="all">All</button>
+              <button type="button" class="roster-filter-pill" data-roster-filter="waiting">Waiting</button>
+              <button type="button" class="roster-filter-pill" data-roster-filter="locked">Locked in</button>
+              <button type="button" class="roster-filter-pill" data-roster-filter="solved">Solved</button>
+            </div>
+          </div>
+          <div class="roster-table-wrap">
+            <table class="roster-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Status</th>
+                  <th>Balls</th>
+                  <th>Current</th>
+                  <th>Windows</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="playerRosterBody">
+                <tr><td colspan="6" class="muted">Connect to load players.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </section>
+      </div>
+    </div>
+  </div>
 
-        <div class="host-workspace">
-          <section class="host-panel" aria-label="Word pool">
-            <h2 class="panel-kicker">Pick a word</h2>
-            <p class="panel-copy">Queue up to 8 words · double-click a suggestion to queue · click a queued word to set it</p>
-            <div class="word-queue-section">
-              <p class="word-queue-heading">Up next <span id="wordQueueCount"></span></p>
-              <ul id="wordQueueList" class="word-queue-list" aria-label="Upcoming words"></ul>
-            </div>
-            <div class="word-history-section">
-              <p class="word-history-heading">Played this session</p>
-              <ul id="wordHistoryList" class="word-history-list" aria-label="Played words"></ul>
-            </div>
-            <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
-            <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
-            <div class="row" style="margin-top:0.65rem;">
-              <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh pool</button>
-            </div>
-            <div id="wordPoolStatus" class="status"></div>
-          </section>
-
-          <section class="host-panel" aria-label="Player roster">
-            <h2 class="panel-kicker">Players live</h2>
-            <div class="roster-stats">
-              <div class="stat-chip">
-                <span class="label">In session</span>
-                <span class="value" id="playerCountValue">0</span>
-              </div>
-              <div class="stat-chip">
-                <span class="label">Waiting</span>
-                <span class="value" id="waitingCountValue">0</span>
-              </div>
-              <div class="stat-chip">
-                <span class="label">Locked in</span>
-                <span class="value" id="submittedCountValue">0</span>
-              </div>
-              <div class="stat-chip">
-                <span class="label">Solved</span>
-                <span class="value" id="solvedCountValue">0</span>
-              </div>
-            </div>
-            <div class="roster-toolbar">
-              <div class="field roster-search-field">
-                <label for="rosterSearchInput">Find player</label>
-                <input id="rosterSearchInput" type="search" placeholder="Search names…" autocomplete="off" />
-              </div>
-              <div class="roster-filter-pills" role="group" aria-label="Filter roster">
-                <button type="button" class="roster-filter-pill is-active" data-roster-filter="all">All</button>
-                <button type="button" class="roster-filter-pill" data-roster-filter="waiting">Waiting</button>
-                <button type="button" class="roster-filter-pill" data-roster-filter="locked">Locked in</button>
-                <button type="button" class="roster-filter-pill" data-roster-filter="solved">Solved</button>
-              </div>
-            </div>
-            <div class="roster-table-wrap">
-              <table class="roster-table">
-                <thead>
-                  <tr>
-                    <th>Player</th>
-                    <th>Status</th>
-                    <th>Balls</th>
-                    <th>Current</th>
-                    <th>Windows</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="playerRosterBody">
-                  <tr><td colspan="6" class="muted">Connect to load players.</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
+  <div class="host-modal" id="wordsModal" hidden>
+    <div class="host-modal-backdrop" data-close-modal></div>
+    <div class="host-modal-dialog host-modal-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="wordsModalTitle">
+      <div class="host-modal-header">
+        <h2 id="wordsModalTitle">Word setup</h2>
+        <button class="secondary" type="button" data-close-modal>Close</button>
+      </div>
+      <div class="host-modal-body">
+        <p class="panel-copy">Queue up to 8 words · double-click a suggestion to queue · click a queued word to set it</p>
+        <div class="word-queue-section">
+          <p class="word-queue-heading">Up next <span id="wordQueueCount"></span></p>
+          <ul id="wordQueueList" class="word-queue-list" aria-label="Upcoming words"></ul>
         </div>
+        <div class="word-history-section">
+          <p class="word-history-heading">Played this session</p>
+          <ul id="wordHistoryList" class="word-history-list" aria-label="Played words"></ul>
+        </div>
+        <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
+        <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
+        <div class="row" style="margin-top:0.65rem;">
+          <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh pool</button>
+        </div>
+        <div id="wordPoolStatus" class="status"></div>
+      </div>
+    </div>
+  </div>
 
-        <section class="host-panel host-footer">
-          <div class="show-tools-block">
-            <h2 class="panel-kicker">Venue extras</h2>
-            <div class="show-tools-grid">
-              <div class="field">
-                <label for="hostNoteInput">Idle message</label>
-                <input id="hostNoteInput" type="text" maxlength="160" placeholder="Shown on display while idle" />
-              </div>
-              <div class="field">
-                <label for="championInput">Champion</label>
-                <input id="championInput" type="text" maxlength="40" placeholder="Display name" />
-              </div>
-              <div class="show-tools-buttons">
-                <button id="saveHostNoteBtn" class="secondary" type="button">Save note</button>
-                <button id="setChampionBtn" type="button">Crown</button>
-                <button id="awardAllBallsBtn" class="good" type="button">All +1</button>
-              </div>
-            </div>
-            <div id="showToolsStatus" class="status"></div>
+  <div class="host-modal" id="settingsModal" hidden>
+    <div class="host-modal-backdrop" data-close-modal></div>
+    <div class="host-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+      <div class="host-modal-header">
+        <h2 id="settingsModalTitle">Round settings</h2>
+        <button class="secondary" type="button" data-close-modal>Close</button>
+      </div>
+      <div class="host-modal-body">
+        <p class="panel-copy">Timer lengths and ball pot — usually set once before the show.</p>
+        <div class="tuning-row" style="padding-top:0;border-top:none;">
+          <div class="field">
+            <label for="guessSecondsInput">Guess (sec)</label>
+            <input id="guessSecondsInput" type="number" min="10" step="5" value="100" />
           </div>
-          <div class="session-danger">
-            <p class="flow-section-label">Session</p>
+          <div class="field">
+            <label for="resultsSecondsInput">Results (sec)</label>
+            <input id="resultsSecondsInput" type="number" min="10" step="5" value="20" />
+          </div>
+          <div class="field field-balls">
+            <label for="ballsInput">Balls left</label>
+            <input id="ballsInput" type="number" min="0" step="1" value="0" />
+          </div>
+          <div class="tuning-actions">
+            <button id="toggleDoubleBtn" class="secondary" type="button">Toggle 2×</button>
+            <button id="setTimersBtn" class="secondary" type="button">Apply timers</button>
+            <button id="setBallsBtn" class="secondary" type="button">Apply balls</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="host-modal" id="venueModal" hidden>
+    <div class="host-modal-backdrop" data-close-modal></div>
+    <div class="host-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="venueModalTitle">
+      <div class="host-modal-header">
+        <h2 id="venueModalTitle">Venue &amp; session</h2>
+        <button class="secondary" type="button" data-close-modal>Close</button>
+      </div>
+      <div class="host-modal-body">
+        <div class="show-tools-block">
+          <h2 class="panel-kicker">Venue extras</h2>
+          <div class="show-tools-grid">
+            <div class="field">
+              <label for="hostNoteInput">Idle message</label>
+              <input id="hostNoteInput" type="text" maxlength="160" placeholder="Shown on display while idle" />
+            </div>
+            <div class="field">
+              <label for="championInput">Champion</label>
+              <input id="championInput" type="text" maxlength="40" placeholder="Display name" />
+            </div>
+            <div class="show-tools-buttons">
+              <button id="saveHostNoteBtn" class="secondary" type="button">Save note</button>
+              <button id="setChampionBtn" type="button">Crown</button>
+              <button id="awardAllBallsBtn" class="good" type="button">All +1</button>
+            </div>
+          </div>
+          <div id="showToolsStatus" class="status"></div>
+        </div>
+        <div class="host-modal-section">
+          <p class="flow-section-label">Session</p>
+          <div class="host-modal-session">
             <button id="newSessionBtn" class="secondary" type="button">New session</button>
             <button id="resetSessionBtn" class="danger" type="button">Hard reset</button>
           </div>
-        </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="host-modal" id="bingoModal" hidden>
+    <div class="host-modal-backdrop" data-close-modal></div>
+    <div class="host-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="bingoModalTitle">
+      <div class="host-modal-header">
+        <h2 id="bingoModalTitle">Bingo endgame</h2>
+        <button class="secondary" type="button" data-close-modal>Close</button>
+      </div>
+      <div class="host-modal-body">
+        <p class="panel-copy">Finale after Lingo. Players stay on the main play link — their phones switch to bingo automatically. Cards mark themselves when numbers are called; players only tap BINGO!</p>
+        <div class="flow-actions">
+          <button id="startBingoBtn" class="good btn-flow" type="button">Start bingo game</button>
+          <a id="bingoCallsLink" class="secondary btn-flow" href="/bingo/calls" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Open call sheet</a>
+        </div>
+        <div id="bingoHostStatus" class="status"></div>
+        <p id="bingoPlayerLink" class="panel-copy" style="word-break:break-all;margin-top:0.5rem;"></p>
       </div>
     </div>
   </div>
@@ -1410,6 +1527,7 @@
       hostMessageQueue: document.getElementById('hostMessageQueue'),
       hostSolveFanfare: document.getElementById('hostSolveFanfare'),
       hostSolveFanfareNames: document.getElementById('hostSolveFanfareNames'),
+      toolsWordsBtn: document.getElementById('toolsWordsBtn'),
     };
 
     let currentState = null;
@@ -1915,6 +2033,47 @@
       }, ms);
     }
 
+    function updateToolsBar() {
+      const queue = Array.isArray(currentState?.wordQueue) ? currentState.wordQueue : [];
+      if (els.toolsWordsBtn) {
+        els.toolsWordsBtn.textContent = queue.length ? `Words (${queue.length})` : 'Words';
+      }
+    }
+
+    function openHostModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      modal.classList.add('is-open');
+      modal.removeAttribute('hidden');
+      document.body.classList.add('host-modal-open');
+    }
+
+    function closeHostModal(modal) {
+      if (!modal) return;
+      modal.classList.remove('is-open');
+      modal.setAttribute('hidden', '');
+      if (!document.querySelector('.host-modal.is-open')) {
+        document.body.classList.remove('host-modal-open');
+      }
+    }
+
+    function wireHostModals() {
+      document.querySelectorAll('[data-open-modal]').forEach((button) => {
+        button.addEventListener('click', () => {
+          openHostModal(button.dataset.openModal);
+        });
+      });
+      document.querySelectorAll('[data-close-modal]').forEach((element) => {
+        element.addEventListener('click', () => {
+          closeHostModal(element.closest('.host-modal'));
+        });
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        document.querySelectorAll('.host-modal.is-open').forEach((modal) => closeHostModal(modal));
+      });
+    }
+
     function renderState() {
       const state = currentState || {};
       const phase = state.phase || 'idle';
@@ -1950,6 +2109,7 @@
       els.resetRoundBtn.disabled = phase === 'idle' && Number(state.roundNumber || 0) === 0;
       updateFlowEmphasis(phase);
       renderWordPool();
+      updateToolsBar();
     }
 
     function updateFlowEmphasis(phase) {
@@ -2358,6 +2518,8 @@
         renderPlayerRoster(rosterPlayers, currentRound, phase, championName);
       });
     });
+
+    wireHostModals();
 
     els.adminKey.value = storedKey();
     if (els.adminKey.value) {
