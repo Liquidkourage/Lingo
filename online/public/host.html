@@ -1289,6 +1289,7 @@
               <button id="revealAnswerBtn" class="warning btn-flow" type="button">Reveal answer</button>
               <button id="resetRoundBtn" class="danger btn-flow" type="button">Reset round</button>
               <button id="pauseTimerBtn" class="secondary btn-flow" type="button">Pause timer</button>
+              <button id="awardAllBallsBtn" class="good btn-flow" type="button">Communism</button>
             </div>
           </div>
 
@@ -1430,7 +1431,6 @@
             <div class="show-tools-buttons">
               <button id="saveHostNoteBtn" class="secondary" type="button">Save note</button>
               <button id="setChampionBtn" type="button">Crown</button>
-              <button id="awardAllBallsBtn" class="good" type="button">All +1</button>
             </div>
           </div>
           <div id="showToolsStatus" class="status"></div>
@@ -2471,12 +2471,12 @@
       }
     });
     els.awardAllBallsBtn.addEventListener('click', async () => {
-      setStatus(els.showToolsStatus, '');
+      setStatus(els.actionStatus, '');
       try {
-        await runAction('award-all-balls', {}, 'Every player received +1 ball.');
-        setStatus(els.showToolsStatus, 'Every player received +1 ball.', 'success');
+        await runAction('award-all-balls', {}, 'Communism — every player +1 ball.');
+        setStatus(els.actionStatus, 'Communism — every player +1 ball.', 'success');
       } catch (error) {
-        setStatus(els.showToolsStatus, error.message || 'Could not award balls.', 'error');
+        setStatus(els.actionStatus, error.message || 'Could not award balls.', 'error');
       }
     });
     els.startBingoBtn.addEventListener('click', async () => {
