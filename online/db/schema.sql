@@ -9,8 +9,8 @@ create table if not exists app_state (
   answer_revealed boolean not null default false,
   ball_multiplier integer not null default 1,
   balls_remaining integer not null default 0,
-  guess_window_seconds integer not null default 90,
-  results_window_seconds integer not null default 45,
+  guess_window_seconds integer not null default 100,
+  results_window_seconds integer not null default 20,
   host_note text not null default '',
   host_word_suggestions jsonb not null default '[]'::jsonb,
   host_word_exclusions jsonb not null default '[]'::jsonb,
@@ -64,8 +64,8 @@ values (
   false,
   1,
   0,
-  90,
-  45,
+  100,
+  20,
   ''
 )
 on conflict (id) do nothing;

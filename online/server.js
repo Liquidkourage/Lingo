@@ -75,9 +75,9 @@ const HOST_WORD_SUGGESTION_COUNT = 100;
 const HOST_WORD_QUEUE_MAX = 8;
 const ALL_SUBMITTED_GRACE_SECONDS = 10;
 const MIN_GUESS_WINDOW_SECONDS = 30;
-const DEFAULT_GUESS_WINDOW_SECONDS = 90;
+const DEFAULT_GUESS_WINDOW_SECONDS = 100;
 const MIN_RESULTS_WINDOW_SECONDS = 15;
-const DEFAULT_RESULTS_WINDOW_SECONDS = 45;
+const DEFAULT_RESULTS_WINDOW_SECONDS = 20;
 let rehearsalAutoSubmitEnabled = false;
 let appReady = false;
 let shuttingDown = false;
@@ -1969,8 +1969,8 @@ async function handleAdminAction(action, body) {
         answer_revealed: false,
         ball_multiplier: 1,
         balls_remaining: 0,
-        guess_window_seconds: 90,
-        results_window_seconds: 45,
+        guess_window_seconds: DEFAULT_GUESS_WINDOW_SECONDS,
+        results_window_seconds: DEFAULT_RESULTS_WINDOW_SECONDS,
         host_note: "",
         guess_window_opened_at: null,
         results_window_opened_at: null,
@@ -2348,8 +2348,8 @@ async function handleAdminAction(action, body) {
         answer_revealed: false,
         ball_multiplier: 1,
         balls_remaining: 0,
-        guess_window_seconds: 90,
-        results_window_seconds: 45,
+        guess_window_seconds: DEFAULT_GUESS_WINDOW_SECONDS,
+        results_window_seconds: DEFAULT_RESULTS_WINDOW_SECONDS,
         host_note: "",
         guess_window_opened_at: null,
         results_window_opened_at: null,

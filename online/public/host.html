@@ -1215,11 +1215,11 @@
           <div class="tuning-row">
             <div class="field">
               <label for="guessSecondsInput">Guess (sec)</label>
-              <input id="guessSecondsInput" type="number" min="10" step="5" value="90" />
+              <input id="guessSecondsInput" type="number" min="10" step="5" value="100" />
             </div>
             <div class="field">
               <label for="resultsSecondsInput">Results (sec)</label>
-              <input id="resultsSecondsInput" type="number" min="10" step="5" value="45" />
+              <input id="resultsSecondsInput" type="number" min="10" step="5" value="20" />
             </div>
             <div class="field field-balls">
               <label for="ballsInput">Balls left</label>
@@ -1936,8 +1936,8 @@
       els.roundValue.textContent = String(state.roundNumber ?? 0);
       els.ballsValue.textContent = String(displayPotBalls(state));
       assignHostField(els.wordInput, 'word', state.currentWord || '');
-      assignHostField(els.guessSecondsInput, 'guessSeconds', String(state.guessWindowSeconds || 90));
-      assignHostField(els.resultsSecondsInput, 'resultsSeconds', String(state.resultsWindowSeconds || 45));
+      assignHostField(els.guessSecondsInput, 'guessSeconds', String(state.guessWindowSeconds || 100));
+      assignHostField(els.resultsSecondsInput, 'resultsSeconds', String(state.resultsWindowSeconds || 20));
       assignHostField(els.ballsInput, 'balls', String(state.ballsRemaining ?? 0));
       assignHostField(els.hostNoteInput, 'hostNote', state.hostNote || '');
       assignHostField(els.championInput, 'champion', state.championDisplayName || '');
