@@ -1735,6 +1735,62 @@
       filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
     }
 
+    .solve-fanfare {
+      position: absolute;
+      inset: 0;
+      z-index: 58;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 8, 18, 0.72);
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+      animation: champion-fanfare-in 0.45s ease both;
+    }
+
+    .solve-fanfare[hidden] {
+      display: none !important;
+    }
+
+    .solve-fanfare-inner {
+      text-align: center;
+      padding: 1em 1.5em;
+      border-radius: 0.45em;
+      border: 2px solid rgba(0, 255, 85, 0.75);
+      background: linear-gradient(180deg, rgba(0, 48, 24, 0.94) 0%, rgba(0, 12, 8, 0.98) 100%);
+      box-shadow:
+        0 0 48px rgba(0, 255, 85, 0.4),
+        0 0 72px rgba(0, 212, 255, 0.2);
+      animation: monarch-crown-pop 1s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+      max-width: 88%;
+    }
+
+    .solve-fanfare-kicker {
+      margin: 0 0 0.35em;
+      font-size: 0.72em;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(180, 255, 210, 0.95);
+    }
+
+    .solve-fanfare-names {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35em 0.55em;
+      justify-content: center;
+    }
+
+    .solve-fanfare-names li {
+      font-size: clamp(1.4em, 5cqw, 2.8em);
+      font-weight: 900;
+      line-height: 1.1;
+      color: var(--show-green);
+      text-shadow: 0 2px 0 #000, 0 0 24px rgba(0, 255, 85, 0.75);
+    }
+
     .bingo-display {
       position: absolute;
       inset: 0;
@@ -3557,6 +3613,13 @@
           </div>
         </div>
 
+        <div class="solve-fanfare" id="solveFanfare" hidden aria-live="polite">
+          <div class="solve-fanfare-inner">
+            <p class="solve-fanfare-kicker">Correct guess!</p>
+            <ul class="solve-fanfare-names" id="solveFanfareNames"></ul>
+          </div>
+        </div>
+
         <div class="bingo-display" id="bingoDisplay" hidden aria-live="polite">
           <p class="bingo-display-kicker">Lingo Bingo</p>
           <p class="bingo-display-last" id="bingoLastCall">—</p>
@@ -3669,6 +3732,8 @@
       answerFanfareWord: document.getElementById("answerFanfareWord"),
       championFanfare: document.getElementById("championFanfare"),
       championFanfareName: document.getElementById("championFanfareName"),
+      solveFanfare: document.getElementById("solveFanfare"),
+      solveFanfareNames: document.getElementById("solveFanfareNames"),
       bingoDisplay: document.getElementById("bingoDisplay"),
       bingoLastCall: document.getElementById("bingoLastCall"),
       bingoProgress: document.getElementById("bingoProgress"),
@@ -3724,6 +3789,8 @@
     let championFanfareTimer = null;
     let championFanfareActive = false;
     let championFanfareInitialized = false;
+    let lastRevealFanfareKey = "";
+    let solveFanfareTimer = null;
     let tickTimer = null;
     let lobbyPageIndex = 0;
     let lobbyRotateTimer = null;
@@ -5362,6 +5429,35 @@
       }
     }
 
+    function renderSolveFanfare(state, previousPhase) {
+      const phase = state.phase || "idle";
+      if (previousPhase !== "guessing" || (phase !== "results" && phase !== "ended")) {
+        return;
+      }
+      const key = String(state.revealFanfareKey || "");
+      const winners = Array.isArray(state.correctGuessWinners) ? state.correctGuessWinners : [];
+      if (!key || !winners.length || key === lastRevealFanfareKey) {
+        return;
+      }
+      lastRevealFanfareKey = key;
+
+      els.solveFanfareNames.replaceChildren();
+      winners.forEach((winner) => {
+        const item = document.createElement("li");
+        item.textContent = winner.displayName;
+        els.solveFanfareNames.appendChild(item);
+      });
+
+      els.solveFanfare.hidden = false;
+      if (solveFanfareTimer) {
+        window.clearTimeout(solveFanfareTimer);
+      }
+      solveFanfareTimer = window.setTimeout(() => {
+        els.solveFanfare.hidden = true;
+        solveFanfareTimer = null;
+      }, 3800);
+    }
+
     function renderChampionFanfare(state) {
       const champion = String(state.championDisplayName || "").trim();
       const previous = lastChampionDisplayName;
@@ -5521,6 +5617,7 @@
       renderUnsubmittedStat(currentState);
 
       renderAnswerFanfare(currentState);
+      renderSolveFanfare(currentState, previousPhase);
       renderChampionFanfare(currentState);
       renderBingo(currentState);
       renderWordTiles(currentState);

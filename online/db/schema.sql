@@ -14,6 +14,8 @@ create table if not exists app_state (
   host_note text not null default '',
   host_word_suggestions jsonb not null default '[]'::jsonb,
   host_word_exclusions jsonb not null default '[]'::jsonb,
+  host_word_queue jsonb not null default '[]'::jsonb,
+  host_word_history jsonb not null default '[]'::jsonb,
   champion_display_name text not null default '',
   first_solver_player_id bigint,
   guess_window_opened_at timestamptz,
@@ -30,6 +32,8 @@ alter table app_state add column if not exists champion_display_name text not nu
 alter table app_state add column if not exists first_solver_player_id bigint;
 alter table app_state add column if not exists host_word_suggestions jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists host_word_exclusions jsonb not null default '[]'::jsonb;
+alter table app_state add column if not exists host_word_queue jsonb not null default '[]'::jsonb;
+alter table app_state add column if not exists host_word_history jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists round_ball_stakes jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists guess_window_seq integer not null default 0;
 alter table app_state add column if not exists all_players_submitted_at timestamptz;
@@ -126,3 +130,13 @@ create table if not exists bingo_games (
 );
 
 create index if not exists idx_bingo_games_session on bingo_games(session_id);
+
+create table if not exists host_messages (
+  id bigserial primary key,
+  session_id text not null,
+  display_name text not null,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_host_messages_session on host_messages(session_id, created_at desc);

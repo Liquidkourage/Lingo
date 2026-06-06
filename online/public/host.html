@@ -612,6 +612,85 @@
       color: rgba(180, 198, 220, 0.55);
     }
 
+    .word-queue-section,
+    .word-history-section {
+      margin-bottom: 0.85rem;
+    }
+
+    .word-queue-heading,
+    .word-history-heading {
+      margin: 0 0 0.35rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--show-gold-soft);
+    }
+
+    .word-queue-list,
+    .word-history-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border: var(--stroke) solid rgba(230, 184, 0, 0.22);
+      border-radius: calc(var(--radius) - 2px);
+      background: var(--show-black);
+    }
+
+    .word-queue-list li,
+    .word-history-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.45rem 0.55rem;
+      border-bottom: 1px solid rgba(230, 184, 0, 0.1);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+
+    .word-queue-list li:last-child,
+    .word-history-list li:last-child {
+      border-bottom: none;
+    }
+
+    .word-queue-list li.is-current {
+      background: rgba(61, 217, 122, 0.12);
+      color: var(--show-green);
+    }
+
+    .word-queue-list li.is-empty,
+    .word-history-list li.is-empty {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: normal;
+      color: rgba(180, 198, 220, 0.55);
+    }
+
+    .word-queue-label {
+      flex: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .word-queue-actions {
+      display: flex;
+      gap: 0.2rem;
+    }
+
+    .word-queue-actions button {
+      min-width: 1.65rem;
+      padding: 0.15rem 0.35rem;
+      font-size: 0.72rem;
+      line-height: 1;
+    }
+
+    .word-history-list li {
+      color: rgba(180, 198, 220, 0.72);
+      cursor: default;
+    }
+
     .roster-stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -897,13 +976,151 @@
     }
 
     @media (max-width: 900px) {
-      .host-status { grid-template-columns: repeat(3, 1fr); }
+      .host-status { grid-template-columns: repeat(4, 1fr); }
       .meta-slot:nth-child(3n + 1) { border-left: none; }
       .meta-slot { border-top: 1px solid rgba(230, 184, 0, 0.14); }
       .meta-slot:nth-child(-n + 3) { border-top: none; }
       .host-topbar { flex-direction: column; align-items: stretch; }
       .host-connect { max-width: none; justify-content: stretch; }
       #connectStatus { text-align: left; }
+    }
+
+    @keyframes host-flash-pulse {
+      0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+      50% { box-shadow: inset 0 0 0 5px rgba(255, 204, 0, 0.8); }
+    }
+
+    @keyframes host-flash-all-in {
+      0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+      50% { box-shadow: inset 0 0 0 5px rgba(61, 217, 122, 0.85); }
+    }
+
+    .host-stage.is-flash-warn {
+      animation: host-flash-pulse 0.7s ease 2;
+    }
+
+    .host-stage.is-flash-critical {
+      animation: host-flash-pulse 0.45s ease 3;
+    }
+
+    .host-stage.is-flash-all-in {
+      animation: host-flash-all-in 0.65s ease 2;
+    }
+
+    .host-solve-fanfare {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 6, 14, 0.78);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+
+    .host-solve-fanfare[hidden] {
+      display: none !important;
+    }
+
+    .host-solve-fanfare-inner {
+      text-align: center;
+      padding: 1.25rem 1.5rem;
+      border-radius: 12px;
+      border: 2px solid rgba(61, 217, 122, 0.7);
+      background: linear-gradient(180deg, rgba(0, 40, 20, 0.96) 0%, rgba(0, 10, 8, 0.98) 100%);
+      box-shadow: 0 0 40px rgba(61, 217, 122, 0.35);
+      max-width: min(92vw, 520px);
+    }
+
+    .host-solve-fanfare-kicker {
+      margin: 0 0 0.5rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(180, 255, 210, 0.95);
+    }
+
+    .host-solve-fanfare-names {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 0.65rem;
+      justify-content: center;
+    }
+
+    .host-solve-fanfare-names li {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--show-green);
+    }
+
+    .host-message-panel {
+      margin-bottom: 0.85rem;
+      padding: 0.75rem 0.85rem;
+      border: 1px solid rgba(230, 184, 0, 0.22);
+      border-radius: calc(var(--radius) - 2px);
+      background: var(--show-panel-raised);
+    }
+
+    .host-message-panel h2 {
+      margin: 0 0 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--show-gold-soft);
+    }
+
+    .host-message-queue {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .host-message-queue.is-empty {
+      color: rgba(180, 198, 220, 0.55);
+      font-size: 0.82rem;
+      font-style: italic;
+    }
+
+    .host-message-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 0.55rem;
+      align-items: start;
+      padding: 0.45rem 0.55rem;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(230, 184, 0, 0.14);
+    }
+
+    .host-message-item strong {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--show-cyan);
+    }
+
+    .host-message-item span {
+      grid-column: 1;
+      font-size: 0.84rem;
+      line-height: 1.35;
+      color: rgba(220, 232, 248, 0.95);
+    }
+
+    .host-message-item button {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      padding: 0.25rem 0.45rem;
+      font-size: 0.65rem;
+    }
+
+    .meta-value.timer {
+      color: var(--show-gold);
     }
 
     @media (max-width: 520px) {
@@ -952,6 +1169,22 @@
         <div class="meta-slot">
           <span class="meta-label">Balls left</span>
           <span class="meta-value balls" id="ballsValue">0</span>
+        </div>
+        <div class="meta-slot">
+          <span class="meta-label">Timer</span>
+          <span class="meta-value timer" id="hostTimerValue">—</span>
+        </div>
+      </div>
+
+      <section class="host-message-panel" aria-label="Player messages">
+        <h2>Player messages</h2>
+        <div class="host-message-queue is-empty" id="hostMessageQueue">No messages yet.</div>
+      </section>
+
+      <div class="host-solve-fanfare" id="hostSolveFanfare" hidden aria-live="polite">
+        <div class="host-solve-fanfare-inner">
+          <p class="host-solve-fanfare-kicker">Correct guess!</p>
+          <ul class="host-solve-fanfare-names" id="hostSolveFanfareNames"></ul>
         </div>
       </div>
 
@@ -1016,7 +1249,15 @@
         <div class="host-workspace">
           <section class="host-panel" aria-label="Word pool">
             <h2 class="panel-kicker">Pick a word</h2>
-            <p class="panel-copy">Double-click to set · right-click to remove</p>
+            <p class="panel-copy">Queue up to 8 words · double-click a suggestion to queue · click a queued word to set it</p>
+            <div class="word-queue-section">
+              <p class="word-queue-heading">Up next <span id="wordQueueCount"></span></p>
+              <ul id="wordQueueList" class="word-queue-list" aria-label="Upcoming words"></ul>
+            </div>
+            <div class="word-history-section">
+              <p class="word-history-heading">Played this session</p>
+              <ul id="wordHistoryList" class="word-history-list" aria-label="Played words"></ul>
+            </div>
             <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
             <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
             <div class="row" style="margin-top:0.65rem;">
@@ -1157,15 +1398,31 @@
       wordSuggestionList: document.getElementById('wordSuggestionList'),
       wordPoolMeta: document.getElementById('wordPoolMeta'),
       wordPoolStatus: document.getElementById('wordPoolStatus'),
+      wordQueueList: document.getElementById('wordQueueList'),
+      wordQueueCount: document.getElementById('wordQueueCount'),
+      wordHistoryList: document.getElementById('wordHistoryList'),
       refreshWordPoolBtn: document.getElementById('refreshWordPoolBtn'),
       startBingoBtn: document.getElementById('startBingoBtn'),
       bingoCallsLink: document.getElementById('bingoCallsLink'),
       bingoHostStatus: document.getElementById('bingoHostStatus'),
       bingoPlayerLink: document.getElementById('bingoPlayerLink'),
+      hostTimerValue: document.getElementById('hostTimerValue'),
+      hostMessageQueue: document.getElementById('hostMessageQueue'),
+      hostSolveFanfare: document.getElementById('hostSolveFanfare'),
+      hostSolveFanfareNames: document.getElementById('hostSolveFanfareNames'),
     };
 
     let currentState = null;
     let pollHandle = null;
+    let hostAlertTimer = null;
+    let hostTickTimer = null;
+    let lastTimerAlertBucket = null;
+    let lastAllPlayersSubmittedKey = '';
+    let lastRevealFanfareKey = '';
+    let hostSolveFanfareTimer = null;
+    let lastHostPhase = 'idle';
+    let hostTimerRemainingLocal = null;
+    let hostTimerFetchedAt = 0;
     let rosterPlayers = [];
     let rosterFilter = 'all';
     let rosterSearchQuery = '';
@@ -1497,11 +1754,183 @@
       }
     }
 
+    function hostActiveTimerRemaining(state) {
+      if (!state || state.timerPaused) return null;
+      if (state.phase === 'guessing') {
+        return hostTimerRemainingLocal ?? state.guessWindowRemainingSeconds;
+      }
+      if (state.phase === 'results') {
+        return hostTimerRemainingLocal ?? state.resultsWindowRemainingSeconds;
+      }
+      return null;
+    }
+
+    function syncHostTimerDisplay(state) {
+      const remaining = hostActiveTimerRemaining(state);
+      if (remaining == null || remaining < 0) {
+        els.hostTimerValue.textContent = '—';
+        return;
+      }
+      els.hostTimerValue.textContent = `${remaining}s`;
+    }
+
+    function triggerHostFlash(className) {
+      els.hostStage.classList.remove('is-flash-warn', 'is-flash-critical', 'is-flash-all-in');
+      void els.hostStage.offsetWidth;
+      els.hostStage.classList.add(className);
+      if (hostAlertTimer) window.clearTimeout(hostAlertTimer);
+      hostAlertTimer = window.setTimeout(() => {
+        els.hostStage.classList.remove('is-flash-warn', 'is-flash-critical', 'is-flash-all-in');
+        hostAlertTimer = null;
+      }, 2200);
+    }
+
+    function syncHostTimerAlerts(state) {
+      const remaining = hostActiveTimerRemaining(state);
+      if (remaining == null) {
+        lastTimerAlertBucket = null;
+        return;
+      }
+      let bucket = null;
+      if (remaining <= 10) bucket = 'critical';
+      else if (remaining <= 30) bucket = 'warn';
+      if (bucket && bucket !== lastTimerAlertBucket) {
+        lastTimerAlertBucket = bucket;
+        triggerHostFlash(bucket === 'critical' ? 'is-flash-critical' : 'is-flash-warn');
+      }
+      if (remaining > 30) {
+        lastTimerAlertBucket = null;
+      }
+    }
+
+    function syncHostAllInAlert(state) {
+      if (state.phase !== 'guessing' || !state.allPlayersSubmittedAtIso) return;
+      const key = `${state.roundNumber}:${state.guessWindowSeq}:${state.allPlayersSubmittedAtIso}`;
+      if (key === lastAllPlayersSubmittedKey) return;
+      lastAllPlayersSubmittedKey = key;
+      triggerHostFlash('is-flash-all-in');
+    }
+
+    function renderHostSolveFanfare(state, previousPhase) {
+      const phase = state.phase || 'idle';
+      if (previousPhase !== 'guessing' || (phase !== 'results' && phase !== 'ended')) return;
+      const key = String(state.revealFanfareKey || '');
+      const winners = Array.isArray(state.correctGuessWinners) ? state.correctGuessWinners : [];
+      if (!key || !winners.length || key === lastRevealFanfareKey) return;
+      lastRevealFanfareKey = key;
+
+      els.hostSolveFanfareNames.replaceChildren();
+      winners.forEach((winner) => {
+        const item = document.createElement('li');
+        item.textContent = winner.displayName;
+        els.hostSolveFanfareNames.appendChild(item);
+      });
+      els.hostSolveFanfare.hidden = false;
+      if (hostSolveFanfareTimer) window.clearTimeout(hostSolveFanfareTimer);
+      hostSolveFanfareTimer = window.setTimeout(() => {
+        els.hostSolveFanfare.hidden = true;
+        hostSolveFanfareTimer = null;
+      }, 3800);
+    }
+
+    function renderHostMessages(messages) {
+      const list = Array.isArray(messages) ? messages : [];
+      els.hostMessageQueue.replaceChildren();
+      if (!list.length) {
+        els.hostMessageQueue.classList.add('is-empty');
+        els.hostMessageQueue.textContent = 'No messages yet.';
+        return;
+      }
+      els.hostMessageQueue.classList.remove('is-empty');
+      list.forEach((entry) => {
+        const item = document.createElement('div');
+        item.className = 'host-message-item';
+
+        const name = document.createElement('strong');
+        name.textContent = entry.displayName || 'Player';
+        item.appendChild(name);
+
+        const body = document.createElement('span');
+        body.textContent = entry.message || '';
+        item.appendChild(body);
+
+        const dismiss = document.createElement('button');
+        dismiss.type = 'button';
+        dismiss.className = 'secondary';
+        dismiss.textContent = '✕';
+        dismiss.addEventListener('click', () => {
+          dismissHostMessage(entry.id);
+        });
+        item.appendChild(dismiss);
+
+        els.hostMessageQueue.appendChild(item);
+      });
+    }
+
+    async function dismissHostMessage(messageId) {
+      try {
+        await runAction('dismiss-host-message', { messageId }, 'Message dismissed.');
+      } catch (error) {
+        setStatus(els.actionStatus, error.message || 'Could not dismiss message.', 'error');
+      }
+    }
+
+    function captureHostTimerFromState(state) {
+      if (!state || state.timerPaused) {
+        hostTimerRemainingLocal = null;
+        return;
+      }
+      if (state.phase === 'guessing' && state.guessWindowRemainingSeconds != null) {
+        hostTimerRemainingLocal = Number(state.guessWindowRemainingSeconds);
+        hostTimerFetchedAt = Date.now();
+      } else if (state.phase === 'results' && state.resultsWindowRemainingSeconds != null) {
+        hostTimerRemainingLocal = Number(state.resultsWindowRemainingSeconds);
+        hostTimerFetchedAt = Date.now();
+      } else {
+        hostTimerRemainingLocal = null;
+      }
+    }
+
+    function scheduleHostTick() {
+      if (hostTickTimer) window.clearInterval(hostTickTimer);
+      hostTickTimer = window.setInterval(() => {
+        if (!currentState) return;
+        const phase = currentState.phase || 'idle';
+        if (phase !== 'guessing' && phase !== 'results') return;
+        if (currentState.timerPaused || hostTimerRemainingLocal == null) return;
+        const elapsed = Math.floor((Date.now() - hostTimerFetchedAt) / 1000);
+        const remaining = Math.max(0, hostTimerRemainingLocal - elapsed);
+        syncHostTimerDisplay({ ...currentState, guessWindowRemainingSeconds: remaining, resultsWindowRemainingSeconds: remaining });
+        syncHostTimerAlerts({ ...currentState, guessWindowRemainingSeconds: remaining, resultsWindowRemainingSeconds: remaining });
+      }, 250);
+    }
+
+    function scheduleHostPolling() {
+      if (pollHandle) window.clearInterval(pollHandle);
+      const phase = currentState?.phase || 'idle';
+      const ms = (phase === 'guessing' || phase === 'results') ? 1000 : 5000;
+      pollHandle = window.setInterval(() => {
+        loadState().catch(() => {});
+        loadPlayers().catch(() => {});
+      }, ms);
+    }
+
     function renderState() {
       const state = currentState || {};
       const phase = state.phase || 'idle';
 
+      const previousHostPhase = lastHostPhase;
+      lastHostPhase = phase;
+
       els.hostStage.dataset.phase = phase;
+      captureHostTimerFromState(state);
+      syncHostTimerDisplay(state);
+      syncHostTimerAlerts(state);
+      syncHostAllInAlert(state);
+      renderHostSolveFanfare(state, previousHostPhase);
+      renderHostMessages(state.hostMessages);
+      scheduleHostPolling();
+      scheduleHostTick();
       els.phaseBadge.textContent = PHASE_LABELS[phase] || PHASE_LABELS.idle;
       els.phaseValue.textContent = phase;
       els.roundValue.textContent = String(state.roundNumber ?? 0);
@@ -1543,25 +1972,124 @@
       if (active && !active.disabled) active.classList.add('is-emphasis');
     }
 
+    const HOST_WORD_QUEUE_MAX = 8;
+
+    function renderWordQueue() {
+      const state = currentState || {};
+      const queue = Array.isArray(state.wordQueue) ? state.wordQueue : [];
+      const currentWord = String(state.currentWord || '').toUpperCase();
+
+      els.wordQueueCount.textContent = queue.length ? `(${queue.length}/${HOST_WORD_QUEUE_MAX})` : '';
+      els.wordQueueList.replaceChildren();
+
+      if (!queue.length) {
+        const emptyItem = document.createElement('li');
+        emptyItem.className = 'is-empty';
+        emptyItem.textContent = 'No words queued. Double-click suggestions below.';
+        els.wordQueueList.appendChild(emptyItem);
+        return;
+      }
+
+      queue.forEach((word, index) => {
+        const item = document.createElement('li');
+        if (word === currentWord) {
+          item.classList.add('is-current');
+        }
+
+        const label = document.createElement('span');
+        label.className = 'word-queue-label';
+        label.textContent = `${index + 1}. ${word}`;
+        label.addEventListener('click', () => {
+          selectQueuedWord(word);
+        });
+        item.appendChild(label);
+
+        const actions = document.createElement('span');
+        actions.className = 'word-queue-actions';
+
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'secondary';
+        upBtn.textContent = '↑';
+        upBtn.disabled = index === 0;
+        upBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          reorderQueuedWord(index, index - 1);
+        });
+        actions.appendChild(upBtn);
+
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = 'secondary';
+        downBtn.textContent = '↓';
+        downBtn.disabled = index === queue.length - 1;
+        downBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          reorderQueuedWord(index, index + 1);
+        });
+        actions.appendChild(downBtn);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'secondary';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          removeQueuedWord(word);
+        });
+        actions.appendChild(removeBtn);
+
+        item.appendChild(actions);
+        els.wordQueueList.appendChild(item);
+      });
+    }
+
+    function renderWordHistory() {
+      const history = Array.isArray(currentState?.wordHistory) ? currentState.wordHistory : [];
+      els.wordHistoryList.replaceChildren();
+
+      if (!history.length) {
+        const emptyItem = document.createElement('li');
+        emptyItem.className = 'is-empty';
+        emptyItem.textContent = 'No words played yet.';
+        els.wordHistoryList.appendChild(emptyItem);
+        return;
+      }
+
+      history.forEach((word, index) => {
+        const item = document.createElement('li');
+        item.textContent = `${index + 1}. ${word}`;
+        els.wordHistoryList.appendChild(item);
+      });
+    }
+
     function renderWordPool() {
       const state = currentState || {};
       const suggestions = Array.isArray(state.wordSuggestions) ? state.wordSuggestions : [];
       const exclusions = Array.isArray(state.wordExclusions) ? state.wordExclusions : [];
+      const queue = Array.isArray(state.wordQueue) ? state.wordQueue : [];
+      const history = Array.isArray(state.wordHistory) ? state.wordHistory : [];
       const currentWord = String(state.currentWord || '').toUpperCase();
       const available = state.availableWordCount;
 
+      renderWordQueue();
+      renderWordHistory();
+
       els.wordPoolMeta.textContent = suggestions.length
-        ? `${suggestions.length} words · ${exclusions.length} removed · ${available ?? '—'} left`
-        : `${exclusions.length} removed · ${available ?? '—'} left`;
+        ? `${suggestions.length} suggestions · ${queue.length} queued · ${history.length} played · ${exclusions.length} removed · ${available ?? '—'} left`
+        : `${queue.length} queued · ${history.length} played · ${exclusions.length} removed · ${available ?? '—'} left`;
 
       els.wordSuggestionList.innerHTML = '';
       if (!suggestions.length) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'is-empty';
-        emptyItem.textContent = 'No suggestions loaded. Click Refresh suggestions.';
+        emptyItem.textContent = 'No suggestions loaded. Click Refresh pool.';
         els.wordSuggestionList.appendChild(emptyItem);
         return;
       }
+
+      const queued = new Set(queue);
+      const played = new Set(history);
 
       suggestions.forEach((word) => {
         const item = document.createElement('li');
@@ -1569,8 +2097,11 @@
         if (word === currentWord) {
           item.classList.add('is-selected');
         }
+        if (queued.has(word) || played.has(word)) {
+          item.style.opacity = '0.45';
+        }
         item.addEventListener('dblclick', () => {
-          selectSuggestedWord(word);
+          queueSuggestedWord(word);
         });
         item.addEventListener('contextmenu', (event) => {
           event.preventDefault();
@@ -1580,7 +2111,40 @@
       });
     }
 
-    async function selectSuggestedWord(word) {
+    async function queueSuggestedWord(word) {
+      setStatus(els.wordPoolStatus, '');
+      try {
+        await runAction('add-to-word-queue', { word }, `Queued ${word}.`);
+        setStatus(els.wordPoolStatus, `Queued ${word}.`, 'success');
+      } catch (error) {
+        setStatus(els.wordPoolStatus, error.message || 'Could not add word to queue.', 'error');
+      }
+    }
+
+    async function removeQueuedWord(word) {
+      setStatus(els.wordPoolStatus, '');
+      try {
+        await runAction('remove-from-word-queue', { word }, `Removed ${word} from queue.`);
+        setStatus(els.wordPoolStatus, `Removed ${word} from queue.`, 'success');
+      } catch (error) {
+        setStatus(els.wordPoolStatus, error.message || 'Could not remove word from queue.', 'error');
+      }
+    }
+
+    async function reorderQueuedWord(fromIndex, toIndex) {
+      const queue = Array.isArray(currentState?.wordQueue) ? [...currentState.wordQueue] : [];
+      if (toIndex < 0 || toIndex >= queue.length) return;
+      const [moved] = queue.splice(fromIndex, 1);
+      queue.splice(toIndex, 0, moved);
+      setStatus(els.wordPoolStatus, '');
+      try {
+        await runAction('set-word-queue', { words: queue }, 'Queue reordered.');
+      } catch (error) {
+        setStatus(els.wordPoolStatus, error.message || 'Could not reorder queue.', 'error');
+      }
+    }
+
+    async function selectQueuedWord(word) {
       els.wordInput.value = word;
       const phase = currentState?.phase || 'idle';
       const confirmMessage = (phase === 'guessing' || phase === 'results')
@@ -1627,10 +2191,8 @@
         await loadState(true);
         await loadPlayers();
         if (pollHandle) window.clearInterval(pollHandle);
-        pollHandle = window.setInterval(() => {
-          loadState().catch(() => {});
-          loadPlayers().catch(() => {});
-        }, 5000);
+        scheduleHostPolling();
+        scheduleHostTick();
       } catch (error) {
         setStatus(els.connectStatus, error.message || 'Connection failed.', 'error');
       }
@@ -1800,10 +2362,8 @@
     els.adminKey.value = storedKey();
     if (els.adminKey.value) {
       Promise.all([loadState(), loadPlayers()]).then(() => {
-        pollHandle = window.setInterval(() => {
-          loadState().catch(() => {});
-          loadPlayers().catch(() => {});
-        }, 5000);
+        scheduleHostPolling();
+        scheduleHostTick();
       }).catch((error) => {
         setStatus(els.connectStatus, error.message || 'Enter a valid admin key.', 'error');
       });

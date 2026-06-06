@@ -72,6 +72,7 @@ const pool = new Pool({
 const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
 const HOST_WORD_SUGGESTION_COUNT = 100;
+const HOST_WORD_QUEUE_MAX = 8;
 const ALL_SUBMITTED_GRACE_SECONDS = 10;
 const MIN_GUESS_WINDOW_SECONDS = 30;
 const DEFAULT_GUESS_WINDOW_SECONDS = 90;
@@ -278,6 +279,54 @@ function parseWordListFromState(value) {
   return [];
 }
 
+function parseWordQueueFromState(value) {
+  return parseWordListFromState(value).slice(0, HOST_WORD_QUEUE_MAX);
+}
+
+function parseWordHistoryFromState(value) {
+  return parseWordListFromState(value);
+}
+
+function hostWordPoolExclusions(state) {
+  return normalizeWordList([
+    ...parseWordListFromState(state.host_word_exclusions),
+    ...parseWordHistoryFromState(state.host_word_history),
+    ...parseWordQueueFromState(state.host_word_queue),
+  ]);
+}
+
+function buildWordQueueAdvancePatch(state) {
+  const completed = normalizeWordInput(state.current_word || "");
+  if (!completed) {
+    return {};
+  }
+
+  const history = parseWordHistoryFromState(state.host_word_history);
+  if (!history.includes(completed)) {
+    history.push(completed);
+  }
+
+  let queue = parseWordQueueFromState(state.host_word_queue);
+  if (queue.length > 0 && queue[0] === completed) {
+    queue = queue.slice(1);
+  } else {
+    queue = queue.filter((word) => word !== completed);
+  }
+
+  return {
+    host_word_history: history,
+    host_word_queue: queue,
+    current_word: queue[0] || "",
+  };
+}
+
+function endRoundPatch(state) {
+  return {
+    ...endCurrentWordPatch(),
+    ...buildWordQueueAdvancePatch(state),
+  };
+}
+
 async function buildHostWordSuggestions(exclusions, count = HOST_WORD_SUGGESTION_COUNT, client = pool) {
   return pickRandomWords(client, count, exclusions);
 }
@@ -288,6 +337,8 @@ async function resetHostWordPool(client = pool) {
   return {
     host_word_suggestions: suggestions,
     host_word_exclusions: exclusions,
+    host_word_queue: [],
+    host_word_history: [],
   };
 }
 
@@ -295,7 +346,7 @@ async function ensureHostWordPool(state, client = pool) {
   const suggestions = parseWordListFromState(state.host_word_suggestions);
   if (suggestions.length > 0) return state;
 
-  const exclusions = parseWordListFromState(state.host_word_exclusions);
+  const exclusions = hostWordPoolExclusions(state);
   const nextSuggestions = await buildHostWordSuggestions(exclusions, HOST_WORD_SUGGESTION_COUNT, client);
   if (!nextSuggestions.length) return state;
 
@@ -306,9 +357,14 @@ async function ensureHostWordPool(state, client = pool) {
 }
 
 async function enrichStateWithWordPool(state, client = pool) {
+  const exclusions = hostWordPoolExclusions({
+    host_word_exclusions: state.wordExclusions,
+    host_word_history: state.wordHistory,
+    host_word_queue: state.wordQueue,
+  });
   return {
     ...state,
-    availableWordCount: await countAvailableWords(client, state.wordExclusions || []),
+    availableWordCount: await countAvailableWords(client, exclusions),
   };
 }
 
@@ -652,7 +708,7 @@ async function performContinueRound(client, guessWindowSeconds) {
     throw new Error("The round cannot continue in the current state.");
   }
   if (!(await hasPlayersWhoCanStillGuess(state, client))) {
-    return updateState(endCurrentWordPatch(), client);
+    return updateState(endRoundPatch(state), client);
   }
   const continueStake = Number(state.balls_remaining || 0);
   const nextWindowSeq = Number(state.guess_window_seq || 0) + 1;
@@ -729,7 +785,7 @@ async function maybeAdvanceTimedPhase(client = pool) {
         if (await hasPlayersWhoCanStillGuess(state, db)) {
           state = await performRevealResults(db);
         } else {
-          state = await updateState(endCurrentWordPatch(), db);
+          state = await updateState(endRoundPatch(state), db);
         }
       }
     } else if (state.phase === "results"
@@ -742,7 +798,7 @@ async function maybeAdvanceTimedPhase(client = pool) {
           configuredGuessWindowSeconds(state.guess_window_seconds),
         );
       } else if (!state.answer_revealed) {
-        state = await updateState(endCurrentWordPatch(), db);
+        state = await updateState(endRoundPatch(state), db);
       }
     }
 
@@ -1014,6 +1070,77 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
   };
 }
 
+const HOST_MESSAGE_MAX_LENGTH = 160;
+const HOST_MESSAGE_QUEUE_MAX = 12;
+
+function buildRevealFanfareKey(state) {
+  const phase = String(state.phase || "idle");
+  if (phase !== "results" && phase !== "ended") {
+    return "";
+  }
+  const round = Number(state.round_number || state.roundNumber || 0);
+  const seq = Number(state.guess_window_seq || state.guessWindowSeq || 0);
+  return `${round}:${seq}`;
+}
+
+function buildCorrectGuessWinners(players) {
+  return (Array.isArray(players) ? players : [])
+    .filter((player) => player.isWinner && player.resultPattern === "!!!!!")
+    .map((player) => ({
+      displayName: player.displayName,
+    }));
+}
+
+async function insertHostMessage(sessionId, displayName, message, client = pool) {
+  const text = String(message || "").trim().slice(0, HOST_MESSAGE_MAX_LENGTH);
+  if (!text) {
+    throw new Error("Message is required.");
+  }
+  await client.query(
+    `insert into host_messages (session_id, display_name, message)
+     values ($1, $2, $3)`,
+    [sessionId, displayName, text],
+  );
+  await client.query(
+    `delete from host_messages
+     where session_id = $1
+       and id not in (
+         select id
+         from host_messages
+         where session_id = $1
+         order by created_at desc
+         limit $2
+       )`,
+    [sessionId, HOST_MESSAGE_QUEUE_MAX],
+  );
+}
+
+async function listHostMessages(sessionId, client = pool) {
+  const result = await client.query(
+    `select id, display_name, message, created_at
+     from host_messages
+     where session_id = $1
+     order by created_at asc
+     limit $2`,
+    [sessionId, HOST_MESSAGE_QUEUE_MAX],
+  );
+  return result.rows.map((row) => ({
+    id: Number(row.id),
+    displayName: row.display_name,
+    message: row.message,
+    createdAtIso: new Date(row.created_at).toISOString(),
+  }));
+}
+
+async function dismissHostMessage(sessionId, messageId, client = pool) {
+  await client.query(
+    `delete from host_messages
+     where session_id = $1
+       and id = $2`,
+    [sessionId, messageId],
+  );
+}
+
 async function getLatestBingoGameForSession(sessionId, client = pool) {
   const result = await client.query(
     `select *
@@ -1031,12 +1158,16 @@ async function buildPublicStatePayload(state, displayName, playerToken, client =
   const players = await getPublicDisplayPlayers(state, client);
   const viewer = await buildViewerContext(displayName, playerToken, state, client);
   const bingoRow = await getLatestBingoGameForSession(state.session_id, client);
+  const revealFanfareKey = buildRevealFanfareKey(state);
+  const correctGuessWinners = buildCorrectGuessWinners(players);
   return {
     ...serializePublicState(state),
     ...metrics,
     players,
     viewer,
     bingo: bingoRow ? serializeBingoPublicState(bingoRow) : null,
+    revealFanfareKey,
+    correctGuessWinners,
   };
 }
 
@@ -1077,6 +1208,8 @@ function serializeState(row) {
     firstSolverPlayerId: row.first_solver_player_id ? Number(row.first_solver_player_id) : null,
     wordSuggestions: parseWordListFromState(row.host_word_suggestions),
     wordExclusions: parseWordListFromState(row.host_word_exclusions),
+    wordQueue: parseWordQueueFromState(row.host_word_queue),
+    wordHistory: parseWordHistoryFromState(row.host_word_history),
     guessWindowOpenedAtIso: row.guess_window_opened_at ? new Date(row.guess_window_opened_at).toISOString() : null,
     resultsWindowOpenedAtIso: row.results_window_opened_at ? new Date(row.results_window_opened_at).toISOString() : null,
     timerPaused: Boolean(row.timer_paused),
@@ -1146,6 +1279,8 @@ async function updateState(patch, client = pool) {
     patchOrState("first_solver_player_id"),
     JSON.stringify(parseWordListFromState(next.host_word_suggestions ?? state.host_word_suggestions)),
     JSON.stringify(parseWordListFromState(next.host_word_exclusions ?? state.host_word_exclusions)),
+    JSON.stringify(parseWordQueueFromState(next.host_word_queue ?? state.host_word_queue)),
+    JSON.stringify(parseWordHistoryFromState(next.host_word_history ?? state.host_word_history)),
     JSON.stringify(parseRoundBallStakesPreserveOrder(next)),
     patchOrState("all_players_submitted_at"),
     Number(next.guess_window_seq ?? state.guess_window_seq ?? 0),
@@ -1173,9 +1308,11 @@ async function updateState(patch, client = pool) {
          first_solver_player_id = $18,
          host_word_suggestions = $19::jsonb,
          host_word_exclusions = $20::jsonb,
-         round_ball_stakes = $21::jsonb,
-         all_players_submitted_at = $22,
-         guess_window_seq = $23,
+         host_word_queue = $21::jsonb,
+         host_word_history = $22::jsonb,
+         round_ball_stakes = $23::jsonb,
+         all_players_submitted_at = $24,
+         guess_window_seq = $25,
          updated_at = now()
      where id = 1
      returning *`,
@@ -1313,9 +1450,7 @@ async function applyRevealResultsScoring(state, client) {
   };
 
   if (lastGuessWasTwoBall || everyoneSolved) {
-    patch.phase = "ended";
-    patch.answer_revealed = true;
-    patch.balls_remaining = 0;
+    Object.assign(patch, endRoundPatch(state));
   } else {
     patch.phase = "results";
   }
@@ -1565,6 +1700,37 @@ app.post("/api/public/join", async (req, res) => {
   }
 });
 
+app.post("/api/public/host-message", async (req, res) => {
+  const playerToken = normalizePlayerToken(req.body.playerToken);
+  const message = String(req.body.message || "").trim();
+  if (!playerToken) {
+    res.status(400).json({ ok: false, error: "Player token is required." });
+    return;
+  }
+  if (!message) {
+    res.status(400).json({ ok: false, error: "Message is required." });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const state = await getState(client);
+    const player = await getPlayerByToken(state.session_id, playerToken, client);
+    if (!player) {
+      throw new Error("Join the game on this device before messaging the host.");
+    }
+    await insertHostMessage(state.session_id, player.display_name, message, client);
+    await client.query("commit");
+    res.json({ ok: true });
+  } catch (error) {
+    await client.query("rollback");
+    res.status(400).json({ ok: false, error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 app.post("/api/public/leave", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
   const playerToken = normalizePlayerToken(req.body.playerToken);
@@ -1748,8 +1914,17 @@ app.get("/api/admin/state", requireAdmin, async (_req, res) => {
   try {
     let state = await maybeAdvanceTimedPhase();
     state = await ensureHostWordPool(state);
+    const players = await getPublicDisplayPlayers(state);
     const serialized = await enrichStateWithWordPool(serializeState(state));
-    res.json({ ok: true, state: serialized });
+    res.json({
+      ok: true,
+      state: {
+        ...serialized,
+        revealFanfareKey: buildRevealFanfareKey(state),
+        correctGuessWinners: buildCorrectGuessWinners(players),
+        hostMessages: await listHostMessages(state.session_id),
+      },
+    });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
@@ -1828,8 +2003,13 @@ async function handleAdminAction(action, body) {
       return serializeState(await updateState(patch));
     }
     case "start-round": {
-      if (!state.current_word) {
-        throw new Error("Set a 5-letter word before starting a round.");
+      let activeWord = normalizeWordInput(state.current_word);
+      if (!activeWord) {
+        const queue = parseWordQueueFromState(state.host_word_queue);
+        activeWord = queue[0] || "";
+      }
+      if (!activeWord) {
+        throw new Error("Set a 5-letter word or add words to the queue before starting a round.");
       }
       const nextRound = Number(state.round_number || 0) + 1;
       const multiplier = Number(state.ball_multiplier || 1);
@@ -1837,7 +2017,7 @@ async function handleAdminAction(action, body) {
       try {
         await client.query("begin");
         const openingStake = 6 * multiplier;
-        const nextState = await updateState({
+        const startPatch = {
           mode: "lingo",
           phase: "guessing",
           round_number: nextRound,
@@ -1857,7 +2037,11 @@ async function handleAdminAction(action, body) {
           first_solver_player_id: null,
           ...clearTimerPausePatch(),
           ...clearAllSubmittedGracePatch(),
-        }, client);
+        };
+        if (!normalizeWordInput(state.current_word)) {
+          startPatch.current_word = activeWord;
+        }
+        const nextState = await updateState(startPatch, client);
         await clearSessionGuesses(nextState.session_id, client);
         await resetWordProgress(nextState.session_id, client);
         await client.query("commit");
@@ -1920,7 +2104,7 @@ async function handleAdminAction(action, body) {
       }));
     }
     case "refresh-word-suggestions": {
-      const exclusions = parseWordListFromState(state.host_word_exclusions);
+      const exclusions = hostWordPoolExclusions(state);
       const count = Math.max(1, Number(body.count) || HOST_WORD_SUGGESTION_COUNT);
       const suggestions = await buildHostWordSuggestions(exclusions, count);
       if (!suggestions.length) {
@@ -1945,6 +2129,63 @@ async function handleAdminAction(action, body) {
         host_word_exclusions: exclusions,
         host_word_suggestions: suggestions,
       }));
+    }
+    case "add-to-word-queue": {
+      const word = normalizeWordInput(body.word);
+      if (!isFiveLetterWord(word)) {
+        throw new Error("Word must be exactly 5 letters.");
+      }
+      if (!(await isLegalWord(pool, word))) {
+        throw new Error("Word must be a legal 5-letter Scrabble word.");
+      }
+      const queue = parseWordQueueFromState(state.host_word_queue);
+      if (queue.length >= HOST_WORD_QUEUE_MAX) {
+        throw new Error(`Queue holds up to ${HOST_WORD_QUEUE_MAX} words.`);
+      }
+      if (queue.includes(word)) {
+        throw new Error("Word is already in the queue.");
+      }
+      const history = parseWordHistoryFromState(state.host_word_history);
+      if (history.includes(word)) {
+        throw new Error("Word was already played this session.");
+      }
+      queue.push(word);
+      const patch = { host_word_queue: queue };
+      if (!normalizeWordInput(state.current_word) && queue.length === 1) {
+        patch.current_word = word;
+      }
+      return serializeState(await updateState(patch));
+    }
+    case "remove-from-word-queue": {
+      const word = normalizeWordInput(body.word);
+      const queue = parseWordQueueFromState(state.host_word_queue).filter((item) => item !== word);
+      const patch = { host_word_queue: queue };
+      if (normalizeWordInput(state.current_word) === word) {
+        patch.current_word = queue[0] || "";
+      }
+      return serializeState(await updateState(patch));
+    }
+    case "set-word-queue": {
+      const words = normalizeWordList(body.words || []).slice(0, HOST_WORD_QUEUE_MAX);
+      for (const word of words) {
+        if (!isFiveLetterWord(word)) {
+          throw new Error("Each queued word must be exactly 5 letters.");
+        }
+        if (!(await isLegalWord(pool, word))) {
+          throw new Error(`"${word}" is not a legal 5-letter Scrabble word.`);
+        }
+      }
+      const history = parseWordHistoryFromState(state.host_word_history);
+      const overlap = words.find((word) => history.includes(word));
+      if (overlap) {
+        throw new Error(`"${overlap}" was already played this session.`);
+      }
+      const patch = { host_word_queue: words };
+      const currentWord = normalizeWordInput(state.current_word);
+      if (!currentWord || !words.includes(currentWord)) {
+        patch.current_word = words[0] || "";
+      }
+      return serializeState(await updateState(patch));
     }
     case "set-champion":
       return serializeState(await updateState({
@@ -2039,11 +2280,24 @@ async function handleAdminAction(action, body) {
     }
     case "reveal-answer":
       return serializeState(await updateState({
-        answer_revealed: true,
-        phase: "ended",
-        balls_remaining: 0,
+        ...endRoundPatch(state),
         ...clearTimerPausePatch(),
       }));
+    case "dismiss-host-message": {
+      const messageId = Number(body.messageId);
+      if (!Number.isFinite(messageId) || messageId <= 0) {
+        throw new Error("messageId is required.");
+      }
+      await dismissHostMessage(state.session_id, messageId);
+      const nextState = await getState();
+      const players = await getPublicDisplayPlayers(nextState);
+      return {
+        ...serializeState(nextState),
+        revealFanfareKey: buildRevealFanfareKey(nextState),
+        correctGuessWinners: buildCorrectGuessWinners(players),
+        hostMessages: await listHostMessages(nextState.session_id),
+      };
+    }
     case "reset-round": {
       if (state.phase === "idle" && Number(state.round_number || 0) === 0) {
         throw new Error("No active round to reset.");
@@ -2085,6 +2339,7 @@ async function handleAdminAction(action, body) {
     case "reset-session": {
       const wordPool = await resetHostWordPool();
       await clearSessionPlayers(state.session_id);
+      await pool.query(`delete from host_messages where session_id = $1`, [state.session_id]);
       return serializeState(await updateState({
         mode: "lingo",
         phase: "idle",

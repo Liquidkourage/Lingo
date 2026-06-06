@@ -530,6 +530,43 @@
       gap: 0.55rem;
     }
 
+    .host-message-compose {
+      margin-top: 0.55rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid rgba(255, 204, 0, 0.2);
+    }
+
+    .host-message-compose[hidden] {
+      display: none !important;
+    }
+
+    .host-message-compose .field-label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.78);
+    }
+
+    .host-message-row {
+      display: flex;
+      gap: 0.45rem;
+      align-items: stretch;
+    }
+
+    .host-message-row input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .host-message-row button {
+      flex-shrink: 0;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.72rem;
+    }
+
     .setup-name-group {
       display: flex;
       align-items: center;
@@ -1369,6 +1406,13 @@
             </div>
             <button id="lobbyToggle" class="good lobby-toggle" type="button">Join game</button>
           </div>
+          <div class="host-message-compose" id="hostMessageCompose" hidden>
+            <label class="field-label" for="hostMessageInput">Message host</label>
+            <div class="host-message-row">
+              <input id="hostMessageInput" type="text" maxlength="160" placeholder="Quick note to the host…" autocomplete="off" />
+              <button id="hostMessageSend" class="secondary" type="button">Send</button>
+            </div>
+          </div>
         </section>
       </div>
 
@@ -1417,17 +1461,17 @@
               class="guess-capture"
               type="text"
               maxlength="5"
-              inputmode="text"
+              inputmode="none"
               autocomplete="off"
               autocapitalize="characters"
               spellcheck="false"
               aria-label="Type your five-letter guess"
             />
-            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 1" tabindex="-1" readonly />
-            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 2" tabindex="-1" readonly />
-            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 3" tabindex="-1" readonly />
-            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 4" tabindex="-1" readonly />
-            <input type="text" class="letter-input" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letter 5" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="none" autocomplete="off" aria-label="Letter 1" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="none" autocomplete="off" aria-label="Letter 2" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="none" autocomplete="off" aria-label="Letter 3" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="none" autocomplete="off" aria-label="Letter 4" tabindex="-1" readonly />
+            <input type="text" class="letter-input" maxlength="1" inputmode="none" autocomplete="off" aria-label="Letter 5" tabindex="-1" readonly />
           </div>
         </div>
 
@@ -1506,6 +1550,9 @@
       nameHint: document.getElementById('nameHint'),
       message: document.getElementById('message'),
       lobbyToggle: document.getElementById('lobbyToggle'),
+      hostMessageCompose: document.getElementById('hostMessageCompose'),
+      hostMessageInput: document.getElementById('hostMessageInput'),
+      hostMessageSend: document.getElementById('hostMessageSend'),
       submit: document.getElementById('submitButton'),
       clear: document.getElementById('clearButton'),
       guessHistory: document.getElementById('guessHistory'),
@@ -1564,6 +1611,7 @@
           els.bingoStatus.textContent = error.message || 'Could not load bingo.';
           els.bingoStatus.className = 'bingo-status error';
         });
+        updateLobbyButtons();
         return true;
       }
       delete els.stage.dataset.bingoMode;
@@ -1595,6 +1643,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const DEMO_PHASE = (urlParams.get('phase') || '').toLowerCase();
     const IS_DEMO = ['guessing', 'results', 'ended'].includes(DEMO_PHASE);
+    const PREFERS_ON_SCREEN_KEYBOARD = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
     function buildDemoState() {
       const openedAt = new Date(Date.now() - 12_000).toISOString();
@@ -2748,12 +2797,46 @@
       if (joined) {
         els.lobbyToggle.textContent = 'Leave game';
         els.lobbyToggle.className = 'secondary lobby-toggle';
+        els.hostMessageCompose.hidden = isBingoMode(currentState);
       } else if (ready) {
         els.lobbyToggle.textContent = 'Re-join game';
         els.lobbyToggle.className = 'good lobby-toggle';
+        els.hostMessageCompose.hidden = true;
       } else {
         els.lobbyToggle.textContent = 'Join game';
         els.lobbyToggle.className = 'good lobby-toggle';
+        els.hostMessageCompose.hidden = true;
+      }
+    }
+
+    async function sendHostMessage() {
+      const playerToken = getPlayerToken();
+      const message = String(els.hostMessageInput.value || '').trim();
+      if (!playerToken) {
+        setMessage('Join the game before messaging the host.', 'error');
+        return;
+      }
+      if (!message) {
+        setMessage('Type a message first.', 'error');
+        return;
+      }
+      els.hostMessageSend.disabled = true;
+      try {
+        const response = await fetch('/api/public/host-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerToken, message }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not send message.');
+        }
+        els.hostMessageInput.value = '';
+        setMessage('Message sent to the host.', 'success');
+      } catch (error) {
+        setMessage(error.message || 'Could not send message.', 'error');
+      } finally {
+        els.hostMessageSend.disabled = false;
       }
     }
 
@@ -3204,8 +3287,20 @@
       }
     }
 
+    function configureGuessCaptureInput() {
+      if (!els.guessCapture) return;
+      if (PREFERS_ON_SCREEN_KEYBOARD) {
+        els.guessCapture.setAttribute('readonly', '');
+        els.guessCapture.setAttribute('inputmode', 'none');
+      } else {
+        els.guessCapture.removeAttribute('readonly');
+        els.guessCapture.setAttribute('inputmode', 'text');
+      }
+    }
+
     function wireGuessCapture() {
       if (!els.guessCapture) return;
+      configureGuessCaptureInput();
 
       els.guessCapture.addEventListener('input', () => {
         guessDraftDirty = true;
@@ -3249,6 +3344,15 @@
     }
 
     els.lobbyToggle.addEventListener('click', toggleLobby);
+    els.hostMessageSend.addEventListener('click', () => {
+      sendHostMessage().catch(() => {});
+    });
+    els.hostMessageInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        sendHostMessage().catch(() => {});
+      }
+    });
     els.submit.addEventListener('click', submitGuess);
     els.clear.addEventListener('click', () => {
       guessDraftDirty = true;
