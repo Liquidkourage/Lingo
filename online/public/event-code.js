@@ -42,7 +42,7 @@
     return { ...(body || {}), eventCode: code };
   }
 
-  global.LingoEvent = {
+  global.TypeoEvent = {
     DEFAULT_EVENT_CODE,
     current: currentEventCode,
     withEventQuery,

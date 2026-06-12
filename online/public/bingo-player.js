@@ -83,26 +83,26 @@
 
       if (isWinner) {
         if (els.budgetLine) {
-          els.budgetLine.innerHTML = `<strong>You won bingo!</strong> (${ballsEarned} balls earned from Lingo)`;
+          els.budgetLine.innerHTML = `<strong>You won bingo!</strong> (${ballsEarned} balls earned from TYPEO)`;
         }
         if (els.bingoBtn) els.bingoBtn.disabled = true;
         setStatus("Congratulations!", "success");
       } else if (ballsEarned < 1) {
         if (els.budgetLine) {
-          els.budgetLine.innerHTML = "You need at least <strong>1 ball</strong> from Lingo to win bingo.";
+          els.budgetLine.innerHTML = "You need at least <strong>1 ball</strong> from TYPEO to win bingo.";
         }
         if (els.bingoBtn) els.bingoBtn.disabled = true;
         setStatus("", "");
       } else if (bingoState.hasWinner) {
         if (els.budgetLine) {
-          els.budgetLine.innerHTML = `You earned <strong>${ballsEarned}</strong> ball${ballsEarned === 1 ? "" : "s"} from Lingo.`;
+          els.budgetLine.innerHTML = `You earned <strong>${ballsEarned}</strong> ball${ballsEarned === 1 ? "" : "s"} from TYPEO.`;
         }
         setStatus(`${bingoState.winnerDisplayName} got bingo first.`, "error");
         if (els.bingoBtn) els.bingoBtn.disabled = true;
       } else {
         if (els.budgetLine) {
           els.budgetLine.innerHTML = [
-            `You earned <strong>${ballsEarned}</strong> ball${ballsEarned === 1 ? "" : "s"} from Lingo.`,
+            `You earned <strong>${ballsEarned}</strong> ball${ballsEarned === 1 ? "" : "s"} from TYPEO.`,
             `Need bingo by call <strong>${ballsEarned}</strong>`,
             `(${callsMade} called${budgetRemaining > 0 ? `, ${budgetRemaining} left in budget` : ""}).`,
           ].join(" ");

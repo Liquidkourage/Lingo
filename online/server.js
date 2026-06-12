@@ -3135,7 +3135,7 @@ app.get("/api/bingo/player-state", async (req, res) => {
 
     const playerRow = await getPlayerByToken(row.session_id, playerToken);
     if (!playerRow) {
-      res.status(404).json({ ok: false, error: "Join the Lingo game on this device first." });
+      res.status(404).json({ ok: false, error: "Join the TYPEO game on this device first." });
       return;
     }
 
@@ -3205,7 +3205,7 @@ app.post("/api/bingo/claim", async (req, res) => {
 
     const playerRow = await getPlayerByToken(row.session_id, playerToken, client);
     if (!playerRow) {
-      throw new Error("Join the Lingo game on this device first.");
+      throw new Error("Join the TYPEO game on this device first.");
     }
 
     const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
@@ -3314,7 +3314,7 @@ async function bootstrapWithRetry(maxAttempts = 5) {
       const totalWords = await countWords(pool);
       appReady = true;
       console.log(
-        `Lingo online app ready. Event: ${state.event_code}. Sessions: ${eventCount.rows[0]?.count || 0}. Words: ${totalWords}`,
+        `TYPEO online app ready. Event: ${state.event_code}. Sessions: ${eventCount.rows[0]?.count || 0}. Words: ${totalWords}`,
       );
       return;
     } catch (error) {

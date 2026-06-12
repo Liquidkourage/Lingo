@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * One-shot 20-bot rehearsal setup against a running Lingo server.
+ * One-shot 20-bot rehearsal setup against a running TYPEO server.
  *
  * Usage (from online/):
  *   LINGO_ADMIN_KEY=secret BASE_URL=https://lingo-production-fc88.up.railway.app node scripts/run-rehearsal.js

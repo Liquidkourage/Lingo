@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lingo Public Display</title>
+  <title>TYPEO — Public Display</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/typeo-brand.css" />
   <style>
     * { box-sizing: border-box; }
 
@@ -3579,16 +3580,16 @@
       <div class="logo-wrap">
         <img
           class="lingo-logo"
-          src="/assets/lingo-logo-extracted.png"
+          src="/assets/typeo-wordmark.svg"
           width="984"
           height="365"
-          alt="Lingo"
+          alt="TYPEO"
         />
       </div>
 
       <div class="standby-slate" id="standbySlate" hidden aria-live="polite">
         <div class="standby-slate-inner">
-          <p class="standby-kicker">Lingo</p>
+          <p class="standby-kicker"><span class="brand-typeo"><span class="brand-typeo-type">TYPE</span><span class="brand-typeo-o">O</span></span></p>
           <p class="standby-title">Stand by…</p>
           <p class="standby-message" id="standbyMessage">Connecting to the game server.</p>
         </div>
@@ -3621,7 +3622,7 @@
         </div>
 
         <div class="bingo-display" id="bingoDisplay" hidden aria-live="polite">
-          <p class="bingo-display-kicker">Lingo Bingo</p>
+          <p class="bingo-display-kicker"><span class="brand-typeo"><span class="brand-typeo-type">TYPE</span><span class="brand-typeo-o">O</span></span> Bingo</p>
           <p class="bingo-display-last" id="bingoLastCall">—</p>
           <p class="bingo-display-progress" id="bingoProgress">0 / 75 calls</p>
           <div class="bingo-display-history" id="bingoHistory"></div>
@@ -3724,6 +3725,7 @@
     </div>
   </div>
 
+  <script src="/typeo-brand.js"></script>
   <script src="/event-code.js"></script>
   <script>
     const els = {
@@ -4024,7 +4026,7 @@
         resultsWindowOpenedAtIso: phase === "results"
           ? new Date(Date.now() - 1000).toISOString()
           : null,
-        revealedWord: phase === "ended" ? "LINGO" : "",
+        revealedWord: phase === "ended" ? "TYPEO" : "",
         answerRevealed: phase === "ended",
         players: phase === "idle"
           ? buildDemoPlayers(count)
@@ -4076,10 +4078,12 @@
       </svg>`;
     }
 
+    const AMBASSADOR_KICKER_HTML = TypeoBrand.wrapWith(" Ambassador:");
+
     function renderAmbassadorKicker() {
       const kicker = document.createElement("div");
       kicker.className = "player-ambassador-kicker";
-      kicker.textContent = "Lingo Ambassador:";
+      kicker.innerHTML = AMBASSADOR_KICKER_HTML;
       return kicker;
     }
 
@@ -4098,8 +4102,8 @@
         card.insertBefore(renderAmbassadorKicker(), card.firstChild);
       } else {
         kicker.querySelector(".player-ambassador-icon")?.remove();
-        if (kicker.textContent !== "Lingo Ambassador:") {
-          kicker.textContent = "Lingo Ambassador:";
+        if (kicker.innerHTML !== AMBASSADOR_KICKER_HTML) {
+          kicker.innerHTML = AMBASSADOR_KICKER_HTML;
         }
       }
       if (!card.querySelector(".player-ambassador-badge")) {
@@ -5730,7 +5734,7 @@
     async function fetchPublicState() {
       if (IS_DEMO) return;
 
-      const response = await fetch(LingoEvent.withEventQuery("/api/public-state"));
+      const response = await fetch(TypeoEvent.withEventQuery("/api/public-state"));
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
         throw new Error(payload.error || "Could not load public state.");

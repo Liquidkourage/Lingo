@@ -147,7 +147,7 @@ function evaluateBingoClaim({ gameId, displayName, callSheet, callIndex, ballsEa
   const balls = Math.max(0, Number(ballsEarned || 0));
 
   if (balls < 1) {
-    return { ok: false, error: "You need at least 1 ball from Lingo to win bingo." };
+    return { ok: false, error: "You need at least 1 ball from TYPEO to win bingo." };
   }
   if (made < 1) {
     return { ok: false, error: "No numbers have been called yet." };

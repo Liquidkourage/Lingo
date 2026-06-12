@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LINGO — Play</title>
+  <title>TYPEO — Play</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/typeo-brand.css" />
   <style>
     :root {
       --show-gold: #ffcc00;
@@ -1494,7 +1495,7 @@
   <div class="play-stage" id="playStage" data-phase="idle">
     <main class="play-card">
       <header class="play-header">
-        <img class="play-logo" src="/assets/lingo-logo-extracted.png" width="280" height="104" alt="Lingo" />
+        <img class="play-logo" src="/assets/typeo-wordmark.svg" width="280" height="70" alt="TYPEO" />
         <div class="phase-badge" id="phaseBadge">Sign up open</div>
         <p class="phase-line" id="phaseLine">Join the lobby so you appear on the venue display before the host starts a round.</p>
       </header>
@@ -1652,6 +1653,7 @@
 
   <script src="/bingo-shared.js"></script>
   <script src="/bingo-player.js"></script>
+  <script src="/typeo-brand.js"></script>
   <script src="/event-code.js"></script>
   <script>
     const els = {
@@ -1752,7 +1754,7 @@
       if (active) {
         els.stage.dataset.bingoMode = 'true';
         els.phaseBadge.textContent = 'Final: Bingo';
-        els.phaseLine.textContent = 'Lingo is done — this is the finale. Watch your card light up as numbers are called.';
+        els.phaseLine.innerHTML = `${TypeoBrand.wrap()} is done — this is the finale. Watch your card light up as numbers are called.`;
         els.playRound.hidden = true;
         els.playStats.hidden = true;
         bingoPlayer.refreshFromPublicState(state).catch((error) => {
@@ -1968,7 +1970,7 @@
         const response = await fetch('/api/public/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(LingoEvent.eventJson({ username, password })),
+          body: JSON.stringify(TypeoEvent.eventJson({ username, password })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -1995,7 +1997,7 @@
         const response = await fetch('/api/public/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(LingoEvent.eventJson({ username, password })),
+          body: JSON.stringify(TypeoEvent.eventJson({ username, password })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -2020,7 +2022,7 @@
           await fetch('/api/public/logout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(LingoEvent.eventJson({ authToken })),
+            body: JSON.stringify(TypeoEvent.eventJson({ authToken })),
           });
         } catch (error) {
           // Still clear local session if the network call fails.
@@ -2056,7 +2058,7 @@
       const response = await fetch('/api/public/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(LingoEvent.eventJson({
+        body: JSON.stringify(TypeoEvent.eventJson({
           authToken,
           playerToken: getPlayerToken(),
         })),
@@ -3012,7 +3014,7 @@
         const response = await fetch('/api/public/host-message', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(LingoEvent.eventJson({ authToken, playerToken, message })),
+          body: JSON.stringify(TypeoEvent.eventJson({ authToken, playerToken, message })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -3364,7 +3366,7 @@
         const response = await fetch('/api/public/leave', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(LingoEvent.eventJson({
+          body: JSON.stringify(TypeoEvent.eventJson({
             authToken,
             displayName: activeUserName(),
             playerToken,
@@ -3387,8 +3389,8 @@
 
     function publicStateUrl() {
       const params = new URLSearchParams();
-      const eventCode = LingoEvent.current();
-      if (eventCode !== LingoEvent.DEFAULT_EVENT_CODE) {
+      const eventCode = TypeoEvent.current();
+      if (eventCode !== TypeoEvent.DEFAULT_EVENT_CODE) {
         params.set('event', eventCode);
       }
       const authToken = getAuthToken();
@@ -3465,7 +3467,7 @@
         const response = await fetch('/api/public/submit-guess', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(LingoEvent.eventJson({ authToken, playerToken, guess })),
+          body: JSON.stringify(TypeoEvent.eventJson({ authToken, playerToken, guess })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {

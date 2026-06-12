@@ -1,0 +1,13 @@
+.brand-typeo {
+  white-space: nowrap;
+}
+
+.brand-typeo-type {
+  letter-spacing: 0.08em;
+}
+
+.brand-typeo-o {
+  margin-left: 0.16em;
+  color: var(--show-gold, #ffcc00);
+  letter-spacing: 0.02em;
+}

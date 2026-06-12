@@ -1,8 +1,8 @@
-# Lingo Online (Railway + Postgres)
+# TYPEO Online (Railway + Postgres)
 
-This is the **current online migration path** for Lingo.
+This is the **current online platform** for TYPEO.
 
-This folder contains the Railway/Postgres pivot for Lingo.
+This folder contains the Railway/Postgres browser app for live venue games.
 
 ## What it includes
 

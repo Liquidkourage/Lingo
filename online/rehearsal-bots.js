@@ -13,7 +13,7 @@ async function pickBotGuess(client) {
   const result = await client.query(
     `select word from words order by random() limit 1`,
   );
-  return result.rows[0]?.word || "LINGO";
+  return result.rows[0]?.word || "TYPEO";
 }
 
 async function clearRehearsalBots(sessionId, client) {

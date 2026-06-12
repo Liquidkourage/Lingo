@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lingo Bingo — Your card</title>
+  <title>TYPEO Bingo — Your card</title>
+  <link rel="stylesheet" href="/typeo-brand.css" />
   <style>
     :root {
       --bg: #05070a;
@@ -125,12 +126,12 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Lingo Bingo</h1>
-    <p class="sub">The finale after Lingo — get a line before your ball budget runs out, then tap BINGO!</p>
+    <h1><span class="brand-typeo"><span class="brand-typeo-type">TYPE</span><span class="brand-typeo-o">O</span></span> Bingo</h1>
+    <p class="sub">The finale after TYPEO — get a line before your ball budget runs out, then tap BINGO!</p>
     <p class="auto-mark-note" id="autoMarkNote"></p>
 
     <div class="panel" id="infoPanel">
-      <p class="budget" id="budgetLine">Join Lingo first to load your ball budget.</p>
+      <p class="budget" id="budgetLine">Join TYPEO first to load your ball budget.</p>
       <div class="last-call" id="lastCall">—</div>
       <p id="status" class="message" aria-live="polite"></p>
       <div class="row">
@@ -197,7 +198,7 @@
     });
 
     if (!gameId) {
-      els.status.textContent = "Missing ?game= in the link. Open the main Lingo play page — bingo appears there automatically.";
+      els.status.textContent = "Missing ?game= in the link. Open the main TYPEO play page — bingo appears there automatically.";
       els.status.className = "message error";
     } else {
       player.refresh()
