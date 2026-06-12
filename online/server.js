@@ -78,6 +78,10 @@ const MIN_GUESS_WINDOW_SECONDS = 30;
 const DEFAULT_GUESS_WINDOW_SECONDS = 100;
 const MIN_RESULTS_WINDOW_SECONDS = 15;
 const DEFAULT_RESULTS_WINDOW_SECONDS = 20;
+const MIN_USERNAME_LENGTH = 3;
+const MAX_USERNAME_LENGTH = 24;
+const MIN_PASSWORD_LENGTH = 6;
+const USERNAME_PATTERN = /^[a-zA-Z0-9_]+$/;
 let rehearsalAutoSubmitEnabled = false;
 let appReady = false;
 let shuttingDown = false;
@@ -149,6 +153,183 @@ function normalizeDisplayName(displayName) {
 
 function normalizePlayerKey(displayName) {
   return normalizeDisplayName(displayName).replace(/[^a-zA-Z0-9]/g, "_").toLowerCase() || "player";
+}
+
+function normalizeUsername(username) {
+  return String(username || "").trim();
+}
+
+function normalizedUsernameKey(username) {
+  return normalizeUsername(username).toLowerCase();
+}
+
+function validateUsername(username) {
+  const value = normalizeUsername(username);
+  if (value.length < MIN_USERNAME_LENGTH || value.length > MAX_USERNAME_LENGTH) {
+    throw new Error(`Username must be ${MIN_USERNAME_LENGTH}-${MAX_USERNAME_LENGTH} characters.`);
+  }
+  if (!USERNAME_PATTERN.test(value)) {
+    throw new Error("Username may only use letters, numbers, and underscores.");
+  }
+  return value;
+}
+
+function validatePassword(password) {
+  const value = String(password || "");
+  if (value.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+  }
+  return value;
+}
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, storedHash) {
+  const [salt, expectedHex] = String(storedHash || "").split(":");
+  if (!salt || !expectedHex) return false;
+  const actualHex = crypto.scryptSync(String(password), salt, 64).toString("hex");
+  const expected = Buffer.from(expectedHex, "hex");
+  const actual = Buffer.from(actualHex, "hex");
+  if (expected.length !== actual.length) return false;
+  return crypto.timingSafeEqual(expected, actual);
+}
+
+function newAuthToken() {
+  return crypto.randomUUID();
+}
+
+async function getUserByAuthToken(authToken, client = pool) {
+  const token = normalizePlayerToken(authToken);
+  if (!token) return null;
+  const result = await client.query(
+    `select id, username, normalized_username, auth_token, created_at, updated_at
+     from users
+     where auth_token = $1`,
+    [token],
+  );
+  return result.rows[0] || null;
+}
+
+async function getPlayerByUserId(sessionId, userId, client = pool) {
+  const result = await client.query(
+    `select *
+     from players
+     where session_id = $1
+       and user_id = $2`,
+    [sessionId, userId],
+  );
+  return result.rows[0] || null;
+}
+
+async function createUserAccount(username, password, client = pool) {
+  const normalized = validateUsername(username);
+  const normalizedKey = normalizedUsernameKey(normalized);
+  validatePassword(password);
+  const existing = await client.query(
+    `select id from users where normalized_username = $1`,
+    [normalizedKey],
+  );
+  if (existing.rows.length) {
+    throw new Error("That username is already taken.");
+  }
+  const authToken = newAuthToken();
+  const result = await client.query(
+    `insert into users (username, normalized_username, password_hash, auth_token, updated_at)
+     values ($1, $2, $3, $4, now())
+     returning id, username, auth_token`,
+    [normalized, normalizedKey, hashPassword(password), authToken],
+  );
+  return result.rows[0];
+}
+
+async function loginUserAccount(username, password, client = pool) {
+  const normalizedKey = normalizedUsernameKey(validateUsername(username));
+  validatePassword(password);
+  const result = await client.query(
+    `select * from users where normalized_username = $1`,
+    [normalizedKey],
+  );
+  const user = result.rows[0];
+  if (!user || !verifyPassword(password, user.password_hash)) {
+    throw new Error("Invalid username or password.");
+  }
+  const authToken = newAuthToken();
+  await client.query(
+    `update users
+     set auth_token = $1,
+         updated_at = now()
+     where id = $2`,
+    [authToken, user.id],
+  );
+  return {
+    id: user.id,
+    username: user.username,
+    auth_token: authToken,
+  };
+}
+
+async function logoutUserAccount(authToken, client = pool) {
+  await client.query(
+    `update users
+     set auth_token = null,
+         updated_at = now()
+     where auth_token = $1`,
+    [normalizePlayerToken(authToken)],
+  );
+}
+
+async function upsertLobbyPlayerForUser(sessionId, user, client = pool) {
+  const userId = Number(user.id);
+  const displayName = normalizeDisplayName(user.username);
+  const normalized = normalizePlayerKey(displayName);
+
+  const existingByUser = await getPlayerByUserId(sessionId, userId, client);
+  if (existingByUser) {
+    return ensurePlayerToken(existingByUser, client);
+  }
+
+  const conflict = await client.query(
+    `select id
+     from players
+     where session_id = $1
+       and normalized_display_name = $2
+       and (user_id is null or user_id <> $3)`,
+    [sessionId, normalized, userId],
+  );
+  if (conflict.rows.length) {
+    throw new Error("That name is already taken in this session.");
+  }
+
+  const result = await client.query(
+    `insert into players (
+       session_id,
+       display_name,
+       normalized_display_name,
+       player_token,
+       user_id,
+       updated_at
+     )
+     values ($1, $2, $3, $4, $5, now())
+     returning *`,
+    [sessionId, displayName, normalized, newPlayerToken(), userId],
+  );
+  return ensurePlayerToken(result.rows[0], client);
+}
+
+async function resolvePlayerForAuth(sessionId, authToken, client = pool) {
+  const user = await getUserByAuthToken(authToken, client);
+  if (!user) {
+    throw new Error("Sign in to continue.");
+  }
+  const row = await getPlayerByUserId(sessionId, user.id, client);
+  if (!row) {
+    throw new Error("Join the game on this device first.");
+  }
+  return { user, row };
 }
 
 function getLingoResultPattern(targetWord, guess) {
@@ -973,13 +1154,33 @@ async function playerSubmittedCurrentWindow(state, player, client = pool) {
   return result.rows.length > 0;
 }
 
-async function buildViewerContext(displayName, playerToken, state, client = pool) {
+async function buildViewerContext(displayName, playerToken, state, client = pool, options = {}) {
   const normalized = normalizeDisplayName(displayName);
   const token = normalizePlayerToken(playerToken);
+  const authToken = normalizePlayerToken(options.authToken);
+  let accountUser = null;
 
   let player = null;
   let sessionValid = false;
-  if (token) {
+  if (authToken) {
+    accountUser = await getUserByAuthToken(authToken, client);
+    if (accountUser) {
+      const row = await getPlayerByUserId(state.session_id, accountUser.id, client);
+      if (row) {
+        player = {
+          id: row.id,
+          displayName: row.display_name,
+          normalizedDisplayName: row.normalized_display_name,
+          currentGuess: row.current_guess,
+          roundNumber: row.round_number,
+          balls: Number(row.balls || 0),
+          solvedCurrentWord: Boolean(row.solved_current_word),
+        };
+        sessionValid = true;
+      }
+    }
+  }
+  if (!player && token) {
     const row = await getPlayerByToken(state.session_id, token, client);
     if (row) {
       player = {
@@ -1000,7 +1201,7 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
     player = findPlayerByDisplayName(players, normalized);
   }
 
-  if (!token && !normalized) return null;
+  if (!token && !normalized && !accountUser) return null;
   const phase = String(state.phase || "idle");
   const round = Number(state.round_number || 0);
 
@@ -1008,7 +1209,9 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
     return {
       found: false,
       sessionValid: false,
-      displayName: normalized,
+      accountSignedIn: Boolean(accountUser),
+      accountUsername: accountUser?.username || "",
+      displayName: accountUser?.username || normalized,
       balls: 0,
       lockedIn: false,
       resultPattern: "",
@@ -1058,6 +1261,8 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
   return {
     found: true,
     sessionValid,
+    accountSignedIn: Boolean(accountUser),
+    accountUsername: accountUser?.username || "",
     displayName: player.displayName,
     balls: Number(player.balls || 0),
     lockedIn: phase === "guessing" && submitted && !player.solvedCurrentWord,
@@ -1153,10 +1358,10 @@ async function getLatestBingoGameForSession(sessionId, client = pool) {
   return result.rows[0] || null;
 }
 
-async function buildPublicStatePayload(state, displayName, playerToken, client = pool) {
+async function buildPublicStatePayload(state, displayName, playerToken, client = pool, options = {}) {
   const metrics = await getPublicMetrics(state.session_id, state.round_number, client);
   const players = await getPublicDisplayPlayers(state, client);
-  const viewer = await buildViewerContext(displayName, playerToken, state, client);
+  const viewer = await buildViewerContext(displayName, playerToken, state, client, options);
   const bingoRow = await getLatestBingoGameForSession(state.session_id, client);
   const revealFanfareKey = buildRevealFanfareKey(state);
   const correctGuessWinners = buildCorrectGuessWinners(players);
@@ -1657,32 +1862,105 @@ app.get("/api/public-state", async (req, res) => {
     const state = await maybeAdvanceTimedPhase();
     const displayName = normalizeDisplayName(req.query.displayName);
     const playerToken = normalizePlayerToken(req.query.playerToken);
+    const authToken = normalizePlayerToken(req.query.authToken);
     res.json({
       ok: true,
-      state: await buildPublicStatePayload(state, displayName, playerToken),
+      state: await buildPublicStatePayload(state, displayName, playerToken, pool, { authToken }),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
 
+app.get("/api/public/me", async (req, res) => {
+  try {
+    const authToken = normalizePlayerToken(req.query.authToken);
+    const user = await getUserByAuthToken(authToken);
+    if (!user) {
+      res.status(401).json({ ok: false, error: "Not signed in." });
+      return;
+    }
+    res.json({
+      ok: true,
+      user: {
+        username: user.username,
+        authToken: user.auth_token,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/register", async (req, res) => {
+  const username = normalizeUsername(req.body.username);
+  const password = String(req.body.password || "");
+  try {
+    const user = await createUserAccount(username, password);
+    res.json({
+      ok: true,
+      user: {
+        username: user.username,
+        authToken: user.auth_token,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/login", async (req, res) => {
+  const username = normalizeUsername(req.body.username);
+  const password = String(req.body.password || "");
+  try {
+    const user = await loginUserAccount(username, password);
+    res.json({
+      ok: true,
+      user: {
+        username: user.username,
+        authToken: user.auth_token,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/logout", async (req, res) => {
+  const authToken = normalizePlayerToken(req.body.authToken);
+  try {
+    await logoutUserAccount(authToken);
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
 app.post("/api/public/join", async (req, res) => {
+  const authToken = normalizePlayerToken(req.body.authToken);
   const displayName = normalizeDisplayName(req.body.displayName);
   const playerToken = normalizePlayerToken(req.body.playerToken);
-  if (!displayName) {
-    res.status(400).json({ ok: false, error: "User name is required." });
-    return;
-  }
-  if (displayName.length > 40) {
-    res.status(400).json({ ok: false, error: "User name must be 40 characters or fewer." });
-    return;
-  }
 
   const client = await pool.connect();
   try {
     await client.query("begin");
     const state = await getState(client);
-    const player = await upsertLobbyPlayer(state.session_id, displayName, playerToken, client);
+    let player;
+    if (authToken) {
+      const user = await getUserByAuthToken(authToken, client);
+      if (!user) {
+        throw new Error("Sign in to join the game.");
+      }
+      player = await upsertLobbyPlayerForUser(state.session_id, user, client);
+    } else {
+      if (!displayName) {
+        throw new Error("Sign in to join the game.");
+      }
+      if (displayName.length > 40) {
+        throw new Error("User name must be 40 characters or fewer.");
+      }
+      player = await upsertLobbyPlayer(state.session_id, displayName, playerToken, client);
+    }
     await client.query("commit");
 
     const nextState = await maybeAdvanceTimedPhase();
@@ -1690,7 +1968,13 @@ app.post("/api/public/join", async (req, res) => {
     res.json({
       ok: true,
       player: identity,
-      publicState: await buildPublicStatePayload(nextState, identity.displayName, identity.playerToken),
+      publicState: await buildPublicStatePayload(
+        nextState,
+        identity.displayName,
+        identity.playerToken,
+        pool,
+        { authToken },
+      ),
     });
   } catch (error) {
     await client.query("rollback");
@@ -1702,9 +1986,10 @@ app.post("/api/public/join", async (req, res) => {
 
 app.post("/api/public/host-message", async (req, res) => {
   const playerToken = normalizePlayerToken(req.body.playerToken);
+  const authToken = normalizePlayerToken(req.body.authToken);
   const message = String(req.body.message || "").trim();
-  if (!playerToken) {
-    res.status(400).json({ ok: false, error: "Player token is required." });
+  if (!playerToken && !authToken) {
+    res.status(400).json({ ok: false, error: "Sign in and join the game first." });
     return;
   }
   if (!message) {
@@ -1716,9 +2001,14 @@ app.post("/api/public/host-message", async (req, res) => {
   try {
     await client.query("begin");
     const state = await getState(client);
-    const player = await getPlayerByToken(state.session_id, playerToken, client);
-    if (!player) {
-      throw new Error("Join the game on this device before messaging the host.");
+    let player;
+    if (authToken) {
+      ({ row: player } = await resolvePlayerForAuth(state.session_id, authToken, client));
+    } else {
+      player = await getPlayerByToken(state.session_id, playerToken, client);
+      if (!player) {
+        throw new Error("Join the game on this device before messaging the host.");
+      }
     }
     await insertHostMessage(state.session_id, player.display_name, message, client);
     await client.query("commit");
@@ -1734,8 +2024,9 @@ app.post("/api/public/host-message", async (req, res) => {
 app.post("/api/public/leave", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
   const playerToken = normalizePlayerToken(req.body.playerToken);
-  if (!playerToken) {
-    res.status(400).json({ ok: false, error: "Player session is required. Re-join the game." });
+  const authToken = normalizePlayerToken(req.body.authToken);
+  if (!playerToken && !authToken) {
+    res.status(400).json({ ok: false, error: "Sign in to leave the game." });
     return;
   }
 
@@ -1743,9 +2034,14 @@ app.post("/api/public/leave", async (req, res) => {
   try {
     await client.query("begin");
     const state = await getState(client);
-    const player = await getPlayerByToken(state.session_id, playerToken, client);
-    if (!player) {
-      throw new Error("Player session not found. Re-join the game.");
+    let player;
+    if (authToken) {
+      ({ row: player } = await resolvePlayerForAuth(state.session_id, authToken, client));
+    } else {
+      player = await getPlayerByToken(state.session_id, playerToken, client);
+      if (!player) {
+        throw new Error("Player session not found. Re-join the game.");
+      }
     }
     await client.query(
       `delete from players
@@ -1758,7 +2054,7 @@ app.post("/api/public/leave", async (req, res) => {
     const nextState = await maybeAdvanceTimedPhase();
     res.json({
       ok: true,
-      publicState: await buildPublicStatePayload(nextState, displayName, ""),
+      publicState: await buildPublicStatePayload(nextState, displayName, "", pool, { authToken }),
     });
   } catch (error) {
     await client.query("rollback");
@@ -1771,10 +2067,11 @@ app.post("/api/public/leave", async (req, res) => {
 app.post("/api/public/submit-guess", async (req, res) => {
   const displayName = normalizeDisplayName(req.body.displayName);
   const playerToken = normalizePlayerToken(req.body.playerToken);
+  const authToken = normalizePlayerToken(req.body.authToken);
   const guess = normalizeWordInput(req.body.guess);
 
-  if (!playerToken) {
-    res.status(400).json({ ok: false, error: "Player session is required. Re-join the game." });
+  if (!playerToken && !authToken) {
+    res.status(400).json({ ok: false, error: "Sign in and join the game first." });
     return;
   }
   if (!isFiveLetterWord(guess)) {
@@ -1794,7 +2091,9 @@ app.post("/api/public/submit-guess", async (req, res) => {
       throw new Error("The host has not set a word yet.");
     }
 
-    const playerRow = await getPlayerByToken(state.session_id, playerToken, client);
+    const playerRow = authToken
+      ? (await resolvePlayerForAuth(state.session_id, authToken, client)).row
+      : await getPlayerByToken(state.session_id, playerToken, client);
     if (!playerRow) {
       throw new Error("Player session not found. Re-join the game.");
     }
@@ -1900,6 +2199,8 @@ app.post("/api/public/submit-guess", async (req, res) => {
         nextState,
         identity.displayName,
         identity.playerToken,
+        pool,
+        { authToken },
       ),
     });
   } catch (error) {

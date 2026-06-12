@@ -140,3 +140,19 @@ create table if not exists host_messages (
 );
 
 create index if not exists idx_host_messages_session on host_messages(session_id, created_at desc);
+
+create table if not exists users (
+  id bigserial primary key,
+  username text not null,
+  normalized_username text not null,
+  password_hash text not null,
+  auth_token text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (normalized_username)
+);
+
+create unique index if not exists idx_users_auth_token on users(auth_token) where auth_token is not null;
+
+alter table players add column if not exists user_id bigint references users(id) on delete set null;
+create index if not exists idx_players_user_session on players(session_id, user_id);

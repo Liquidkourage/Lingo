@@ -509,6 +509,118 @@
       background: rgba(0, 0, 0, 0.35);
     }
 
+    .play-setup-panel[data-auth-mode="signed-in"] .auth-signed-out {
+      display: none;
+    }
+
+    .play-setup-panel[data-auth-mode="signed-out"] .auth-signed-in {
+      display: none;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 0.45rem 0.55rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .auth-tab.is-active {
+      border-color: var(--show-gold);
+      color: var(--show-gold-hot);
+    }
+
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.is-active {
+      display: block;
+    }
+
+    .auth-field {
+      margin-bottom: 0.55rem;
+    }
+
+    .auth-field label {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.78);
+    }
+
+    .auth-field input {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      border: var(--contrast-stroke) solid rgba(62, 200, 232, 0.35);
+      border-radius: 0.15em;
+      background: var(--show-black);
+      color: var(--show-white);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+
+    .auth-actions {
+      display: flex;
+      gap: 0.45rem;
+      margin-top: 0.65rem;
+    }
+
+    .auth-actions button {
+      flex: 1;
+    }
+
+    .auth-hint {
+      margin: 0.45rem 0 0;
+      font-size: 0.72rem;
+      color: rgba(180, 198, 220, 0.65);
+    }
+
+    .auth-username {
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: var(--show-cyan);
+      text-shadow: 0 0 14px rgba(0, 212, 255, 0.45);
+    }
+
+    .auth-signed-in-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.55rem;
+      margin-bottom: 0.55rem;
+    }
+
+    .auth-signed-in-meta {
+      min-width: 0;
+    }
+
+    .auth-signed-in-label {
+      display: block;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.65);
+      margin-bottom: 0.15rem;
+    }
+
+    .auth-logout-btn {
+      padding: 0.32rem 0.55rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.08em;
+    }
+
     .play-setup-panel[data-name-mode="editing"] {
       border-color: var(--show-cyan);
       background: rgba(0, 20, 40, 0.65);
@@ -1388,23 +1500,52 @@
       </header>
 
       <div class="play-setup" id="playSetup">
-        <section class="play-setup-panel" id="playIdentity" data-name-mode="editing" aria-label="Your player setup">
-          <div class="name-edit" id="nameEdit">
-            <label class="field-label" for="playerName">Your user name</label>
-            <div class="name-row">
-              <input id="playerName" type="text" maxlength="40" autocomplete="nickname" placeholder="SwiftTiger" />
-              <button id="shuffleNameBtn" class="secondary name-shuffle" type="button" title="Another suggestion" aria-label="Another name suggestion">↻</button>
-              <button id="confirmNameBtn" class="good name-confirm" type="button">Use name &amp; join</button>
+        <section class="play-setup-panel" id="playIdentity" data-auth-mode="signed-out" aria-label="Your account">
+          <div class="auth-signed-out" id="authSignedOut">
+            <div class="auth-tabs" role="tablist" aria-label="Account">
+              <button id="authTabLogin" class="secondary auth-tab is-active" type="button" data-auth-tab="login">Log in</button>
+              <button id="authTabRegister" class="secondary auth-tab" type="button" data-auth-tab="register">Create account</button>
             </div>
-            <p class="name-hint" id="nameHint">Sets your name and joins the game.</p>
+            <form id="authLoginForm" class="auth-form is-active" autocomplete="on">
+              <div class="auth-field">
+                <label for="loginUsername">Username</label>
+                <input id="loginUsername" type="text" maxlength="24" autocomplete="username" autocapitalize="none" spellcheck="false" />
+              </div>
+              <div class="auth-field">
+                <label for="loginPassword">Password</label>
+                <input id="loginPassword" type="password" maxlength="128" autocomplete="current-password" />
+              </div>
+              <div class="auth-actions">
+                <button id="loginBtn" class="good" type="submit">Log in</button>
+              </div>
+            </form>
+            <form id="authRegisterForm" class="auth-form" autocomplete="on">
+              <div class="auth-field">
+                <label for="registerUsername">Username</label>
+                <input id="registerUsername" type="text" maxlength="24" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="letters, numbers, _" />
+              </div>
+              <div class="auth-field">
+                <label for="registerPassword">Password</label>
+                <input id="registerPassword" type="password" maxlength="128" autocomplete="new-password" />
+              </div>
+              <div class="auth-actions">
+                <button id="registerBtn" class="good" type="submit">Create account</button>
+              </div>
+              <p class="auth-hint">At least 6 characters. Your username is shown on the venue display.</p>
+            </form>
           </div>
-          <div class="setup-row" id="nameLocked">
-            <div class="setup-name-group">
-              <span class="name-display" id="playerNameDisplay"></span>
-              <span class="champion-badge" id="championBadge" title="Venue champion">★</span>
-              <button id="changeNameBtn" class="name-change" type="button">Change</button>
+          <div class="auth-signed-in" id="authSignedIn">
+            <div class="auth-signed-in-row">
+              <div class="auth-signed-in-meta">
+                <span class="auth-signed-in-label">Signed in as</span>
+                <span class="auth-username" id="accountUsernameDisplay"></span>
+                <span class="champion-badge" id="championBadge" title="Venue champion">★</span>
+              </div>
+              <button id="logoutBtn" class="secondary auth-logout-btn" type="button">Log out</button>
             </div>
-            <button id="lobbyToggle" class="good lobby-toggle" type="button">Join game</button>
+            <div class="setup-row">
+              <button id="lobbyToggle" class="good lobby-toggle" type="button">Join game</button>
+            </div>
           </div>
           <div class="host-message-compose" id="hostMessageCompose" hidden>
             <label class="field-label" for="hostMessageInput">Message host</label>
@@ -1542,14 +1683,20 @@
       wordTiles: document.getElementById('wordTiles'),
       guessCapture: document.getElementById('guessCapture'),
       playIdentity: document.getElementById('playIdentity'),
-      playerName: document.getElementById('playerName'),
-      playerNameDisplay: document.getElementById('playerNameDisplay'),
-      shuffleName: document.getElementById('shuffleNameBtn'),
-      confirmName: document.getElementById('confirmNameBtn'),
-      changeName: document.getElementById('changeNameBtn'),
-      nameHint: document.getElementById('nameHint'),
-      message: document.getElementById('message'),
+      authTabLogin: document.getElementById('authTabLogin'),
+      authTabRegister: document.getElementById('authTabRegister'),
+      authLoginForm: document.getElementById('authLoginForm'),
+      authRegisterForm: document.getElementById('authRegisterForm'),
+      loginUsername: document.getElementById('loginUsername'),
+      loginPassword: document.getElementById('loginPassword'),
+      registerUsername: document.getElementById('registerUsername'),
+      registerPassword: document.getElementById('registerPassword'),
+      loginBtn: document.getElementById('loginBtn'),
+      registerBtn: document.getElementById('registerBtn'),
+      accountUsernameDisplay: document.getElementById('accountUsernameDisplay'),
+      logoutBtn: document.getElementById('logoutBtn'),
       lobbyToggle: document.getElementById('lobbyToggle'),
+      message: document.getElementById('message'),
       hostMessageCompose: document.getElementById('hostMessageCompose'),
       hostMessageInput: document.getElementById('hostMessageInput'),
       hostMessageSend: document.getElementById('hostMessageSend'),
@@ -1726,14 +1873,23 @@
       ended: { badge: 'Round ended', line: 'The word has been revealed. Next round soon.' },
     };
 
+    let accountUsername = '';
+
     function setMessage(text, type = '') {
       els.message.textContent = text || '';
       els.message.className = 'message' + (type ? ` ${type}` : '');
     }
 
-    function storeDisplayName(name) {
-      localStorage.setItem('lingo_display_name', name);
-      localStorage.setItem('lingo_display_name_ts', String(Date.now()));
+    function getAuthToken() {
+      return localStorage.getItem('lingo_auth_token') || '';
+    }
+
+    function storeAuthToken(token) {
+      if (token) localStorage.setItem('lingo_auth_token', token);
+    }
+
+    function clearAuthToken() {
+      localStorage.removeItem('lingo_auth_token');
     }
 
     function storePlayerToken(token) {
@@ -1748,82 +1904,159 @@
       localStorage.removeItem('lingo_player_token');
     }
 
-    function getStoredDisplayName() {
-      const name = localStorage.getItem('lingo_display_name');
-      const ts = parseInt(localStorage.getItem('lingo_display_name_ts') || '', 10);
-      if (!name || Number.isNaN(ts) || Date.now() - ts > 24 * 60 * 60 * 1000) return '';
-      return name;
+    function setAuthMode(mode) {
+      els.playIdentity.setAttribute('data-auth-mode', mode === 'signed-in' ? 'signed-in' : 'signed-out');
+      if (mode === 'signed-in') {
+        els.accountUsernameDisplay.textContent = accountUsername;
+      }
     }
 
-    let usernameParts = null;
-
-    async function loadUsernameParts() {
-      if (usernameParts) return usernameParts;
-      const response = await fetch('/data/username-parts.json');
-      if (!response.ok) throw new Error('Could not load name suggestions.');
-      usernameParts = await response.json();
-      return usernameParts;
+    function setAuthTab(tab) {
+      const isLogin = tab !== 'register';
+      els.authTabLogin.classList.toggle('is-active', isLogin);
+      els.authTabRegister.classList.toggle('is-active', !isLogin);
+      els.authLoginForm.classList.toggle('is-active', isLogin);
+      els.authRegisterForm.classList.toggle('is-active', !isLogin);
     }
 
-    function titleCasePart(word) {
-      const normalized = String(word || '').toLowerCase();
-      if (!normalized) return '';
-      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    function isSignedIn() {
+      return Boolean(getAuthToken()) && Boolean(accountUsername);
     }
-
-    function randomSuggestedName(parts) {
-      const adjectives = parts.adjectives || [];
-      const animals = parts.animals || [];
-      const adjective = adjectives[Math.floor(Math.random() * adjectives.length)] || 'swift';
-      const animal = animals[Math.floor(Math.random() * animals.length)] || 'tiger';
-      return `${titleCasePart(adjective)}${titleCasePart(animal)}`;
-    }
-
-    let skipNameBlurConfirm = false;
 
     function isNameLocked() {
-      return els.playIdentity.getAttribute('data-name-mode') === 'locked';
+      return isSignedIn() || IS_DEMO;
+    }
+
+    function hasUserName() {
+      return isSignedIn() || IS_DEMO;
     }
 
     function activeUserName() {
-      if (isNameLocked()) return els.playerNameDisplay.textContent.trim();
-      return els.playerName.value.trim();
+      return accountUsername
+        || currentState?.viewer?.accountUsername
+        || currentState?.viewer?.displayName
+        || '';
     }
 
-    function setNameHintMode(mode) {
-      if (mode === 'custom') {
-        els.nameHint.textContent = 'Tap Use name & join when ready.';
-        return;
+    async function restoreAccountSession() {
+      const token = getAuthToken();
+      if (!token || IS_DEMO) return;
+      try {
+        const response = await fetch(`/api/public/me?authToken=${encodeURIComponent(token)}`);
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          clearAuthToken();
+          accountUsername = '';
+          setAuthMode('signed-out');
+          return;
+        }
+        accountUsername = payload.user.username;
+        storeAuthToken(payload.user.authToken);
+        setAuthMode('signed-in');
+      } catch (error) {
+        setAuthMode(getAuthToken() ? 'signed-in' : 'signed-out');
       }
-      els.nameHint.textContent = 'Sets your name and joins the game.';
     }
 
-    function lockUserName(options = {}) {
-      const { showMessage = false } = options;
-      const name = (
-        els.playerName.value.trim()
-        || els.playerNameDisplay.textContent.trim()
-        || String(nameSuggestionSeed || '').trim()
-      );
-      if (!name) return false;
-      els.playerNameDisplay.textContent = name;
-      els.playerName.value = name;
-      els.playIdentity.setAttribute('data-name-mode', 'locked');
-      nameSuggestionSeed = name;
-      storeDisplayName(name);
-      if (showMessage) {
-        setMessage(`You're ${name}.`, 'success');
+    async function registerAccount(event) {
+      if (event) event.preventDefault();
+      const username = els.registerUsername.value.trim();
+      const password = els.registerPassword.value;
+      els.registerBtn.disabled = true;
+      try {
+        const response = await fetch('/api/public/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not create account.');
+        }
+        accountUsername = payload.user.username;
+        storeAuthToken(payload.user.authToken);
+        setAuthMode('signed-in');
+        els.registerPassword.value = '';
+        await joinAfterSignIn('Account created.');
+      } catch (error) {
+        setMessage(error.message || 'Could not create account.', 'error');
+      } finally {
+        els.registerBtn.disabled = false;
       }
-      maybeFocusNameField(currentState?.phase);
-      return true;
     }
 
-    async function joinGame(displayName) {
+    async function loginAccount(event) {
+      if (event) event.preventDefault();
+      const username = els.loginUsername.value.trim();
+      const password = els.loginPassword.value;
+      els.loginBtn.disabled = true;
+      try {
+        const response = await fetch('/api/public/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not log in.');
+        }
+        accountUsername = payload.user.username;
+        storeAuthToken(payload.user.authToken);
+        setAuthMode('signed-in');
+        els.loginPassword.value = '';
+        await joinAfterSignIn('Signed in.');
+      } catch (error) {
+        setMessage(error.message || 'Could not log in.', 'error');
+      } finally {
+        els.loginBtn.disabled = false;
+      }
+    }
+
+    async function logoutAccount() {
+      const authToken = getAuthToken();
+      if (authToken) {
+        try {
+          await fetch('/api/public/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ authToken }),
+          });
+        } catch (error) {
+          // Still clear local session if the network call fails.
+        }
+      }
+      if (isViewerJoined()) {
+        await leaveLobby({ silent: true });
+      }
+      clearAuthToken();
+      clearPlayerToken();
+      accountUsername = '';
+      setAuthMode('signed-out');
+      setMessage('Logged out.', 'success');
+      fetchPublicState().catch(() => {});
+    }
+
+    async function joinAfterSignIn(prefixMessage) {
+      try {
+        const payload = await joinGame();
+        renderPublicState(payload.publicState);
+        setMessage(`${prefixMessage} Joined the game.`, 'success');
+      } catch (error) {
+        renderPublicState(currentState || { phase: 'idle' });
+        setMessage(`${prefixMessage} Tap Join game when ready.`, 'success');
+      }
+    }
+
+    async function joinGame() {
+      const authToken = getAuthToken();
+      if (!authToken) {
+        throw new Error('Sign in to join the game.');
+      }
       const response = await fetch('/api/public/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          displayName,
+          authToken,
           playerToken: getPlayerToken(),
         }),
       });
@@ -1831,67 +2064,22 @@
       if (!response.ok || !payload.ok) {
         throw new Error(payload.error || 'Could not join the game.');
       }
-      storeDisplayName(displayName);
       if (payload.player?.playerToken) {
         storePlayerToken(payload.player.playerToken);
+      }
+      if (payload.user?.username) {
+        accountUsername = payload.user.username;
+      } else if (payload.player?.displayName) {
+        accountUsername = payload.player.displayName;
       }
       return payload;
     }
 
-    async function confirmUserNameAndJoin(event) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
+    function maybeFocusNameField(phase) {
+      if (IS_DEMO || isSignedIn()) return;
+      if (phase === 'idle' && document.activeElement !== els.loginUsername) {
+        window.requestAnimationFrame(() => els.loginUsername.focus({ preventScroll: true }));
       }
-      skipNameBlurConfirm = true;
-      if (!lockUserName()) {
-        setMessage('Type a name or tap ↻ for a suggestion.', 'error');
-        openNameEditor();
-        els.playerName.focus();
-        return;
-      }
-
-      const displayName = activeUserName();
-      if (els.confirmName) els.confirmName.disabled = true;
-      try {
-        const payload = await joinGame(displayName);
-        const joinedBefore = Boolean(currentState && currentState.viewer && currentState.viewer.found);
-        setMessage(
-          joinedBefore
-            ? `You're ${displayName} — name updated.`
-            : `You're ${displayName} — joined the game.`,
-          'success',
-        );
-        renderPublicState(payload.publicState);
-      } catch (error) {
-        setMessage(error.message || 'Could not join the game.', 'error');
-        updateLobbyButtons();
-      } finally {
-        if (els.confirmName) els.confirmName.disabled = false;
-      }
-    }
-
-    function openNameEditor() {
-      els.playIdentity.setAttribute('data-name-mode', 'editing');
-      els.playerName.value = els.playerNameDisplay.textContent || els.playerName.value;
-      setNameHintMode('custom');
-      window.requestAnimationFrame(() => els.playerName.focus());
-    }
-
-    async function applySuggestedName(forceNew = false) {
-      const stored = getStoredDisplayName();
-      if (!forceNew && stored) {
-        els.playerName.value = stored;
-        lockUserName();
-        return stored;
-      }
-      openNameEditor();
-      const parts = await loadUsernameParts();
-      const suggestion = randomSuggestedName(parts);
-      els.playerName.value = suggestion;
-      nameSuggestionSeed = suggestion;
-      setNameHintMode('suggested');
-      return suggestion;
     }
 
     function normalizedGuessText(text) {
@@ -2014,10 +2202,6 @@
 
     function isViewerJoined(state = currentState) {
       return Boolean(state?.viewer?.sessionValid);
-    }
-
-    function hasUserName() {
-      return Boolean(activeUserName());
     }
 
     function viewerSolvedCurrentWord() {
@@ -2172,13 +2356,6 @@
       els.guessCapture.focus({ preventScroll: true });
     }
 
-    function maybeFocusNameField(phase) {
-      if (hasUserName() && isNameLocked()) return;
-      if (!isNameLocked()) {
-        window.requestAnimationFrame(() => els.playerName.focus({ preventScroll: true }));
-      }
-    }
-
     function insertGuessLetter(letter) {
       if (!canDraftGuess() || !els.guessCapture) return;
       const ch = normalizedGuessText(letter);
@@ -2229,7 +2406,13 @@
       if (!/^[a-zA-Z]$/.test(key)) return false;
 
       const active = document.activeElement;
-      if (active === els.playerName) return false;
+      if (
+        active === els.loginUsername
+        || active === els.loginPassword
+        || active === els.registerUsername
+        || active === els.registerPassword
+        || active === els.hostMessageInput
+      ) return false;
 
       event.preventDefault();
       insertGuessLetter(key);
@@ -2792,16 +2975,18 @@
 
     function updateLobbyButtons() {
       const joined = isViewerJoined();
-      const ready = hasUserName() && isNameLocked();
-      els.lobbyToggle.disabled = !ready;
+      const signedIn = isSignedIn();
+      els.lobbyToggle.disabled = !signedIn;
+      if (!signedIn) {
+        els.lobbyToggle.textContent = 'Join game';
+        els.lobbyToggle.className = 'good lobby-toggle';
+        els.hostMessageCompose.hidden = true;
+        return;
+      }
       if (joined) {
         els.lobbyToggle.textContent = 'Leave game';
         els.lobbyToggle.className = 'secondary lobby-toggle';
         els.hostMessageCompose.hidden = isBingoMode(currentState);
-      } else if (ready) {
-        els.lobbyToggle.textContent = 'Re-join game';
-        els.lobbyToggle.className = 'good lobby-toggle';
-        els.hostMessageCompose.hidden = true;
       } else {
         els.lobbyToggle.textContent = 'Join game';
         els.lobbyToggle.className = 'good lobby-toggle';
@@ -2810,9 +2995,10 @@
     }
 
     async function sendHostMessage() {
+      const authToken = getAuthToken();
       const playerToken = getPlayerToken();
       const message = String(els.hostMessageInput.value || '').trim();
-      if (!playerToken) {
+      if (!authToken || !playerToken) {
         setMessage('Join the game before messaging the host.', 'error');
         return;
       }
@@ -2825,7 +3011,7 @@
         const response = await fetch('/api/public/host-message', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ playerToken, message }),
+          body: JSON.stringify({ authToken, playerToken, message }),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -3087,8 +3273,17 @@
         ? '—'
         : String(isViewerJoined(state) ? viewer.balls : 0);
 
-      if (isLiveRound(phase) && isNameLocked() && activeUserName() && !isViewerJoined(state)) {
-        setMessage('Tap Re-join game to continue playing on this device.', 'error');
+      if (isLiveRound(phase) && isSignedIn() && !isViewerJoined(state)) {
+        setMessage('Tap Join game to appear on the venue display.', 'error');
+      }
+
+      if (viewer?.accountUsername) {
+        accountUsername = viewer.accountUsername;
+      }
+      if (getAuthToken() && accountUsername) {
+        setAuthMode('signed-in');
+      } else if (!IS_DEMO && !getAuthToken()) {
+        setAuthMode('signed-out');
       }
 
       if (viewer && viewer.isChampion) {
@@ -3134,33 +3329,32 @@
     }
 
     async function joinLobby() {
-      if (!isNameLocked()) {
-        setMessage('Tap Use name & join first.', 'error');
-        openNameEditor();
-        return;
-      }
-      const displayName = activeUserName();
-      if (!displayName) {
-        setMessage('Set your user name first.', 'error');
-        openNameEditor();
+      if (!isSignedIn()) {
+        setMessage('Log in or create an account first.', 'error');
+        setAuthTab('login');
+        els.loginUsername.focus();
         return;
       }
 
       els.lobbyToggle.disabled = true;
       try {
-        const payload = await joinGame(displayName);
+        const payload = await joinGame();
         setMessage('You joined the game and appear on the venue display.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
         setMessage(error.message || 'Could not join the game.', 'error');
         updateLobbyButtons();
+      } finally {
+        els.lobbyToggle.disabled = !isSignedIn();
       }
     }
 
-    async function leaveLobby() {
+    async function leaveLobby(options = {}) {
+      const { silent = false } = options;
+      const authToken = getAuthToken();
       const playerToken = getPlayerToken();
-      if (!playerToken) {
-        setMessage('You are not in the game.', 'error');
+      if (!authToken || !playerToken) {
+        if (!silent) setMessage('You are not in the game.', 'error');
         return;
       }
 
@@ -3170,6 +3364,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            authToken,
             displayName: activeUserName(),
             playerToken,
           }),
@@ -3179,22 +3374,25 @@
           throw new Error(payload.error || 'Could not leave the lobby.');
         }
         clearPlayerToken();
-        setMessage('You left the game.', 'success');
+        if (!silent) setMessage('You left the game.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
-        setMessage(error.message || 'Could not leave the lobby.', 'error');
+        if (!silent) setMessage(error.message || 'Could not leave the lobby.', 'error');
         updateLobbyButtons();
+      } finally {
+        els.lobbyToggle.disabled = !isSignedIn();
       }
     }
 
     function publicStateUrl() {
       const params = new URLSearchParams();
+      const authToken = getAuthToken();
+      if (authToken) {
+        params.set('authToken', authToken);
+      }
       const playerToken = getPlayerToken();
       if (playerToken) {
         params.set('playerToken', playerToken);
-      } else {
-        const displayName = activeUserName();
-        if (displayName) params.set('displayName', displayName);
       }
       const query = params.toString();
       return query ? `/api/public-state?${query}` : '/api/public-state';
@@ -3209,14 +3407,16 @@
       renderPublicState(payload.state);
     }
 
-    async function ensureViewerSession(displayName) {
+    async function ensureViewerSession() {
       if (isViewerJoined()) {
         return true;
       }
-      const payload = await joinGame(displayName);
-      if (payload.player?.playerToken) {
-        storePlayerToken(payload.player.playerToken);
+      if (!isSignedIn()) {
+        setMessage('Log in or create an account first.', 'error');
+        setAuthTab('login');
+        return false;
       }
+      const payload = await joinGame();
       renderPublicState(payload.publicState);
       return isViewerJoined();
     }
@@ -3225,23 +3425,18 @@
       if (!canSubmitGuess()) {
         return;
       }
-      if (!isNameLocked()) {
-        setMessage('Tap Use name & join first.', 'error');
-        openNameEditor();
+      if (!isSignedIn()) {
+        setMessage('Log in or create an account first.', 'error');
+        setAuthTab('login');
+        els.loginUsername.focus();
         return;
       }
       if (viewerSolvedCurrentWord()) {
         setMessage('You already solved this word for the round.', 'error');
         return;
       }
-      const displayName = activeUserName();
       const guess = currentGuess();
 
-      if (!displayName) {
-        setMessage('Enter your user name above first.', 'error');
-        openNameEditor();
-        return;
-      }
       if (guess.length !== 5) {
         setMessage('Please enter a 5-letter guess.', 'error');
         return;
@@ -3252,25 +3447,25 @@
 
       try {
         if (!isViewerJoined()) {
-          const rejoined = await ensureViewerSession(displayName);
+          const rejoined = await ensureViewerSession();
           if (!rejoined) {
             throw new Error('Re-join the game before submitting a guess.');
           }
         }
+        const authToken = getAuthToken();
         const playerToken = getPlayerToken();
-        if (!playerToken) {
+        if (!authToken && !playerToken) {
           throw new Error('Re-join the game before submitting a guess.');
         }
         const response = await fetch('/api/public/submit-guess', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ displayName, playerToken, guess }),
+          body: JSON.stringify({ authToken, playerToken, guess }),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || 'Could not submit guess.');
         }
-        storeDisplayName(displayName);
         guessDraftDirty = false;
         if (payload.solvedNow) {
           setGuessText(payload.player.currentGuess || guess);
@@ -3359,48 +3554,16 @@
       clearInputs(true);
       setMessage('');
     });
-    els.shuffleName.addEventListener('mousedown', () => {
-      skipNameBlurConfirm = true;
+    els.authTabLogin.addEventListener('click', () => setAuthTab('login'));
+    els.authTabRegister.addEventListener('click', () => setAuthTab('register'));
+    els.authLoginForm.addEventListener('submit', (event) => {
+      loginAccount(event).catch(() => {});
     });
-    els.shuffleName.addEventListener('click', () => {
-      applySuggestedName(true).catch(() => {
-        setMessage('Could not load another suggestion.', 'error');
-      });
+    els.authRegisterForm.addEventListener('submit', (event) => {
+      registerAccount(event).catch(() => {});
     });
-    if (els.confirmName) {
-      els.confirmName.addEventListener('mousedown', () => {
-        skipNameBlurConfirm = true;
-      });
-      els.confirmName.addEventListener('click', (event) => {
-        confirmUserNameAndJoin(event);
-      });
-    }
-    if (els.changeName) {
-      els.changeName.addEventListener('mousedown', () => {
-        skipNameBlurConfirm = true;
-      });
-      els.changeName.addEventListener('click', () => {
-        openNameEditor();
-      });
-    }
-
-    let nameSuggestionSeed = '';
-    els.playerName.addEventListener('input', () => {
-      const value = els.playerName.value.trim();
-      if (!value) {
-        setNameHintMode('suggested');
-        els.playerName.focus();
-        return;
-      }
-      if (nameSuggestionSeed && value !== nameSuggestionSeed) {
-        setNameHintMode('custom');
-      }
-    });
-    els.playerName.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        confirmUserNameAndJoin();
-      }
+    els.logoutBtn.addEventListener('click', () => {
+      logoutAccount().catch(() => {});
     });
 
     document.addEventListener('keydown', (event) => {
@@ -3414,39 +3577,30 @@
 
     async function bootPlayerPage() {
       if (IS_DEMO) {
-        els.playerName.value = 'NightOwl';
-        nameSuggestionSeed = 'NightOwl';
-      } else {
-        try {
-          nameSuggestionSeed = await applySuggestedName(false);
-        } catch (error) {
-          if (!getStoredDisplayName()) {
-            els.playerName.value = 'NightOwl';
-            nameSuggestionSeed = 'NightOwl';
-            setNameHintMode('suggested');
-          }
-        }
-      }
-
-      if (IS_DEMO) {
-        lockUserName();
+        accountUsername = 'NightOwl';
         renderPublicState(buildDemoState());
         startTimerTick();
         return;
       }
-      fetchPublicState()
-        .catch((err) => setMessage(err.message || 'Could not load game state.', 'error'))
-        .finally(async () => {
-          if (isNameLocked() && activeUserName() && !isViewerJoined(currentState)) {
-            try {
-              const payload = await joinGame(activeUserName());
-              renderPublicState(payload.publicState);
-            } catch (error) {
-              setMessage(error.message || 'Tap Re-join game to continue playing.', 'error');
-            }
-          }
-          maybeFocusNameField(currentState?.phase);
-        });
+
+      await restoreAccountSession();
+
+      try {
+        await fetchPublicState();
+      } catch (err) {
+        setMessage(err.message || 'Could not load game state.', 'error');
+      }
+
+      if (isSignedIn() && !isViewerJoined(currentState)) {
+        try {
+          const payload = await joinGame();
+          renderPublicState(payload.publicState);
+        } catch (error) {
+          setMessage(error.message || 'Tap Join game when ready.', 'error');
+        }
+      }
+
+      maybeFocusNameField(currentState?.phase);
       startTimerTick();
     }
 
