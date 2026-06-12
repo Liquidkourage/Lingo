@@ -130,8 +130,11 @@ async function createEventRow(eventCode, client = pool) {
   }
 
   const sessionId = `session_${Date.now()}`;
+  const idResult = await client.query("select coalesce(max(id), 0) + 1 as next_id from app_state");
+  const nextId = Number(idResult.rows[0]?.next_id || 1);
   const result = await client.query(
     `insert into app_state (
+       id,
        event_code,
        version,
        mode,
@@ -145,9 +148,9 @@ async function createEventRow(eventCode, client = pool) {
        guess_window_seconds,
        results_window_seconds,
        host_note
-     ) values ($1, 1, 'lingo', 'idle', $2, 0, '', false, 1, 0, $3, $4, '')
+     ) values ($1, $2, 1, 'lingo', 'idle', $3, 0, '', false, 1, 0, $4, $5, '')
      returning *`,
-    [code, sessionId, DEFAULT_GUESS_WINDOW_SECONDS, DEFAULT_RESULTS_WINDOW_SECONDS],
+    [nextId, code, sessionId, DEFAULT_GUESS_WINDOW_SECONDS, DEFAULT_RESULTS_WINDOW_SECONDS],
   );
   return result.rows[0];
 }
@@ -3375,12 +3378,12 @@ async function startServer() {
     });
   });
 
-  await bootstrapWithRetry();
-
   httpServer = app.listen(port, "0.0.0.0", () => {
     console.log(`Listening on http://0.0.0.0:${port}`);
-    startBackgroundTimers();
   });
+
+  await bootstrapWithRetry();
+  startBackgroundTimers();
 }
 
 startServer().catch((error) => {

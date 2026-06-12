@@ -37,6 +37,9 @@ alter table app_state add column if not exists host_word_history jsonb not null 
 alter table app_state add column if not exists round_ball_stakes jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists guess_window_seq integer not null default 0;
 alter table app_state add column if not exists all_players_submitted_at timestamptz;
+alter table app_state add column if not exists event_code text;
+update app_state set event_code = 'default' where event_code is null or event_code = '';
+alter table app_state alter column event_code set default 'default';
 
 insert into app_state (
   id,
@@ -72,7 +75,8 @@ values (
 )
 on conflict (id) do nothing;
 
-update app_state set event_code = 'default' where id = 1 and (event_code is null or event_code = '');
+update app_state set event_code = 'default' where event_code is null or event_code = '';
+create unique index if not exists idx_app_state_event_code on app_state(event_code);
 
 create table if not exists players (
   id bigserial primary key,
@@ -160,8 +164,3 @@ create unique index if not exists idx_users_auth_token on users(auth_token) wher
 
 alter table players add column if not exists user_id bigint references users(id) on delete set null;
 create index if not exists idx_players_user_session on players(session_id, user_id);
-
-alter table app_state add column if not exists event_code text;
-update app_state set event_code = 'default' where event_code is null or event_code = '';
-alter table app_state alter column event_code set default 'default';
-create unique index if not exists idx_app_state_event_code on app_state(event_code);
