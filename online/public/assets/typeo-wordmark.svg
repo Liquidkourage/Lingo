@@ -1,20 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 80" role="img" aria-label="TYPEO">
-  <text
-    x="0"
-    y="58"
-    font-family="Montserrat, Arial Black, sans-serif"
-    font-size="56"
-    font-weight="900"
-    fill="#58e8ff"
-    letter-spacing="0.08em"
-  >TYPE</text>
-  <text
-    x="214"
-    y="58"
-    font-family="Montserrat, Arial Black, sans-serif"
-    font-size="56"
-    font-weight="900"
-    fill="#ffcc00"
-  >O</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 336 76" role="img" aria-label="TYPEO">
+  <defs>
+    <linearGradient id="tileShell" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8fefff" />
+      <stop offset="38%" stop-color="#00c8dc" />
+      <stop offset="100%" stop-color="#007f96" />
+    </linearGradient>
+    <radialGradient id="ballShell" cx="30%" cy="24%" r="72%">
+      <stop offset="0%" stop-color="#fff6a8" />
+      <stop offset="35%" stop-color="#ffd633" />
+      <stop offset="72%" stop-color="#efb800" />
+      <stop offset="100%" stop-color="#b88400" />
+    </radialGradient>
+    <filter id="elementShadow" x="-30%" y="-20%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.8" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <g filter="url(#elementShadow)">
+    <!-- Glossy cyan tiles — 60px tall, same as ball diameter -->
+    <g
+      font-family="'American Typewriter', 'Courier New', Courier, monospace"
+      font-weight="700"
+      font-size="30"
+      fill="#ffffff"
+    >
+      <g transform="translate(0 8)">
+        <rect width="60" height="60" rx="7" fill="url(#tileShell)" stroke="#0097b0" stroke-width="1.2" />
+        <ellipse cx="18" cy="16" rx="16" ry="10" fill="#ffffff" opacity="0.42" />
+        <text x="30" y="39" text-anchor="middle">T</text>
+      </g>
+
+      <g transform="translate(68 8)">
+        <rect width="60" height="60" rx="7" fill="url(#tileShell)" stroke="#0097b0" stroke-width="1.2" />
+        <ellipse cx="18" cy="16" rx="16" ry="10" fill="#ffffff" opacity="0.42" />
+        <text x="30" y="39" text-anchor="middle">Y</text>
+      </g>
+
+      <g transform="translate(136 8)">
+        <rect width="60" height="60" rx="7" fill="url(#tileShell)" stroke="#0097b0" stroke-width="1.2" />
+        <ellipse cx="18" cy="16" rx="16" ry="10" fill="#ffffff" opacity="0.42" />
+        <text x="30" y="39" text-anchor="middle">P</text>
+      </g>
+
+      <g transform="translate(204 8)">
+        <rect width="60" height="60" rx="7" fill="url(#tileShell)" stroke="#0097b0" stroke-width="1.2" />
+        <ellipse cx="18" cy="16" rx="16" ry="10" fill="#ffffff" opacity="0.42" />
+        <text x="30" y="39" text-anchor="middle">E</text>
+      </g>
+    </g>
+
+    <!-- Golden bingo ball — 60px diameter, aligned to tile height -->
+    <g transform="translate(276 8)">
+      <circle cx="30" cy="30" r="30" fill="url(#ballShell)" stroke="#c89400" stroke-width="1.5" />
+      <ellipse cx="19" cy="17" rx="11" ry="8" fill="#ffffff" opacity="0.62" />
+      <circle cx="30" cy="30" r="17.5" fill="#ffffff" stroke="#d8d0c0" stroke-width="1" />
+      <text
+        x="30"
+        y="31"
+        text-anchor="middle"
+        font-family="'American Typewriter', 'Courier New', Courier, monospace"
+        font-weight="700"
+        font-size="17"
+        fill="#111111"
+      >O</text>
+      <text
+        x="30"
+        y="43"
+        text-anchor="middle"
+        font-family="Montserrat, Arial, sans-serif"
+        font-weight="800"
+        font-size="9.5"
+        fill="#111111"
+      >69</text>
+    </g>
+  </g>
 </svg>
