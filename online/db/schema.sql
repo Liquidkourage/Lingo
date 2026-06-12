@@ -40,6 +40,7 @@ alter table app_state add column if not exists all_players_submitted_at timestam
 
 insert into app_state (
   id,
+  event_code,
   version,
   mode,
   phase,
@@ -55,6 +56,7 @@ insert into app_state (
 )
 values (
   1,
+  'default',
   1,
   'lingo',
   'idle',
@@ -69,6 +71,8 @@ values (
   ''
 )
 on conflict (id) do nothing;
+
+update app_state set event_code = 'default' where id = 1 and (event_code is null or event_code = '');
 
 create table if not exists players (
   id bigserial primary key,
@@ -156,3 +160,8 @@ create unique index if not exists idx_users_auth_token on users(auth_token) wher
 
 alter table players add column if not exists user_id bigint references users(id) on delete set null;
 create index if not exists idx_players_user_session on players(session_id, user_id);
+
+alter table app_state add column if not exists event_code text;
+update app_state set event_code = 'default' where event_code is null or event_code = '';
+alter table app_state alter column event_code set default 'default';
+create unique index if not exists idx_app_state_event_code on app_state(event_code);

@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { AsyncLocalStorage } = require("async_hooks");
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
@@ -68,6 +69,88 @@ const pool = new Pool({
   connectionString: databaseUrl,
   ssl: databaseUrl.includes("localhost") ? false : { rejectUnauthorized: false },
 });
+
+const DEFAULT_EVENT_CODE = "default";
+const eventContext = new AsyncLocalStorage();
+
+function normalizeEventCode(value) {
+  const code = String(value || "").trim().toLowerCase();
+  if (!code) {
+    return DEFAULT_EVENT_CODE;
+  }
+  if (!/^[a-z0-9][a-z0-9_-]{2,31}$/.test(code)) {
+    throw new Error("Event code must be 3–32 letters, numbers, _ or -.");
+  }
+  return code;
+}
+
+function currentEventCode() {
+  return eventContext.getStore()?.eventCode || DEFAULT_EVENT_CODE;
+}
+
+function runWithEventCode(eventCode, fn) {
+  return eventContext.run({ eventCode: normalizeEventCode(eventCode) }, fn);
+}
+
+function resolveEventCodeFromRequest(req) {
+  return normalizeEventCode(
+    req.get("x-lingo-event-code")
+    || req.query.event
+    || req.query.eventCode
+    || req.body?.eventCode
+    || req.body?.event,
+  );
+}
+
+function attachEventContext(req, res, next) {
+  try {
+    runWithEventCode(resolveEventCodeFromRequest(req), next);
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+}
+
+function generateEventCode() {
+  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
+  let code = "";
+  for (let index = 0; index < 6; index += 1) {
+    code += alphabet[crypto.randomInt(alphabet.length)];
+  }
+  return code;
+}
+
+async function createEventRow(eventCode, client = pool) {
+  const code = normalizeEventCode(eventCode);
+  const existing = await client.query(
+    "select 1 from app_state where event_code = $1",
+    [code],
+  );
+  if (existing.rowCount) {
+    throw new Error("Event code already in use. Pick another.");
+  }
+
+  const sessionId = `session_${Date.now()}`;
+  const result = await client.query(
+    `insert into app_state (
+       event_code,
+       version,
+       mode,
+       phase,
+       session_id,
+       round_number,
+       current_word,
+       answer_revealed,
+       ball_multiplier,
+       balls_remaining,
+       guess_window_seconds,
+       results_window_seconds,
+       host_note
+     ) values ($1, 1, 'lingo', 'idle', $2, 0, '', false, 1, 0, $3, $4, '')
+     returning *`,
+    [code, sessionId, DEFAULT_GUESS_WINDOW_SECONDS, DEFAULT_RESULTS_WINDOW_SECONDS],
+  );
+  return result.rows[0];
+}
 
 const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
@@ -1397,6 +1480,7 @@ async function ensureSchema() {
 function serializeState(row) {
   if (!row) return null;
   return {
+    eventCode: row.event_code || DEFAULT_EVENT_CODE,
     version: row.version,
     mode: row.mode,
     phase: row.phase,
@@ -1438,14 +1522,18 @@ function serializePublicState(row) {
   return {
     ...state,
     publicFirstLetter,
-    playSiteUrl: getPlaySiteUrl(),
+    playSiteUrl: playPageUrl(state.eventCode),
     revealedWord: state.answerRevealed ? state.currentWord : "",
     currentWord: state.answerRevealed ? state.currentWord : "",
   };
 }
 
 async function getState(client = pool) {
-  const result = await client.query("select * from app_state where id = 1");
+  const eventCode = currentEventCode();
+  const result = await client.query("select * from app_state where event_code = $1", [eventCode]);
+  if (!result.rows[0]) {
+    throw new Error(`Unknown event "${eventCode}". Create an event on the host page first.`);
+  }
   return result.rows[0];
 }
 
@@ -1489,6 +1577,7 @@ async function updateState(patch, client = pool) {
     JSON.stringify(parseRoundBallStakesPreserveOrder(next)),
     patchOrState("all_players_submitted_at"),
     Number(next.guess_window_seq ?? state.guess_window_seq ?? 0),
+    currentEventCode(),
   ];
 
   const result = await client.query(
@@ -1519,7 +1608,7 @@ async function updateState(patch, client = pool) {
          all_players_submitted_at = $24,
          guess_window_seq = $25,
          updated_at = now()
-     where id = 1
+     where event_code = $26
      returning *`,
     params
   );
@@ -1813,13 +1902,20 @@ function getPlaySiteUrl() {
   return (configured || DEFAULT_PLAY_SITE_URL).replace(/\/$/, "");
 }
 
-function playPageUrl() {
-  return `${getPlaySiteUrl()}/`;
+function playPageUrl(eventCode = currentEventCode()) {
+  const code = normalizeEventCode(eventCode);
+  const base = `${getPlaySiteUrl()}/`;
+  if (code === DEFAULT_EVENT_CODE) {
+    return base;
+  }
+  return `${base}?event=${encodeURIComponent(code)}`;
 }
+
+app.use("/api", attachEventContext);
 
 app.get("/api/play-qr", async (req, res) => {
   try {
-    const url = playPageUrl();
+    const url = playPageUrl(resolveEventCodeFromRequest(req));
     const png = await QRCode.toBuffer(url, {
       type: "png",
       width: 400,
@@ -2252,6 +2348,27 @@ app.get("/api/admin/players", requireAdmin, async (_req, res) => {
 });
 
 async function handleAdminAction(action, body) {
+  if (action === "create-event") {
+    let code = body.eventCode ? normalizeEventCode(body.eventCode) : "";
+    if (!code) {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const candidate = generateEventCode();
+        const exists = await pool.query(
+          "select 1 from app_state where event_code = $1",
+          [candidate],
+        );
+        if (!exists.rowCount) {
+          code = candidate;
+          break;
+        }
+      }
+      if (!code) {
+        throw new Error("Could not generate a unique event code.");
+      }
+    }
+    return serializeState(await createEventRow(code));
+  }
+
   const state = await getState();
   const word = normalizeWordInput(body.word);
 
@@ -3151,10 +3268,17 @@ app.use((req, res, next) => {
   res.sendFile(path.join(staticDir, fileName));
 });
 
+async function advanceAllTimedPhases() {
+  const result = await pool.query("select event_code from app_state");
+  for (const row of result.rows) {
+    await runWithEventCode(row.event_code, () => maybeAdvanceTimedPhase());
+  }
+}
+
 function startBackgroundTimers() {
   timerTickHandle = setInterval(() => {
     if (shuttingDown || !appReady) return;
-    maybeAdvanceTimedPhase().catch((error) => {
+    advanceAllTimedPhases().catch((error) => {
       if (!shuttingDown) {
         console.error("timer tick", error.message);
       }
@@ -3186,9 +3310,12 @@ async function bootstrapWithRetry(maxAttempts = 5) {
     try {
       await ensureSchema();
       const state = await getState();
+      const eventCount = await pool.query("select count(*)::int as count from app_state");
       const totalWords = await countWords(pool);
       appReady = true;
-      console.log(`Lingo online app ready. Session: ${state.session_id}. Words: ${totalWords}`);
+      console.log(
+        `Lingo online app ready. Event: ${state.event_code}. Sessions: ${eventCount.rows[0]?.count || 0}. Words: ${totalWords}`,
+      );
       return;
     } catch (error) {
       console.error(`Bootstrap attempt ${attempt}/${maxAttempts} failed:`, error.message);

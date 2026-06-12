@@ -3724,6 +3724,7 @@
     </div>
   </div>
 
+  <script src="/event-code.js"></script>
   <script>
     const els = {
       stage: document.getElementById("stage"),
@@ -5729,7 +5730,7 @@
     async function fetchPublicState() {
       if (IS_DEMO) return;
 
-      const response = await fetch("/api/public-state");
+      const response = await fetch(LingoEvent.withEventQuery("/api/public-state"));
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
         throw new Error(payload.error || "Could not load public state.");

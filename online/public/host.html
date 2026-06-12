@@ -1217,10 +1217,15 @@
         </div>
         <div class="host-connect">
           <div class="field">
+            <label for="eventCodeInput">Event code</label>
+            <input id="eventCodeInput" type="text" maxlength="32" autocapitalize="none" spellcheck="false" placeholder="e.g. friday-night" />
+          </div>
+          <div class="field">
             <label for="adminKey">Admin key</label>
             <input id="adminKey" type="password" autocomplete="current-password" placeholder="LINGO_ADMIN_KEY" />
           </div>
           <div class="host-connect-actions">
+            <button id="createEventBtn" class="secondary" type="button">New event</button>
             <button id="connectBtn" class="good" type="button">Connect</button>
             <button id="refreshBtn" class="secondary" type="button">Refresh</button>
           </div>
@@ -1228,7 +1233,7 @@
         </div>
       </div>
 
-      <p class="host-links">Players <strong>/</strong> · Venue <strong>/display</strong> · Bingo <strong><a href="/bingo/calls" style="color:inherit;">/bingo/calls</a></strong> · Rehearsal <strong><a href="/rehearsal" style="color:inherit;">/rehearsal</a></strong></p>
+      <p class="host-links" id="hostLinks">Players <strong>/</strong> · Venue <strong>/display</strong> · Bingo <strong><a href="/bingo/calls" style="color:inherit;">/bingo/calls</a></strong> · Rehearsal <strong><a href="/rehearsal" style="color:inherit;">/rehearsal</a></strong></p>
 
       <div class="host-status" aria-label="Live session">
         <div class="meta-slot">
@@ -1477,6 +1482,9 @@
       hostStage: document.getElementById('hostStage'),
       phaseBadge: document.getElementById('phaseBadge'),
       adminKey: document.getElementById('adminKey'),
+      eventCodeInput: document.getElementById('eventCodeInput'),
+      createEventBtn: document.getElementById('createEventBtn'),
+      hostLinks: document.getElementById('hostLinks'),
       connectBtn: document.getElementById('connectBtn'),
       refreshBtn: document.getElementById('refreshBtn'),
       connectStatus: document.getElementById('connectStatus'),
@@ -1545,6 +1553,48 @@
     let rosterFilter = 'all';
     let rosterSearchQuery = '';
 
+    function storedEventCode() {
+      return localStorage.getItem('lingo_host_event_code') || '';
+    }
+
+    function setStoredEventCode(value) {
+      localStorage.setItem('lingo_host_event_code', value);
+    }
+
+    function hostEventCode() {
+      return String(els.eventCodeInput?.value || storedEventCode() || 'default').trim().toLowerCase() || 'default';
+    }
+
+    function applyHostEventCode(code, options = {}) {
+      const normalized = String(code || '').trim().toLowerCase() || 'default';
+      if (els.eventCodeInput) {
+        els.eventCodeInput.value = normalized;
+      }
+      setStoredEventCode(normalized);
+      if (options.updateUrl !== false) {
+        const url = new URL(window.location.href);
+        if (normalized === 'default') {
+          url.searchParams.delete('event');
+        } else {
+          url.searchParams.set('event', normalized);
+        }
+        window.history.replaceState({}, '', url);
+      }
+      renderHostLinks(normalized);
+    }
+
+    function renderHostLinks(eventCode) {
+      if (!els.hostLinks) return;
+      const code = String(eventCode || hostEventCode()).trim().toLowerCase() || 'default';
+      const query = code === 'default' ? '' : `?event=${encodeURIComponent(code)}`;
+      els.hostLinks.innerHTML = [
+        `Players <strong>/${query}</strong>`,
+        `Venue <strong>/display${query}</strong>`,
+        `Bingo <strong><a href="/bingo/calls${query}" style="color:inherit;">/bingo/calls</a></strong>`,
+        `Rehearsal <strong><a href="/rehearsal${query}" style="color:inherit;">/rehearsal</a></strong>`,
+      ].join(' · ');
+    }
+
     function storedKey() {
       return localStorage.getItem('lingo_host_admin_key') || '';
     }
@@ -1565,6 +1615,7 @@
         headers: {
           'Content-Type': 'application/json',
           'x-lingo-admin-key': key,
+          'x-lingo-event-code': hostEventCode(),
           ...(options.headers || {}),
         },
       });
@@ -2347,6 +2398,7 @@
           setStatus(els.connectStatus, 'Enter the admin key first.', 'error');
           return;
         }
+        applyHostEventCode(hostEventCode());
         setStoredKey(key);
         await loadState(true);
         await loadPlayers();
@@ -2355,6 +2407,40 @@
         scheduleHostTick();
       } catch (error) {
         setStatus(els.connectStatus, error.message || 'Connection failed.', 'error');
+      }
+    });
+
+    els.createEventBtn.addEventListener('click', async () => {
+      try {
+        const key = els.adminKey.value.trim();
+        if (!key) {
+          setStatus(els.connectStatus, 'Enter the admin key first.', 'error');
+          return;
+        }
+        setStoredKey(key);
+        const requested = els.eventCodeInput.value.trim();
+        const response = await adminFetch('/api/admin/create-event', {
+          method: 'POST',
+          body: JSON.stringify(requested ? { eventCode: requested } : {}),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not create event.');
+        }
+        applyHostEventCode(payload.state.eventCode || requested);
+        currentState = payload.state;
+        renderState();
+        await loadPlayers(true);
+        setStatus(
+          els.connectStatus,
+          `Event "${payload.state.eventCode}" ready. Share the player and display links below.`,
+          'success',
+        );
+        if (pollHandle) window.clearInterval(pollHandle);
+        scheduleHostPolling();
+        scheduleHostTick();
+      } catch (error) {
+        setStatus(els.connectStatus, error.message || 'Could not create event.', 'error');
       }
     });
 
@@ -2520,6 +2606,9 @@
     });
 
     wireHostModals();
+
+    const urlEventCode = new URLSearchParams(window.location.search).get('event');
+    applyHostEventCode(urlEventCode || storedEventCode() || 'default', { updateUrl: Boolean(urlEventCode) });
 
     els.adminKey.value = storedKey();
     if (els.adminKey.value) {

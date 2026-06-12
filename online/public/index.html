@@ -1652,6 +1652,7 @@
 
   <script src="/bingo-shared.js"></script>
   <script src="/bingo-player.js"></script>
+  <script src="/event-code.js"></script>
   <script>
     const els = {
       stage: document.getElementById('playStage'),
@@ -1967,7 +1968,7 @@
         const response = await fetch('/api/public/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify(LingoEvent.eventJson({ username, password })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -1994,7 +1995,7 @@
         const response = await fetch('/api/public/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify(LingoEvent.eventJson({ username, password })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -2019,7 +2020,7 @@
           await fetch('/api/public/logout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ authToken }),
+            body: JSON.stringify(LingoEvent.eventJson({ authToken })),
           });
         } catch (error) {
           // Still clear local session if the network call fails.
@@ -2055,10 +2056,10 @@
       const response = await fetch('/api/public/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(LingoEvent.eventJson({
           authToken,
           playerToken: getPlayerToken(),
-        }),
+        })),
       });
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
@@ -3011,7 +3012,7 @@
         const response = await fetch('/api/public/host-message', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ authToken, playerToken, message }),
+          body: JSON.stringify(LingoEvent.eventJson({ authToken, playerToken, message })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -3363,11 +3364,11 @@
         const response = await fetch('/api/public/leave', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          body: JSON.stringify(LingoEvent.eventJson({
             authToken,
             displayName: activeUserName(),
             playerToken,
-          }),
+          })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -3386,6 +3387,10 @@
 
     function publicStateUrl() {
       const params = new URLSearchParams();
+      const eventCode = LingoEvent.current();
+      if (eventCode !== LingoEvent.DEFAULT_EVENT_CODE) {
+        params.set('event', eventCode);
+      }
       const authToken = getAuthToken();
       if (authToken) {
         params.set('authToken', authToken);
@@ -3460,7 +3465,7 @@
         const response = await fetch('/api/public/submit-guess', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ authToken, playerToken, guess }),
+          body: JSON.stringify(LingoEvent.eventJson({ authToken, playerToken, guess })),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
