@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 238 48" role="img" aria-label="TYPEO">
+  <defs>
+    <linearGradient id="tileShell" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9af2ff" />
+      <stop offset="45%" stop-color="#00c8dc" />
+      <stop offset="100%" stop-color="#00889f" />
+    </linearGradient>
+    <radialGradient id="ballShell" cx="32%" cy="26%" r="70%">
+      <stop offset="0%" stop-color="#fff4a0" />
+      <stop offset="40%" stop-color="#ffd633" />
+      <stop offset="100%" stop-color="#c89400" />
+    </radialGradient>
+  </defs>
+
+  <!-- Compact wordmark for small UI (host header). Same palette, fewer fine details. -->
+  <g
+    font-family="'American Typewriter', 'Courier New', Courier, monospace"
+    font-weight="800"
+    font-size="24"
+    fill="#ffffff"
+  >
+    <g transform="translate(0 2)">
+      <rect width="44" height="44" rx="6" fill="url(#tileShell)" stroke="#0097b0" stroke-width="1.4" />
+      <ellipse cx="14" cy="12" rx="10" ry="6" fill="#ffffff" opacity="0.35" />
+      <text x="22" y="30" text-anchor="middle">T</text>
+    </g>
+
+    <g transform="translate(48 2)">
+      <rect width="44" height="44" rx="6" fill="url(#tileShell)" stroke="#0097b0" stroke-width="1.4" />
+      <ellipse cx="14" cy="12" rx="10" ry="6" fill="#ffffff" opacity="0.35" />
+      <text x="22" y="30" text-anchor="middle">Y</text>
+    </g>
+
+    <g transform="translate(96 2)">
+      <rect width="44" height="44" rx="6" fill="url(#tileShell)" stroke="#0097b0" stroke-width="1.4" />
+      <ellipse cx="14" cy="12" rx="10" ry="6" fill="#ffffff" opacity="0.35" />
+      <text x="22" y="30" text-anchor="middle">P</text>
+    </g>
+
+    <g transform="translate(144 2)">
+      <rect width="44" height="44" rx="6" fill="url(#tileShell)" stroke="#0097b0" stroke-width="1.4" />
+      <ellipse cx="14" cy="12" rx="10" ry="6" fill="#ffffff" opacity="0.35" />
+      <text x="22" y="30" text-anchor="middle">E</text>
+    </g>
+  </g>
+
+  <g transform="translate(194 2)">
+    <circle cx="22" cy="22" r="22" fill="url(#ballShell)" stroke="#c89400" stroke-width="1.4" />
+    <ellipse cx="14" cy="12" rx="8" ry="5.5" fill="#ffffff" opacity="0.55" />
+    <circle cx="22" cy="22" r="13.5" fill="#ffffff" stroke="#d8d0c0" stroke-width="0.9" />
+    <text
+      x="22"
+      y="27"
+      text-anchor="middle"
+      font-family="'American Typewriter', 'Courier New', Courier, monospace"
+      font-weight="800"
+      font-size="15"
+      fill="#111111"
+    >O</text>
+  </g>
+</svg>
