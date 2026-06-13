@@ -4409,12 +4409,19 @@
     function playSiteUrl(state = currentState) {
       const configured = String(state?.playSiteUrl || "").trim();
       if (configured) return configured.replace(/\/$/, "");
-      return "https://lingo.liquidkourage.com";
+      const base = "https://lingo.liquidkourage.com";
+      const code = String(state?.eventCode || TypeoEvent.current()).trim().toLowerCase();
+      if (code && code !== TypeoEvent.DEFAULT_EVENT_CODE) {
+        return `${base}/?event=${encodeURIComponent(code)}`;
+      }
+      return base;
     }
 
     function playSiteUrlDisplay(state = currentState) {
       try {
-        return new URL(playSiteUrl(state)).host;
+        const parsed = new URL(playSiteUrl(state));
+        const path = parsed.pathname === "/" ? "" : parsed.pathname;
+        return `${parsed.host}${path}${parsed.search || ""}`;
       } catch (_error) {
         return playSiteUrl(state).replace(/^https?:\/\//, "");
       }
