@@ -503,6 +503,12 @@
       display: block;
     }
 
+    .play-stage[data-viewer-joined="true"][data-phase="guessing"] .play-setup,
+    .play-stage[data-viewer-joined="true"][data-phase="results"] .play-setup,
+    .play-stage[data-viewer-joined="true"][data-phase="ended"] .play-setup {
+      display: none;
+    }
+
     .play-setup-panel {
       padding: 0.55rem 0.65rem 0.6rem;
       border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.45);
@@ -1773,7 +1779,7 @@
       els.playBingo.hidden = !active;
       if (active) {
         els.stage.dataset.bingoMode = 'true';
-        els.phaseBadge.textContent = 'Final: Bingo';
+        renderPhaseBadge(state);
         els.phaseLine.innerHTML = `${TypeoBrand.wrap()} is done — this is the finale. Watch your card light up as numbers are called.`;
         els.playRound.hidden = true;
         els.playStats.hidden = true;
@@ -2520,7 +2526,7 @@
         return `paused:${phase}:${state.roundNumber || 0}:${state.timerPausedRemainingSeconds}`;
       }
       if (phase === 'guessing') {
-        return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ''}:${state.guessWindowSeconds || ''}:${state.allPlayersSubmittedAtIso || ''}`;
+        return `g:${state.roundNumber || 0}:${state.guessWindowSeq || 0}:${state.guessWindowOpenedAtIso || ''}:${state.guessWindowSeconds || ''}:${state.allPlayersSubmittedAtIso || ''}`;
       }
       if (phase === 'results') {
         return `r:${state.roundNumber || 0}:${state.resultsWindowOpenedAtIso || ''}:${state.resultsWindowSeconds || ''}`;
@@ -2616,35 +2622,30 @@
         timerZeroFetchPending = false;
       }
 
+      const serverRemaining = serverPhaseSecondsRemaining(state);
+
       if (isTimerPaused(state)) {
-        const serverRemaining = serverPhaseSecondsRemaining(state);
         timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
         timerDisplay.deadlineMs = null;
         return;
       }
 
+      if (serverRemaining != null && serverRemaining >= 0) {
+        timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
+        timerDisplay.baseRemaining = null;
+        return;
+      }
+
       const openedDeadlineMs = phaseDeadlineMs(state);
       if (openedDeadlineMs != null) {
-        if (keyChanged) {
-          const serverRemaining = serverPhaseSecondsRemaining(state);
-          if (serverRemaining != null && serverRemaining >= 0) {
-            timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
-          } else {
-            timerDisplay.deadlineMs = openedDeadlineMs;
-          }
-        } else if (timerDisplay.deadlineMs == null) {
-          timerDisplay.deadlineMs = openedDeadlineMs;
-        }
+        timerDisplay.deadlineMs = openedDeadlineMs;
         timerDisplay.baseRemaining = null;
         return;
       }
 
       timerDisplay.deadlineMs = null;
-      const serverRemaining = serverPhaseSecondsRemaining(state);
-      if (keyChanged || timerDisplay.baseRemaining == null || serverRemaining == null) {
-        timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
-        timerDisplay.syncedAtMs = Date.now();
-      }
+      timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
+      timerDisplay.syncedAtMs = Date.now();
     }
 
     function phaseSecondsRemaining(state) {
@@ -2780,6 +2781,11 @@
     }
 
     function renderPhaseBadge(state) {
+      if (isBingoMode(state)) {
+        els.phaseBadge.textContent = 'Final: Bingo';
+        return;
+      }
+
       const phase = state.phase || 'idle';
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;
       const paused = shouldEmphasizeTimerPause(state);
@@ -3340,6 +3346,11 @@
       const viewer = state.viewer;
 
       els.stage.dataset.phase = phase;
+      if (isViewerJoined(state)) {
+        els.stage.dataset.viewerJoined = 'true';
+      } else {
+        delete els.stage.dataset.viewerJoined;
+      }
       if (shouldEmphasizeTimerPause(state)) {
         els.stage.dataset.timerPaused = 'true';
       } else {

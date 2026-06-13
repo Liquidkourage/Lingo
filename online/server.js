@@ -588,10 +588,14 @@ function buildWordQueueAdvancePatch(state) {
 }
 
 function endRoundPatch(state) {
-  return {
-    ...endCurrentWordPatch(),
-    ...buildWordQueueAdvancePatch(state),
-  };
+  return endCurrentWordPatch();
+}
+
+function wordQueueAdvancePatchForStartRound(state) {
+  if (state.phase !== "ended" || !state.answer_revealed) {
+    return {};
+  }
+  return buildWordQueueAdvancePatch(state);
 }
 
 async function buildHostWordSuggestions(exclusions, count = HOST_WORD_SUGGESTION_COUNT, client = pool) {
@@ -1726,7 +1730,7 @@ async function applyRevealResultsScoring(state, client) {
   }
 
   if (ballsRemaining === 6 * multiplier) {
-    ballsRemaining = 5 * multiplier;
+    ballsRemaining = 4 * multiplier;
     if (someoneNewlySolved) {
       ballsRemaining -= multiplier;
     }
@@ -1907,9 +1911,9 @@ function getPlaySiteUrl() {
 
 function playPageUrl(eventCode = currentEventCode()) {
   const code = normalizeEventCode(eventCode);
-  const base = `${getPlaySiteUrl()}/`;
+  const base = `${getPlaySiteUrl()}/play`;
   if (code === DEFAULT_EVENT_CODE) {
-    return base;
+    return `${base}`;
   }
   return `${base}?event=${encodeURIComponent(code)}`;
 }
@@ -2424,9 +2428,11 @@ async function handleAdminAction(action, body) {
       return serializeState(await updateState(patch));
     }
     case "start-round": {
-      let activeWord = normalizeWordInput(state.current_word);
+      const queueAdvance = wordQueueAdvancePatchForStartRound(state);
+      const stateAfterQueue = { ...state, ...queueAdvance };
+      let activeWord = normalizeWordInput(stateAfterQueue.current_word);
       if (!activeWord) {
-        const queue = parseWordQueueFromState(state.host_word_queue);
+        const queue = parseWordQueueFromState(stateAfterQueue.host_word_queue);
         activeWord = queue[0] || "";
       }
       if (!activeWord) {
@@ -2439,6 +2445,7 @@ async function handleAdminAction(action, body) {
         await client.query("begin");
         const openingStake = 6 * multiplier;
         const startPatch = {
+          ...queueAdvance,
           mode: "lingo",
           phase: "guessing",
           round_number: nextRound,
@@ -2459,7 +2466,7 @@ async function handleAdminAction(action, body) {
           ...clearTimerPausePatch(),
           ...clearAllSubmittedGracePatch(),
         };
-        if (!normalizeWordInput(state.current_word)) {
+        if (!normalizeWordInput(stateAfterQueue.current_word)) {
           startPatch.current_word = activeWord;
         }
         const nextState = await updateState(startPatch, client);
@@ -3257,17 +3264,21 @@ app.use((req, res, next) => {
     next();
     return;
   }
-  const fileName = req.path === "/host"
-    ? "host.html"
-    : req.path === "/display"
-      ? "display.html"
-      : req.path === "/rehearsal"
-        ? "rehearsal.html"
-        : req.path === "/bingo" || req.path === "/bingo.html"
-          ? "bingo.html"
-          : req.path === "/bingo/calls" || req.path === "/bingo-calls.html"
-            ? "bingo-calls.html"
-            : "index.html";
+  const fileName = req.path === "/"
+    ? "lobby.html"
+    : req.path === "/play"
+      ? "index.html"
+      : req.path === "/host"
+        ? "host.html"
+        : req.path === "/display"
+          ? "display.html"
+          : req.path === "/rehearsal"
+            ? "rehearsal.html"
+            : req.path === "/bingo" || req.path === "/bingo.html"
+              ? "bingo.html"
+              : req.path === "/bingo/calls" || req.path === "/bingo-calls.html"
+                ? "bingo-calls.html"
+                : "index.html";
   res.sendFile(path.join(staticDir, fileName));
 });
 

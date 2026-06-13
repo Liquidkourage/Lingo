@@ -1234,7 +1234,7 @@
         </div>
       </div>
 
-      <p class="host-links" id="hostLinks">Players <strong>/</strong> · Venue <strong>/display</strong> · Bingo <strong><a href="/bingo/calls" style="color:inherit;">/bingo/calls</a></strong> · Rehearsal <strong><a href="/rehearsal" style="color:inherit;">/rehearsal</a></strong></p>
+      <p class="host-links" id="hostLinks">Players <strong>/play</strong> · Venue <strong>/display</strong> · Bingo <strong><a href="/bingo/calls" style="color:inherit;">/bingo/calls</a></strong> · Rehearsal <strong><a href="/rehearsal" style="color:inherit;">/rehearsal</a></strong></p>
 
       <div class="host-status" aria-label="Live session">
         <div class="meta-slot">
@@ -1589,7 +1589,7 @@
       const code = String(eventCode || hostEventCode()).trim().toLowerCase() || 'default';
       const query = code === 'default' ? '' : `?event=${encodeURIComponent(code)}`;
       els.hostLinks.innerHTML = [
-        `Players <strong>/${query}</strong>`,
+        `Players <strong>/play${query}</strong>`,
         `Venue <strong>/display${query}</strong>`,
         `Bingo <strong><a href="/bingo/calls${query}" style="color:inherit;">/bingo/calls</a></strong>`,
         `Rehearsal <strong><a href="/rehearsal${query}" style="color:inherit;">/rehearsal</a></strong>`,

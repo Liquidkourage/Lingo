@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TYPEO — Join a game</title>
+  <link rel="stylesheet" href="/typeo-brand.css" />
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      font-family: Montserrat, Arial, sans-serif;
+      color: #fff;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(40, 120, 200, 0.18) 0%, transparent 68%),
+        radial-gradient(ellipse 55% 35% at 50% 100%, rgba(230, 184, 0, 0.08) 0%, transparent 72%),
+        #020818;
+    }
+
+    .lobby-card {
+      width: min(100%, 420px);
+      padding: 1.35rem 1.25rem 1.4rem;
+      border: 2px solid rgba(255, 204, 0, 0.45);
+      border-radius: 0.35rem;
+      background: rgba(2, 8, 24, 0.92);
+      text-align: center;
+    }
+
+    .lobby-logo {
+      display: block;
+      width: min(88%, 300px);
+      height: auto;
+      margin: 0 auto 1rem;
+    }
+
+    .lobby-title {
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ffcc00;
+    }
+
+    .lobby-copy {
+      margin: 0 0 1.1rem;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      color: rgba(200, 215, 235, 0.82);
+    }
+
+    .lobby-field {
+      text-align: left;
+      margin-bottom: 0.85rem;
+    }
+
+    .lobby-field label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.78);
+    }
+
+    .lobby-field input {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border: 2px solid rgba(62, 200, 232, 0.35);
+      border-radius: 0.2rem;
+      background: #000008;
+      color: #fff;
+      font: inherit;
+      font-size: 1rem;
+    }
+
+    .lobby-actions {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 2px solid rgba(255, 204, 0, 0.55);
+      border-radius: 0.2rem;
+      background: rgba(255, 204, 0, 0.14);
+      color: #ffe566;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      border-color: rgba(62, 200, 232, 0.35);
+      background: rgba(0, 0, 0, 0.35);
+      color: rgba(200, 220, 245, 0.88);
+      font-weight: 600;
+    }
+
+    .lobby-links {
+      margin: 1rem 0 0;
+      font-size: 0.78rem;
+      color: rgba(180, 198, 220, 0.72);
+    }
+
+    .lobby-links a {
+      color: #00d4ff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <main class="lobby-card">
+    <img class="lobby-logo" src="/assets/typeo-wordmark.svg" width="320" height="72" alt="TYPEO" />
+    <h1 class="lobby-title">Join tonight's game</h1>
+    <p class="lobby-copy">Enter the event code from the host or venue screen. You'll join that game's lobby on your phone.</p>
+
+    <form id="lobbyForm">
+      <div class="lobby-field">
+        <label for="eventCodeInput">Event code</label>
+        <input id="eventCodeInput" type="text" maxlength="32" autocapitalize="none" spellcheck="false" placeholder="e.g. jay" required />
+      </div>
+      <div class="lobby-actions">
+        <button type="submit">Join game</button>
+        <button type="button" class="secondary" id="defaultPlayBtn">Play on default event</button>
+      </div>
+    </form>
+
+    <p class="lobby-links">
+      Hosting? <a href="/host">Open host control</a> · Venue screen: <a href="/display">/display</a>
+    </p>
+  </main>
+
+  <script src="/event-code.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const eventFromUrl = params.get('event');
+    const input = document.getElementById('eventCodeInput');
+
+    if (eventFromUrl && eventFromUrl.trim()) {
+      window.location.replace(TypeoEvent.withEventQuery('/play'));
+    }
+
+    try {
+      const stored = localStorage.getItem('lingo_event_code');
+      if (stored && stored !== 'default') {
+        input.value = stored;
+      }
+    } catch (_error) {
+      // Ignore storage failures.
+    }
+
+    function goToPlay(eventCode) {
+      const code = String(eventCode || '').trim().toLowerCase();
+      if (!code) return;
+      try {
+        localStorage.setItem('lingo_event_code', code);
+      } catch (_error) {
+        // Ignore storage failures.
+      }
+      const url = code === 'default'
+        ? '/play'
+        : `/play?event=${encodeURIComponent(code)}`;
+      window.location.href = url;
+    }
+
+    document.getElementById('lobbyForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      goToPlay(input.value);
+    });
+
+    document.getElementById('defaultPlayBtn').addEventListener('click', () => {
+      goToPlay('default');
+    });
+  </script>
+</body>
+</html>

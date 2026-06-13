@@ -4243,7 +4243,7 @@
         return `paused:${phase}:${state.roundNumber || 0}:${state.timerPausedRemainingSeconds}`;
       }
       if (phase === "guessing") {
-        return `g:${state.roundNumber || 0}:${state.guessWindowOpenedAtIso || ""}:${state.guessWindowSeconds || ""}:${state.allPlayersSubmittedAtIso || ""}`;
+        return `g:${state.roundNumber || 0}:${state.guessWindowSeq || 0}:${state.guessWindowOpenedAtIso || ""}:${state.guessWindowSeconds || ""}:${state.allPlayersSubmittedAtIso || ""}`;
       }
       if (phase === "results") {
         return `r:${state.roundNumber || 0}:${state.resultsWindowOpenedAtIso || ""}:${state.resultsWindowSeconds || ""}`;
@@ -4339,35 +4339,30 @@
         timerZeroFetchPending = false;
       }
 
+      const serverRemaining = serverPhaseSecondsRemaining(state);
+
       if (state.timerPaused) {
-        const serverRemaining = serverPhaseSecondsRemaining(state);
         timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
         timerDisplay.deadlineMs = null;
         return;
       }
 
+      if (serverRemaining != null && serverRemaining >= 0) {
+        timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
+        timerDisplay.baseRemaining = null;
+        return;
+      }
+
       const openedDeadlineMs = phaseDeadlineMs(state);
       if (openedDeadlineMs != null) {
-        if (keyChanged) {
-          const serverRemaining = serverPhaseSecondsRemaining(state);
-          if (serverRemaining != null && serverRemaining >= 0) {
-            timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
-          } else {
-            timerDisplay.deadlineMs = openedDeadlineMs;
-          }
-        } else if (timerDisplay.deadlineMs == null) {
-          timerDisplay.deadlineMs = openedDeadlineMs;
-        }
+        timerDisplay.deadlineMs = openedDeadlineMs;
         timerDisplay.baseRemaining = null;
         return;
       }
 
       timerDisplay.deadlineMs = null;
-      const serverRemaining = serverPhaseSecondsRemaining(state);
-      if (keyChanged || timerDisplay.baseRemaining == null || serverRemaining == null) {
-        timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
-        timerDisplay.syncedAtMs = Date.now();
-      }
+      timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
+      timerDisplay.syncedAtMs = Date.now();
     }
 
     function phaseSecondsRemaining(state) {
@@ -4409,10 +4404,10 @@
     function playSiteUrl(state = currentState) {
       const configured = String(state?.playSiteUrl || "").trim();
       if (configured) return configured.replace(/\/$/, "");
-      const base = "https://lingo.liquidkourage.com";
+      const base = "https://lingo.liquidkourage.com/play";
       const code = String(state?.eventCode || TypeoEvent.current()).trim().toLowerCase();
       if (code && code !== TypeoEvent.DEFAULT_EVENT_CODE) {
-        return `${base}/?event=${encodeURIComponent(code)}`;
+        return `${base}?event=${encodeURIComponent(code)}`;
       }
       return base;
     }
@@ -5441,6 +5436,14 @@
       }
     }
 
+    function formatFanfareNameList(names) {
+      const list = names.map((name) => String(name || "").trim()).filter(Boolean);
+      if (!list.length) return "";
+      if (list.length === 1) return list[0];
+      if (list.length === 2) return `${list[0]} and ${list[1]}`;
+      return `${list.slice(0, -1).join(", ")}, and ${list[list.length - 1]}`;
+    }
+
     function renderSolveFanfare(state, previousPhase) {
       const phase = state.phase || "idle";
       if (previousPhase !== "guessing" || (phase !== "results" && phase !== "ended")) {
@@ -5454,11 +5457,9 @@
       lastRevealFanfareKey = key;
 
       els.solveFanfareNames.replaceChildren();
-      winners.forEach((winner) => {
-        const item = document.createElement("li");
-        item.textContent = winner.displayName;
-        els.solveFanfareNames.appendChild(item);
-      });
+      const item = document.createElement("li");
+      item.textContent = formatFanfareNameList(winners.map((winner) => winner.displayName));
+      els.solveFanfareNames.appendChild(item);
 
       els.solveFanfare.hidden = false;
       if (solveFanfareTimer) {
@@ -5608,7 +5609,11 @@
       updateLobbyHeader(currentState);
 
       const copy = phaseCopy(phase, currentState);
-      els.statusText.textContent = copy.badge;
+      if (shouldShowBingo(currentState)) {
+        els.statusText.textContent = "Final: Bingo";
+      } else {
+        els.statusText.textContent = copy.badge;
+      }
       if (phase === "idle") {
         els.idleCtaText.textContent = idleCtaCopy(currentState);
       }
