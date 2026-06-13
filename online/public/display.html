@@ -5013,7 +5013,7 @@
 
     function renderIdleInfo(state = {}) {
       els.playUrl.textContent = playSiteUrlDisplay(state);
-      els.playQr.src = `${playSiteUrl(state)}/api/play-qr`;
+      els.playQr.src = TypeoEvent.withEventQuery("/api/play-qr");
       els.playQr.alt = `QR code for ${playSiteUrlDisplay(state)}`;
 
       const hostNote = state.hostNote?.trim();
