@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TYPEO — How to play</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/typeo-brand.css" />
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --show-gold: #ffcc00;
+      --show-gold-soft: #ffe08a;
+      --show-cyan: #00d4ff;
+      --show-green: #00ff55;
+      --show-panel: rgba(2, 8, 24, 0.94);
+      --show-border: rgba(255, 204, 0, 0.35);
+      --show-text: rgba(210, 225, 245, 0.92);
+      --show-muted: rgba(180, 198, 220, 0.72);
+      --feedback-correct: #00ff55;
+      --feedback-present: #ffcc00;
+      --feedback-absent: #3a4a5c;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Montserrat, Arial, sans-serif;
+      color: #fff;
+      background:
+        radial-gradient(ellipse 80% 45% at 50% 0%, rgba(40, 120, 200, 0.2) 0%, transparent 68%),
+        radial-gradient(ellipse 55% 35% at 50% 100%, rgba(230, 184, 0, 0.08) 0%, transparent 72%),
+        #020818;
+      line-height: 1.55;
+    }
+
+    .rules-shell {
+      width: min(100%, 52rem);
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .rules-header {
+      text-align: center;
+      margin-bottom: 1.35rem;
+    }
+
+    .rules-logo {
+      display: block;
+      width: min(88%, 320px);
+      height: auto;
+      margin: 0 auto 0.85rem;
+    }
+
+    .rules-kicker {
+      margin: 0 0 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--show-gold);
+    }
+
+    .rules-lede {
+      margin: 0 auto;
+      max-width: 38rem;
+      font-size: 0.95rem;
+      color: var(--show-muted);
+    }
+
+    .rules-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+      margin: 1.1rem 0 1.35rem;
+      padding: 0.75rem;
+      border: 1px solid rgba(0, 212, 255, 0.22);
+      border-radius: 0.35rem;
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .rules-nav a {
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 204, 0, 0.35);
+      background: rgba(255, 204, 0, 0.08);
+      color: var(--show-gold-soft);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .rules-nav a:hover {
+      border-color: rgba(0, 212, 255, 0.55);
+      color: #fff;
+    }
+
+    .rules-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .rules-actions a,
+    .rules-actions button {
+      padding: 0.62rem 0.95rem;
+      border: 2px solid rgba(255, 204, 0, 0.55);
+      border-radius: 0.2rem;
+      background: rgba(255, 204, 0, 0.12);
+      color: #ffe566;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .rules-actions a.secondary,
+    .rules-actions button.secondary {
+      border-color: rgba(62, 200, 232, 0.45);
+      background: rgba(0, 212, 255, 0.08);
+      color: var(--show-cyan);
+    }
+
+    section {
+      margin-bottom: 1rem;
+      padding: 1rem 1rem 0.95rem;
+      border: 1px solid var(--show-border);
+      border-radius: 0.35rem;
+      background: var(--show-panel);
+    }
+
+    section h2 {
+      margin: 0 0 0.55rem;
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--show-gold);
+    }
+
+    section h3 {
+      margin: 0.85rem 0 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.88);
+    }
+
+    section p,
+    section li {
+      font-size: 0.88rem;
+      color: var(--show-text);
+    }
+
+    section ul,
+    section ol {
+      margin: 0.35rem 0 0.55rem;
+      padding-left: 1.15rem;
+    }
+
+    section li + li {
+      margin-top: 0.28rem;
+    }
+
+    .legend {
+      display: grid;
+      gap: 0.45rem;
+      margin: 0.55rem 0 0.2rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 0.86rem;
+      color: var(--show-text);
+    }
+
+    .legend-swatch {
+      flex: 0 0 auto;
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 0.14rem;
+      border: 2px solid rgba(0, 0, 0, 0.65);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 0.95rem;
+    }
+
+    .legend-swatch.is-correct {
+      background: var(--feedback-correct);
+      color: #003014;
+    }
+
+    .legend-swatch.is-present {
+      background: var(--feedback-present);
+      color: #141100;
+    }
+
+    .legend-swatch.is-absent {
+      background: var(--feedback-absent);
+      color: rgba(220, 230, 240, 0.75);
+    }
+
+    .callout {
+      margin: 0.65rem 0 0;
+      padding: 0.65rem 0.75rem;
+      border-left: 3px solid var(--show-cyan);
+      background: rgba(0, 212, 255, 0.07);
+      font-size: 0.84rem;
+      color: rgba(210, 225, 245, 0.9);
+    }
+
+    .stakes-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.55rem 0 0.15rem;
+      font-size: 0.82rem;
+    }
+
+    .stakes-table th,
+    .stakes-table td {
+      padding: 0.4rem 0.45rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+    }
+
+    .stakes-table th {
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--show-muted);
+    }
+
+    .rules-footer {
+      margin-top: 1.25rem;
+      text-align: center;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(160, 180, 205, 0.55);
+    }
+  </style>
+</head>
+<body>
+  <div class="rules-shell">
+    <header class="rules-header">
+      <img class="rules-logo" src="/assets/typeo-wordmark.svg" width="984" height="222" alt="TYPEO" />
+      <p class="rules-kicker">Official rules</p>
+      <p class="rules-lede">
+        <span class="brand-typeo"><span class="brand-typeo-type">TYPE</span><span class="brand-typeo-o">O</span></span>
+        is a live venue word game. Guess five-letter words, earn balls, then try to win bingo in the finale.
+        These rules match the online app used at the show.
+      </p>
+    </header>
+
+    <nav class="rules-nav" aria-label="Sections">
+      <a href="#join">Join</a>
+      <a href="#rounds">Rounds</a>
+      <a href="#feedback">Feedback</a>
+      <a href="#balls">Balls</a>
+      <a href="#multi-guess">Multi-guess</a>
+      <a href="#bingo">Bingo</a>
+      <a href="#venue">Venue</a>
+      <a href="#host">Host tools</a>
+    </nav>
+
+    <div class="rules-actions">
+      <a id="playLink" href="/play">Play now</a>
+      <a class="secondary" href="/">Event lobby</a>
+    </div>
+
+    <section id="join">
+      <h2>Joining the game</h2>
+      <ul>
+        <li>Open the play link shown on the venue screen or scan the QR code. If the host gave an event code, use that same link — it may look like <code>/play?event=yourcode</code>.</li>
+        <li><strong>Guest:</strong> pick a display name and tap <strong>Join game</strong>. No account required.</li>
+        <li><strong>Account:</strong> create one or log in if you want your name saved between shows.</li>
+        <li>Join the lobby <em>before</em> the host starts a round so your name appears on the big screen.</li>
+        <li>Use one phone per player. Your guesses and bingo card stay tied to that device.</li>
+      </ul>
+      <div class="callout">
+        When a round goes live, the app tries to bring you straight into the game if you already signed in with a name.
+      </div>
+    </section>
+
+    <section id="rounds">
+      <h2>TYPEO rounds</h2>
+      <p>Each round is one secret five-letter word chosen by the host.</p>
+      <h3>Guessing phase</h3>
+      <ul>
+        <li>The room sees the <strong>first letter</strong> of the word (for example, <strong>S ● ● ● ●</strong>).</li>
+        <li>Type a valid five-letter English word and submit before the timer runs out.</li>
+        <li>You may change your guess during the same guessing window — your latest submission is the one that counts.</li>
+        <li>Words must be in the game dictionary. Invalid guesses do not count as a solve and show <strong>Not a word…</strong>.</li>
+        <li>If you submit the correct word during guessing, you are locked in for that word — no further guesses that round.</li>
+      </ul>
+      <h3>Results phase</h3>
+      <ul>
+        <li>When time is up (or everyone has submitted), the host reveals results.</li>
+        <li>You see color and symbol feedback for your official guess (see below).</li>
+        <li>Players who guessed the word correctly earn balls from the pot.</li>
+      </ul>
+      <h3>Round end</h3>
+      <ul>
+        <li>The round keeps going through multiple guess windows while balls remain in the pot and at least one player has not solved yet.</li>
+        <li>The round ends when the word is fully solved out or the final two-ball guess window finishes. The answer is then revealed to the room.</li>
+      </ul>
+    </section>
+
+    <section id="feedback">
+      <h2>Guess feedback</h2>
+      <p>Every letter in your guess is marked one of three ways:</p>
+      <div class="legend" aria-label="Feedback legend">
+        <div class="legend-item">
+          <span class="legend-swatch is-correct" aria-hidden="true">▪</span>
+          <span><strong>Correct spot</strong> — right letter in the right position.</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch is-present" aria-hidden="true">○</span>
+          <span><strong>Wrong spot</strong> — letter is in the word, but not in that position.</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch is-absent" aria-hidden="true">✕</span>
+          <span><strong>Not in word</strong> — letter is not in the answer.</span>
+        </div>
+      </div>
+      <p style="margin-top:0.75rem;">
+        Duplicate letters follow standard Lingo rules: a letter is only marked present or correct as many times as it appears in the answer.
+      </p>
+      <div class="callout">
+        On your phone, the on-screen keyboard remembers greens and yellows from valid guesses in the current round.
+      </div>
+    </section>
+
+    <section id="balls">
+      <h2>Balls &amp; scoring</h2>
+      <p>Balls are the currency of the show. You collect them during TYPEO and spend them during bingo.</p>
+      <h3>The pot</h3>
+      <ul>
+        <li>Each round starts with a pot of <strong>6 balls</strong> (×2 if the host enables double-ball mode).</li>
+        <li>Each guess window is played at the current pot value. That number is shown on your guess history as the stake for that try.</li>
+        <li>When someone solves on a reveal, the pot usually drops — often from 6 down to 4 on the first solve, then by one ball after later solves.</li>
+        <li>The last guess window is always at <strong>2 balls</strong>. After that window, the word ends.</li>
+      </ul>
+      <h3>Earning balls</h3>
+      <ul>
+        <li>Solve the word on a reveal and you earn the full stake that was on the table for that reveal.</li>
+        <li>The first correct solver in a results phase gets a shout-out on the venue screen.</li>
+        <li>The host may award <strong>+1 ball to everyone</strong> as a bonus (sometimes called Communism / Ballshevik).</li>
+      </ul>
+      <h3>Typical stake ladder</h3>
+      <p>With normal (1×) balls, guess windows often look like this:</p>
+      <table class="stakes-table">
+        <thead>
+          <tr>
+            <th>Guess window</th>
+            <th>Pot stake</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Opening guess</td><td>6 balls</td></tr>
+          <tr><td>After first solve</td><td>4 balls</td></tr>
+          <tr><td>Next windows</td><td>3 → 2 balls</td></tr>
+          <tr><td>Final window</td><td>2 balls, then word ends</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        If double-ball mode is on, multiply every stake above by two (opening pot 12, final window 4, and so on).
+      </div>
+    </section>
+
+    <section id="multi-guess">
+      <h2>Multiple guesses in one round</h2>
+      <ul>
+        <li>A round is <em>one word</em>, but it can have several timed guess windows back-to-back.</li>
+        <li>After each results phase, players who have not solved yet get another chance while balls remain.</li>
+        <li>Each new window uses the updated pot stake. Your phone keeps a history of every guess you made that round.</li>
+        <li>Your <strong>official</strong> result on the venue screen is the guess locked in when results were revealed.</li>
+        <li>If you miss a window entirely, that counts as no guess for that stake.</li>
+      </ul>
+    </section>
+
+    <section id="bingo">
+      <h2>Bingo finale</h2>
+      <p>After TYPEO, the host starts bingo. Your phone switches to your bingo card automatically.</p>
+      <h3>Your card</h3>
+      <ul>
+        <li>Every player gets a unique 5×5 card based on the game and your name.</li>
+        <li>The center square is a free space.</li>
+        <li>Called numbers <strong>light up on their own</strong> — you do not tap squares to mark them.</li>
+      </ul>
+      <h3>Winning</h3>
+      <ul>
+        <li>You need at least <strong>1 ball</strong> earned from TYPEO to be eligible.</li>
+        <li>Your ball count is your <strong>bingo budget</strong>: you must complete a line by the time that many numbers have been called.</li>
+        <li>Example: if you earned 4 balls, you need bingo by call 4 (or earlier).</li>
+        <li>A valid line is any row, column, or diagonal — same as classic bingo.</li>
+        <li>When you have a qualifying line, tap <strong>BINGO!</strong> on your phone. First valid claim wins.</li>
+        <li>If your line completes after your budget runs out, you are out of the running — keep playing for fun, but you cannot win.</li>
+      </ul>
+      <h3>Finale scramble</h3>
+      <p>
+        During bingo you may see an eight-letter scramble on your phone — a fun side puzzle tied to the show.
+        Unscrambling it is optional and does not replace calling bingo.
+      </p>
+    </section>
+
+    <section id="venue">
+      <h2>At the venue</h2>
+      <ul>
+        <li>The big screen shows the word clue, timer, player cards, and who still needs to submit.</li>
+        <li>Your name and status appear on the player board once you join.</li>
+        <li>The host can broadcast messages to the room and to phones — watch for those cues.</li>
+        <li>A leaderboard may appear between rounds when the host turns it on.</li>
+        <li>Keep your phone brightness up and stay on the play page during the show.</li>
+      </ul>
+    </section>
+
+    <section id="host">
+      <h2>Host-controlled features</h2>
+      <p>These are decided live by the host — not every show uses all of them:</p>
+      <ul>
+        <li>Timer length for guessing and between rounds</li>
+        <li>Pause / resume timer</li>
+        <li>Double-ball mode (2× stakes)</li>
+        <li>Bonus ball for all players</li>
+        <li>Champion / monarch crown for a returning winner</li>
+        <li>Starting bingo and calling numbers</li>
+      </ul>
+      <div class="callout">
+        Fair play: one person, one device, one name. Do not share answers across the room before the reveal.
+      </div>
+    </section>
+
+    <p class="rules-footer">Presented by Liquid Kourage Entertainment</p>
+  </div>
+
+  <script src="/event-code.js"></script>
+  <script>
+    const playLink = document.getElementById('playLink');
+    if (playLink && window.TypeoEvent) {
+      playLink.href = TypeoEvent.withEventQuery('/play');
+    }
+  </script>
+</body>
+</html>

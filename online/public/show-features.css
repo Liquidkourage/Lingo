@@ -125,7 +125,7 @@
 }
 
 .pattern-cell .pattern-symbol {
-  font-size: 0.72em;
+  font-size: 0.62em;
   font-weight: 900;
   line-height: 1;
   color: rgba(0, 0, 0, 0.82);
@@ -262,6 +262,21 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #ffcc00;
+}
+
+.rules-full-link {
+  margin: 0.55rem 0 0;
+}
+
+.rules-full-link a {
+  color: #00d4ff;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.rules-full-link a:hover {
+  text-decoration: underline;
 }
 
 .account-tools,
