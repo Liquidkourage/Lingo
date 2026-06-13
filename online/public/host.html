@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/typeo-brand.css" />
+  <link rel="stylesheet" href="/show-features.css" />
   <style>
     :root {
       --show-gold: #e6b800;
@@ -690,12 +691,14 @@
     }
 
     .word-queue-section,
-    .word-history-section {
+    .word-history-section,
+    .word-exclusions-section {
       margin-bottom: 0.85rem;
     }
 
     .word-queue-heading,
-    .word-history-heading {
+    .word-history-heading,
+    .word-exclusions-heading {
       margin: 0 0 0.35rem;
       font-size: 0.62rem;
       font-weight: 700;
@@ -705,7 +708,8 @@
     }
 
     .word-queue-list,
-    .word-history-list {
+    .word-history-list,
+    .word-exclusions-list {
       list-style: none;
       margin: 0;
       padding: 0;
@@ -715,7 +719,8 @@
     }
 
     .word-queue-list li,
-    .word-history-list li {
+    .word-history-list li,
+    .word-exclusions-list li {
       display: flex;
       align-items: center;
       gap: 0.45rem;
@@ -727,7 +732,8 @@
     }
 
     .word-queue-list li:last-child,
-    .word-history-list li:last-child {
+    .word-history-list li:last-child,
+    .word-exclusions-list li:last-child {
       border-bottom: none;
     }
 
@@ -737,7 +743,8 @@
     }
 
     .word-queue-list li.is-empty,
-    .word-history-list li.is-empty {
+    .word-history-list li.is-empty,
+    .word-exclusions-list li.is-empty {
       display: block;
       font-size: 0.78rem;
       font-weight: 500;
@@ -763,9 +770,21 @@
       line-height: 1;
     }
 
-    .word-history-list li {
+    .word-history-list li,
+    .word-exclusions-list li {
       color: rgba(180, 198, 220, 0.72);
       cursor: default;
+    }
+
+    .word-exclusions-actions {
+      margin-left: auto;
+    }
+
+    .word-exclusions-actions button {
+      min-width: 1.65rem;
+      padding: 0.15rem 0.45rem;
+      font-size: 0.72rem;
+      line-height: 1;
     }
 
     .roster-stats {
@@ -1255,6 +1274,11 @@
         </div>
       </div>
 
+      <section class="host-unsubmitted-panel" aria-label="Players still waiting">
+        <h2>Not in yet <span id="hostUnsubmittedCount"></span></h2>
+        <div class="host-unsubmitted-chips is-empty" id="hostUnsubmittedList">Everyone is in.</div>
+      </section>
+
       <section class="host-message-panel" aria-label="Player messages">
         <h2>Player messages</h2>
         <div class="host-message-queue is-empty" id="hostMessageQueue">No messages yet.</div>
@@ -1364,7 +1388,7 @@
         <button class="secondary" type="button" data-close-modal>Close</button>
       </div>
       <div class="host-modal-body">
-        <p class="panel-copy">Queue up to 8 words · double-click a suggestion to queue · click a queued word to set it</p>
+        <p class="panel-copy">Queue up to 8 words · double-click a suggestion to queue · click a queued word to set it · right-click to remove for this event</p>
         <div class="word-queue-section">
           <p class="word-queue-heading">Up next <span id="wordQueueCount"></span></p>
           <ul id="wordQueueList" class="word-queue-list" aria-label="Upcoming words"></ul>
@@ -1372,6 +1396,10 @@
         <div class="word-history-section">
           <p class="word-history-heading">Played this session</p>
           <ul id="wordHistoryList" class="word-history-list" aria-label="Played words"></ul>
+        </div>
+        <div class="word-exclusions-section">
+          <p class="word-exclusions-heading">Removed for this event <span id="wordExclusionsCount"></span></p>
+          <ul id="wordExclusionsList" class="word-exclusions-list" aria-label="Removed words"></ul>
         </div>
         <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
         <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
@@ -1434,10 +1462,34 @@
               <label for="championInput">Champion</label>
               <input id="championInput" type="text" maxlength="40" placeholder="Display name" />
             </div>
+            <div class="field">
+              <label for="hostBroadcastInput">Live broadcast</label>
+              <input id="hostBroadcastInput" type="text" maxlength="200" placeholder="Shown on display and player phones" />
+            </div>
+            <div class="field">
+              <label for="scrambleWordDisplay">Scramble word</label>
+              <input id="scrambleWordDisplay" type="text" maxlength="8" readonly />
+            </div>
             <div class="show-tools-buttons">
               <button id="saveHostNoteBtn" class="secondary" type="button">Save note</button>
+              <button id="saveHostBroadcastBtn" class="secondary" type="button">Save broadcast</button>
               <button id="setChampionBtn" type="button">Crown</button>
+              <button id="toggleLeaderboardBtn" class="secondary" type="button">Show leaderboard</button>
+              <button id="regenerateScrambleBtn" class="secondary" type="button">New scramble</button>
             </div>
+            <div class="show-tools-buttons" style="margin-top:0.45rem;">
+              <button type="button" class="secondary shot-call-btn" data-shot="Grab your phones — we're starting!">Start cue</button>
+              <button type="button" class="secondary shot-call-btn" data-shot="Last call to join!">Last call</button>
+              <button type="button" class="secondary shot-call-btn" data-shot="Halftime — check the leaderboard!">Halftime</button>
+              <button type="button" class="secondary shot-call-btn" data-shot="Final round coming up!">Final round</button>
+            </div>
+            <details class="host-runbook" style="margin-top:0.75rem;text-align:left;">
+              <summary>Host runbook</summary>
+              <p style="margin:0.45rem 0 0;font-size:0.82rem;line-height:1.45;color:rgba(200,220,245,0.82);">
+                Hard reset before doors. Set word or queue, then Start round. Reveal results when ready or let auto-reveal run.
+                Communism adds a ball to everyone. Start bingo when TYPEO ends — phones switch automatically.
+              </p>
+            </details>
           </div>
           <div id="showToolsStatus" class="status"></div>
         </div>
@@ -1471,6 +1523,7 @@
     </div>
   </div>
 
+  <script src="/show-features.js"></script>
   <script>
     const PHASE_LABELS = {
       idle: 'Sign up open',
@@ -1527,6 +1580,8 @@
       wordQueueList: document.getElementById('wordQueueList'),
       wordQueueCount: document.getElementById('wordQueueCount'),
       wordHistoryList: document.getElementById('wordHistoryList'),
+      wordExclusionsList: document.getElementById('wordExclusionsList'),
+      wordExclusionsCount: document.getElementById('wordExclusionsCount'),
       refreshWordPoolBtn: document.getElementById('refreshWordPoolBtn'),
       startBingoBtn: document.getElementById('startBingoBtn'),
       bingoCallsLink: document.getElementById('bingoCallsLink'),
@@ -1536,6 +1591,13 @@
       hostMessageQueue: document.getElementById('hostMessageQueue'),
       hostSolveFanfare: document.getElementById('hostSolveFanfare'),
       hostSolveFanfareNames: document.getElementById('hostSolveFanfareNames'),
+      hostUnsubmittedList: document.getElementById('hostUnsubmittedList'),
+      hostUnsubmittedCount: document.getElementById('hostUnsubmittedCount'),
+      hostBroadcastInput: document.getElementById('hostBroadcastInput'),
+      scrambleWordDisplay: document.getElementById('scrambleWordDisplay'),
+      saveHostBroadcastBtn: document.getElementById('saveHostBroadcastBtn'),
+      toggleLeaderboardBtn: document.getElementById('toggleLeaderboardBtn'),
+      regenerateScrambleBtn: document.getElementById('regenerateScrambleBtn'),
       toolsWordsBtn: document.getElementById('toolsWordsBtn'),
     };
 
@@ -1948,6 +2010,13 @@
       els.hostStage.classList.remove('is-flash-warn', 'is-flash-critical', 'is-flash-all-in');
       void els.hostStage.offsetWidth;
       els.hostStage.classList.add(className);
+      if (className === 'is-flash-critical') {
+        TypeoShow.playHostAlert('critical');
+      } else if (className === 'is-flash-all-in') {
+        TypeoShow.playHostAlert('all-in');
+      } else {
+        TypeoShow.playHostAlert('warn');
+      }
       if (hostAlertTimer) window.clearTimeout(hostAlertTimer);
       hostAlertTimer = window.setTimeout(() => {
         els.hostStage.classList.remove('is-flash-warn', 'is-flash-critical', 'is-flash-all-in');
@@ -2001,6 +2070,24 @@
         els.hostSolveFanfare.hidden = true;
         hostSolveFanfareTimer = null;
       }, 3800);
+    }
+
+    function renderHostUnsubmitted(state) {
+      const names = Array.isArray(state.unsubmittedPlayers) ? state.unsubmittedPlayers : [];
+      els.hostUnsubmittedCount.textContent = names.length ? `(${names.length})` : '';
+      els.hostUnsubmittedList.replaceChildren();
+      if (!names.length) {
+        els.hostUnsubmittedList.classList.add('is-empty');
+        els.hostUnsubmittedList.textContent = 'Everyone is in.';
+        return;
+      }
+      els.hostUnsubmittedList.classList.remove('is-empty');
+      names.forEach((name) => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = name;
+        els.hostUnsubmittedList.appendChild(chip);
+      });
     }
 
     function renderHostMessages(messages) {
@@ -2140,6 +2227,18 @@
       syncHostAllInAlert(state);
       renderHostSolveFanfare(state, previousHostPhase);
       renderHostMessages(state.hostMessages);
+      renderHostUnsubmitted(state);
+      if (els.hostBroadcastInput && !hostDirtyFields.has('hostBroadcast')) {
+        els.hostBroadcastInput.value = String(state.hostBroadcast || '');
+      }
+      if (els.scrambleWordDisplay) {
+        els.scrambleWordDisplay.value = String(state.scrambleWord || '');
+      }
+      if (els.toggleLeaderboardBtn) {
+        els.toggleLeaderboardBtn.textContent = state.leaderboardVisible
+          ? 'Hide leaderboard'
+          : 'Show leaderboard';
+      }
       scheduleHostPolling();
       scheduleHostTick();
       els.phaseBadge.textContent = PHASE_LABELS[phase] || PHASE_LABELS.idle;
@@ -2275,6 +2374,41 @@
       });
     }
 
+    function renderWordExclusions() {
+      const exclusions = Array.isArray(currentState?.wordExclusions) ? currentState.wordExclusions : [];
+      els.wordExclusionsCount.textContent = exclusions.length ? `(${exclusions.length})` : '';
+      els.wordExclusionsList.replaceChildren();
+
+      if (!exclusions.length) {
+        const emptyItem = document.createElement('li');
+        emptyItem.className = 'is-empty';
+        emptyItem.textContent = 'Right-click a suggestion to remove it. Removals persist for this event.';
+        els.wordExclusionsList.appendChild(emptyItem);
+        return;
+      }
+
+      exclusions.forEach((word) => {
+        const item = document.createElement('li');
+        const label = document.createElement('span');
+        label.textContent = word;
+        item.appendChild(label);
+
+        const actions = document.createElement('span');
+        actions.className = 'word-exclusions-actions';
+
+        const restoreBtn = document.createElement('button');
+        restoreBtn.type = 'button';
+        restoreBtn.className = 'secondary';
+        restoreBtn.textContent = 'Restore';
+        restoreBtn.addEventListener('click', () => {
+          restoreExcludedWord(word);
+        });
+        actions.appendChild(restoreBtn);
+        item.appendChild(actions);
+        els.wordExclusionsList.appendChild(item);
+      });
+    }
+
     function renderWordPool() {
       const state = currentState || {};
       const suggestions = Array.isArray(state.wordSuggestions) ? state.wordSuggestions : [];
@@ -2286,6 +2420,7 @@
 
       renderWordQueue();
       renderWordHistory();
+      renderWordExclusions();
 
       els.wordPoolMeta.textContent = suggestions.length
         ? `${suggestions.length} suggestions · ${queue.length} queued · ${history.length} played · ${exclusions.length} removed · ${available ?? '—'} left`
@@ -2368,19 +2503,20 @@
     async function excludeSuggestedWord(word) {
       setStatus(els.wordPoolStatus, '');
       try {
-        const response = await adminFetch('/api/admin/exclude-word', {
-          method: 'POST',
-          body: JSON.stringify({ word }),
-        });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || 'Could not remove word from pool.');
-        }
-        currentState = payload.state;
-        renderState();
-        setStatus(els.wordPoolStatus, `Removed ${word} from the pool.`, 'success');
+        await runAction('exclude-word', { word }, `Removed ${word} from the pool.`);
+        setStatus(els.wordPoolStatus, `Removed ${word} for this event.`, 'success');
       } catch (error) {
         setStatus(els.wordPoolStatus, error.message || 'Could not remove word.', 'error');
+      }
+    }
+
+    async function restoreExcludedWord(word) {
+      setStatus(els.wordPoolStatus, '');
+      try {
+        await runAction('unexclude-word', { word }, `Restored ${word}.`);
+        setStatus(els.wordPoolStatus, `Restored ${word} to the pool.`, 'success');
+      } catch (error) {
+        setStatus(els.wordPoolStatus, error.message || 'Could not restore word.', 'error');
       }
     }
 
@@ -2547,6 +2683,42 @@
       } catch (error) {
         setStatus(els.showToolsStatus, error.message || 'Could not save display note.', 'error');
       }
+    });
+    els.saveHostBroadcastBtn.addEventListener('click', async () => {
+      setStatus(els.showToolsStatus, '');
+      try {
+        await runAction('set-host-broadcast', { hostBroadcast: els.hostBroadcastInput.value }, 'Broadcast saved.');
+        setStatus(els.showToolsStatus, 'Broadcast saved.', 'success');
+      } catch (error) {
+        setStatus(els.showToolsStatus, error.message || 'Could not save broadcast.', 'error');
+      }
+    });
+    els.toggleLeaderboardBtn.addEventListener('click', async () => {
+      const visible = Boolean(currentState?.leaderboardVisible);
+      try {
+        await runAction('set-leaderboard-visible', { visible: !visible }, visible ? 'Leaderboard hidden.' : 'Leaderboard shown.');
+      } catch (error) {
+        setStatus(els.showToolsStatus, error.message || 'Could not toggle leaderboard.', 'error');
+      }
+    });
+    els.regenerateScrambleBtn.addEventListener('click', async () => {
+      try {
+        await runAction('regenerate-scramble-word', {}, 'Scramble word updated.');
+      } catch (error) {
+        setStatus(els.showToolsStatus, error.message || 'Could not regenerate scramble.', 'error');
+      }
+    });
+    document.querySelectorAll('.shot-call-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const text = button.getAttribute('data-shot') || '';
+        els.hostBroadcastInput.value = text;
+        try {
+          await runAction('set-host-broadcast', { hostBroadcast: text }, 'Shot call sent.');
+          setStatus(els.showToolsStatus, 'Shot call sent to display.', 'success');
+        } catch (error) {
+          setStatus(els.showToolsStatus, error.message || 'Could not send shot call.', 'error');
+        }
+      });
     });
     els.setChampionBtn.addEventListener('click', async () => {
       setStatus(els.showToolsStatus, '');

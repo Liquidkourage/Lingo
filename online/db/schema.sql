@@ -164,3 +164,16 @@ create unique index if not exists idx_users_auth_token on users(auth_token) wher
 
 alter table players add column if not exists user_id bigint references users(id) on delete set null;
 create index if not exists idx_players_user_session on players(session_id, user_id);
+
+alter table app_state add column if not exists host_broadcast text not null default '';
+alter table app_state add column if not exists leaderboard_visible boolean not null default false;
+alter table app_state add column if not exists award_all_balls_seq integer not null default 0;
+alter table app_state add column if not exists scramble_word text not null default '';
+
+alter table users add column if not exists profile_display_name text not null default '';
+alter table users add column if not exists email text not null default '';
+alter table users add column if not exists email_verified boolean not null default false;
+alter table users add column if not exists password_reset_token text;
+alter table users add column if not exists password_reset_expires_at timestamptz;
+create unique index if not exists idx_users_password_reset_token
+  on users(password_reset_token) where password_reset_token is not null;

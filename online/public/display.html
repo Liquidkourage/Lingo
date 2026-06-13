@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/typeo-brand.css" />
+  <link rel="stylesheet" href="/show-features.css" />
   <style>
     * { box-sizing: border-box; }
 
@@ -3384,8 +3385,8 @@
     .stage[data-phase="guessing"] .pattern-cell,
     .stage[data-phase="results"] .pattern-cell,
     .stage[data-phase="ended"] .pattern-cell {
-      width: 0.92em;
-      height: 0.92em;
+      width: 0.78em;
+      height: 0.78em;
       min-width: 0;
       min-height: 0;
     }
@@ -3621,6 +3622,18 @@
           </div>
         </div>
 
+        <div class="ballsplosion-overlay" id="ballsplosionOverlay" aria-hidden="true"></div>
+
+        <div class="leaderboard-overlay" id="leaderboardOverlay" hidden aria-live="polite">
+          <div class="leaderboard-panel">
+            <h2>Leaderboard</h2>
+            <ol class="leaderboard-list" id="leaderboardList"></ol>
+          </div>
+        </div>
+
+        <p class="host-broadcast-banner" id="displayBroadcast" hidden></p>
+        <div class="universal-hud" id="universalHud" hidden></div>
+
         <div class="bingo-display" id="bingoDisplay" hidden aria-live="polite">
           <p class="bingo-display-kicker"><span class="brand-typeo"><span class="brand-typeo-type">TYPE</span><span class="brand-typeo-o">O</span></span> Bingo</p>
           <p class="bingo-display-last" id="bingoLastCall">—</p>
@@ -3725,6 +3738,7 @@
     </div>
   </div>
 
+  <script src="/show-features.js"></script>
   <script src="/typeo-brand.js"></script>
   <script src="/event-code.js"></script>
   <script>
@@ -3737,6 +3751,11 @@
       championFanfareName: document.getElementById("championFanfareName"),
       solveFanfare: document.getElementById("solveFanfare"),
       solveFanfareNames: document.getElementById("solveFanfareNames"),
+      ballsplosionOverlay: document.getElementById("ballsplosionOverlay"),
+      leaderboardOverlay: document.getElementById("leaderboardOverlay"),
+      leaderboardList: document.getElementById("leaderboardList"),
+      displayBroadcast: document.getElementById("displayBroadcast"),
+      universalHud: document.getElementById("universalHud"),
       bingoDisplay: document.getElementById("bingoDisplay"),
       bingoLastCall: document.getElementById("bingoLastCall"),
       bingoProgress: document.getElementById("bingoProgress"),
@@ -3863,6 +3882,9 @@
     const DEMO_CHAMPION = "NightOwl";
     const LINGO_AMBASSADOR_ALIASES = new Set(["jeewee"]);
     const LINGO_AMBASSADOR_DISPLAY = "Jeewee";
+    const LINGO_VILLAIN_ALIASES = new Set(["lee"]);
+    const LINGO_VILLAIN_DISPLAY = "Lee";
+    let lastAwardAllBallsSeq = 0;
     const DEMO_BALL_TOTALS = [18, 12, 24, 6, 30, 9, 15, 21, 14, 27, 11, 19, 8, 22, 16, 13, 25, 10, 20, 7];
     const DEMO_PLAYER_NAMES = [
       "NightOwl", "PixelFox", "StormChaser", "EchoPlay", "LuckyStar",
@@ -4056,6 +4078,14 @@
       return aliases.some((alias) => LINGO_AMBASSADOR_ALIASES.has(alias));
     }
 
+    function isLingoVillain(player) {
+      if (!player) {
+        return false;
+      }
+      const aliases = [player.displayName, player.lobbyLabel].map(normalizePlayerAlias);
+      return aliases.some((alias) => LINGO_VILLAIN_ALIASES.has(alias));
+    }
+
     let ambassadorIconSeq = 0;
 
     function ambassadorIconSvg() {
@@ -4115,6 +4145,70 @@
       delete card.dataset.lingoAmbassador;
       card.querySelector(".player-ambassador-kicker")?.remove();
       card.querySelector(".player-ambassador-badge")?.remove();
+    }
+
+    function ensureVillainChrome(card) {
+      card.dataset.lingoVillain = "true";
+    }
+
+    function clearVillainChrome(card) {
+      delete card.dataset.lingoVillain;
+    }
+
+    function renderDisplayBroadcast(state) {
+      const text = String(state.hostBroadcast || "").trim();
+      if (!text) {
+        els.displayBroadcast.hidden = true;
+        els.displayBroadcast.textContent = "";
+        return;
+      }
+      els.displayBroadcast.hidden = false;
+      els.displayBroadcast.textContent = text;
+    }
+
+    function renderUniversalHud(state) {
+      const phase = state.phase || "idle";
+      if (phase === "idle") {
+        els.universalHud.hidden = true;
+        els.universalHud.replaceChildren();
+        return;
+      }
+      els.universalHud.hidden = false;
+      const remaining = phase === "guessing"
+        ? state.guessWindowRemainingSeconds
+        : phase === "results"
+          ? state.resultsWindowRemainingSeconds
+          : null;
+      const parts = [
+        `Round ${state.roundNumber || 0}`,
+        `Pot ${displayPotBallsPublic(state)}`,
+        phase.replace(/^./, (c) => c.toUpperCase()),
+      ];
+      if (remaining != null) parts.push(`${remaining}s`);
+      if (state.submittedThisRound != null) {
+        parts.push(`${state.submittedThisRound}/${state.playerCount || 0} in`);
+      }
+      els.universalHud.replaceChildren();
+      parts.forEach((part) => {
+        const chip = document.createElement("span");
+        chip.textContent = part;
+        els.universalHud.appendChild(chip);
+      });
+    }
+
+    function renderLeaderboardOverlay(state) {
+      const visible = Boolean(state.leaderboardVisible);
+      els.leaderboardOverlay.hidden = !visible;
+      if (!visible) return;
+      TypeoShow.renderLeaderboardList(els.leaderboardList, state.leaderboard || [], { limit: 15 });
+    }
+
+    function syncAwardAllBallsFanfare(state) {
+      const seq = Number(state.awardAllBallsSeq || 0);
+      if (seq > lastAwardAllBallsSeq) {
+        lastAwardAllBallsSeq = seq;
+        TypeoShow.triggerBallsplosion(els.ballsplosionOverlay, 16);
+      }
     }
 
     function detectNewLobbyArrivals(players, phase) {
@@ -5112,11 +5206,18 @@
 
       const lobbyLabel = isLingoAmbassador(player)
         ? LINGO_AMBASSADOR_DISPLAY
-        : (player.lobbyLabel || player.displayName || "Player");
+        : isLingoVillain(player)
+          ? LINGO_VILLAIN_DISPLAY
+          : (player.lobbyLabel || player.displayName || "Player");
       if (isLingoAmbassador(player)) {
         ensureAmbassadorChrome(card);
+        clearVillainChrome(card);
+      } else if (isLingoVillain(player)) {
+        clearAmbassadorChrome(card);
+        ensureVillainChrome(card);
       } else {
         clearAmbassadorChrome(card);
+        clearVillainChrome(card);
       }
 
       let crownEl = card.querySelector(".player-crown");
@@ -5323,6 +5424,10 @@
         cell.dataset.mark = mark || "/";
         cell.style.setProperty("--reveal-index", String(index));
         cell.setAttribute("aria-label", patternMarkAriaLabel(mark));
+        const symbol = document.createElement("span");
+        symbol.className = "pattern-symbol";
+        symbol.textContent = TypeoShow.patternSymbol(mark || "/");
+        cell.appendChild(symbol);
         row.appendChild(cell);
       });
       return row;
@@ -5636,6 +5741,10 @@
       renderAnswerFanfare(currentState);
       renderSolveFanfare(currentState, previousPhase);
       renderChampionFanfare(currentState);
+      renderDisplayBroadcast(currentState);
+      renderUniversalHud(currentState);
+      renderLeaderboardOverlay(currentState);
+      syncAwardAllBallsFanfare(currentState);
       renderBingo(currentState);
       renderWordTiles(currentState);
       renderWordClue(currentState);

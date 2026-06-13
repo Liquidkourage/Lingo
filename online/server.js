@@ -159,6 +159,20 @@ const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
 const HOST_WORD_SUGGESTION_COUNT = 100;
 const HOST_WORD_QUEUE_MAX = 8;
+const HOST_BROADCAST_MAX_LENGTH = 200;
+const PROFILE_DISPLAY_NAME_MAX_LENGTH = 40;
+const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const SCRAMBLE_WORD_LENGTH = 8;
+const SCRAMBLE_ANSWERS = [
+  "TYPEOING",
+  "GAMEWORD",
+  "SHOWTIME",
+  "LIQUIDKO",
+  "WORDPLAY",
+  "BALLPARK",
+  "GUESSTWO",
+  "FINALEON",
+];
 const ALL_SUBMITTED_GRACE_SECONDS = 10;
 const MIN_GUESS_WINDOW_SECONDS = 30;
 const DEFAULT_GUESS_WINDOW_SECONDS = 100;
@@ -268,6 +282,68 @@ function validatePassword(password) {
   return value;
 }
 
+function validateProfileDisplayName(displayName) {
+  const value = normalizeDisplayName(displayName);
+  if (!value) {
+    throw new Error("Display name is required.");
+  }
+  if (value.length > PROFILE_DISPLAY_NAME_MAX_LENGTH) {
+    throw new Error(`Display name must be ${PROFILE_DISPLAY_NAME_MAX_LENGTH} characters or fewer.`);
+  }
+  return value;
+}
+
+function userProfileDisplayName(user) {
+  const profile = normalizeDisplayName(user?.profile_display_name);
+  if (profile) return profile;
+  return normalizeDisplayName(user?.username);
+}
+
+function serializeUserPublic(user) {
+  return {
+    username: user.username,
+    authToken: user.auth_token,
+    profileDisplayName: userProfileDisplayName(user),
+    email: String(user.email || "").trim(),
+    emailVerified: Boolean(user.email_verified),
+  };
+}
+
+function pickScrambleWord() {
+  const index = Math.floor(Math.random() * SCRAMBLE_ANSWERS.length);
+  return SCRAMBLE_ANSWERS[index] || "TYPEOING";
+}
+
+function buildLeaderboardEntries(players) {
+  return (Array.isArray(players) ? players : [])
+    .map((player) => ({
+      displayName: player.displayName,
+      balls: Number(player.balls || 0),
+      isChampion: Boolean(player.isChampion),
+      isSolved: Boolean(player.isSolved),
+    }))
+    .sort((left, right) => {
+      if (right.balls !== left.balls) return right.balls - left.balls;
+      return String(left.displayName).localeCompare(String(right.displayName));
+    });
+}
+
+function buildUnsubmittedPlayerNames(state, players) {
+  const phase = String(state.phase || "idle");
+  if (phase !== "guessing" && phase !== "results") {
+    return [];
+  }
+  const round = Number(state.round_number || 0);
+  return (Array.isArray(players) ? players : [])
+    .filter((player) => {
+      if (player.solvedCurrentWord || player.isSolved) return false;
+      if (Number(player.roundNumber) !== round) return true;
+      return !player.hasSubmitted;
+    })
+    .map((player) => player.displayName)
+    .filter(Boolean);
+}
+
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(password, salt, 64).toString("hex");
@@ -324,9 +400,9 @@ async function createUserAccount(username, password, client = pool) {
   }
   const authToken = newAuthToken();
   const result = await client.query(
-    `insert into users (username, normalized_username, password_hash, auth_token, updated_at)
-     values ($1, $2, $3, $4, now())
-     returning id, username, auth_token`,
+    `insert into users (username, normalized_username, password_hash, auth_token, profile_display_name, updated_at)
+     values ($1, $2, $3, $4, $1, now())
+     returning *`,
     [normalized, normalizedKey, hashPassword(password), authToken],
   );
   return result.rows[0];
@@ -370,7 +446,7 @@ async function logoutUserAccount(authToken, client = pool) {
 
 async function upsertLobbyPlayerForUser(sessionId, user, client = pool) {
   const userId = Number(user.id);
-  const displayName = normalizeDisplayName(user.username);
+  const displayName = userProfileDisplayName(user);
   const normalized = normalizePlayerKey(displayName);
 
   const existingByUser = await getPlayerByUserId(sessionId, userId, client);
@@ -602,12 +678,16 @@ async function buildHostWordSuggestions(exclusions, count = HOST_WORD_SUGGESTION
   return pickRandomWords(client, count, exclusions);
 }
 
-async function resetHostWordPool(client = pool) {
-  const exclusions = [];
-  const suggestions = await buildHostWordSuggestions(exclusions, HOST_WORD_SUGGESTION_COUNT, client);
+async function resetHostWordPool(state = {}, client = pool) {
+  const preservedExclusions = parseWordListFromState(state.host_word_exclusions);
+  const suggestions = await buildHostWordSuggestions(
+    preservedExclusions,
+    HOST_WORD_SUGGESTION_COUNT,
+    client,
+  );
   return {
     host_word_suggestions: suggestions,
-    host_word_exclusions: exclusions,
+    host_word_exclusions: preservedExclusions,
     host_word_queue: [],
     host_word_history: [],
   };
@@ -623,7 +703,6 @@ async function ensureHostWordPool(state, client = pool) {
 
   return updateState({
     host_word_suggestions: nextSuggestions,
-    host_word_exclusions: exclusions,
   }, client);
 }
 
@@ -1455,6 +1534,8 @@ async function buildPublicStatePayload(state, displayName, playerToken, client =
   const bingoRow = await getLatestBingoGameForSession(state.session_id, client);
   const revealFanfareKey = buildRevealFanfareKey(state);
   const correctGuessWinners = buildCorrectGuessWinners(players);
+  const leaderboard = buildLeaderboardEntries(players);
+  const unsubmittedPlayers = buildUnsubmittedPlayerNames(state, players);
   return {
     ...serializePublicState(state),
     ...metrics,
@@ -1463,6 +1544,8 @@ async function buildPublicStatePayload(state, displayName, playerToken, client =
     bingo: bingoRow ? serializeBingoPublicState(bingoRow) : null,
     revealFanfareKey,
     correctGuessWinners,
+    leaderboard,
+    unsubmittedPlayers,
   };
 }
 
@@ -1500,6 +1583,10 @@ function serializeState(row) {
     guessWindowSeconds: configuredGuessWindowSeconds(row.guess_window_seconds),
     resultsWindowSeconds: configuredResultsWindowSeconds(row.results_window_seconds),
     hostNote: row.host_note,
+    hostBroadcast: String(row.host_broadcast || ""),
+    leaderboardVisible: Boolean(row.leaderboard_visible),
+    awardAllBallsSeq: Number(row.award_all_balls_seq || 0),
+    scrambleWord: String(row.scramble_word || ""),
     championDisplayName: getEffectiveChampion(row),
     firstSolverPlayerId: row.first_solver_player_id ? Number(row.first_solver_player_id) : null,
     wordSuggestions: parseWordListFromState(row.host_word_suggestions),
@@ -1584,6 +1671,10 @@ async function updateState(patch, client = pool) {
     JSON.stringify(parseRoundBallStakesPreserveOrder(next)),
     patchOrState("all_players_submitted_at"),
     Number(next.guess_window_seq ?? state.guess_window_seq ?? 0),
+    String(patchOrState("host_broadcast", "")),
+    Boolean(patchOrState("leaderboard_visible", false)),
+    Number(patchOrState("award_all_balls_seq", 0)),
+    String(patchOrState("scramble_word", "")),
     currentEventCode(),
   ];
 
@@ -1614,8 +1705,12 @@ async function updateState(patch, client = pool) {
          round_ball_stakes = $23::jsonb,
          all_players_submitted_at = $24,
          guess_window_seq = $25,
+         host_broadcast = $26,
+         leaderboard_visible = $27,
+         award_all_balls_seq = $28,
+         scramble_word = $29,
          updated_at = now()
-     where event_code = $26
+     where event_code = $30
      returning *`,
     params
   );
@@ -1985,13 +2080,170 @@ app.get("/api/public/me", async (req, res) => {
     }
     res.json({
       ok: true,
-      user: {
-        username: user.username,
-        authToken: user.auth_token,
-      },
+      user: serializeUserPublic(user),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/update-profile", async (req, res) => {
+  const authToken = normalizePlayerToken(req.body.authToken);
+  const profileDisplayName = validateProfileDisplayName(req.body.profileDisplayName);
+  const email = String(req.body.email || "").trim().toLowerCase();
+  try {
+    const user = await getUserByAuthToken(authToken);
+    if (!user) {
+      throw new Error("Sign in to update your profile.");
+    }
+    const result = await pool.query(
+      `update users
+       set profile_display_name = $1,
+           email = $2,
+           email_verified = case when $2 = '' then false else email_verified end,
+           updated_at = now()
+       where id = $3
+       returning *`,
+      [profileDisplayName, email, user.id],
+    );
+    res.json({ ok: true, user: serializeUserPublic(result.rows[0]) });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/change-password", async (req, res) => {
+  const authToken = normalizePlayerToken(req.body.authToken);
+  const currentPassword = String(req.body.currentPassword || "");
+  const newPassword = validatePassword(req.body.newPassword);
+  try {
+    const user = await getUserByAuthToken(authToken);
+    if (!user || !verifyPassword(currentPassword, user.password_hash)) {
+      throw new Error("Current password is incorrect.");
+    }
+    await pool.query(
+      `update users
+       set password_hash = $1,
+           updated_at = now()
+       where id = $2`,
+      [hashPassword(newPassword), user.id],
+    );
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/request-password-reset", async (req, res) => {
+  const username = validateUsername(req.body.username);
+  try {
+    const result = await pool.query(
+      `select id from users where normalized_username = $1`,
+      [normalizedUsernameKey(username)],
+    );
+    const user = result.rows[0];
+    if (!user) {
+      res.json({ ok: true, message: "If that account exists, a reset token was created." });
+      return;
+    }
+    const token = crypto.randomBytes(24).toString("hex");
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+    await pool.query(
+      `update users
+       set password_reset_token = $1,
+           password_reset_expires_at = $2,
+           updated_at = now()
+       where id = $3`,
+      [token, expiresAt, user.id],
+    );
+    res.json({
+      ok: true,
+      resetToken: token,
+      expiresAtIso: expiresAt.toISOString(),
+      message: "Use this reset token on the password reset form within one hour.",
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/reset-password", async (req, res) => {
+  const token = String(req.body.resetToken || "").trim();
+  const newPassword = validatePassword(req.body.newPassword);
+  if (!token) {
+    res.status(400).json({ ok: false, error: "Reset token is required." });
+    return;
+  }
+  try {
+    const result = await pool.query(
+      `select *
+       from users
+       where password_reset_token = $1
+         and password_reset_expires_at > now()`,
+      [token],
+    );
+    const user = result.rows[0];
+    if (!user) {
+      throw new Error("Reset token is invalid or expired.");
+    }
+    await pool.query(
+      `update users
+       set password_hash = $1,
+           password_reset_token = null,
+           password_reset_expires_at = null,
+           updated_at = now()
+       where id = $2`,
+      [hashPassword(newPassword), user.id],
+    );
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/request-email-verification", async (req, res) => {
+  const authToken = normalizePlayerToken(req.body.authToken);
+  try {
+    const user = await getUserByAuthToken(authToken);
+    if (!user) {
+      throw new Error("Sign in first.");
+    }
+    const email = String(user.email || "").trim();
+    if (!email) {
+      throw new Error("Add an email address to your profile first.");
+    }
+    const token = crypto.randomBytes(16).toString("hex");
+    res.json({
+      ok: true,
+      verificationToken: token,
+      message: "Email delivery is not wired yet. Save this token for manual verification during beta.",
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/public/verify-email", async (req, res) => {
+  const authToken = normalizePlayerToken(req.body.authToken);
+  try {
+    const user = await getUserByAuthToken(authToken);
+    if (!user) {
+      throw new Error("Sign in first.");
+    }
+    if (!String(user.email || "").trim()) {
+      throw new Error("Add an email address to your profile first.");
+    }
+    const result = await pool.query(
+      `update users
+       set email_verified = true,
+           updated_at = now()
+       where id = $1
+       returning *`,
+      [user.id],
+    );
+    res.json({ ok: true, user: serializeUserPublic(result.rows[0]) });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
   }
 });
 
@@ -2002,10 +2254,7 @@ app.post("/api/public/register", async (req, res) => {
     const user = await createUserAccount(username, password);
     res.json({
       ok: true,
-      user: {
-        username: user.username,
-        authToken: user.auth_token,
-      },
+      user: serializeUserPublic(user),
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message });
@@ -2017,12 +2266,10 @@ app.post("/api/public/login", async (req, res) => {
   const password = String(req.body.password || "");
   try {
     const user = await loginUserAccount(username, password);
+    const fullUser = await getUserByAuthToken(user.auth_token);
     res.json({
       ok: true,
-      user: {
-        username: user.username,
-        authToken: user.auth_token,
-      },
+      user: serializeUserPublic(fullUser),
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message });
@@ -2327,6 +2574,8 @@ app.get("/api/admin/state", requireAdmin, async (_req, res) => {
         revealFanfareKey: buildRevealFanfareKey(state),
         correctGuessWinners: buildCorrectGuessWinners(players),
         hostMessages: await listHostMessages(state.session_id),
+        leaderboard: buildLeaderboardEntries(players),
+        unsubmittedPlayers: buildUnsubmittedPlayerNames(state, players),
       },
     });
   } catch (error) {
@@ -2383,7 +2632,7 @@ async function handleAdminAction(action, body) {
     case "state":
       return serializeState(state);
     case "create-session": {
-      const wordPool = await resetHostWordPool();
+      const wordPool = await resetHostWordPool(state);
       return serializeState(await updateState({
         version: 1,
         mode: "lingo",
@@ -2405,6 +2654,10 @@ async function handleAdminAction(action, body) {
         round_ball_stakes: [],
         guess_window_seq: 0,
         all_players_submitted_at: null,
+        host_broadcast: "",
+        leaderboard_visible: false,
+        award_all_balls_seq: 0,
+        scramble_word: pickScrambleWord(),
         ...wordPool,
       }));
     }
@@ -2558,6 +2811,17 @@ async function handleAdminAction(action, body) {
         host_word_suggestions: suggestions,
       }));
     }
+    case "unexclude-word": {
+      const restoredWord = normalizeWordInput(body.word);
+      if (!isFiveLetterWord(restoredWord)) {
+        throw new Error("Word must be exactly 5 letters.");
+      }
+      const exclusions = parseWordListFromState(state.host_word_exclusions)
+        .filter((item) => item !== restoredWord);
+      return serializeState(await updateState({
+        host_word_exclusions: exclusions,
+      }));
+    }
     case "add-to-word-queue": {
       const word = normalizeWordInput(body.word);
       if (!isFiveLetterWord(word)) {
@@ -2623,6 +2887,18 @@ async function handleAdminAction(action, body) {
       return serializeState(await updateState({
         host_note: String(body.hostNote || ""),
       }));
+    case "set-host-broadcast":
+      return serializeState(await updateState({
+        host_broadcast: String(body.hostBroadcast || "").trim().slice(0, HOST_BROADCAST_MAX_LENGTH),
+      }));
+    case "set-leaderboard-visible":
+      return serializeState(await updateState({
+        leaderboard_visible: Boolean(body.visible),
+      }));
+    case "regenerate-scramble-word":
+      return serializeState(await updateState({
+        scramble_word: pickScrambleWord(),
+      }));
     case "remove-player": {
       const playerId = Number(body.playerId);
       if (!Number.isFinite(playerId) || playerId <= 0) {
@@ -2655,15 +2931,18 @@ async function handleAdminAction(action, body) {
       );
       return serializeState(await getState());
     }
-    case "award-all-balls":
+    case "award-all-balls": {
       await pool.query(
         `update players
          set balls = balls + 1,
              updated_at = now()
          where session_id = $1`,
-        [state.session_id]
+        [state.session_id],
       );
-      return serializeState(await getState());
+      return serializeState(await updateState({
+        award_all_balls_seq: Number(state.award_all_balls_seq || 0) + 1,
+      }));
+    }
     case "toggle-timer-pause": {
       if (state.phase !== "guessing" && state.phase !== "results") {
         throw new Error("Timer can only be paused during guessing or results.");
@@ -2765,7 +3044,7 @@ async function handleAdminAction(action, body) {
       }
     }
     case "reset-session": {
-      const wordPool = await resetHostWordPool();
+      const wordPool = await resetHostWordPool(state);
       await clearSessionPlayers(state.session_id);
       await pool.query(`delete from host_messages where session_id = $1`, [state.session_id]);
       return serializeState(await updateState({
@@ -2787,6 +3066,10 @@ async function handleAdminAction(action, body) {
         round_ball_stakes: [],
         guess_window_seq: 0,
         all_players_submitted_at: null,
+        host_broadcast: "",
+        leaderboard_visible: false,
+        award_all_balls_seq: 0,
+        scramble_word: pickScrambleWord(),
         ...wordPool,
       }));
     }

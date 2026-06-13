@@ -13,6 +13,7 @@
     let grid = [];
     let playerState = null;
     let bingoState = null;
+    let lastAnimatedCall = "";
 
     function setStatus(text, type = "") {
       if (els.status) {
@@ -46,12 +47,27 @@
       }
     }
 
+    function renderCallUi() {
+      if (!bingoState) return;
+      const lastCall = bingoState.lastCall || "—";
+      if (els.lastCall) {
+        els.lastCall.textContent = lastCall;
+      }
+      if (lastCall && lastCall !== "—") {
+        if (els.callHeroWrap) els.callHeroWrap.hidden = false;
+        if (els.callHero && lastCall !== lastAnimatedCall) {
+          lastAnimatedCall = lastCall;
+          root.TypeoShow?.animateBingoCallBall(els.callHero, lastCall);
+        }
+      }
+      if (els.callHistory && root.TypeoShow) {
+        root.TypeoShow.renderBingoCallHistory(els.callHistory, bingoState.called || [], lastCall);
+      }
+    }
+
     function updateUi() {
       if (!bingoState) return;
-
-      if (els.lastCall) {
-        els.lastCall.textContent = bingoState.lastCall || "—";
-      }
+      renderCallUi();
 
       if (bingoState.hasWinner) {
         if (els.winnerBanner) {

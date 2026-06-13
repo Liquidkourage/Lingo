@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/typeo-brand.css" />
+  <link rel="stylesheet" href="/show-features.css" />
   <style>
     :root {
       --show-gold: #ffcc00;
@@ -1508,7 +1509,15 @@
         <img class="play-logo" src="/assets/typeo-wordmark.svg" width="320" height="72" alt="TYPEO" />
         <div class="phase-badge" id="phaseBadge">Sign up open</div>
         <p class="phase-line" id="phaseLine">Join the lobby so you appear on the venue display before the host starts a round.</p>
+        <p class="player-broadcast-banner" id="playerBroadcast" hidden></p>
       </header>
+
+      <details class="play-instructions">
+        <summary>How to play</summary>
+        Join with a name, then wait for the host to start. Type a five-letter guess each round.
+        Colors and symbols show how close you are: ▪ correct spot, ○ right letter wrong spot, ✕ not in the word.
+        Earn balls for correct solves. During bingo, your card marks itself — tap BINGO! when you have a line.
+      </details>
 
       <div class="play-setup" id="playSetup">
         <section class="play-setup-panel" id="playIdentity" data-auth-mode="signed-out" aria-label="Join the game">
@@ -1540,6 +1549,27 @@
               <div class="auth-actions">
                 <button id="loginBtn" class="good" type="submit">Log in</button>
               </div>
+              <details class="auth-recovery">
+                <summary>Forgot password?</summary>
+                <div class="auth-field">
+                  <label for="resetUsername">Username</label>
+                  <input id="resetUsername" type="text" maxlength="24" autocomplete="username" />
+                </div>
+                <div class="auth-actions">
+                  <button id="requestResetBtn" class="secondary" type="button">Get reset token</button>
+                </div>
+                <div class="auth-field">
+                  <label for="resetToken">Reset token</label>
+                  <input id="resetToken" type="text" maxlength="64" autocomplete="off" />
+                </div>
+                <div class="auth-field">
+                  <label for="resetPassword">New password</label>
+                  <input id="resetPassword" type="password" maxlength="128" autocomplete="new-password" />
+                </div>
+                <div class="auth-actions">
+                  <button id="applyResetBtn" class="secondary" type="button">Set new password</button>
+                </div>
+              </details>
             </form>
             <form id="authRegisterForm" class="auth-form" autocomplete="on">
               <div class="auth-field">
@@ -1568,6 +1598,32 @@
             <div class="setup-row">
               <button id="lobbyToggle" class="good lobby-toggle" type="button">Join game</button>
             </div>
+            <details class="account-tools">
+              <summary>Account settings</summary>
+              <div class="auth-field">
+                <label for="profileDisplayName">Display name</label>
+                <input id="profileDisplayName" type="text" maxlength="40" autocomplete="nickname" />
+              </div>
+              <div class="auth-field">
+                <label for="profileEmail">Email (optional)</label>
+                <input id="profileEmail" type="email" maxlength="120" autocomplete="email" />
+              </div>
+              <div class="auth-actions">
+                <button id="saveProfileBtn" class="secondary" type="button">Save profile</button>
+                <button id="verifyEmailBtn" class="secondary" type="button">Mark email verified</button>
+              </div>
+              <div class="auth-field">
+                <label for="currentPassword">Current password</label>
+                <input id="currentPassword" type="password" maxlength="128" autocomplete="current-password" />
+              </div>
+              <div class="auth-field">
+                <label for="newPassword">New password</label>
+                <input id="newPassword" type="password" maxlength="128" autocomplete="new-password" />
+              </div>
+              <div class="auth-actions">
+                <button id="changePasswordBtn" class="secondary" type="button">Change password</button>
+              </div>
+            </details>
           </div>
           <div class="host-message-compose" id="hostMessageCompose" hidden>
             <label class="field-label" for="hostMessageInput">Message host</label>
@@ -1599,6 +1655,14 @@
       <section class="play-block play-bingo" id="playBingo" hidden aria-label="Bingo finale">
         <p class="bingo-auto-note" id="bingoAutoNote"></p>
         <p class="bingo-budget" id="bingoBudgetLine">Loading your bingo card…</p>
+        <div class="scramble-panel" id="bingoScramblePanel" hidden>
+          <strong>Unscramble the finale word</strong>
+          <div class="scramble-letters" id="bingoScrambleLetters"></div>
+        </div>
+        <div class="bingo-call-hero" id="bingoCallHeroWrap" hidden>
+          <span class="bingo-call-hero-ball" id="bingoCallHero">—</span>
+        </div>
+        <ul class="bingo-call-history" id="bingoCallHistory" aria-label="Recent calls"></ul>
         <p class="bingo-last-call">
           <span class="bingo-last-call-label">Last call</span>
           <span id="bingoLastCall">—</span>
@@ -1674,6 +1738,7 @@
 
   <script src="/bingo-shared.js"></script>
   <script src="/bingo-player.js"></script>
+  <script src="/show-features.js"></script>
   <script src="/typeo-brand.js"></script>
   <script src="/event-code.js"></script>
   <script>
@@ -1682,6 +1747,7 @@
       phaseBadge: document.getElementById('phaseBadge'),
       timerFlash: document.getElementById('timerFlash'),
       phaseLine: document.getElementById('phaseLine'),
+      playerBroadcast: document.getElementById('playerBroadcast'),
       metaRound: document.getElementById('metaRound'),
       metaPot: document.getElementById('metaPot'),
       metaYours: document.getElementById('metaYours'),
@@ -1698,6 +1764,11 @@
       playBingo: document.getElementById('playBingo'),
       bingoAutoNote: document.getElementById('bingoAutoNote'),
       bingoBudgetLine: document.getElementById('bingoBudgetLine'),
+      bingoScramblePanel: document.getElementById('bingoScramblePanel'),
+      bingoScrambleLetters: document.getElementById('bingoScrambleLetters'),
+      bingoCallHeroWrap: document.getElementById('bingoCallHeroWrap'),
+      bingoCallHero: document.getElementById('bingoCallHero'),
+      bingoCallHistory: document.getElementById('bingoCallHistory'),
       bingoLastCall: document.getElementById('bingoLastCall'),
       bingoStatus: document.getElementById('bingoStatus'),
       bingoBody: document.getElementById('bingoBody'),
@@ -1720,6 +1791,18 @@
       registerUsername: document.getElementById('registerUsername'),
       registerPassword: document.getElementById('registerPassword'),
       loginBtn: document.getElementById('loginBtn'),
+      resetUsername: document.getElementById('resetUsername'),
+      requestResetBtn: document.getElementById('requestResetBtn'),
+      resetToken: document.getElementById('resetToken'),
+      resetPassword: document.getElementById('resetPassword'),
+      applyResetBtn: document.getElementById('applyResetBtn'),
+      profileDisplayName: document.getElementById('profileDisplayName'),
+      profileEmail: document.getElementById('profileEmail'),
+      saveProfileBtn: document.getElementById('saveProfileBtn'),
+      verifyEmailBtn: document.getElementById('verifyEmailBtn'),
+      currentPassword: document.getElementById('currentPassword'),
+      newPassword: document.getElementById('newPassword'),
+      changePasswordBtn: document.getElementById('changePasswordBtn'),
       registerBtn: document.getElementById('registerBtn'),
       accountUsernameDisplay: document.getElementById('accountUsernameDisplay'),
       authIdentityLabel: document.getElementById('authIdentityLabel'),
@@ -1746,6 +1829,9 @@
     let tickTimer = null;
     let guessDraftDirty = false;
     let lastPlayPhase = 'idle';
+    let lastWasBingoMode = false;
+    let lastScrambleKey = '';
+    let lastScrambleDisplay = '';
     let guessCaretIndex = null;
     let lastGuessWindowKey = '';
     let lastStatusContextKey = '';
@@ -1758,6 +1844,9 @@
       els: {
         budgetLine: els.bingoBudgetLine,
         lastCall: els.bingoLastCall,
+        callHero: els.bingoCallHero,
+        callHeroWrap: els.bingoCallHeroWrap,
+        callHistory: els.bingoCallHistory,
         status: els.bingoStatus,
         statusClassBase: 'bingo-status',
         bingoBtn: els.bingoClaimBtn,
@@ -1776,22 +1865,100 @@
 
     function renderBingoMode(state) {
       const active = isBingoMode(state);
+      const justEnteredBingo = active && !lastWasBingoMode;
+      lastWasBingoMode = active;
       els.playBingo.hidden = !active;
+      renderPlayerBroadcast(state);
       if (active) {
         els.stage.dataset.bingoMode = 'true';
         renderPhaseBadge(state);
         els.phaseLine.innerHTML = `${TypeoBrand.wrap()} is done — this is the finale. Watch your card light up as numbers are called.`;
         els.playRound.hidden = true;
         els.playStats.hidden = true;
-        bingoPlayer.refreshFromPublicState(state).catch((error) => {
-          els.bingoStatus.textContent = error.message || 'Could not load bingo.';
-          els.bingoStatus.className = 'bingo-status error';
-        });
+        renderScramblePanel(state);
+        if (justEnteredBingo && canJoinGame() && !isViewerJoined(state)) {
+          joinGame()
+            .then((payload) => {
+              if (!getAuthToken()) {
+                setAuthMode('signed-in', { playerMode: 'guest' });
+              }
+              renderPublicState(payload.publicState);
+              setMessage('Bingo finale — you joined automatically.', 'success');
+            })
+            .catch(() => {
+              setMessage('Bingo started — tap Join game to load your card.', 'error');
+            });
+        } else {
+          bingoPlayer.refreshFromPublicState(state).catch((error) => {
+            els.bingoStatus.textContent = error.message || 'Could not load bingo.';
+            els.bingoStatus.className = 'bingo-status error';
+          });
+        }
         updateLobbyButtons();
+        if (justEnteredBingo || isViewerJoined(state)) {
+          scrollToGame();
+        }
         return true;
       }
       delete els.stage.dataset.bingoMode;
       return false;
+    }
+
+    function renderPlayerBroadcast(state) {
+      if (!els.playerBroadcast) return;
+      const text = String(state?.hostBroadcast || '').trim();
+      if (!text) {
+        els.playerBroadcast.hidden = true;
+        els.playerBroadcast.textContent = '';
+        return;
+      }
+      els.playerBroadcast.hidden = false;
+      els.playerBroadcast.textContent = text;
+    }
+
+    function renderScramblePanel(state) {
+      if (!els.bingoScramblePanel || !els.bingoScrambleLetters) return;
+      const word = String(state?.scrambleWord || '').trim();
+      if (!word) {
+        els.bingoScramblePanel.hidden = true;
+        return;
+      }
+      els.bingoScramblePanel.hidden = false;
+      if (word !== lastScrambleKey) {
+        lastScrambleKey = word;
+        lastScrambleDisplay = TypeoShow.scrambledWord(word);
+      }
+      els.bingoScrambleLetters.textContent = lastScrambleDisplay;
+    }
+
+    function scrollToGame() {
+      const target = !els.playRound.hidden
+        ? els.playRound
+        : !els.playBingo.hidden
+          ? els.playBingo
+          : els.playStats;
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function maybeAutoAdvanceOnRoundStart(state, previousPhase) {
+      const phase = state.phase || 'idle';
+      if (previousPhase !== 'idle' || !isLiveRound(phase)) return;
+      if (canJoinGame() && !isViewerJoined(state)) {
+        try {
+          const payload = await joinGame();
+          if (!getAuthToken()) {
+            setAuthMode('signed-in', { playerMode: 'guest' });
+          }
+          renderPublicState(payload.publicState);
+          setMessage('Round started — you joined automatically.', 'success');
+          return;
+        } catch (error) {
+          setMessage('Round started — tap Join game to play.', 'error');
+        }
+      }
+      if (isViewerJoined(state)) {
+        scrollToGame();
+      }
     }
     let lastTimerToastWindowKey = '';
     let timerToastLastRemaining = null;
@@ -1998,6 +2165,16 @@
         || '';
     }
 
+    function syncProfileFields(user) {
+      if (!user) return;
+      if (els.profileDisplayName) {
+        els.profileDisplayName.value = user.profileDisplayName || user.username || '';
+      }
+      if (els.profileEmail) {
+        els.profileEmail.value = user.email || '';
+      }
+    }
+
     async function restoreAccountSession() {
       const token = getAuthToken();
       if (!token || IS_DEMO) return;
@@ -2011,6 +2188,7 @@
           return;
         }
         accountUsername = payload.user.username;
+        syncProfileFields(payload.user);
         clearGuestDisplayName();
         storeAuthToken(payload.user.authToken);
         setAuthMode('signed-in', { playerMode: 'account' });
@@ -2035,6 +2213,7 @@
           throw new Error(payload.error || 'Could not create account.');
         }
         accountUsername = payload.user.username;
+        syncProfileFields(payload.user);
         clearGuestDisplayName();
         storeAuthToken(payload.user.authToken);
         setAuthMode('signed-in', { playerMode: 'account' });
@@ -2063,6 +2242,7 @@
           throw new Error(payload.error || 'Could not log in.');
         }
         accountUsername = payload.user.username;
+        syncProfileFields(payload.user);
         clearGuestDisplayName();
         storeAuthToken(payload.user.authToken);
         setAuthMode('signed-in', { playerMode: 'account' });
@@ -2072,6 +2252,150 @@
         setMessage(error.message || 'Could not log in.', 'error');
       } finally {
         els.loginBtn.disabled = false;
+      }
+    }
+
+    async function saveProfile() {
+      const authToken = getAuthToken();
+      if (!authToken) {
+        setMessage('Log in to save your profile.', 'error');
+        return;
+      }
+      els.saveProfileBtn.disabled = true;
+      try {
+        const response = await fetch('/api/public/update-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(TypeoEvent.eventJson({
+            authToken,
+            profileDisplayName: els.profileDisplayName?.value.trim() || '',
+            email: els.profileEmail?.value.trim() || '',
+          })),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not save profile.');
+        }
+        syncProfileFields(payload.user);
+        setMessage('Profile saved.', 'success');
+      } catch (error) {
+        setMessage(error.message || 'Could not save profile.', 'error');
+      } finally {
+        els.saveProfileBtn.disabled = false;
+      }
+    }
+
+    async function changeAccountPassword() {
+      const authToken = getAuthToken();
+      if (!authToken) {
+        setMessage('Log in to change your password.', 'error');
+        return;
+      }
+      els.changePasswordBtn.disabled = true;
+      try {
+        const response = await fetch('/api/public/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(TypeoEvent.eventJson({
+            authToken,
+            currentPassword: els.currentPassword?.value || '',
+            newPassword: els.newPassword?.value || '',
+          })),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not change password.');
+        }
+        if (els.currentPassword) els.currentPassword.value = '';
+        if (els.newPassword) els.newPassword.value = '';
+        setMessage('Password updated.', 'success');
+      } catch (error) {
+        setMessage(error.message || 'Could not change password.', 'error');
+      } finally {
+        els.changePasswordBtn.disabled = false;
+      }
+    }
+
+    async function requestPasswordReset() {
+      const username = els.resetUsername?.value.trim() || els.loginUsername?.value.trim() || '';
+      if (!username) {
+        setMessage('Enter your username first.', 'error');
+        return;
+      }
+      els.requestResetBtn.disabled = true;
+      try {
+        const response = await fetch('/api/public/request-password-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(TypeoEvent.eventJson({ username })),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not request reset.');
+        }
+        if (payload.resetToken && els.resetToken) {
+          els.resetToken.value = payload.resetToken;
+        }
+        setMessage(payload.message || 'Reset token created.', 'success');
+      } catch (error) {
+        setMessage(error.message || 'Could not request reset.', 'error');
+      } finally {
+        els.requestResetBtn.disabled = false;
+      }
+    }
+
+    async function applyPasswordReset() {
+      const resetToken = els.resetToken?.value.trim() || '';
+      const newPassword = els.resetPassword?.value || '';
+      if (!resetToken || !newPassword) {
+        setMessage('Enter the reset token and a new password.', 'error');
+        return;
+      }
+      els.applyResetBtn.disabled = true;
+      try {
+        const response = await fetch('/api/public/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(TypeoEvent.eventJson({ resetToken, newPassword })),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not reset password.');
+        }
+        if (els.resetPassword) els.resetPassword.value = '';
+        if (els.resetToken) els.resetToken.value = '';
+        setMessage('Password reset — log in with your new password.', 'success');
+        setAuthTab('login');
+      } catch (error) {
+        setMessage(error.message || 'Could not reset password.', 'error');
+      } finally {
+        els.applyResetBtn.disabled = false;
+      }
+    }
+
+    async function verifyAccountEmail() {
+      const authToken = getAuthToken();
+      if (!authToken) {
+        setMessage('Log in first.', 'error');
+        return;
+      }
+      els.verifyEmailBtn.disabled = true;
+      try {
+        const response = await fetch('/api/public/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(TypeoEvent.eventJson({ authToken })),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not verify email.');
+        }
+        syncProfileFields(payload.user);
+        setMessage('Email marked verified.', 'success');
+      } catch (error) {
+        setMessage(error.message || 'Could not verify email.', 'error');
+      } finally {
+        els.verifyEmailBtn.disabled = false;
       }
     }
 
@@ -3335,6 +3659,7 @@
       syncTimerDisplay(state);
       syncStatusMessage(state);
       const phase = state.phase || 'idle';
+      const previousPhase = lastPlayPhase;
       if (phase === 'results' && lastPlayPhase === 'guessing') {
         setGuessText('');
         guessDraftDirty = false;
@@ -3359,6 +3684,7 @@
       els.stage.dataset.guessLocked = phase === 'guessing' && viewer?.isSolved ? 'true' : 'false';
       els.stage.dataset.solved = (phase === 'results' || phase === 'ended') && viewer?.isSolved ? 'true' : 'false';
       renderPhaseBadge(state);
+      renderPlayerBroadcast(state);
       if (phase === 'idle' && state.hostNote) {
         els.phaseLine.textContent = state.hostNote;
       } else if (phase === 'ended' && state.revealedWord) {
@@ -3412,6 +3738,7 @@
       syncGuessDraftFromState(state);
       schedulePolling();
       maybeFocusNameField(phase);
+      maybeAutoAdvanceOnRoundStart(state, previousPhase).catch(() => {});
     }
 
     function refreshTimerBadge() {
@@ -3695,6 +4022,21 @@
     });
     els.logoutBtn.addEventListener('click', () => {
       logoutAccount().catch(() => {});
+    });
+    els.saveProfileBtn?.addEventListener('click', () => {
+      saveProfile().catch(() => {});
+    });
+    els.changePasswordBtn?.addEventListener('click', () => {
+      changeAccountPassword().catch(() => {});
+    });
+    els.requestResetBtn?.addEventListener('click', () => {
+      requestPasswordReset().catch(() => {});
+    });
+    els.applyResetBtn?.addEventListener('click', () => {
+      applyPasswordReset().catch(() => {});
+    });
+    els.verifyEmailBtn?.addEventListener('click', () => {
+      verifyAccountEmail().catch(() => {});
     });
 
     document.addEventListener('keydown', (event) => {
