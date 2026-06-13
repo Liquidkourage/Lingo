@@ -2053,7 +2053,7 @@ app.post("/api/public/join", async (req, res) => {
       player = await upsertLobbyPlayerForUser(state.session_id, user, client);
     } else {
       if (!displayName) {
-        throw new Error("Sign in to join the game.");
+        throw new Error("Enter a display name or sign in to join the game.");
       }
       if (displayName.length > 40) {
         throw new Error("User name must be 40 characters or fewer.");

@@ -518,6 +518,10 @@
       display: none;
     }
 
+    .play-setup-panel[data-auth-mode="signed-in"][data-player-mode="guest"] .auth-logout-btn {
+      display: none;
+    }
+
     .auth-tabs {
       display: flex;
       gap: 0.35rem;
@@ -1501,13 +1505,24 @@
       </header>
 
       <div class="play-setup" id="playSetup">
-        <section class="play-setup-panel" id="playIdentity" data-auth-mode="signed-out" aria-label="Your account">
+        <section class="play-setup-panel" id="playIdentity" data-auth-mode="signed-out" aria-label="Join the game">
           <div class="auth-signed-out" id="authSignedOut">
-            <div class="auth-tabs" role="tablist" aria-label="Account">
-              <button id="authTabLogin" class="secondary auth-tab is-active" type="button" data-auth-tab="login">Log in</button>
+            <div class="auth-tabs" role="tablist" aria-label="How to join">
+              <button id="authTabGuest" class="secondary auth-tab is-active" type="button" data-auth-tab="guest">Guest</button>
+              <button id="authTabLogin" class="secondary auth-tab" type="button" data-auth-tab="login">Log in</button>
               <button id="authTabRegister" class="secondary auth-tab" type="button" data-auth-tab="register">Create account</button>
             </div>
-            <form id="authLoginForm" class="auth-form is-active" autocomplete="on">
+            <form id="authGuestForm" class="auth-form is-active" autocomplete="on">
+              <div class="auth-field">
+                <label for="guestDisplayName">Display name</label>
+                <input id="guestDisplayName" type="text" maxlength="40" autocomplete="nickname" spellcheck="false" placeholder="How you appear on the venue screen" />
+              </div>
+              <div class="auth-actions">
+                <button id="guestJoinBtn" class="good" type="submit">Join game</button>
+              </div>
+              <p class="auth-hint">No account needed. Pick a name your friends will recognize.</p>
+            </form>
+            <form id="authLoginForm" class="auth-form" autocomplete="on">
               <div class="auth-field">
                 <label for="loginUsername">Username</label>
                 <input id="loginUsername" type="text" maxlength="24" autocomplete="username" autocapitalize="none" spellcheck="false" />
@@ -1538,7 +1553,7 @@
           <div class="auth-signed-in" id="authSignedIn">
             <div class="auth-signed-in-row">
               <div class="auth-signed-in-meta">
-                <span class="auth-signed-in-label">Signed in as</span>
+                <span class="auth-signed-in-label" id="authIdentityLabel">Signed in as</span>
                 <span class="auth-username" id="accountUsernameDisplay"></span>
                 <span class="champion-badge" id="championBadge" title="Venue champion">★</span>
               </div>
@@ -1686,10 +1701,14 @@
       wordTiles: document.getElementById('wordTiles'),
       guessCapture: document.getElementById('guessCapture'),
       playIdentity: document.getElementById('playIdentity'),
+      authTabGuest: document.getElementById('authTabGuest'),
       authTabLogin: document.getElementById('authTabLogin'),
       authTabRegister: document.getElementById('authTabRegister'),
+      authGuestForm: document.getElementById('authGuestForm'),
       authLoginForm: document.getElementById('authLoginForm'),
       authRegisterForm: document.getElementById('authRegisterForm'),
+      guestDisplayName: document.getElementById('guestDisplayName'),
+      guestJoinBtn: document.getElementById('guestJoinBtn'),
       loginUsername: document.getElementById('loginUsername'),
       loginPassword: document.getElementById('loginPassword'),
       registerUsername: document.getElementById('registerUsername'),
@@ -1697,6 +1716,7 @@
       loginBtn: document.getElementById('loginBtn'),
       registerBtn: document.getElementById('registerBtn'),
       accountUsernameDisplay: document.getElementById('accountUsernameDisplay'),
+      authIdentityLabel: document.getElementById('authIdentityLabel'),
       logoutBtn: document.getElementById('logoutBtn'),
       lobbyToggle: document.getElementById('lobbyToggle'),
       message: document.getElementById('message'),
@@ -1907,35 +1927,66 @@
       localStorage.removeItem('lingo_player_token');
     }
 
-    function setAuthMode(mode) {
-      els.playIdentity.setAttribute('data-auth-mode', mode === 'signed-in' ? 'signed-in' : 'signed-out');
-      if (mode === 'signed-in') {
+    function getGuestDisplayName() {
+      return localStorage.getItem('lingo_guest_display_name') || '';
+    }
+
+    function storeGuestDisplayName(name) {
+      if (name) localStorage.setItem('lingo_guest_display_name', name);
+    }
+
+    function clearGuestDisplayName() {
+      localStorage.removeItem('lingo_guest_display_name');
+    }
+
+    function setAuthMode(mode, options = {}) {
+      const signedIn = mode === 'signed-in';
+      els.playIdentity.setAttribute('data-auth-mode', signedIn ? 'signed-in' : 'signed-out');
+      if (signedIn) {
+        const guest = options.playerMode === 'guest' || (!getAuthToken() && Boolean(accountUsername));
+        els.playIdentity.setAttribute('data-player-mode', guest ? 'guest' : 'account');
+        els.authIdentityLabel.textContent = guest ? 'Playing as' : 'Signed in as';
         els.accountUsernameDisplay.textContent = accountUsername;
+      } else {
+        els.playIdentity.removeAttribute('data-player-mode');
       }
     }
 
     function setAuthTab(tab) {
-      const isLogin = tab !== 'register';
+      const guest = tab === 'guest';
+      const isLogin = tab === 'login';
+      const isRegister = tab === 'register';
+      els.authTabGuest.classList.toggle('is-active', guest);
       els.authTabLogin.classList.toggle('is-active', isLogin);
-      els.authTabRegister.classList.toggle('is-active', !isLogin);
+      els.authTabRegister.classList.toggle('is-active', isRegister);
+      els.authGuestForm.classList.toggle('is-active', guest);
       els.authLoginForm.classList.toggle('is-active', isLogin);
-      els.authRegisterForm.classList.toggle('is-active', !isLogin);
+      els.authRegisterForm.classList.toggle('is-active', isRegister);
     }
 
     function isSignedIn() {
       return Boolean(getAuthToken()) && Boolean(accountUsername);
     }
 
+    function isGuestMode() {
+      return !getAuthToken() && Boolean(getGuestDisplayName());
+    }
+
+    function canJoinGame() {
+      return isSignedIn() || isGuestMode();
+    }
+
     function isNameLocked() {
-      return isSignedIn() || IS_DEMO;
+      return isSignedIn() || isViewerJoined() || IS_DEMO;
     }
 
     function hasUserName() {
-      return isSignedIn() || IS_DEMO;
+      return isSignedIn() || (isGuestMode() && isViewerJoined()) || IS_DEMO;
     }
 
     function activeUserName() {
       return accountUsername
+        || getGuestDisplayName()
         || currentState?.viewer?.accountUsername
         || currentState?.viewer?.displayName
         || '';
@@ -1954,8 +2005,9 @@
           return;
         }
         accountUsername = payload.user.username;
+        clearGuestDisplayName();
         storeAuthToken(payload.user.authToken);
-        setAuthMode('signed-in');
+        setAuthMode('signed-in', { playerMode: 'account' });
       } catch (error) {
         setAuthMode(getAuthToken() ? 'signed-in' : 'signed-out');
       }
@@ -1977,8 +2029,9 @@
           throw new Error(payload.error || 'Could not create account.');
         }
         accountUsername = payload.user.username;
+        clearGuestDisplayName();
         storeAuthToken(payload.user.authToken);
-        setAuthMode('signed-in');
+        setAuthMode('signed-in', { playerMode: 'account' });
         els.registerPassword.value = '';
         await joinAfterSignIn('Account created.');
       } catch (error) {
@@ -2004,8 +2057,9 @@
           throw new Error(payload.error || 'Could not log in.');
         }
         accountUsername = payload.user.username;
+        clearGuestDisplayName();
         storeAuthToken(payload.user.authToken);
-        setAuthMode('signed-in');
+        setAuthMode('signed-in', { playerMode: 'account' });
         els.loginPassword.value = '';
         await joinAfterSignIn('Signed in.');
       } catch (error) {
@@ -2033,8 +2087,10 @@
       }
       clearAuthToken();
       clearPlayerToken();
+      clearGuestDisplayName();
       accountUsername = '';
       setAuthMode('signed-out');
+      setAuthTab('guest');
       setMessage('Logged out.', 'success');
       fetchPublicState().catch(() => {});
     }
@@ -2052,16 +2108,22 @@
 
     async function joinGame() {
       const authToken = getAuthToken();
-      if (!authToken) {
-        throw new Error('Sign in to join the game.');
+      const body = { playerToken: getPlayerToken() };
+      if (authToken) {
+        body.authToken = authToken;
+      } else {
+        const displayName = els.guestDisplayName?.value.trim() || getGuestDisplayName();
+        if (!displayName) {
+          throw new Error('Enter a display name to join.');
+        }
+        body.displayName = displayName;
+        storeGuestDisplayName(displayName);
+        accountUsername = displayName;
       }
       const response = await fetch('/api/public/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(TypeoEvent.eventJson({
-          authToken,
-          playerToken: getPlayerToken(),
-        })),
+        body: JSON.stringify(TypeoEvent.eventJson(body)),
       });
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
@@ -2078,10 +2140,35 @@
       return payload;
     }
 
+    async function joinAsGuest(event) {
+      if (event) event.preventDefault();
+      const displayName = els.guestDisplayName.value.trim();
+      if (!displayName) {
+        setMessage('Enter a display name first.', 'error');
+        return;
+      }
+      els.guestJoinBtn.disabled = true;
+      try {
+        storeGuestDisplayName(displayName);
+        accountUsername = displayName;
+        const payload = await joinGame();
+        setAuthMode('signed-in', { playerMode: 'guest' });
+        renderPublicState(payload.publicState);
+        setMessage('You joined the game and appear on the venue display.', 'success');
+      } catch (error) {
+        setMessage(error.message || 'Could not join the game.', 'error');
+      } finally {
+        els.guestJoinBtn.disabled = false;
+      }
+    }
+
     function maybeFocusNameField(phase) {
-      if (IS_DEMO || isSignedIn()) return;
-      if (phase === 'idle' && document.activeElement !== els.loginUsername) {
-        window.requestAnimationFrame(() => els.loginUsername.focus({ preventScroll: true }));
+      if (IS_DEMO || isSignedIn() || isViewerJoined()) return;
+      if (phase !== 'idle') return;
+      const focusGuest = els.authTabGuest.classList.contains('is-active');
+      const target = focusGuest ? els.guestDisplayName : els.loginUsername;
+      if (document.activeElement !== target) {
+        window.requestAnimationFrame(() => target.focus({ preventScroll: true }));
       }
     }
 
@@ -2410,7 +2497,8 @@
 
       const active = document.activeElement;
       if (
-        active === els.loginUsername
+        active === els.guestDisplayName
+        || active === els.loginUsername
         || active === els.loginPassword
         || active === els.registerUsername
         || active === els.registerPassword
@@ -2978,14 +3066,12 @@
 
     function updateLobbyButtons() {
       const joined = isViewerJoined();
-      const signedIn = isSignedIn();
-      els.lobbyToggle.disabled = !signedIn;
-      if (!signedIn) {
-        els.lobbyToggle.textContent = 'Join game';
-        els.lobbyToggle.className = 'good lobby-toggle';
+      const signedInPanel = els.playIdentity.getAttribute('data-auth-mode') === 'signed-in';
+      if (!signedInPanel) {
         els.hostMessageCompose.hidden = true;
         return;
       }
+      els.lobbyToggle.disabled = false;
       if (joined) {
         els.lobbyToggle.textContent = 'Leave game';
         els.lobbyToggle.className = 'secondary lobby-toggle';
@@ -3001,7 +3087,7 @@
       const authToken = getAuthToken();
       const playerToken = getPlayerToken();
       const message = String(els.hostMessageInput.value || '').trim();
-      if (!authToken || !playerToken) {
+      if (!playerToken && !authToken) {
         setMessage('Join the game before messaging the host.', 'error');
         return;
       }
@@ -3276,17 +3362,26 @@
         ? '—'
         : String(isViewerJoined(state) ? viewer.balls : 0);
 
-      if (isLiveRound(phase) && isSignedIn() && !isViewerJoined(state)) {
+      if (isLiveRound(phase) && canJoinGame() && !isViewerJoined(state)) {
         setMessage('Tap Join game to appear on the venue display.', 'error');
       }
 
       if (viewer?.accountUsername) {
         accountUsername = viewer.accountUsername;
+      } else if (viewer?.displayName && isViewerJoined(state) && !getAuthToken()) {
+        accountUsername = viewer.displayName;
+        storeGuestDisplayName(viewer.displayName);
       }
+
       if (getAuthToken() && accountUsername) {
-        setAuthMode('signed-in');
-      } else if (!IS_DEMO && !getAuthToken()) {
+        setAuthMode('signed-in', { playerMode: 'account' });
+      } else if (isViewerJoined(state) && activeUserName()) {
+        setAuthMode('signed-in', { playerMode: 'guest' });
+      } else if (!IS_DEMO) {
         setAuthMode('signed-out');
+        if (els.guestDisplayName && getGuestDisplayName()) {
+          els.guestDisplayName.value = getGuestDisplayName();
+        }
       }
 
       if (viewer && viewer.isChampion) {
@@ -3332,23 +3427,26 @@
     }
 
     async function joinLobby() {
-      if (!isSignedIn()) {
-        setMessage('Log in or create an account first.', 'error');
-        setAuthTab('login');
-        els.loginUsername.focus();
+      if (!canJoinGame()) {
+        setMessage('Enter a display name or log in first.', 'error');
+        setAuthTab('guest');
+        els.guestDisplayName.focus();
         return;
       }
 
       els.lobbyToggle.disabled = true;
       try {
         const payload = await joinGame();
+        if (!getAuthToken()) {
+          setAuthMode('signed-in', { playerMode: 'guest' });
+        }
         setMessage('You joined the game and appear on the venue display.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
         setMessage(error.message || 'Could not join the game.', 'error');
         updateLobbyButtons();
       } finally {
-        els.lobbyToggle.disabled = !isSignedIn();
+        els.lobbyToggle.disabled = false;
       }
     }
 
@@ -3356,7 +3454,7 @@
       const { silent = false } = options;
       const authToken = getAuthToken();
       const playerToken = getPlayerToken();
-      if (!authToken || !playerToken) {
+      if (!authToken && !playerToken) {
         if (!silent) setMessage('You are not in the game.', 'error');
         return;
       }
@@ -3377,13 +3475,21 @@
           throw new Error(payload.error || 'Could not leave the lobby.');
         }
         clearPlayerToken();
+        if (!authToken) {
+          accountUsername = getGuestDisplayName();
+          setAuthMode('signed-out');
+          setAuthTab('guest');
+          if (els.guestDisplayName) {
+            els.guestDisplayName.value = getGuestDisplayName();
+          }
+        }
         if (!silent) setMessage('You left the game.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
         if (!silent) setMessage(error.message || 'Could not leave the lobby.', 'error');
         updateLobbyButtons();
       } finally {
-        els.lobbyToggle.disabled = !isSignedIn();
+        els.lobbyToggle.disabled = false;
       }
     }
 
@@ -3418,12 +3524,15 @@
       if (isViewerJoined()) {
         return true;
       }
-      if (!isSignedIn()) {
-        setMessage('Log in or create an account first.', 'error');
-        setAuthTab('login');
+      if (!canJoinGame()) {
+        setMessage('Enter a display name or log in first.', 'error');
+        setAuthTab('guest');
         return false;
       }
       const payload = await joinGame();
+      if (!getAuthToken()) {
+        setAuthMode('signed-in', { playerMode: 'guest' });
+      }
       renderPublicState(payload.publicState);
       return isViewerJoined();
     }
@@ -3432,10 +3541,10 @@
       if (!canSubmitGuess()) {
         return;
       }
-      if (!isSignedIn()) {
-        setMessage('Log in or create an account first.', 'error');
-        setAuthTab('login');
-        els.loginUsername.focus();
+      if (!canJoinGame()) {
+        setMessage('Enter a display name or log in first.', 'error');
+        setAuthTab('guest');
+        els.guestDisplayName.focus();
         return;
       }
       if (viewerSolvedCurrentWord()) {
@@ -3561,8 +3670,12 @@
       clearInputs(true);
       setMessage('');
     });
+    els.authTabGuest.addEventListener('click', () => setAuthTab('guest'));
     els.authTabLogin.addEventListener('click', () => setAuthTab('login'));
     els.authTabRegister.addEventListener('click', () => setAuthTab('register'));
+    els.authGuestForm.addEventListener('submit', (event) => {
+      joinAsGuest(event).catch(() => {});
+    });
     els.authLoginForm.addEventListener('submit', (event) => {
       loginAccount(event).catch(() => {});
     });
@@ -3592,15 +3705,22 @@
 
       await restoreAccountSession();
 
+      if (els.guestDisplayName && getGuestDisplayName()) {
+        els.guestDisplayName.value = getGuestDisplayName();
+      }
+
       try {
         await fetchPublicState();
       } catch (err) {
         setMessage(err.message || 'Could not load game state.', 'error');
       }
 
-      if (isSignedIn() && !isViewerJoined(currentState)) {
+      if (canJoinGame() && !isViewerJoined(currentState)) {
         try {
           const payload = await joinGame();
+          if (!getAuthToken()) {
+            setAuthMode('signed-in', { playerMode: 'guest' });
+          }
           renderPublicState(payload.publicState);
         } catch (error) {
           setMessage(error.message || 'Tap Join game when ready.', 'error');
