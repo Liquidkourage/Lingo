@@ -649,8 +649,50 @@ function parseWordHistoryFromState(value) {
   return parseWordListFromState(value);
 }
 
-function hostWordPoolExclusions(state) {
+async function listGlobalHostWordBans(client = pool) {
+  const result = await client.query(
+    `select word from host_word_bans order by word asc`,
+  );
+  return normalizeWordList(result.rows.map((row) => row.word));
+}
+
+async function addGlobalHostWordBan(word, client = pool) {
+  const normalized = normalizeWordInput(word);
+  if (!isFiveLetterWord(normalized)) {
+    return;
+  }
+  await client.query(
+    `insert into host_word_bans (word)
+     values ($1)
+     on conflict (word) do nothing`,
+    [normalized],
+  );
+}
+
+async function removeGlobalHostWordBan(word, client = pool) {
+  const normalized = normalizeWordInput(word);
+  if (!isFiveLetterWord(normalized)) {
+    return;
+  }
+  await client.query(
+    `delete from host_word_bans where word = $1`,
+    [normalized],
+  );
+}
+
+async function migrateEventExclusionsToGlobalBans(client = pool) {
+  const result = await client.query(`select host_word_exclusions from app_state`);
+  for (const row of result.rows) {
+    for (const word of parseWordListFromState(row.host_word_exclusions)) {
+      await addGlobalHostWordBan(word, client);
+    }
+  }
+}
+
+async function hostWordPoolExclusions(state, client = pool) {
+  const globalBans = await listGlobalHostWordBans(client);
   return normalizeWordList([
+    ...globalBans,
     ...parseWordListFromState(state.host_word_exclusions),
     ...parseWordHistoryFromState(state.host_word_history),
     ...parseWordQueueFromState(state.host_word_queue),
@@ -698,25 +740,33 @@ async function buildHostWordSuggestions(exclusions, count = HOST_WORD_SUGGESTION
 }
 
 async function resetHostWordPool(state = {}, client = pool) {
-  const preservedExclusions = parseWordListFromState(state.host_word_exclusions);
+  const exclusions = await hostWordPoolExclusions(state, client);
   const suggestions = await buildHostWordSuggestions(
-    preservedExclusions,
+    exclusions,
     HOST_WORD_SUGGESTION_COUNT,
     client,
   );
   return {
     host_word_suggestions: suggestions,
-    host_word_exclusions: preservedExclusions,
     host_word_queue: [],
     host_word_history: [],
   };
 }
 
 async function ensureHostWordPool(state, client = pool) {
-  const suggestions = parseWordListFromState(state.host_word_suggestions);
-  if (suggestions.length > 0) return state;
+  const exclusions = await hostWordPoolExclusions(state, client);
+  const exclusionSet = new Set(exclusions);
+  const currentSuggestions = parseWordListFromState(state.host_word_suggestions);
+  const filteredSuggestions = currentSuggestions.filter((word) => !exclusionSet.has(word));
+  if (filteredSuggestions.length > 0) {
+    if (filteredSuggestions.length !== currentSuggestions.length) {
+      return updateState({
+        host_word_suggestions: filteredSuggestions,
+      }, client);
+    }
+    return state;
+  }
 
-  const exclusions = hostWordPoolExclusions(state);
   const nextSuggestions = await buildHostWordSuggestions(exclusions, HOST_WORD_SUGGESTION_COUNT, client);
   if (!nextSuggestions.length) return state;
 
@@ -726,13 +776,15 @@ async function ensureHostWordPool(state, client = pool) {
 }
 
 async function enrichStateWithWordPool(state, client = pool) {
-  const exclusions = hostWordPoolExclusions({
+  const globalBans = await listGlobalHostWordBans(client);
+  const exclusions = await hostWordPoolExclusions({
     host_word_exclusions: state.wordExclusions,
     host_word_history: state.wordHistory,
     host_word_queue: state.wordQueue,
-  });
+  }, client);
   return {
     ...state,
+    wordExclusions: globalBans,
     availableWordCount: await countAvailableWords(client, exclusions),
   };
 }
@@ -1632,6 +1684,7 @@ async function ensureSchema() {
   const sql = fs.readFileSync(schemaPath, "utf8");
   await pool.query(sql);
   await loadEventCodeBlocklist();
+  await migrateEventExclusionsToGlobalBans();
   const totalWords = await countWords(pool);
   if (totalWords === 0) {
     await seedWordsTable(pool);
@@ -2844,9 +2897,11 @@ async function handleAdminAction(action, body) {
       }));
     }
     case "refresh-word-suggestions": {
-      const exclusions = hostWordPoolExclusions(state);
+      const exclusions = await hostWordPoolExclusions(state);
+      const exclusionSet = new Set(exclusions);
       const count = Math.max(1, Number(body.count) || HOST_WORD_SUGGESTION_COUNT);
-      const suggestions = await buildHostWordSuggestions(exclusions, count);
+      const suggestions = (await buildHostWordSuggestions(exclusions, count))
+        .filter((word) => !exclusionSet.has(word));
       if (!suggestions.length) {
         throw new Error("No words left in the host pool.");
       }
@@ -2859,14 +2914,10 @@ async function handleAdminAction(action, body) {
       if (!isFiveLetterWord(excludedWord)) {
         throw new Error("Word must be exactly 5 letters.");
       }
-      const exclusions = parseWordListFromState(state.host_word_exclusions);
-      if (!exclusions.includes(excludedWord)) {
-        exclusions.push(excludedWord);
-      }
+      await addGlobalHostWordBan(excludedWord);
       const suggestions = parseWordListFromState(state.host_word_suggestions)
         .filter((item) => item !== excludedWord);
       return serializeState(await updateState({
-        host_word_exclusions: exclusions,
         host_word_suggestions: suggestions,
       }));
     }
@@ -2875,11 +2926,8 @@ async function handleAdminAction(action, body) {
       if (!isFiveLetterWord(restoredWord)) {
         throw new Error("Word must be exactly 5 letters.");
       }
-      const exclusions = parseWordListFromState(state.host_word_exclusions)
-        .filter((item) => item !== restoredWord);
-      return serializeState(await updateState({
-        host_word_exclusions: exclusions,
-      }));
+      await removeGlobalHostWordBan(restoredWord);
+      return serializeState(await getState());
     }
     case "add-to-word-queue": {
       const word = normalizeWordInput(body.word);

@@ -123,6 +123,12 @@ create table if not exists words (
   constraint words_format_chk check (word ~ '^[A-Z]{5}$')
 );
 
+create table if not exists host_word_bans (
+  word text primary key,
+  created_at timestamptz not null default now(),
+  constraint host_word_bans_format_chk check (word ~ '^[A-Z]{5}$')
+);
+
 create index if not exists idx_players_session on players(session_id);
 create index if not exists idx_guess_submissions_session_round on guess_submissions(session_id, round_number);
 

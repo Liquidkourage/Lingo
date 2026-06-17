@@ -1398,7 +1398,7 @@
           <ul id="wordHistoryList" class="word-history-list" aria-label="Played words"></ul>
         </div>
         <div class="word-exclusions-section">
-          <p class="word-exclusions-heading">Removed for this event <span id="wordExclusionsCount"></span></p>
+          <p class="word-exclusions-heading">Removed from pool (permanent) <span id="wordExclusionsCount"></span></p>
           <ul id="wordExclusionsList" class="word-exclusions-list" aria-label="Removed words"></ul>
         </div>
         <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
@@ -2430,7 +2430,7 @@
       if (!exclusions.length) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'is-empty';
-        emptyItem.textContent = 'Right-click a suggestion to remove it. Removals persist for this event.';
+        emptyItem.textContent = 'Right-click a suggestion to remove it. Removals persist across events.';
         els.wordExclusionsList.appendChild(emptyItem);
         return;
       }
@@ -2459,8 +2459,10 @@
 
     function renderWordPool() {
       const state = currentState || {};
-      const suggestions = Array.isArray(state.wordSuggestions) ? state.wordSuggestions : [];
       const exclusions = Array.isArray(state.wordExclusions) ? state.wordExclusions : [];
+      const exclusionSet = new Set(exclusions);
+      const suggestions = (Array.isArray(state.wordSuggestions) ? state.wordSuggestions : [])
+        .filter((word) => !exclusionSet.has(word));
       const queue = Array.isArray(state.wordQueue) ? state.wordQueue : [];
       const history = Array.isArray(state.wordHistory) ? state.wordHistory : [];
       const currentWord = String(state.currentWord || '').toUpperCase();
@@ -2552,7 +2554,7 @@
       setStatus(els.wordPoolStatus, '');
       try {
         await runAction('exclude-word', { word }, `Removed ${word} from the pool.`);
-        setStatus(els.wordPoolStatus, `Removed ${word} for this event.`, 'success');
+        setStatus(els.wordPoolStatus, `Removed ${word} from the pool permanently.`, 'success');
       } catch (error) {
         setStatus(els.wordPoolStatus, error.message || 'Could not remove word.', 'error');
       }
