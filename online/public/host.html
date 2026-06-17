@@ -1238,14 +1238,14 @@
         <div class="host-connect">
           <div class="field">
             <label for="eventCodeInput">Join code</label>
-            <input id="eventCodeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="CRANE" />
+            <input id="eventCodeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Auto-assigned" />
           </div>
           <div class="field">
             <label for="adminKey">Admin key</label>
             <input id="adminKey" type="password" autocomplete="current-password" placeholder="LINGO_ADMIN_KEY" />
           </div>
           <div class="host-connect-actions">
-            <button id="createEventBtn" class="secondary" type="button">New event</button>
+            <button id="createEventBtn" class="secondary" type="button">New event (auto code)</button>
             <button id="connectBtn" class="good" type="button">Connect</button>
             <button id="refreshBtn" class="secondary" type="button">Refresh</button>
           </div>
@@ -1624,8 +1624,14 @@
       localStorage.setItem('lingo_host_event_code', value);
     }
 
+    function typedJoinCode() {
+      return String(els.eventCodeInput?.value || '').trim().toLowerCase();
+    }
+
     function hostEventCode() {
-      return String(els.eventCodeInput?.value || storedEventCode() || 'default').trim().toLowerCase() || 'default';
+      const typed = typedJoinCode();
+      if (typed) return typed;
+      return storedEventCode() || 'default';
     }
 
     function applyHostEventCode(code, options = {}) {
@@ -1754,6 +1760,22 @@
       renderState();
       await loadPlayers(true);
       setStatus(els.actionStatus, successText, 'success');
+    }
+
+    async function createAutoAssignedEvent() {
+      const response = await adminFetch('/api/admin/create-event', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'Could not create event.');
+      }
+      applyHostEventCode(payload.state.eventCode);
+      currentState = payload.state;
+      renderState();
+      await loadPlayers(true);
+      return payload.state;
     }
 
     async function loadState(showStatus = false) {
@@ -2537,10 +2559,22 @@
           setStatus(els.connectStatus, 'Enter the admin key first.', 'error');
           return;
         }
-        applyHostEventCode(hostEventCode());
         setStoredKey(key);
-        await loadState(true);
-        await loadPlayers();
+        if (!typedJoinCode()) {
+          const state = await createAutoAssignedEvent();
+          const joinCode = String(state.joinCode || state.eventCode || '').toUpperCase();
+          setStatus(
+            els.connectStatus,
+            joinCode
+              ? `Join code ${joinCode} assigned. Open /display and share /play with players.`
+              : 'Connected to backend.',
+            'success',
+          );
+        } else {
+          applyHostEventCode(hostEventCode());
+          await loadState(true);
+          await loadPlayers();
+        }
         if (pollHandle) window.clearInterval(pollHandle);
         scheduleHostPolling();
         scheduleHostTick();
@@ -2557,22 +2591,10 @@
           return;
         }
         setStoredKey(key);
-        const requested = els.eventCodeInput.value.trim().toLowerCase();
-        const response = await adminFetch('/api/admin/create-event', {
-          method: 'POST',
-          body: JSON.stringify(requested ? { eventCode: requested } : {}),
-        });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || 'Could not create event.');
-        }
-        applyHostEventCode(payload.state.eventCode || requested);
-        currentState = payload.state;
-        renderState();
-        await loadPlayers(true);
+        const state = await createAutoAssignedEvent();
         setStatus(
           els.connectStatus,
-          `Join code "${(payload.state.joinCode || payload.state.eventCode || requested).toUpperCase()}" ready. Share /play and this code on the venue screen.`,
+          `Join code "${String(state.joinCode || state.eventCode || '').toUpperCase()}" assigned. Share /play and this code on the venue screen.`,
           'success',
         );
         if (pollHandle) window.clearInterval(pollHandle);
