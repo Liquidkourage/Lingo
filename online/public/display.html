@@ -2597,26 +2597,59 @@
       position: relative;
       z-index: 1;
       margin: 0;
-      padding: 0.38em 0.45em;
+      padding: 0.28em 0.45em;
       border-radius: 0.35em;
-      border: 1px solid rgba(72, 212, 255, 0.45);
-      background: linear-gradient(180deg, rgba(0, 28, 64, 0.92) 0%, rgba(0, 10, 32, 0.96) 100%);
-      box-shadow: inset 0 0 12px rgba(0, 80, 180, 0.2);
+      border: 1px solid rgba(72, 212, 255, 0.35);
+      background: linear-gradient(180deg, rgba(0, 28, 64, 0.82) 0%, rgba(0, 10, 32, 0.92) 100%);
+      box-shadow: inset 0 0 12px rgba(0, 80, 180, 0.16);
     }
 
     .idle-url {
       position: relative;
       z-index: 1;
       margin: 0;
-      font-size: 0.62em;
-      font-weight: 900;
+      font-size: 0.56em;
+      font-weight: 800;
       line-height: 1.2;
-      letter-spacing: 0.04em;
-      color: #9ef4ff;
-      text-shadow:
-        0 0 12px rgba(80, 220, 255, 0.85),
-        0 0 24px rgba(40, 160, 255, 0.45);
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      color: rgba(190, 228, 255, 0.92);
       word-break: break-word;
+    }
+
+    .idle-join-wrap {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 0.12em;
+      justify-items: center;
+      margin: 0.18em 0 0;
+      padding: 0.34em 0.5em 0.38em;
+      border-radius: 0.35em;
+      border: 2px solid rgba(255, 204, 0, 0.72);
+      background: linear-gradient(180deg, rgba(0, 18, 48, 0.96) 0%, rgba(0, 6, 20, 0.98) 100%);
+      box-shadow:
+        0 0 24px rgba(255, 190, 40, 0.28),
+        inset 0 0 18px rgba(255, 204, 0, 0.08);
+    }
+
+    .idle-join-label {
+      font-size: 0.38em;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255, 220, 120, 0.88);
+    }
+
+    .idle-join-code {
+      font-size: 1.35em;
+      font-weight: 900;
+      letter-spacing: 0.28em;
+      line-height: 1;
+      color: #ffe566;
+      text-shadow:
+        0 0 18px rgba(255, 220, 80, 0.85),
+        0 0 36px rgba(255, 170, 30, 0.35);
     }
 
     /* Idle welcome: badge + join/lobby deck */
@@ -3796,6 +3829,10 @@
                 <img class="idle-qr" id="playQr" width="400" height="400" alt="" />
               </div>
               <p class="idle-url-wrap"><span class="idle-url" id="playUrl"></span></p>
+              <div class="idle-join-wrap" id="idleJoinWrap" hidden>
+                <span class="idle-join-label">Join code</span>
+                <span class="idle-join-code" id="idleJoinCode"></span>
+              </div>
               <p class="stage-byline">Presented by Liquid Kourage Entertainment</p>
             </div>
           </div>
@@ -3856,6 +3893,8 @@
       subtitle: document.getElementById("subtitle"),
       playUrl: document.getElementById("playUrl"),
       playQr: document.getElementById("playQr"),
+      idleJoinWrap: document.getElementById("idleJoinWrap"),
+      idleJoinCode: document.getElementById("idleJoinCode"),
       idleCta: document.getElementById("idleCta"),
       idleCtaText: document.querySelector("#idleCta .idle-cta-text"),
       idleHostNote: document.getElementById("idleHostNote"),
@@ -4586,15 +4625,28 @@
       return String(value);
     }
 
+    function playSiteBaseDisplay(state = currentState) {
+      const configured = String(state?.playSiteBaseUrl || state?.playSiteUrl || "").trim();
+      if (configured) {
+        try {
+          const parsed = new URL(configured.includes("://") ? configured : `https://${configured}`);
+          const path = parsed.pathname === "/" ? "" : parsed.pathname;
+          return `${parsed.host}${path}`.replace(/\/play\?.*$/, "/play");
+        } catch (_error) {
+          return configured.replace(/^https?:\/\//, "").replace(/\?.*$/, "");
+        }
+      }
+      return "lingo.liquidkourage.com/play";
+    }
+
     function playSiteUrl(state = currentState) {
-      const configured = String(state?.playSiteUrl || "").trim();
+      const configured = String(state?.joinPlayUrl || state?.playSiteUrl || "").trim();
       if (configured) return configured.replace(/\/$/, "");
-      const base = "https://lingo.liquidkourage.com/play";
       const code = String(state?.eventCode || TypeoEvent.current()).trim().toLowerCase();
       if (code && code !== TypeoEvent.DEFAULT_EVENT_CODE) {
-        return `${base}?event=${encodeURIComponent(code)}`;
+        return `https://lingo.liquidkourage.com/play?join=${encodeURIComponent(code)}`;
       }
-      return base;
+      return "https://lingo.liquidkourage.com/play";
     }
 
     function playSiteUrlDisplay(state = currentState) {
@@ -4605,6 +4657,14 @@
       } catch (_error) {
         return playSiteUrl(state).replace(/^https?:\/\//, "");
       }
+    }
+
+    function syncDisplayJoinContext(state) {
+      const code = String(state?.eventCode || "").trim().toLowerCase();
+      if (!code || code === TypeoEvent.DEFAULT_EVENT_CODE) {
+        return;
+      }
+      TypeoEvent.applyJoinCode(code);
     }
 
     function lobbyHeaderParts(pageInfo) {
@@ -5199,9 +5259,30 @@
     }
 
     function renderIdleInfo(state = {}) {
-      els.playUrl.textContent = playSiteUrlDisplay(state);
-      els.playQr.src = TypeoEvent.withEventQuery("/api/play-qr");
-      els.playQr.alt = `QR code for ${playSiteUrlDisplay(state)}`;
+      const joinCode = String(state.joinCode || TypeoEvent.formatJoinCodeDisplay(state.eventCode) || "").trim();
+      els.playUrl.textContent = playSiteBaseDisplay(state);
+      if (els.idleJoinWrap && els.idleJoinCode) {
+        if (joinCode) {
+          els.idleJoinWrap.hidden = false;
+          els.idleJoinCode.textContent = joinCode;
+        } else {
+          els.idleJoinWrap.hidden = true;
+          els.idleJoinCode.textContent = "";
+        }
+      }
+      if (els.idleCtaText) {
+        els.idleCtaText.textContent = joinCode
+          ? "On your phone: open the site, enter the join code, pick a name"
+          : "Sign up — game starts soon";
+      }
+      const code = String(state.eventCode || TypeoEvent.current()).trim().toLowerCase();
+      const qrUrl = code && code !== TypeoEvent.DEFAULT_EVENT_CODE
+        ? `/api/play-qr?join=${encodeURIComponent(code)}`
+        : TypeoEvent.withJoinQuery("/api/play-qr");
+      els.playQr.src = qrUrl;
+      els.playQr.alt = joinCode
+        ? `QR code to join ${joinCode}`
+        : `QR code for ${playSiteBaseDisplay(state)}`;
 
       const hostNote = state.hostNote?.trim();
       if (hostNote) {
@@ -5750,6 +5831,7 @@
       }
 
       currentState = applyDemoState(state);
+      syncDisplayJoinContext(currentState);
       syncTimerDisplay(currentState);
       const phase = currentState.phase || "idle";
 

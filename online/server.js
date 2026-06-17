@@ -6,6 +6,16 @@ const express = require("express");
 const { Pool } = require("pg");
 const { countAvailableWords, countWords, isFiveLetterWord, isLegalWord, normalizeWordInput, normalizeWordList, pickRandomWords, seedWordsTable } = require("./words");
 const {
+  DEFAULT_EVENT_CODE,
+  displayJoinCode,
+  formatEventCode,
+  joinPlayUrl,
+  loadEventCodeBlocklist,
+  normalizeEventCodeInput,
+  pickRandomEventCode,
+  validateEventCode,
+} = require("./event-codes");
+const {
   REHEARSAL_BOT_COUNT,
   clearRehearsalBots,
   getRehearsalStatus,
@@ -76,18 +86,10 @@ const pool = new Pool({
   ssl: databaseUrl.includes("localhost") ? false : { rejectUnauthorized: false },
 });
 
-const DEFAULT_EVENT_CODE = "default";
 const eventContext = new AsyncLocalStorage();
 
 function normalizeEventCode(value) {
-  const code = String(value || "").trim().toLowerCase();
-  if (!code) {
-    return DEFAULT_EVENT_CODE;
-  }
-  if (!/^[a-z0-9][a-z0-9_-]{2,31}$/.test(code)) {
-    throw new Error("Event code must be 3–32 letters, numbers, _ or -.");
-  }
-  return code;
+  return formatEventCode(value);
 }
 
 function currentEventCode() {
@@ -101,8 +103,12 @@ function runWithEventCode(eventCode, fn) {
 function resolveEventCodeFromRequest(req) {
   return normalizeEventCode(
     req.get("x-lingo-event-code")
+    || req.query.join
+    || req.query.code
     || req.query.event
     || req.query.eventCode
+    || req.body?.join
+    || req.body?.code
     || req.body?.eventCode
     || req.body?.event,
   );
@@ -116,17 +122,8 @@ function attachEventContext(req, res, next) {
   }
 }
 
-function generateEventCode() {
-  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
-  let code = "";
-  for (let index = 0; index < 6; index += 1) {
-    code += alphabet[crypto.randomInt(alphabet.length)];
-  }
-  return code;
-}
-
 async function createEventRow(eventCode, client = pool) {
-  const code = normalizeEventCode(eventCode);
+  const code = await validateEventCode(client, eventCode, { allowDefault: false });
   const existing = await client.query(
     "select 1 from app_state where event_code = $1",
     [code],
@@ -1628,6 +1625,7 @@ function requireAdmin(req, res, next) {
 async function ensureSchema() {
   const sql = fs.readFileSync(schemaPath, "utf8");
   await pool.query(sql);
+  await loadEventCodeBlocklist();
   const totalWords = await countWords(pool);
   if (totalWords === 0) {
     await seedWordsTable(pool);
@@ -1638,6 +1636,7 @@ function serializeState(row) {
   if (!row) return null;
   return {
     eventCode: row.event_code || DEFAULT_EVENT_CODE,
+    joinCode: displayJoinCode(row.event_code || DEFAULT_EVENT_CODE),
     version: row.version,
     mode: row.mode,
     phase: row.phase,
@@ -1684,6 +1683,8 @@ function serializePublicState(row) {
     ...state,
     publicFirstLetter,
     playSiteUrl: playPageUrl(state.eventCode),
+    playSiteBaseUrl: `${getPlaySiteUrl()}/play`,
+    joinPlayUrl: playPageUrl(state.eventCode),
     revealedWord: state.answerRevealed ? state.currentWord : "",
     currentWord: state.answerRevealed ? state.currentWord : "",
   };
@@ -1693,7 +1694,7 @@ async function getState(client = pool) {
   const eventCode = currentEventCode();
   const result = await client.query("select * from app_state where event_code = $1", [eventCode]);
   if (!result.rows[0]) {
-    throw new Error(`Unknown event "${eventCode}". Create an event on the host page first.`);
+    throw new Error(`Unknown join code "${eventCode}". Check the code on the venue screen.`);
   }
   return result.rows[0];
 }
@@ -2072,12 +2073,7 @@ function getPlaySiteUrl() {
 }
 
 function playPageUrl(eventCode = currentEventCode()) {
-  const code = normalizeEventCode(eventCode);
-  const base = `${getPlaySiteUrl()}/play`;
-  if (code === DEFAULT_EVENT_CODE) {
-    return `${base}`;
-  }
-  return `${base}?event=${encodeURIComponent(code)}`;
+  return joinPlayUrl(`${getPlaySiteUrl()}/play`, eventCode);
 }
 
 app.use("/api", attachEventContext);
@@ -2672,22 +2668,11 @@ app.get("/api/admin/players", requireAdmin, async (_req, res) => {
 
 async function handleAdminAction(action, body) {
   if (action === "create-event") {
-    let code = body.eventCode ? normalizeEventCode(body.eventCode) : "";
-    if (!code) {
-      for (let attempt = 0; attempt < 8; attempt += 1) {
-        const candidate = generateEventCode();
-        const exists = await pool.query(
-          "select 1 from app_state where event_code = $1",
-          [candidate],
-        );
-        if (!exists.rowCount) {
-          code = candidate;
-          break;
-        }
-      }
-      if (!code) {
-        throw new Error("Could not generate a unique event code.");
-      }
+    let code = "";
+    if (body.eventCode) {
+      code = await validateEventCode(pool, body.eventCode, { allowDefault: false });
+    } else {
+      code = await pickRandomEventCode(pool);
     }
     return serializeState(await createEventRow(code));
   }
@@ -3613,6 +3598,11 @@ app.use((req, res, next) => {
   }
   if (req.method !== "GET") {
     next();
+    return;
+  }
+  const joinMatch = req.path.match(/^\/join\/([a-z]{5})$/i);
+  if (joinMatch) {
+    res.redirect(302, `/play?join=${encodeURIComponent(joinMatch[1].toLowerCase())}`);
     return;
   }
   const fileName = req.path === "/"

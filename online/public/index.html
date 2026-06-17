@@ -581,6 +581,17 @@
       font-size: 0.95rem;
     }
 
+    #joinCodeInput {
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    #joinCodeField[hidden] {
+      display: none;
+    }
+
     .auth-actions {
       display: flex;
       gap: 0.45rem;
@@ -1529,6 +1540,10 @@
               <button id="authTabRegister" class="secondary auth-tab" type="button" data-auth-tab="register">Create account</button>
             </div>
             <form id="authGuestForm" class="auth-form is-active" autocomplete="on">
+              <div class="auth-field" id="joinCodeField">
+                <label for="joinCodeInput">Join code</label>
+                <input id="joinCodeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="5-letter word on screen" />
+              </div>
               <div class="auth-field">
                 <label for="guestDisplayName">Display name</label>
                 <input id="guestDisplayName" type="text" maxlength="40" autocomplete="nickname" spellcheck="false" placeholder="How you appear on the venue screen" />
@@ -1536,7 +1551,7 @@
               <div class="auth-actions">
                 <button id="guestJoinBtn" class="good" type="submit">Join game</button>
               </div>
-              <p class="auth-hint">No account needed. Pick a name your friends will recognize.</p>
+              <p class="auth-hint">Open <strong>/play</strong> on your phone, enter the join code from the venue screen, then pick a name.</p>
             </form>
             <form id="authLoginForm" class="auth-form" autocomplete="on">
               <div class="auth-field">
@@ -1786,6 +1801,8 @@
       authLoginForm: document.getElementById('authLoginForm'),
       authRegisterForm: document.getElementById('authRegisterForm'),
       guestDisplayName: document.getElementById('guestDisplayName'),
+      joinCodeInput: document.getElementById('joinCodeInput'),
+      joinCodeField: document.getElementById('joinCodeField'),
       guestJoinBtn: document.getElementById('guestJoinBtn'),
       loginUsername: document.getElementById('loginUsername'),
       loginPassword: document.getElementById('loginPassword'),
@@ -2473,6 +2490,13 @@
 
     async function joinAsGuest(event) {
       if (event) event.preventDefault();
+      const joinCode = activeJoinCode();
+      if (!joinCode) {
+        setMessage('Enter the 5-letter join code from the venue screen.', 'error');
+        els.joinCodeInput?.focus();
+        return;
+      }
+      TypeoEvent.applyJoinCode(joinCode);
       const displayName = els.guestDisplayName.value.trim();
       if (!displayName) {
         setMessage('Enter a display name first.', 'error');
@@ -3831,11 +3855,35 @@
       }
     }
 
+    function syncJoinCodeUI() {
+      const fromUrl = TypeoEvent.resolveJoinCodeFromUrl();
+      const stored = TypeoEvent.storedJoinCode();
+      const code = fromUrl || (stored !== TypeoEvent.DEFAULT_EVENT_CODE ? stored : '');
+      if (els.joinCodeInput) {
+        els.joinCodeInput.value = code ? code.toUpperCase() : '';
+      }
+      if (els.joinCodeField) {
+        els.joinCodeField.hidden = Boolean(fromUrl);
+      }
+      if (code && TypeoEvent.isJoinCodeFormat(code)) {
+        TypeoEvent.rememberJoinCode(code);
+      }
+    }
+
+    function activeJoinCode() {
+      const typed = els.joinCodeInput?.value.trim().toLowerCase() || '';
+      if (typed && TypeoEvent.isJoinCodeFormat(typed) && typed !== TypeoEvent.DEFAULT_EVENT_CODE) {
+        return typed;
+      }
+      const current = TypeoEvent.current();
+      return current !== TypeoEvent.DEFAULT_EVENT_CODE ? current : '';
+    }
+
     function publicStateUrl() {
       const params = new URLSearchParams();
-      const eventCode = TypeoEvent.current();
-      if (eventCode !== TypeoEvent.DEFAULT_EVENT_CODE) {
-        params.set('event', eventCode);
+      const joinCode = activeJoinCode();
+      if (joinCode) {
+        params.set('join', joinCode);
       }
       const authToken = getAuthToken();
       if (authToken) {
@@ -4048,6 +4096,22 @@
     buildKeyboard();
     clearInputs(false);
 
+    els.joinCodeInput?.addEventListener('input', () => {
+      if (!els.joinCodeInput) return;
+      els.joinCodeInput.value = els.joinCodeInput.value.replace(/[^a-z]/gi, '').slice(0, 5).toUpperCase();
+    });
+    els.joinCodeInput?.addEventListener('change', async () => {
+      const joinCode = activeJoinCode();
+      if (!joinCode) return;
+      TypeoEvent.applyJoinCode(joinCode);
+      try {
+        await fetchPublicState();
+        setMessage('');
+      } catch (error) {
+        setMessage(error.message || 'Could not load game state.', 'error');
+      }
+    });
+
     async function bootPlayerPage() {
       if (IS_DEMO) {
         accountUsername = 'NightOwl';
@@ -4057,10 +4121,21 @@
       }
 
       await restoreAccountSession();
+      syncJoinCodeUI();
 
       if (els.guestDisplayName && getGuestDisplayName()) {
         els.guestDisplayName.value = getGuestDisplayName();
       }
+
+      const joinCode = activeJoinCode();
+      if (!joinCode) {
+        setMessage('Enter the 5-letter join code from the venue screen.', 'error');
+        els.joinCodeInput?.focus();
+        startTimerTick();
+        return;
+      }
+
+      TypeoEvent.applyJoinCode(joinCode);
 
       try {
         await fetchPublicState();

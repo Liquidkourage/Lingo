@@ -1237,8 +1237,8 @@
         </div>
         <div class="host-connect">
           <div class="field">
-            <label for="eventCodeInput">Event code</label>
-            <input id="eventCodeInput" type="text" maxlength="32" autocapitalize="none" spellcheck="false" placeholder="e.g. friday-night" />
+            <label for="eventCodeInput">Join code</label>
+            <input id="eventCodeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="CRANE" />
           </div>
           <div class="field">
             <label for="adminKey">Admin key</label>
@@ -1631,15 +1631,17 @@
     function applyHostEventCode(code, options = {}) {
       const normalized = String(code || '').trim().toLowerCase() || 'default';
       if (els.eventCodeInput) {
-        els.eventCodeInput.value = normalized;
+        els.eventCodeInput.value = normalized === 'default' ? '' : normalized.toUpperCase();
       }
       setStoredEventCode(normalized);
       if (options.updateUrl !== false) {
         const url = new URL(window.location.href);
         if (normalized === 'default') {
+          url.searchParams.delete('join');
           url.searchParams.delete('event');
         } else {
-          url.searchParams.set('event', normalized);
+          url.searchParams.set('join', normalized);
+          url.searchParams.delete('event');
         }
         window.history.replaceState({}, '', url);
       }
@@ -1649,9 +1651,9 @@
     function renderHostLinks(eventCode) {
       if (!els.hostLinks) return;
       const code = String(eventCode || hostEventCode()).trim().toLowerCase() || 'default';
-      const query = code === 'default' ? '' : `?event=${encodeURIComponent(code)}`;
+      const query = code === 'default' ? '' : `?join=${encodeURIComponent(code)}`;
       els.hostLinks.innerHTML = [
-        `Players <strong>/play${query}</strong>`,
+        `Players <strong>/play${query}</strong> · site <strong>/play</strong> + code <strong>${code === 'default' ? '—' : code.toUpperCase()}</strong>`,
         `Venue <strong>/display${query}</strong>`,
         `Bingo <strong><a href="/bingo/calls${query}" style="color:inherit;">/bingo/calls</a></strong>`,
         `Rehearsal <strong><a href="/rehearsal${query}" style="color:inherit;">/rehearsal</a></strong>`,
@@ -2555,7 +2557,7 @@
           return;
         }
         setStoredKey(key);
-        const requested = els.eventCodeInput.value.trim();
+        const requested = els.eventCodeInput.value.trim().toLowerCase();
         const response = await adminFetch('/api/admin/create-event', {
           method: 'POST',
           body: JSON.stringify(requested ? { eventCode: requested } : {}),
@@ -2570,7 +2572,7 @@
         await loadPlayers(true);
         setStatus(
           els.connectStatus,
-          `Event "${payload.state.eventCode}" ready. Share the player and display links below.`,
+          `Join code "${(payload.state.joinCode || payload.state.eventCode || requested).toUpperCase()}" ready. Share /play and this code on the venue screen.`,
           'success',
         );
         if (pollHandle) window.clearInterval(pollHandle);
@@ -2781,9 +2783,15 @@
       });
     });
 
+    els.eventCodeInput?.addEventListener('input', () => {
+      if (!els.eventCodeInput) return;
+      els.eventCodeInput.value = els.eventCodeInput.value.replace(/[^a-z]/gi, '').slice(0, 5).toUpperCase();
+    });
+
     wireHostModals();
 
-    const urlEventCode = new URLSearchParams(window.location.search).get('event');
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlEventCode = urlParams.get('join') || urlParams.get('event');
     applyHostEventCode(urlEventCode || storedEventCode() || 'default', { updateUrl: Boolean(urlEventCode) });
 
     els.adminKey.value = storedKey();

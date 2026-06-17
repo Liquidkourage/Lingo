@@ -54,6 +54,14 @@
       color: rgba(200, 215, 235, 0.82);
     }
 
+    .lobby-site {
+      margin: 0 0 0.85rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #9ef4ff;
+    }
+
     .lobby-field {
       text-align: left;
       margin-bottom: 0.85rem;
@@ -78,6 +86,13 @@
       color: #fff;
       font: inherit;
       font-size: 1rem;
+    }
+
+    .lobby-field input.join-code-input {
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      font-weight: 800;
+      text-align: center;
     }
 
     .lobby-actions {
@@ -124,16 +139,17 @@
   <main class="lobby-card">
     <img class="lobby-logo" src="/assets/typeo-wordmark.svg" width="320" height="72" alt="TYPEO" />
     <h1 class="lobby-title">Join tonight's game</h1>
-    <p class="lobby-copy">Enter the event code from the host or venue screen. You'll join that game's lobby on your phone.</p>
+    <p class="lobby-copy">Open the play site on your phone, then enter the 5-letter join code from the venue screen.</p>
+    <p class="lobby-site"><strong id="playSiteLabel">lingo.liquidkourage.com/play</strong></p>
 
     <form id="lobbyForm">
       <div class="lobby-field">
-        <label for="eventCodeInput">Event code</label>
-        <input id="eventCodeInput" type="text" maxlength="32" autocapitalize="none" spellcheck="false" placeholder="e.g. jay" required />
+        <label for="joinCodeInput">Join code</label>
+        <input id="joinCodeInput" class="join-code-input" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="CRANE" required />
       </div>
       <div class="lobby-actions">
-        <button type="submit">Join game</button>
-        <button type="button" class="secondary" id="defaultPlayBtn">Play on default event</button>
+        <button type="submit">Continue</button>
+        <button type="button" class="secondary" id="defaultPlayBtn">Dev: default room</button>
       </div>
     </form>
 
@@ -146,34 +162,25 @@
   <script src="/event-code.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
-    const eventFromUrl = params.get('event');
-    const input = document.getElementById('eventCodeInput');
+    const joinFromUrl = params.get('join') || params.get('event') || params.get('code');
+    const input = document.getElementById('joinCodeInput');
 
-    if (eventFromUrl && eventFromUrl.trim()) {
-      window.location.replace(TypeoEvent.withEventQuery('/play'));
+    if (joinFromUrl && joinFromUrl.trim()) {
+      window.location.replace(TypeoEvent.withJoinQuery('/play', joinFromUrl));
     }
 
-    try {
-      const stored = localStorage.getItem('lingo_event_code');
-      if (stored && stored !== 'default') {
-        input.value = stored;
-      }
-    } catch (_error) {
-      // Ignore storage failures.
+    const stored = TypeoEvent.storedJoinCode();
+    if (stored && stored !== TypeoEvent.DEFAULT_EVENT_CODE) {
+      input.value = TypeoEvent.formatJoinCodeDisplay(stored);
     }
 
-    function goToPlay(eventCode) {
-      const code = String(eventCode || '').trim().toLowerCase();
-      if (!code) return;
-      try {
-        localStorage.setItem('lingo_event_code', code);
-      } catch (_error) {
-        // Ignore storage failures.
+    function goToPlay(joinCode) {
+      const code = String(joinCode || '').trim().toLowerCase();
+      if (!TypeoEvent.isJoinCodeFormat(code) || code === TypeoEvent.DEFAULT_EVENT_CODE) {
+        return;
       }
-      const url = code === 'default'
-        ? '/play'
-        : `/play?event=${encodeURIComponent(code)}`;
-      window.location.href = url;
+      TypeoEvent.rememberJoinCode(code);
+      window.location.href = TypeoEvent.withJoinQuery('/play', code);
     }
 
     document.getElementById('lobbyForm').addEventListener('submit', (event) => {
@@ -182,7 +189,11 @@
     });
 
     document.getElementById('defaultPlayBtn').addEventListener('click', () => {
-      goToPlay('default');
+      window.location.href = '/play';
+    });
+
+    input.addEventListener('input', () => {
+      input.value = input.value.replace(/[^a-z]/gi, '').slice(0, 5).toUpperCase();
     });
   </script>
 </body>
