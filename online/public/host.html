@@ -2296,6 +2296,9 @@
       assignHostField(els.ballsInput, 'balls', String(state.ballsRemaining ?? 0));
       assignHostField(els.hostNoteInput, 'hostNote', state.hostNote || '');
       assignHostField(els.championInput, 'champion', state.championDisplayName || '');
+      if (state.eventCode && state.eventCode !== 'default') {
+        applyHostEventCode(state.eventCode, { updateUrl: false });
+      }
       const canPause = phase === 'guessing' || phase === 'results';
       els.pauseTimerBtn.disabled = !canPause;
       els.pauseTimerBtn.textContent = state.timerPaused ? 'Resume timer' : 'Pause timer';
@@ -2840,12 +2843,11 @@
 
     els.adminKey.value = storedKey();
     if (els.adminKey.value) {
-      Promise.all([loadState(), loadPlayers()]).then(() => {
-        scheduleHostPolling();
-        scheduleHostTick();
-      }).catch((error) => {
-        setStatus(els.connectStatus, error.message || 'Enter a valid admin key.', 'error');
-      });
+      setStatus(
+        els.connectStatus,
+        'Admin key saved. Click Connect for a new show (auto join code) or enter a code to resume.',
+        'success',
+      );
     }
   </script>
 </body>
