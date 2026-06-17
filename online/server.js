@@ -118,6 +118,12 @@ function attachEventContext(req, res, next) {
   try {
     runWithEventCode(resolveEventCodeFromRequest(req), next);
   } catch (error) {
+    const creatingEvent = req.method === "POST"
+      && String(req.path || "").includes("create-event");
+    if (creatingEvent) {
+      runWithEventCode(DEFAULT_EVENT_CODE, next);
+      return;
+    }
     res.status(400).json({ ok: false, error: error.message });
   }
 }

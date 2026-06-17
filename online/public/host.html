@@ -1616,12 +1616,25 @@
     let rosterFilter = 'all';
     let rosterSearchQuery = '';
 
+    function isValidJoinCode(code) {
+      const normalized = String(code || '').trim().toLowerCase();
+      return normalized === 'default' || /^[a-z]{5}$/.test(normalized);
+    }
+
+    function normalizeHostJoinCode(code) {
+      const normalized = String(code || '').trim().toLowerCase();
+      if (normalized === 'default') return 'default';
+      if (/^[a-z]{5}$/.test(normalized)) return normalized;
+      return 'default';
+    }
+
     function storedEventCode() {
       return localStorage.getItem('lingo_host_event_code') || '';
     }
 
     function setStoredEventCode(value) {
-      localStorage.setItem('lingo_host_event_code', value);
+      const normalized = normalizeHostJoinCode(value);
+      localStorage.setItem('lingo_host_event_code', normalized === 'default' ? '' : normalized);
     }
 
     function typedJoinCode() {
@@ -1630,12 +1643,15 @@
 
     function hostEventCode() {
       const typed = typedJoinCode();
-      if (typed) return typed;
-      return storedEventCode() || 'default';
+      if (typed) {
+        return isValidJoinCode(typed) ? typed : 'default';
+      }
+      const stored = normalizeHostJoinCode(storedEventCode());
+      return stored === 'default' ? 'default' : stored;
     }
 
     function applyHostEventCode(code, options = {}) {
-      const normalized = String(code || '').trim().toLowerCase() || 'default';
+      const normalized = normalizeHostJoinCode(code);
       if (els.eventCodeInput) {
         els.eventCodeInput.value = normalized === 'default' ? '' : normalized.toUpperCase();
       }
@@ -1681,13 +1697,17 @@
 
     function adminFetch(path, options = {}) {
       const key = els.adminKey.value.trim();
+      const eventCode = options.eventCode !== undefined
+        ? normalizeHostJoinCode(options.eventCode)
+        : hostEventCode();
+      const { eventCode: _eventCode, ...fetchOptions } = options;
       return fetch(path, {
-        ...options,
+        ...fetchOptions,
         headers: {
           'Content-Type': 'application/json',
           'x-lingo-admin-key': key,
-          'x-lingo-event-code': hostEventCode(),
-          ...(options.headers || {}),
+          'x-lingo-event-code': eventCode,
+          ...(fetchOptions.headers || {}),
         },
       });
     }
@@ -1766,6 +1786,7 @@
       const response = await adminFetch('/api/admin/create-event', {
         method: 'POST',
         body: JSON.stringify({}),
+        eventCode: 'default',
       });
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
@@ -2566,7 +2587,7 @@
           setStatus(
             els.connectStatus,
             joinCode
-              ? `Join code ${joinCode} assigned. Open /display and share /play with players.`
+              ? `Join code ${joinCode} assigned. Open /display, queue a word, then Start round.`
               : 'Connected to backend.',
             'success',
           );
@@ -2814,7 +2835,8 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const urlEventCode = urlParams.get('join') || urlParams.get('event');
-    applyHostEventCode(urlEventCode || storedEventCode() || 'default', { updateUrl: Boolean(urlEventCode) });
+    const initialCode = normalizeHostJoinCode(urlEventCode || storedEventCode() || 'default');
+    applyHostEventCode(initialCode, { updateUrl: true });
 
     els.adminKey.value = storedKey();
     if (els.adminKey.value) {
