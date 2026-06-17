@@ -82,6 +82,36 @@
   color: #fff;
 }
 
+.leaderboard-badges {
+  display: inline-flex;
+  gap: 0.2rem;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.leaderboard-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.leaderboard-badge--crown {
+  color: #ffd040;
+  background: rgba(255, 208, 64, 0.16);
+  border: 1px solid rgba(255, 208, 64, 0.45);
+}
+
+.leaderboard-badge--ambassador {
+  color: #ffcc00;
+  background: rgba(255, 204, 0, 0.12);
+  border: 1px solid rgba(255, 204, 0, 0.35);
+}
+
 .leaderboard-balls {
   color: #4db8ff;
 }

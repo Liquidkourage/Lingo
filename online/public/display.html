@@ -55,7 +55,7 @@
       --live-chrome-stack-gap: var(--live-v-gap);
       --live-chrome-board-gap: var(--live-v-gap);
       --live-board-bottom-inset: 2px;
-      --live-card-width: min(100%, 10.4em);
+      --live-card-width: min(100%, 9.2em);
       --live-card-min-height: 2.85em;
     }
 
@@ -1353,6 +1353,13 @@
       box-shadow: 0 0 24px rgba(0, 212, 255, 0.22);
     }
 
+    .stage[data-phase="guessing"] .stat-cell:not(.stat-cell--unsubmitted),
+    .stage[data-phase="results"] .stat-cell:not(.stat-cell--unsubmitted),
+    .stage[data-phase="ended"] .stat-cell:not(.stat-cell--unsubmitted) {
+      min-height: 4.4em;
+      padding: 0.3em 0.12em;
+    }
+
     .stage[data-phase="guessing"] .stat-cell,
     .stage[data-phase="results"] .stat-cell,
     .stage[data-phase="ended"] .stat-cell {
@@ -1388,7 +1395,7 @@
     .stage[data-phase="guessing"] .stat-value,
     .stage[data-phase="results"] .stat-value,
     .stage[data-phase="ended"] .stat-value {
-      font-size: 1.28em;
+      font-size: 1.45em;
       font-weight: 900;
       text-shadow: 0 2px 0 #000, 0 0 14px currentColor;
     }
@@ -1400,9 +1407,9 @@
     .stage[data-phase="guessing"] .stat-cell--unsubmitted,
     .stage[data-phase="results"] .stat-cell--unsubmitted,
     .stage[data-phase="ended"] .stat-cell--unsubmitted {
-      padding: 0.2em 0.12em 0.24em;
-      gap: 0.08em;
-      min-height: 3.4em;
+      padding: 0.24em 0.14em 0.28em;
+      gap: 0.1em;
+      min-height: 9em;
       flex: 1 1 auto;
     }
 
@@ -1421,14 +1428,14 @@
 
     .unsubmitted-chips {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 0.24em;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.28em;
       width: 100%;
       max-width: 100%;
-      padding: 0.08em 0.14em 0.12em;
+      padding: 0.08em 0.1em 0.12em;
       min-height: 1.55em;
+      flex-wrap: nowrap;
     }
 
     .unsubmitted-chip {
@@ -1440,7 +1447,8 @@
       border: 2px solid var(--show-gold);
       background: var(--show-black);
       color: var(--show-gold-hot);
-      white-space: nowrap;
+      white-space: normal;
+      text-align: center;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1451,8 +1459,9 @@
     .stage[data-phase="guessing"] .unsubmitted-chip,
     .stage[data-phase="results"] .unsubmitted-chip,
     .stage[data-phase="ended"] .unsubmitted-chip {
-      font-size: calc(var(--chip-name-size, 0.52em) * var(--live-player-card-text-scale, 1));
-      padding: 0.18em 0.38em;
+      font-size: calc(var(--chip-name-size, 0.68em) * var(--live-player-card-text-scale, 1));
+      padding: 0.28em 0.42em;
+      line-height: 1.15;
     }
 
     .unsubmitted-chips.is-empty::after {
@@ -1519,9 +1528,10 @@
       flex: 1 1 auto;
       width: 100%;
       height: 100%;
-      max-width: 100%;
+      max-width: min(100%, 90%);
       max-height: 100%;
       min-height: 0;
+      margin-inline: auto;
       /* Grid structure: LIVE_LAYOUT_TIERS in display.html (data-live-layout e.g. "5x3") */
       grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
       grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
@@ -1537,9 +1547,10 @@
       flex: 1 1 auto;
       width: 100%;
       height: 100%;
-      max-width: 100%;
+      max-width: min(100%, 90%);
       max-height: 100%;
       min-height: 0;
+      margin-inline: auto;
       grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
       grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
       place-content: stretch;
@@ -4272,7 +4283,8 @@
     }
 
     function renderLeaderboardOverlay(state) {
-      const visible = Boolean(state.leaderboardVisible);
+      const broadcastMentionsLeaderboard = /leaderboard/i.test(String(state.hostBroadcast || ""));
+      const visible = Boolean(state.leaderboardVisible) || broadcastMentionsLeaderboard;
       els.leaderboardOverlay.hidden = !visible;
       if (!visible) return;
       TypeoShow.renderLeaderboardList(els.leaderboardList, state.leaderboard || [], { limit: 15 });
@@ -4283,6 +4295,10 @@
       if (seq > lastAwardAllBallsSeq) {
         lastAwardAllBallsSeq = seq;
         TypeoShow.triggerBallsplosion(els.ballsplosionOverlay, 16);
+        const players = Array.isArray(state.players) ? state.players : [];
+        if (players.length) {
+          patchPlayerBoardBalls(players, state.phase || "idle");
+        }
       }
     }
 
@@ -5437,7 +5453,7 @@
         });
       }
 
-      const includeBalls = phase === "guessing";
+      const includeBalls = phase === "guessing" || phase === "results" || phase === "ended";
       return JSON.stringify({
         phase,
         playerCount: players.length,

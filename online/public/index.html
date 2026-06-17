@@ -2635,7 +2635,7 @@
         state
         && isViewerJoined(state)
         && !Boolean(state?.viewer?.isSolved)
-        && (phase === 'guessing' || phase === 'results'),
+        && phase === 'guessing',
       );
     }
 
@@ -3502,9 +3502,7 @@
         return;
       }
       if (phase === 'results') {
-        els.promptLine.textContent = canDraftGuess(state)
-          ? 'Try your next guess — submit when guessing opens'
-          : 'Next guess soon';
+        els.promptLine.textContent = 'Reviewing guesses — wait for the next guess window';
         return;
       }
       if (phase === 'ended') {
@@ -3666,6 +3664,7 @@
         guessDraftDirty = false;
         guessCaretIndex = null;
         paintGuessSelection();
+        updateSubmitEnabled();
       }
       lastPlayPhase = phase;
       const copy = PHASE_COPY[phase] || PHASE_COPY.idle;

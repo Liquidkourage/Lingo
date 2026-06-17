@@ -58,7 +58,23 @@
       rank.textContent = `#${index + 1}`;
       const name = document.createElement("span");
       name.className = "leaderboard-name";
-      name.textContent = entry.displayName || "Player";
+      const badges = document.createElement("span");
+      badges.className = "leaderboard-badges";
+      if (entry.isChampion) {
+        const crown = document.createElement("span");
+        crown.className = "leaderboard-badge leaderboard-badge--crown";
+        crown.textContent = "♛";
+        crown.title = "Reigning champion";
+        badges.appendChild(crown);
+      }
+      if (entry.isAmbassador) {
+        const gem = document.createElement("span");
+        gem.className = "leaderboard-badge leaderboard-badge--ambassador";
+        gem.textContent = "◆";
+        gem.title = "Ambassador";
+        badges.appendChild(gem);
+      }
+      name.append(badges, document.createTextNode(entry.displayName || "Player"));
       const balls = document.createElement("span");
       balls.className = "leaderboard-balls";
       balls.textContent = `${Number(entry.balls || 0)} balls`;

@@ -2714,6 +2714,9 @@
         els.hostBroadcastInput.value = text;
         try {
           await runAction('set-host-broadcast', { hostBroadcast: text }, 'Shot call sent.');
+          if (/leaderboard/i.test(text)) {
+            await runAction('set-leaderboard-visible', { visible: true }, 'Leaderboard shown.');
+          }
           setStatus(els.showToolsStatus, 'Shot call sent to display.', 'success');
         } catch (error) {
           setStatus(els.showToolsStatus, error.message || 'Could not send shot call.', 'error');

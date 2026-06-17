@@ -57,6 +57,12 @@ const port = Number(process.env.PORT || 3000);
 const adminKey = String(process.env.LINGO_ADMIN_KEY || "").trim();
 const databaseUrl = resolveDatabaseUrl();
 const defaultChampion = String(process.env.LINGO_CHAMPION || "").trim();
+const LINGO_AMBASSADOR_ALIASES = new Set(
+  String(process.env.LINGO_AMBASSADOR || "jeewee")
+    .split(",")
+    .map((alias) => alias.trim().toLowerCase())
+    .filter(Boolean),
+);
 const DEFAULT_PLAY_SITE_URL = "https://lingo.liquidkourage.com";
 
 if (!databaseUrl) {
@@ -174,6 +180,8 @@ const SCRAMBLE_ANSWERS = [
   "FINALEON",
 ];
 const ALL_SUBMITTED_GRACE_SECONDS = 10;
+const MAX_GUESS_HISTORY_WINDOWS = 12;
+const ABANDONED_SESSION_IDLE_MS = 60 * 60 * 1000;
 const MIN_GUESS_WINDOW_SECONDS = 30;
 const DEFAULT_GUESS_WINDOW_SECONDS = 100;
 const MIN_RESULTS_WINDOW_SECONDS = 15;
@@ -320,6 +328,7 @@ function buildLeaderboardEntries(players) {
       displayName: player.displayName,
       balls: Number(player.balls || 0),
       isChampion: Boolean(player.isChampion),
+      isAmbassador: isAmbassadorPlayer(player.displayName),
       isSolved: Boolean(player.isSolved),
     }))
     .sort((left, right) => {
@@ -542,6 +551,13 @@ function isChampionPlayer(displayName, state) {
   const champion = getEffectiveChampion(state);
   if (!champion || !displayName) return false;
   return String(displayName).trim().toLowerCase() === champion.toLowerCase();
+}
+
+function isAmbassadorPlayer(displayName) {
+  const raw = String(displayName || "").trim().toLowerCase();
+  if (!raw) return false;
+  if (LINGO_AMBASSADOR_ALIASES.has(raw)) return true;
+  return LINGO_AMBASSADOR_ALIASES.has(normalizePlayerKey(displayName));
 }
 
 function uniqueStakesInOrder(stakes) {
@@ -1112,12 +1128,60 @@ async function maybeAutoRevealIfAllSubmitted(state, client) {
   return syncAllSubmittedGrace(state, client);
 }
 
+async function maybeExpireAbandonedSession(state, client = pool, options = {}) {
+  const forceIfEmpty = Boolean(options.forceIfEmpty);
+  if (!state || state.phase === "idle") {
+    return state;
+  }
+  const players = await listPlayers(state.session_id, client);
+  const updatedAt = state.updated_at ? new Date(state.updated_at).getTime() : 0;
+  if (players.length === 0) {
+    if (!forceIfEmpty && updatedAt && Date.now() - updatedAt < ABANDONED_SESSION_IDLE_MS) {
+      return state;
+    }
+  } else {
+    const lastActivityAt = Math.max(
+      updatedAt,
+      ...players.map((player) => {
+        const playerUpdated = player.updatedAtIso ? new Date(player.updatedAtIso).getTime() : 0;
+        const playerCreated = player.createdAtIso ? new Date(player.createdAtIso).getTime() : 0;
+        return Math.max(playerUpdated, playerCreated);
+      }),
+    );
+    if (!lastActivityAt || Date.now() - lastActivityAt < ABANDONED_SESSION_IDLE_MS) {
+      return state;
+    }
+  }
+  return updateState({
+    mode: "lingo",
+    phase: "idle",
+    round_number: 0,
+    current_word: "",
+    answer_revealed: false,
+    balls_remaining: 0,
+    ball_multiplier: 1,
+    guess_window_opened_at: null,
+    results_window_opened_at: null,
+    first_solver_player_id: null,
+    timer_paused: false,
+    timer_paused_remaining_seconds: null,
+    round_ball_stakes: [],
+    guess_window_seq: 0,
+    all_players_submitted_at: null,
+    host_broadcast: "",
+    leaderboard_visible: false,
+    ...clearTimerPausePatch(),
+    ...clearAllSubmittedGracePatch(),
+  }, client);
+}
+
 async function maybeAdvanceTimedPhase(client = pool) {
   const db = client === pool ? await pool.connect() : client;
   const releaseAfter = client === pool;
   try {
     await db.query("begin");
     let state = await getState(db);
+    state = await maybeExpireAbandonedSession(state, db);
 
     if (state.phase === "guessing") {
       state = await syncAllSubmittedGrace(state, db);
@@ -1260,8 +1324,11 @@ async function listViewerGuessHistory(playerId, state, client = pool, options = 
   }
 
   if (windows.length) {
+    const visibleWindows = windows.length > MAX_GUESS_HISTORY_WINDOWS
+      ? windows.slice(-MAX_GUESS_HISTORY_WINDOWS)
+      : windows;
     const history = [];
-    windows.forEach(({ seq, stake }) => {
+    visibleWindows.forEach(({ seq, stake }) => {
       if (historyAlreadySolved(history)) {
         return;
       }
@@ -2706,6 +2773,7 @@ async function handleAdminAction(action, body) {
           balls_remaining: openingStake,
           guess_window_seq: 1,
           round_ball_stakes: [openingStake],
+          ...(nextRound > 1 || state.phase === "idle" ? { host_broadcast: "" } : {}),
           guess_window_seconds: normalizedGuessWindowSeconds(
             body.guessWindowSeconds,
             state.guess_window_seconds,
@@ -3608,7 +3676,8 @@ async function bootstrapWithRetry(maxAttempts = 5) {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       await ensureSchema();
-      const state = await getState();
+      let state = await getState();
+      state = await maybeExpireAbandonedSession(state, pool, { forceIfEmpty: true });
       const eventCount = await pool.query("select count(*)::int as count from app_state");
       const totalWords = await countWords(pool);
       appReady = true;
