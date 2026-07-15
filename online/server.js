@@ -32,7 +32,6 @@ const {
   evaluateBingoClaim,
   bingoAchievedWithinBudget,
 } = require("./bingo-logic");
-const { listWordSets, loadWordSetById } = require("./word-sets");
 require("dotenv").config();
 
 const QRCode = require("qrcode");
@@ -3110,14 +3109,6 @@ async function handleAdminAction(action, body) {
       const patch = await applyWordQueuePatch(state, body.words || []);
       return serializeState(await updateState(patch));
     }
-    case "load-word-set": {
-      const set = await loadWordSetById(body.setId);
-      if (!set.words.length) {
-        throw new Error(`Word set "${set.name}" is empty.`);
-      }
-      const patch = await applyWordQueuePatch(state, set.words);
-      return serializeState(await updateState(patch));
-    }
     case "set-champion":
       return serializeState(await updateState({
         champion_display_name: normalizeDisplayName(body.championDisplayName),
@@ -3667,15 +3658,6 @@ app.post("/api/admin/bingo/end", requireAdmin, async (_req, res) => {
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message });
-  }
-});
-
-app.get("/api/admin/word-sets", requireAdmin, async (_req, res) => {
-  try {
-    const sets = await listWordSets();
-    res.json({ ok: true, sets });
-  } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
   }
 });
 

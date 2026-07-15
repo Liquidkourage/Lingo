@@ -719,16 +719,6 @@
       color: rgba(200, 220, 245, 0.82);
     }
 
-    .word-set-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-    }
-
-    .word-set-actions button {
-      flex: 1 1 140px;
-    }
-
     .bingo-host-summary {
       margin: 0 0 0.75rem;
       padding: 0.65rem 0.75rem;
@@ -1539,7 +1529,7 @@
         <button class="secondary" type="button" data-close-modal>Close</button>
       </div>
       <div class="host-modal-body">
-        <p class="panel-copy">Paste your own words or pick a quick set · up to 8 in the queue · double-click a suggestion to add one · click a queued word to set it · right-click to remove</p>
+        <p class="panel-copy">Paste your own words · up to 8 in the queue · double-click a suggestion to add one · click a queued word to set it · right-click to remove</p>
         <div class="word-set-section">
           <p class="word-set-heading">Your word list</p>
           <div class="word-custom-list">
@@ -1550,10 +1540,6 @@
               <button id="loadCustomWordListBtn" class="good" type="button">Load into queue</button>
               <button id="clearCustomWordListBtn" class="secondary" type="button">Clear</button>
             </div>
-          </div>
-          <p class="word-set-heading">Quick sets</p>
-          <div class="word-set-actions" id="wordSetActions">
-            <span class="muted">Connect to load quick sets.</span>
           </div>
         </div>
         <div class="word-queue-section">
@@ -1773,7 +1759,6 @@
       bingoHostSummary: document.getElementById('bingoHostSummary'),
       bingoHostTableWrap: document.getElementById('bingoHostTableWrap'),
       bingoHostPlayersBody: document.getElementById('bingoHostPlayersBody'),
-      wordSetActions: document.getElementById('wordSetActions'),
       customWordListInput: document.getElementById('customWordListInput'),
       loadCustomWordListBtn: document.getElementById('loadCustomWordListBtn'),
       clearCustomWordListBtn: document.getElementById('clearCustomWordListBtn'),
@@ -1806,7 +1791,6 @@
     let rosterPlayers = [];
     let rosterFilter = 'all';
     let rosterSearchQuery = '';
-    let hostWordSets = [];
     let lastBingoHostSnapshot = null;
 
     function isValidJoinCode(code) {
@@ -2139,61 +2123,6 @@
       } catch (_error) {
         // Keep the last good snapshot while polling.
       }
-    }
-
-    async function loadWordSets() {
-      if (!els.wordSetActions) return;
-      try {
-        const response = await adminFetch('/api/admin/word-sets');
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || 'Could not load word sets.');
-        }
-        hostWordSets = Array.isArray(payload.sets) ? payload.sets : [];
-        els.wordSetActions.replaceChildren();
-        if (!hostWordSets.length) {
-          const empty = document.createElement('span');
-          empty.className = 'muted';
-          empty.textContent = 'No word sets found.';
-          els.wordSetActions.appendChild(empty);
-          return;
-        }
-        hostWordSets.forEach((set) => {
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.className = 'secondary';
-          button.textContent = `${set.name} (${set.wordCount})`;
-          button.title = set.description || set.name;
-          button.addEventListener('click', () => {
-            loadWordSet(set.id, set.name);
-          });
-          els.wordSetActions.appendChild(button);
-        });
-      } catch (error) {
-        els.wordSetActions.replaceChildren();
-        const message = document.createElement('span');
-        message.className = 'muted';
-        message.textContent = error.message || 'Could not load word sets.';
-        els.wordSetActions.appendChild(message);
-      }
-    }
-
-    async function loadWordSet(setId, setName) {
-      setStatus(els.wordPoolStatus, '');
-      try {
-        await runAction('load-word-set', { setId }, `Loaded ${setName}.`);
-        if (els.customWordListInput && Array.isArray(currentState?.wordQueue)) {
-          els.customWordListInput.value = currentState.wordQueue.join('\n');
-          saveCustomWordListDraft();
-        }
-        setStatus(els.wordPoolStatus, `Loaded "${setName}" into the queue.`, 'success');
-      } catch (error) {
-        setStatus(els.wordPoolStatus, error.message || 'Could not load word set.', 'error');
-      }
-    }
-
-    function customWordListStorageKey() {
-      return `lingo_host_word_list_${hostEventCode()}`;
     }
 
     function restoreCustomWordListDraft() {
@@ -2674,7 +2603,6 @@
       document.body.classList.add('host-modal-open');
       if (modalId === 'wordsModal') {
         restoreCustomWordListDraft();
-        loadWordSets().catch(() => {});
       }
       if (modalId === 'bingoModal') {
         loadBingoHostPlayers().catch(() => {});
@@ -3045,14 +2973,12 @@
               : 'Connected to backend.',
             'success',
           );
-          await loadWordSets();
         } else {
           applyHostEventCode(hostEventCode());
           await loadState(true);
           await loadPlayers();
         }
         if (pollHandle) window.clearInterval(pollHandle);
-        await loadWordSets();
         scheduleHostPolling();
         scheduleHostTick();
       } catch (error) {

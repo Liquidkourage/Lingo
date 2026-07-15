@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "lint": "node --check server.js && node --check event-codes.js && node --check import-words.js && node --check words.js && node --check word-sets.js && node --check rehearsal-bots.js && node --check scripts/run-rehearsal.js",
+    "lint": "node --check server.js && node --check event-codes.js && node --check import-words.js && node --check words.js && node --check rehearsal-bots.js && node --check scripts/run-rehearsal.js",
     "import-words": "node import-words.js",
     "rehearsal": "node scripts/run-rehearsal.js"
   },
