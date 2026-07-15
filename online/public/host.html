@@ -29,6 +29,18 @@
 
     * { box-sizing: border-box; }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     html, body {
       margin: 0;
       min-height: 100%;
@@ -657,6 +669,45 @@
       margin-bottom: 0.85rem;
       padding-bottom: 0.75rem;
       border-bottom: 1px solid rgba(62, 200, 232, 0.18);
+    }
+
+    .word-custom-list {
+      display: grid;
+      gap: 0.55rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .word-custom-list textarea {
+      width: 100%;
+      min-height: 5.5rem;
+      resize: vertical;
+      padding: 0.65rem 0.75rem;
+      border: var(--stroke) solid rgba(62, 200, 232, 0.35);
+      border-radius: calc(var(--radius) - 2px);
+      background: var(--show-black);
+      color: var(--show-white);
+      font-family: Montserrat, Arial, sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      line-height: 1.45;
+    }
+
+    .word-custom-list-actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .word-custom-list-actions button {
+      flex: 1 1 160px;
+    }
+
+    .word-custom-hint {
+      margin: 0;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: rgba(180, 198, 220, 0.72);
     }
 
     .word-set-heading {
@@ -1488,11 +1539,21 @@
         <button class="secondary" type="button" data-close-modal>Close</button>
       </div>
       <div class="host-modal-body">
-        <p class="panel-copy">Queue up to 8 words · double-click a suggestion to queue · click a queued word to set it · right-click to remove for this event</p>
+        <p class="panel-copy">Paste your own words or pick a quick set · up to 8 in the queue · double-click a suggestion to add one · click a queued word to set it · right-click to remove</p>
         <div class="word-set-section">
-          <p class="word-set-heading">Load a pre-selected set</p>
+          <p class="word-set-heading">Your word list</p>
+          <div class="word-custom-list">
+            <label class="sr-only" for="customWordListInput">Your words for the queue</label>
+            <textarea id="customWordListInput" placeholder="Paste or type words — one per line, or separated by commas&#10;APPLE&#10;HOUSE&#10;PLANT"></textarea>
+            <p class="word-custom-hint">Uses the first 8 valid 5-letter words. Illegal or already-played words are rejected when you load.</p>
+            <div class="word-custom-list-actions">
+              <button id="loadCustomWordListBtn" class="good" type="button">Load into queue</button>
+              <button id="clearCustomWordListBtn" class="secondary" type="button">Clear</button>
+            </div>
+          </div>
+          <p class="word-set-heading">Quick sets</p>
           <div class="word-set-actions" id="wordSetActions">
-            <span class="muted">Connect to load word sets.</span>
+            <span class="muted">Connect to load quick sets.</span>
           </div>
         </div>
         <div class="word-queue-section">
@@ -1713,6 +1774,9 @@
       bingoHostTableWrap: document.getElementById('bingoHostTableWrap'),
       bingoHostPlayersBody: document.getElementById('bingoHostPlayersBody'),
       wordSetActions: document.getElementById('wordSetActions'),
+      customWordListInput: document.getElementById('customWordListInput'),
+      loadCustomWordListBtn: document.getElementById('loadCustomWordListBtn'),
+      clearCustomWordListBtn: document.getElementById('clearCustomWordListBtn'),
       bingoPlayerLink: document.getElementById('bingoPlayerLink'),
       hostTimerValue: document.getElementById('hostTimerValue'),
       hostMessageQueue: document.getElementById('hostMessageQueue'),
@@ -2118,9 +2182,68 @@
       setStatus(els.wordPoolStatus, '');
       try {
         await runAction('load-word-set', { setId }, `Loaded ${setName}.`);
+        if (els.customWordListInput && Array.isArray(currentState?.wordQueue)) {
+          els.customWordListInput.value = currentState.wordQueue.join('\n');
+          saveCustomWordListDraft();
+        }
         setStatus(els.wordPoolStatus, `Loaded "${setName}" into the queue.`, 'success');
       } catch (error) {
         setStatus(els.wordPoolStatus, error.message || 'Could not load word set.', 'error');
+      }
+    }
+
+    function customWordListStorageKey() {
+      return `lingo_host_word_list_${hostEventCode()}`;
+    }
+
+    function restoreCustomWordListDraft() {
+      if (!els.customWordListInput) return;
+      const saved = localStorage.getItem(customWordListStorageKey());
+      if (saved != null) {
+        els.customWordListInput.value = saved;
+        return;
+      }
+      const queue = Array.isArray(currentState?.wordQueue) ? currentState.wordQueue : [];
+      if (queue.length) {
+        els.customWordListInput.value = queue.join('\n');
+      }
+    }
+
+    function saveCustomWordListDraft() {
+      if (!els.customWordListInput) return;
+      localStorage.setItem(customWordListStorageKey(), els.customWordListInput.value || '');
+    }
+
+    function parseHostWordListInput(text) {
+      const tokens = String(text || '')
+        .toUpperCase()
+        .split(/[\s,;]+/)
+        .map((token) => token.replace(/[^A-Z]/g, ''))
+        .filter((token) => token.length === 5);
+      return [...new Set(tokens)];
+    }
+
+    async function loadCustomWordList() {
+      setStatus(els.wordPoolStatus, '');
+      const parsed = parseHostWordListInput(els.customWordListInput?.value || '');
+      if (!parsed.length) {
+        setStatus(els.wordPoolStatus, 'Enter at least one valid 5-letter word.', 'error');
+        return;
+      }
+      const words = parsed.slice(0, HOST_WORD_QUEUE_MAX);
+      try {
+        await runAction('set-word-queue', { words }, `Loaded ${words.length} words into the queue.`);
+        saveCustomWordListDraft();
+        const skipped = parsed.length - words.length;
+        setStatus(
+          els.wordPoolStatus,
+          skipped > 0
+            ? `Loaded ${words.length} words into the queue (${skipped} extra ignored — max ${HOST_WORD_QUEUE_MAX}).`
+            : `Loaded ${words.length} word${words.length === 1 ? '' : 's'} into the queue.`,
+          'success',
+        );
+      } catch (error) {
+        setStatus(els.wordPoolStatus, error.message || 'Could not load your word list.', 'error');
       }
     }
 
@@ -2550,6 +2673,7 @@
       modal.removeAttribute('hidden');
       document.body.classList.add('host-modal-open');
       if (modalId === 'wordsModal') {
+        restoreCustomWordListDraft();
         loadWordSets().catch(() => {});
       }
       if (modalId === 'bingoModal') {
@@ -2989,6 +3113,19 @@
       {},
       'Loaded a fresh set of word suggestions.',
     ));
+    els.loadCustomWordListBtn?.addEventListener('click', () => {
+      loadCustomWordList().catch((error) => {
+        setStatus(els.wordPoolStatus, error.message || 'Could not load your word list.', 'error');
+      });
+    });
+    els.clearCustomWordListBtn?.addEventListener('click', () => {
+      if (els.customWordListInput) {
+        els.customWordListInput.value = '';
+        saveCustomWordListDraft();
+      }
+      setStatus(els.wordPoolStatus, '');
+    });
+    els.customWordListInput?.addEventListener('input', saveCustomWordListDraft);
     els.startRoundBtn.addEventListener('click', () => runAction('start-round', {
       guessWindowSeconds: Number(els.guessSecondsInput.value),
       resultsWindowSeconds: Number(els.resultsSecondsInput.value),
