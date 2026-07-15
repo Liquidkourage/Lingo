@@ -351,9 +351,9 @@
       <p>Balls are the currency of the show. You collect them during TYPEO and spend them during bingo.</p>
       <h3>The pot</h3>
       <ul>
-        <li>Each round starts with a pot of <strong>6 balls</strong> (×2 if the host enables double-ball mode).</li>
-        <li>Each guess window is played at the current pot value. That number is shown on your guess history as the stake for that try.</li>
-        <li>When someone solves on a reveal, the pot usually drops — often from 6 down to 4 on the first solve, then by one ball after later solves.</li>
+        <li>Every guess window is worth <strong>5 balls</strong> until at least one player solves the word. The opening window adds a <strong>+1 bonus</strong> (6 balls total). Double-ball mode doubles all of these values.</li>
+        <li>If nobody solves on the opening guess, only the bonus drops — the next window is still <strong>5 balls</strong>, and it stays at 5 for as many windows as it takes until someone solves.</li>
+        <li>Once someone solves, they earn the stake on the table (6 on the opening guess, otherwise 5). The pot then drops by one ball per solve until the final <strong>2-ball</strong> window.</li>
         <li>The last guess window is always at <strong>2 balls</strong>. After that window, the word ends.</li>
       </ul>
       <h3>Earning balls</h3>
@@ -363,7 +363,7 @@
         <li>The host may award <strong>+1 ball to everyone</strong> as a bonus (sometimes called Communism / Ballshevik).</li>
       </ul>
       <h3>Typical stake ladder</h3>
-      <p>With normal (1×) balls, guess windows often look like this:</p>
+      <p>With normal (1×) balls, a round often looks like this:</p>
       <table class="stakes-table">
         <thead>
           <tr>
@@ -372,9 +372,10 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>Opening guess</td><td>6 balls</td></tr>
+          <tr><td>Opening guess</td><td>6 balls (5 + opening bonus)</td></tr>
+          <tr><td>While nobody has solved yet</td><td>5 balls (may repeat)</td></tr>
           <tr><td>After first solve</td><td>4 balls</td></tr>
-          <tr><td>Next windows</td><td>3 → 2 balls</td></tr>
+          <tr><td>After later solves</td><td>3 → 2 balls</td></tr>
           <tr><td>Final window</td><td>2 balls, then word ends</td></tr>
         </tbody>
       </table>

@@ -8,6 +8,7 @@
       getPlayerToken,
       BingoShared,
       setOuterMessage,
+      setBallsEarned,
     } = options;
 
     let grid = [];
@@ -80,6 +81,12 @@
       }
 
       if (!playerState) {
+        if (els.ballsEarnedValue) {
+          els.ballsEarnedValue.textContent = '—';
+        }
+        if (setBallsEarned) {
+          setBallsEarned(null);
+        }
         if (els.budgetLine) {
           els.budgetLine.innerHTML = "Join the game on this device to load your card.";
         }
@@ -96,6 +103,13 @@
         isWinner,
         budgetRemaining,
       } = playerState;
+
+      if (els.ballsEarnedValue) {
+        els.ballsEarnedValue.textContent = String(ballsEarned);
+      }
+      if (setBallsEarned) {
+        setBallsEarned(ballsEarned);
+      }
 
       if (isWinner) {
         if (els.budgetLine) {

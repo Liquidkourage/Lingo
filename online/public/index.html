@@ -952,10 +952,71 @@
       display: none;
     }
 
-    .play-stage[data-bingo-mode="true"] .play-stats,
+    .play-stage[data-bingo-mode="true"] .play-stats {
+      display: block;
+    }
+
     .play-stage[data-bingo-mode="true"] .play-round,
     .play-stage[data-bingo-mode="true"] .lobby-toggle {
       display: none !important;
+    }
+
+    .play-stage[data-bingo-mode="true"] .play-stats .meta-slot:not(.meta-slot-balls-earned) {
+      display: none;
+    }
+
+    .play-stage[data-bingo-mode="true"] .play-stats .meta-rail {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .play-stage[data-bingo-mode="true"] .play-stats {
+      margin-bottom: 0.65rem;
+    }
+
+    .bingo-balls-rail {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      width: 100%;
+      margin: 0 0 0.5rem;
+      padding: 0.55rem 0.85rem;
+      border: 2px solid rgba(0, 255, 85, 0.45);
+      border-radius: 999px;
+      background: rgba(0, 40, 20, 0.55);
+      box-shadow: 0 0 18px rgba(0, 255, 85, 0.18);
+    }
+
+    .play-stage[data-bingo-mode="true"] .bingo-balls-rail {
+      display: inline-flex;
+    }
+
+    .bingo-balls-rail-label {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(220, 255, 235, 0.9);
+    }
+
+    .bingo-balls-rail-value {
+      font-size: 1.85rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--show-green);
+      text-shadow: 0 0 16px rgba(0, 255, 85, 0.65);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .play-stage[data-bingo-mode="true"] .play-logo {
+      width: min(52%, 168px);
+      margin-bottom: 0.25rem;
+    }
+
+    .play-stage[data-bingo-mode="true"] .play-header {
+      margin-bottom: 0.55rem;
+      padding-bottom: 0.35rem;
     }
 
     .play-stage[data-bingo-mode="true"] .play-bingo {
@@ -1519,6 +1580,10 @@
       <header class="play-header">
         <img class="play-logo" src="/assets/typeo-wordmark.svg" width="320" height="72" alt="TYPEO" />
         <div class="phase-badge" id="phaseBadge">Sign up open</div>
+        <div class="bingo-balls-rail" id="bingoBallsRail" aria-label="Balls earned from TYPEO">
+          <span class="bingo-balls-rail-label">Balls earned</span>
+          <span class="bingo-balls-rail-value" id="bingoBallsEarned">0</span>
+        </div>
         <p class="phase-line" id="phaseLine">Join the lobby so you appear on the venue display before the host starts a round.</p>
         <p class="player-broadcast-banner" id="playerBroadcast" hidden></p>
       </header>
@@ -1661,7 +1726,7 @@
             <span class="meta-label">Balls for this guess</span>
             <span class="meta-value pot" id="metaPot">0</span>
           </div>
-          <div class="meta-slot">
+          <div class="meta-slot meta-slot-balls-earned">
             <span class="meta-label"># Balls Earned</span>
             <span class="meta-value balls" id="metaYours">0</span>
           </div>
@@ -1790,6 +1855,7 @@
       bingoBody: document.getElementById('bingoBody'),
       bingoClaimBtn: document.getElementById('bingoClaimBtn'),
       bingoWinnerBanner: document.getElementById('bingoWinnerBanner'),
+      bingoBallsEarned: document.getElementById('bingoBallsEarned'),
       roundHistory: document.getElementById('roundHistory'),
       wordTiles: document.getElementById('wordTiles'),
       guessCapture: document.getElementById('guessCapture'),
@@ -1870,10 +1936,12 @@
         bingoBtn: els.bingoClaimBtn,
         bingoBody: els.bingoBody,
         winnerBanner: els.bingoWinnerBanner,
+        ballsEarnedValue: els.bingoBallsEarned,
       },
       getGameId: () => currentState?.bingo?.gameId || '',
       getPlayerToken: () => getPlayerToken(),
       BingoShared,
+      setBallsEarned: (value) => renderBallsEarned(value),
     });
 
     els.bingoAutoNote.textContent = BingoPlayerUi.AUTO_MARK_COPY;
@@ -1892,7 +1960,7 @@
         renderPhaseBadge(state);
         els.phaseLine.innerHTML = `${TypeoBrand.wrap()} is done — this is the finale. Watch your card light up as numbers are called.`;
         els.playRound.hidden = true;
-        els.playStats.hidden = true;
+        els.playStats.hidden = false;
         renderScramblePanel(state);
         if (justEnteredBingo && canJoinGame() && !isViewerJoined(state)) {
           joinGame()
@@ -1950,12 +2018,14 @@
     }
 
     function scrollToGame() {
-      const target = !els.playRound.hidden
-        ? els.playRound
-        : !els.playBingo.hidden
-          ? els.playBingo
-          : els.playStats;
+      const target = !els.playRound.hidden ? els.playRound : els.playStats;
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderBallsEarned(value) {
+      const text = value == null ? '—' : String(value);
+      if (els.metaYours) els.metaYours.textContent = text;
+      if (els.bingoBallsEarned) els.bingoBallsEarned.textContent = text;
     }
 
     async function maybeAutoAdvanceOnRoundStart(state, previousPhase) {
@@ -3719,9 +3789,9 @@
 
       els.metaRound.textContent = String(state.roundNumber || 0);
       els.metaPot.textContent = String(displayPotBalls(state));
-      els.metaYours.textContent = !activeUserName()
-        ? '—'
-        : String(isViewerJoined(state) ? viewer.balls : 0);
+      renderBallsEarned(!activeUserName()
+        ? null
+        : (isViewerJoined(state) ? viewer.balls : 0));
 
       if (isLiveRound(phase) && canJoinGame() && !isViewerJoined(state)) {
         setMessage('Tap Join game to appear on the venue display.', 'error');

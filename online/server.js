@@ -1951,11 +1951,12 @@ async function applyRevealResultsScoring(state, client) {
     }
   }
 
+  // Opening window is 5 + 1 bonus (6). Strip the bonus after the first reveal;
+  // stay at 5 until someone solves, then drop by 1 per solve down to 2.
   if (ballsRemaining === 6 * multiplier) {
-    ballsRemaining = 4 * multiplier;
-    if (someoneNewlySolved) {
-      ballsRemaining -= multiplier;
-    }
+    ballsRemaining = someoneNewlySolved
+      ? 4 * multiplier
+      : 5 * multiplier;
   } else if (hadSolverBeforeReveal || someoneNewlySolved) {
     ballsRemaining -= multiplier;
   }
