@@ -1,0 +1,6 @@
+{
+  "id": "warmup",
+  "name": "Warm-up",
+  "description": "Friendly opener words for early rounds.",
+  "words": ["APPLE", "HOUSE", "PLANT", "WATER", "LIGHT", "MUSIC", "PARTY", "HAPPY"]
+}

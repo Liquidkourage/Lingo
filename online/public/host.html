@@ -653,6 +653,106 @@
       color: rgba(180, 198, 220, 0.65);
     }
 
+    .word-set-section {
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(62, 200, 232, 0.18);
+    }
+
+    .word-set-heading {
+      margin: 0 0 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.82);
+    }
+
+    .word-set-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .word-set-actions button {
+      flex: 1 1 140px;
+    }
+
+    .bingo-host-summary {
+      margin: 0 0 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid rgba(255, 204, 0, 0.35);
+      border-radius: 0.35em;
+      background: rgba(255, 204, 0, 0.08);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: rgba(235, 245, 255, 0.92);
+    }
+
+    .bingo-host-table-wrap {
+      max-height: min(42vh, 360px);
+      overflow: auto;
+      border: var(--stroke) solid rgba(62, 200, 232, 0.28);
+      border-radius: calc(var(--radius) - 2px);
+      background: var(--show-black);
+    }
+
+    .bingo-host-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .bingo-host-table th,
+    .bingo-host-table td {
+      padding: 0.45rem 0.55rem;
+      border-bottom: 1px solid rgba(62, 200, 232, 0.12);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .bingo-host-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: rgba(4, 12, 28, 0.96);
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(180, 210, 240, 0.82);
+    }
+
+    .bingo-host-table tr:last-child td { border-bottom: none; }
+
+    .roster-status-pill.is-no-balls,
+    .roster-status-pill.is-watching,
+    .roster-status-pill.is-last-call {
+      color: rgba(210, 225, 245, 0.92);
+      border-color: rgba(160, 190, 220, 0.35);
+      background: rgba(160, 190, 220, 0.08);
+    }
+
+    .roster-status-pill.is-can-claim {
+      color: var(--show-green);
+      border-color: rgba(0, 255, 85, 0.45);
+      background: rgba(0, 255, 85, 0.1);
+    }
+
+    .roster-status-pill.is-out,
+    .roster-status-pill.is-late,
+    .roster-status-pill.is-beaten {
+      color: #ff9aa8;
+      border-color: rgba(255, 34, 68, 0.35);
+      background: rgba(255, 34, 68, 0.08);
+    }
+
+    .roster-status-pill.is-winner {
+      color: var(--show-gold-hot);
+      border-color: rgba(255, 204, 0, 0.45);
+      background: rgba(255, 204, 0, 0.1);
+    }
+
     .word-suggestion-list {
       list-style: none;
       margin: 0;
@@ -1389,6 +1489,12 @@
       </div>
       <div class="host-modal-body">
         <p class="panel-copy">Queue up to 8 words · double-click a suggestion to queue · click a queued word to set it · right-click to remove for this event</p>
+        <div class="word-set-section">
+          <p class="word-set-heading">Load a pre-selected set</p>
+          <div class="word-set-actions" id="wordSetActions">
+            <span class="muted">Connect to load word sets.</span>
+          </div>
+        </div>
         <div class="word-queue-section">
           <p class="word-queue-heading">Up next <span id="wordQueueCount"></span></p>
           <ul id="wordQueueList" class="word-queue-list" aria-label="Upcoming words"></ul>
@@ -1515,7 +1621,23 @@
         <p class="panel-copy">Finale after TYPEO. Players stay on the main play link — their phones switch to bingo automatically. Cards mark themselves when numbers are called; players only tap BINGO!</p>
         <div class="flow-actions">
           <button id="startBingoBtn" class="good btn-flow" type="button">Start bingo game</button>
+          <button id="endBingoBtn" class="danger btn-flow" type="button">End bingo</button>
           <a id="bingoCallsLink" class="secondary btn-flow" href="/bingo/calls" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Open call sheet</a>
+        </div>
+        <div id="bingoHostSummary" class="bingo-host-summary" hidden></div>
+        <div class="bingo-host-table-wrap" id="bingoHostTableWrap" hidden>
+          <table class="bingo-host-table" aria-label="Bingo player status">
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Balls</th>
+                <th>Calls</th>
+                <th>Left</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="bingoHostPlayersBody"></tbody>
+          </table>
         </div>
         <div id="bingoHostStatus" class="status"></div>
         <p id="bingoPlayerLink" class="panel-copy" style="word-break:break-all;margin-top:0.5rem;"></p>
@@ -1584,8 +1706,13 @@
       wordExclusionsCount: document.getElementById('wordExclusionsCount'),
       refreshWordPoolBtn: document.getElementById('refreshWordPoolBtn'),
       startBingoBtn: document.getElementById('startBingoBtn'),
+      endBingoBtn: document.getElementById('endBingoBtn'),
       bingoCallsLink: document.getElementById('bingoCallsLink'),
       bingoHostStatus: document.getElementById('bingoHostStatus'),
+      bingoHostSummary: document.getElementById('bingoHostSummary'),
+      bingoHostTableWrap: document.getElementById('bingoHostTableWrap'),
+      bingoHostPlayersBody: document.getElementById('bingoHostPlayersBody'),
+      wordSetActions: document.getElementById('wordSetActions'),
       bingoPlayerLink: document.getElementById('bingoPlayerLink'),
       hostTimerValue: document.getElementById('hostTimerValue'),
       hostMessageQueue: document.getElementById('hostMessageQueue'),
@@ -1615,6 +1742,8 @@
     let rosterPlayers = [];
     let rosterFilter = 'all';
     let rosterSearchQuery = '';
+    let hostWordSets = [];
+    let lastBingoHostSnapshot = null;
 
     function isValidJoinCode(code) {
       const normalized = String(code || '').trim().toLowerCase();
@@ -1807,12 +1936,22 @@
       }
       currentState = payload.state;
       renderState();
+      if (isBingoMode()) {
+        await loadBingoHostPlayers();
+      }
       if (showStatus) {
         setStatus(els.connectStatus, 'Connected to backend.', 'success');
       }
     }
 
+    function isBingoMode(state = currentState) {
+      return state?.mode === 'bingo' && Boolean(state?.bingo?.gameId);
+    }
+
     function rosterStatusForPlayer(player, currentRound, phase) {
+      if (isBingoMode() && player.bingo) {
+        return player.bingo.status || 'watching';
+      }
       if (player.solvedCurrentWord) {
         return 'solved';
       }
@@ -1829,7 +1968,160 @@
     function rosterStatusLabel(status) {
       if (status === 'locked') return 'Locked in';
       if (status === 'solved') return 'Solved';
+      if (status === 'no-balls') return 'No balls';
+      if (status === 'watching') return 'Watching';
+      if (status === 'last-call') return 'Last call';
+      if (status === 'can-claim') return 'Can claim';
+      if (status === 'late') return 'Late line';
+      if (status === 'out') return 'Out of budget';
+      if (status === 'beaten') return 'Out';
+      if (status === 'winner') return 'Winner';
       return 'Waiting';
+    }
+
+    function rosterBingoDetail(player) {
+      const bingo = player.bingo;
+      if (!bingo) return '';
+      if (bingo.ballsEarned < 1) return 'Needs TYPEO balls';
+      return `${bingo.budgetRemaining} call${bingo.budgetRemaining === 1 ? '' : 's'} left`;
+    }
+
+    function renderBingoHostPanel(bingoPayload) {
+      if (!els.bingoHostSummary || !els.bingoHostTableWrap || !els.bingoHostPlayersBody) return;
+      const active = isBingoMode();
+      if (!active || !bingoPayload) {
+        els.bingoHostSummary.hidden = true;
+        els.bingoHostTableWrap.hidden = true;
+        els.bingoHostPlayersBody.replaceChildren();
+        return;
+      }
+
+      const summary = bingoPayload.summary || {};
+      const players = Array.isArray(bingoPayload.players) ? bingoPayload.players : [];
+      const bingo = bingoPayload.bingo || currentState?.bingo || {};
+      const callsMade = Number(bingo.callsMade || 0);
+      const winner = String(bingo.winnerDisplayName || '').trim();
+
+      els.bingoHostSummary.hidden = false;
+      els.bingoHostTableWrap.hidden = false;
+
+      if (winner) {
+        els.bingoHostSummary.textContent = `${winner} won bingo after ${callsMade} calls. ${summary.canClaim || 0} player(s) could still claim when it ended.`;
+      } else if (summary.out === summary.total && summary.total > 0) {
+        els.bingoHostSummary.textContent = `All ${summary.total} players are out of ball budget after ${callsMade} calls.`;
+      } else {
+        const parts = [
+          `${summary.watching || 0} still in budget`,
+          `${summary.canClaim || 0} can claim`,
+          `${summary.out || 0} out`,
+          `${summary.noBalls || 0} with no balls`,
+        ];
+        els.bingoHostSummary.textContent = `Call ${callsMade} · ${parts.join(' · ')}`;
+      }
+
+      els.bingoHostPlayersBody.replaceChildren();
+      players
+        .slice()
+        .sort((left, right) => String(left.displayName || '').localeCompare(String(right.displayName || '')))
+        .forEach((player) => {
+          const bingoStatus = player.bingo || {};
+          const row = document.createElement('tr');
+
+          const nameCell = document.createElement('td');
+          nameCell.textContent = player.displayName || 'Player';
+          row.appendChild(nameCell);
+
+          const ballsCell = document.createElement('td');
+          ballsCell.textContent = String(bingoStatus.ballsEarned ?? 0);
+          row.appendChild(ballsCell);
+
+          const callsCell = document.createElement('td');
+          callsCell.textContent = String(bingoStatus.callsMade ?? 0);
+          row.appendChild(callsCell);
+
+          const leftCell = document.createElement('td');
+          leftCell.textContent = bingoStatus.ballsEarned > 0
+            ? String(bingoStatus.budgetRemaining ?? 0)
+            : '—';
+          row.appendChild(leftCell);
+
+          const statusCell = document.createElement('td');
+          const pill = document.createElement('span');
+          const status = bingoStatus.status || 'watching';
+          pill.className = `roster-status-pill is-${status}`;
+          pill.textContent = bingoStatus.statusLabel || rosterStatusLabel(status);
+          statusCell.appendChild(pill);
+          row.appendChild(statusCell);
+
+          els.bingoHostPlayersBody.appendChild(row);
+        });
+    }
+
+    async function loadBingoHostPlayers() {
+      if (!isBingoMode()) {
+        renderBingoHostPanel(null);
+        return;
+      }
+      const gameId = String(currentState?.bingo?.gameId || '').trim();
+      if (!gameId) return;
+      try {
+        const response = await adminFetch(`/api/admin/bingo/players?game=${encodeURIComponent(gameId)}`);
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not load bingo players.');
+        }
+        lastBingoHostSnapshot = payload;
+        renderBingoHostPanel(payload);
+      } catch (_error) {
+        // Keep the last good snapshot while polling.
+      }
+    }
+
+    async function loadWordSets() {
+      if (!els.wordSetActions) return;
+      try {
+        const response = await adminFetch('/api/admin/word-sets');
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not load word sets.');
+        }
+        hostWordSets = Array.isArray(payload.sets) ? payload.sets : [];
+        els.wordSetActions.replaceChildren();
+        if (!hostWordSets.length) {
+          const empty = document.createElement('span');
+          empty.className = 'muted';
+          empty.textContent = 'No word sets found.';
+          els.wordSetActions.appendChild(empty);
+          return;
+        }
+        hostWordSets.forEach((set) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'secondary';
+          button.textContent = `${set.name} (${set.wordCount})`;
+          button.title = set.description || set.name;
+          button.addEventListener('click', () => {
+            loadWordSet(set.id, set.name);
+          });
+          els.wordSetActions.appendChild(button);
+        });
+      } catch (error) {
+        els.wordSetActions.replaceChildren();
+        const message = document.createElement('span');
+        message.className = 'muted';
+        message.textContent = error.message || 'Could not load word sets.';
+        els.wordSetActions.appendChild(message);
+      }
+    }
+
+    async function loadWordSet(setId, setName) {
+      setStatus(els.wordPoolStatus, '');
+      try {
+        await runAction('load-word-set', { setId }, `Loaded ${setName}.`);
+        setStatus(els.wordPoolStatus, `Loaded "${setName}" into the queue.`, 'success');
+      } catch (error) {
+        setStatus(els.wordPoolStatus, error.message || 'Could not load word set.', 'error');
+      }
     }
 
     function renderHostPatternDots(pattern) {
@@ -1904,9 +2196,26 @@
 
       const statuses = players.map((player) => rosterStatusForPlayer(player, currentRound, phase));
       els.playerCountValue.textContent = String(players.length);
-      els.waitingCountValue.textContent = String(statuses.filter((item) => item === 'waiting').length);
-      els.submittedCountValue.textContent = String(statuses.filter((item) => item === 'locked').length);
-      els.solvedCountValue.textContent = String(statuses.filter((item) => item === 'solved').length);
+      if (isBingoMode() && state.bingo?.summary) {
+        const summary = state.bingo.summary;
+        els.waitingCountValue.textContent = String(summary.watching || 0);
+        els.submittedCountValue.textContent = String(summary.canClaim || 0);
+        els.solvedCountValue.textContent = String(summary.out || 0);
+        lastBingoHostSnapshot = {
+          bingo: state.bingo,
+          summary: state.bingo.summary,
+          players: players.map((player) => ({
+            displayName: player.displayName,
+            bingo: player.bingo,
+          })),
+        };
+        renderBingoHostPanel(lastBingoHostSnapshot);
+      } else {
+        els.waitingCountValue.textContent = String(statuses.filter((item) => item === 'waiting').length);
+        els.submittedCountValue.textContent = String(statuses.filter((item) => item === 'locked').length);
+        els.solvedCountValue.textContent = String(statuses.filter((item) => item === 'solved').length);
+        renderBingoHostPanel(null);
+      }
 
       if (forceRender || !rosterHasFocus()) {
         renderPlayerRoster(players, currentRound, phase, championName);
@@ -1980,20 +2289,28 @@
 
         const guessCell = document.createElement('td');
         guessCell.className = 'guess-cell';
-        const submitted = status === 'locked' || status === 'solved';
-        guessCell.textContent = submitted ? String(player.currentGuess || '').toUpperCase() : '—';
+        if (isBingoMode() && player.bingo) {
+          guessCell.textContent = rosterBingoDetail(player);
+        } else {
+          const submitted = status === 'locked' || status === 'solved';
+          guessCell.textContent = submitted ? String(player.currentGuess || '').toUpperCase() : '—';
+        }
         row.appendChild(guessCell);
 
         const historyCell = document.createElement('td');
         const windows = document.createElement('div');
         windows.className = 'roster-windows';
-        const history = Array.isArray(player.guessHistory) ? player.guessHistory : [];
-        if (!history.length) {
-          windows.textContent = '—';
+        if (isBingoMode()) {
+          windows.textContent = player.bingo?.hasLine ? 'Has line' : '—';
         } else {
-          history.forEach((entry) => {
-            windows.appendChild(renderHostWindowChip(entry));
-          });
+          const history = Array.isArray(player.guessHistory) ? player.guessHistory : [];
+          if (!history.length) {
+            windows.textContent = '—';
+          } else {
+            history.forEach((entry) => {
+              windows.appendChild(renderHostWindowChip(entry));
+            });
+          }
         }
         historyCell.appendChild(windows);
         row.appendChild(historyCell);
@@ -2210,7 +2527,9 @@
     function scheduleHostPolling() {
       if (pollHandle) window.clearInterval(pollHandle);
       const phase = currentState?.phase || 'idle';
-      const ms = (phase === 'guessing' || phase === 'results') ? 1000 : 5000;
+      const ms = isBingoMode()
+        ? 2000
+        : (phase === 'guessing' || phase === 'results') ? 1000 : 5000;
       pollHandle = window.setInterval(() => {
         loadState().catch(() => {});
         loadPlayers().catch(() => {});
@@ -2230,6 +2549,12 @@
       modal.classList.add('is-open');
       modal.removeAttribute('hidden');
       document.body.classList.add('host-modal-open');
+      if (modalId === 'wordsModal') {
+        loadWordSets().catch(() => {});
+      }
+      if (modalId === 'bingoModal') {
+        loadBingoHostPlayers().catch(() => {});
+      }
     }
 
     function closeHostModal(modal) {
@@ -2596,12 +2921,14 @@
               : 'Connected to backend.',
             'success',
           );
+          await loadWordSets();
         } else {
           applyHostEventCode(hostEventCode());
           await loadState(true);
           await loadPlayers();
         }
         if (pollHandle) window.clearInterval(pollHandle);
+        await loadWordSets();
         scheduleHostPolling();
         scheduleHostTick();
       } catch (error) {
@@ -2803,10 +3130,36 @@
           throw new Error(payload.error || 'Could not start bingo.');
         }
         els.bingoPlayerLink.textContent = 'Players on / — no new link needed. Cards auto-mark; they tap BINGO! when ready.';
-        els.bingoCallsLink.href = payload.hostCallsUrl || '/bingo/calls';
+        els.bingoCallsLink.href = payload.hostCallsUrl || `/bingo/calls?game=${encodeURIComponent(payload.bingo.gameId)}`;
+        currentState = { ...(currentState || {}), mode: 'bingo', bingo: payload.bingo };
+        await loadState();
+        await loadBingoHostPlayers();
+        scheduleHostPolling();
         setStatus(els.bingoHostStatus, 'Bingo started — player phones and venue display switched to bingo.', 'success');
       } catch (error) {
         setStatus(els.bingoHostStatus, error.message || 'Could not start bingo.', 'error');
+      }
+    });
+
+    els.endBingoBtn?.addEventListener('click', async () => {
+      setStatus(els.bingoHostStatus, '');
+      try {
+        const response = await adminFetch('/api/admin/bingo/end', {
+          method: 'POST',
+          body: JSON.stringify({}),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not end bingo.');
+        }
+        currentState = payload.state || currentState;
+        renderState();
+        await loadPlayers(true);
+        renderBingoHostPanel(null);
+        scheduleHostPolling();
+        setStatus(els.bingoHostStatus, 'Bingo ended — players returned to the lobby screen.', 'success');
+      } catch (error) {
+        setStatus(els.bingoHostStatus, error.message || 'Could not end bingo.', 'error');
       }
     });
 

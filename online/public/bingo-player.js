@@ -66,6 +66,29 @@
       }
     }
 
+    function renderBudgetCard(playerState) {
+      if (!playerState) {
+        if (els.budgetTarget) els.budgetTarget.textContent = '—';
+        if (els.budgetCalls) els.budgetCalls.textContent = '—';
+        if (els.budgetRemainingValue) els.budgetRemainingValue.textContent = '—';
+        return;
+      }
+      const {
+        ballsEarned,
+        callsMade,
+        budgetRemaining,
+      } = playerState;
+      if (els.budgetTarget) {
+        els.budgetTarget.textContent = ballsEarned > 0 ? String(ballsEarned) : '—';
+      }
+      if (els.budgetCalls) {
+        els.budgetCalls.textContent = String(callsMade);
+      }
+      if (els.budgetRemainingValue) {
+        els.budgetRemainingValue.textContent = ballsEarned > 0 ? String(budgetRemaining) : '—';
+      }
+    }
+
     function updateUi() {
       if (!bingoState) return;
       renderCallUi();
@@ -81,6 +104,7 @@
       }
 
       if (!playerState) {
+        renderBudgetCard(null);
         if (els.ballsEarnedValue) {
           els.ballsEarnedValue.textContent = '—';
         }
@@ -110,32 +134,41 @@
       if (setBallsEarned) {
         setBallsEarned(ballsEarned);
       }
+      renderBudgetCard(playerState);
 
       if (isWinner) {
         if (els.budgetLine) {
-          els.budgetLine.innerHTML = `<strong>You won bingo!</strong> (${ballsEarned} balls earned from TYPEO)`;
+          els.budgetLine.textContent = 'You won bingo! Your TYPEO balls set the call window you had to beat.';
         }
         if (els.bingoBtn) els.bingoBtn.disabled = true;
         setStatus("Congratulations!", "success");
       } else if (ballsEarned < 1) {
         if (els.budgetLine) {
-          els.budgetLine.innerHTML = "You need at least <strong>1 ball</strong> from TYPEO to win bingo.";
+          els.budgetLine.textContent = 'You need at least 1 ball from TYPEO to be eligible for bingo.';
         }
         if (els.bingoBtn) els.bingoBtn.disabled = true;
         setStatus("", "");
       } else if (bingoState.hasWinner) {
         if (els.budgetLine) {
-          els.budgetLine.innerHTML = `You earned <strong>${ballsEarned}</strong> ball${ballsEarned === 1 ? "" : "s"} from TYPEO.`;
+          els.budgetLine.textContent = `${bingoState.winnerDisplayName} got bingo first.`;
         }
         setStatus(`${bingoState.winnerDisplayName} got bingo first.`, "error");
         if (els.bingoBtn) els.bingoBtn.disabled = true;
       } else {
         if (els.budgetLine) {
-          els.budgetLine.innerHTML = [
-            `You earned <strong>${ballsEarned}</strong> ball${ballsEarned === 1 ? "" : "s"} from TYPEO.`,
-            `Need bingo by call <strong>${ballsEarned}</strong>`,
-            `(${callsMade} called${budgetRemaining > 0 ? `, ${budgetRemaining} left in budget` : ""}).`,
-          ].join(" ");
+          if (canClaim) {
+            els.budgetLine.textContent = callsMade > ballsEarned
+              ? 'You had bingo in time — tap BINGO! (A late tap is fine.)'
+              : 'You have bingo within your ball budget — tap BINGO!';
+          } else if (hasLine && !earnedBingoInBudget) {
+            els.budgetLine.textContent = `Your line completed after call ${ballsEarned} — too late to win.`;
+          } else if (callsMade >= ballsEarned && !earnedBingoInBudget) {
+            els.budgetLine.textContent = `No bingo by call ${ballsEarned} — you're out of the running.`;
+          } else if (budgetRemaining === 0) {
+            els.budgetLine.textContent = `This is your last call in budget — need bingo on call ${callsMade + 1} or earlier.`;
+          } else {
+            els.budgetLine.textContent = `Need a line before call ${ballsEarned + 1}. ${budgetRemaining} call${budgetRemaining === 1 ? '' : 's'} left in your budget.`;
+          }
         }
         if (canClaim) {
           const late = callsMade > ballsEarned;

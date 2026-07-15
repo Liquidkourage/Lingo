@@ -1050,12 +1050,66 @@
     }
 
     .bingo-budget {
-      margin: 0 0 0.45rem;
+      margin: 0 0 0.65rem;
       text-align: center;
       font-size: 0.88rem;
       font-weight: 700;
       line-height: 1.4;
       color: rgba(220, 235, 255, 0.95);
+    }
+
+    .bingo-budget-card {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.45rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .bingo-budget-stat {
+      padding: 0.55rem 0.4rem;
+      border: 2px solid rgba(255, 204, 0, 0.35);
+      border-radius: 0.35em;
+      background: rgba(0, 18, 42, 0.72);
+      text-align: center;
+    }
+
+    .bingo-budget-stat.is-highlight {
+      border-color: rgba(0, 255, 85, 0.45);
+      background: rgba(0, 40, 20, 0.55);
+      box-shadow: 0 0 16px rgba(0, 255, 85, 0.12);
+    }
+
+    .bingo-budget-stat-label {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.56rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(190, 215, 240, 0.82);
+    }
+
+    .bingo-budget-stat-value {
+      display: block;
+      font-size: 1.35rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--show-gold-hot);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bingo-budget-stat.is-highlight .bingo-budget-stat-value {
+      color: var(--show-green);
+      text-shadow: 0 0 14px rgba(0, 255, 85, 0.45);
+    }
+
+    .bingo-budget-note {
+      margin: 0 0 0.75rem;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.45;
+      color: rgba(210, 225, 245, 0.9);
     }
 
     .bingo-budget strong {
@@ -1735,7 +1789,21 @@
 
       <section class="play-block play-bingo" id="playBingo" hidden aria-label="Bingo finale">
         <p class="bingo-auto-note" id="bingoAutoNote"></p>
-        <p class="bingo-budget" id="bingoBudgetLine">Loading your bingo card…</p>
+        <div class="bingo-budget-card" id="bingoBudgetCard" aria-label="Bingo ball budget">
+          <div class="bingo-budget-stat">
+            <span class="bingo-budget-stat-label">Bingo by call</span>
+            <span class="bingo-budget-stat-value" id="bingoBudgetTarget">—</span>
+          </div>
+          <div class="bingo-budget-stat">
+            <span class="bingo-budget-stat-label">Calls so far</span>
+            <span class="bingo-budget-stat-value" id="bingoBudgetCalls">—</span>
+          </div>
+          <div class="bingo-budget-stat is-highlight">
+            <span class="bingo-budget-stat-label">Budget left</span>
+            <span class="bingo-budget-stat-value" id="bingoBudgetRemaining">—</span>
+          </div>
+        </div>
+        <p class="bingo-budget-note" id="bingoBudgetLine">Loading your bingo card…</p>
         <div class="scramble-panel" id="bingoScramblePanel" hidden>
           <strong>Unscramble the finale word</strong>
           <div class="scramble-letters" id="bingoScrambleLetters"></div>
@@ -1845,6 +1913,9 @@
       playBingo: document.getElementById('playBingo'),
       bingoAutoNote: document.getElementById('bingoAutoNote'),
       bingoBudgetLine: document.getElementById('bingoBudgetLine'),
+      bingoBudgetTarget: document.getElementById('bingoBudgetTarget'),
+      bingoBudgetCalls: document.getElementById('bingoBudgetCalls'),
+      bingoBudgetRemaining: document.getElementById('bingoBudgetRemaining'),
       bingoScramblePanel: document.getElementById('bingoScramblePanel'),
       bingoScrambleLetters: document.getElementById('bingoScrambleLetters'),
       bingoCallHeroWrap: document.getElementById('bingoCallHeroWrap'),
@@ -1927,6 +1998,9 @@
     const bingoPlayer = BingoPlayerUi.create({
       els: {
         budgetLine: els.bingoBudgetLine,
+        budgetTarget: els.bingoBudgetTarget,
+        budgetCalls: els.bingoBudgetCalls,
+        budgetRemainingValue: els.bingoBudgetRemaining,
         lastCall: els.bingoLastCall,
         callHero: els.bingoCallHero,
         callHeroWrap: els.bingoCallHeroWrap,

@@ -150,6 +150,7 @@
         <button type="button" id="prevBtn" class="secondary">Previous</button>
         <button type="button" id="nextBtn">Call next</button>
         <button type="button" id="resetBtn" class="secondary">Reset calls</button>
+        <button type="button" id="endBingoBtn" class="secondary">End bingo</button>
       </div>
 
       <div class="history no-print" id="callHistory"></div>
@@ -181,6 +182,7 @@
       prevBtn: document.getElementById("prevBtn"),
       nextBtn: document.getElementById("nextBtn"),
       resetBtn: document.getElementById("resetBtn"),
+      endBingoBtn: document.getElementById("endBingoBtn"),
       callHistory: document.getElementById("callHistory"),
       callSheet: document.getElementById("callSheet"),
       gameStatus: document.getElementById("gameStatus"),
@@ -326,6 +328,13 @@
     });
     els.resetBtn.addEventListener("click", () => {
       advance("reset").catch((error) => setGameStatus(error.message, "error"));
+    });
+    els.endBingoBtn.addEventListener("click", () => {
+      adminFetch("/api/admin/bingo/end", { method: "POST", body: "{}" })
+        .then(() => {
+          setGameStatus("Bingo ended — players returned to the lobby screen.", "success");
+        })
+        .catch((error) => setGameStatus(error.message, "error"));
     });
 
     els.adminKey.value = storedKey();

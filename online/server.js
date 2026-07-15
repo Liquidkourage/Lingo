@@ -32,6 +32,7 @@ const {
   evaluateBingoClaim,
   bingoAchievedWithinBudget,
 } = require("./bingo-logic");
+const { listWordSets, loadWordSetById } = require("./word-sets");
 require("dotenv").config();
 
 const QRCode = require("qrcode");
@@ -1649,6 +1650,128 @@ async function getLatestBingoGameForSession(sessionId, client = pool) {
   return result.rows[0] || null;
 }
 
+function computeBingoPlayerStatus(playerRow, bingoRow) {
+  if (!playerRow || !bingoRow) {
+    return null;
+  }
+
+  const ballsEarned = Number(playerRow.balls || 0);
+  const callSheet = Array.isArray(bingoRow.call_sheet) ? bingoRow.call_sheet : [];
+  const callIndex = Number(bingoRow.call_index ?? -1);
+  const made = callsMade(callIndex);
+  const { grid } = generateBingoCard(bingoRow.id, playerRow.display_name);
+  const called = calledNumbersFromSheet(callSheet, callIndex);
+  const hasLine = hasBingoLine(grid, called);
+  const earnedBingoInBudget = bingoAchievedWithinBudget(
+    callSheet,
+    callIndex,
+    ballsEarned,
+    grid,
+  );
+  const budgetRemaining = Math.max(0, ballsEarned - made);
+  const hasWinner = Boolean(bingoRow.winner_display_name);
+  const isWinner = hasWinner
+    && String(bingoRow.winner_display_name).toLowerCase()
+      === String(playerRow.display_name).toLowerCase();
+  const canClaim = earnedBingoInBudget && !hasWinner;
+
+  let status = "watching";
+  let statusLabel = "Watching";
+  if (isWinner) {
+    status = "winner";
+    statusLabel = "Winner";
+  } else if (ballsEarned < 1) {
+    status = "no-balls";
+    statusLabel = "No balls";
+  } else if (hasWinner) {
+    status = "beaten";
+    statusLabel = "Out";
+  } else if (canClaim) {
+    status = "can-claim";
+    statusLabel = "Can claim";
+  } else if (hasLine && !earnedBingoInBudget) {
+    status = "late";
+    statusLabel = "Late line";
+  } else if (made >= ballsEarned && !earnedBingoInBudget) {
+    status = "out";
+    statusLabel = "Out of budget";
+  } else if (budgetRemaining === 0) {
+    status = "last-call";
+    statusLabel = "Last call";
+  }
+
+  return {
+    ballsEarned,
+    callsMade: made,
+    budgetRemaining,
+    hasLine,
+    earnedBingoInBudget,
+    canClaim,
+    isWinner,
+    status,
+    statusLabel,
+  };
+}
+
+function summarizeBingoPlayerStatuses(statuses) {
+  const summary = {
+    total: statuses.length,
+    noBalls: 0,
+    watching: 0,
+    canClaim: 0,
+    out: 0,
+    winner: 0,
+  };
+
+  for (const status of statuses) {
+    if (!status) continue;
+    if (status.status === "no-balls") summary.noBalls += 1;
+    if (status.status === "watching" || status.status === "last-call") summary.watching += 1;
+    if (status.status === "can-claim") summary.canClaim += 1;
+    if (status.status === "out" || status.status === "late" || status.status === "beaten") {
+      summary.out += 1;
+    }
+    if (status.status === "winner") summary.winner += 1;
+  }
+
+  return summary;
+}
+
+async function listBingoPlayerStatuses(sessionId, bingoRow, client = pool) {
+  const players = await listPlayers(sessionId, client);
+  return players.map((player) => ({
+    playerId: Number(player.id),
+    displayName: player.displayName,
+    bingo: computeBingoPlayerStatus({
+      display_name: player.displayName,
+      balls: player.balls,
+    }, bingoRow),
+  }));
+}
+
+async function applyWordQueuePatch(state, words, client = pool) {
+  const queue = normalizeWordList(words).slice(0, HOST_WORD_QUEUE_MAX);
+  for (const word of queue) {
+    if (!isFiveLetterWord(word)) {
+      throw new Error("Each queued word must be exactly 5 letters.");
+    }
+    if (!(await isLegalWord(client, word))) {
+      throw new Error(`"${word}" is not a legal 5-letter Scrabble word.`);
+    }
+  }
+  const history = parseWordHistoryFromState(state.host_word_history);
+  const overlap = queue.find((word) => history.includes(word));
+  if (overlap) {
+    throw new Error(`"${overlap}" was already played this session.`);
+  }
+  const patch = { host_word_queue: queue };
+  const currentWord = normalizeWordInput(state.current_word);
+  if (!currentWord || !queue.includes(currentWord)) {
+    patch.current_word = queue[0] || "";
+  }
+  return patch;
+}
+
 async function buildPublicStatePayload(state, displayName, playerToken, client = pool, options = {}) {
   const metrics = await getPublicMetrics(state.session_id, state.round_number, client);
   const players = await getPublicDisplayPlayers(state, client);
@@ -2690,6 +2813,7 @@ app.get("/api/admin/state", requireAdmin, async (_req, res) => {
     state = await ensureHostWordPool(state);
     const players = await getPublicDisplayPlayers(state);
     const serialized = await enrichStateWithWordPool(serializeState(state));
+    const bingoRow = await getLatestBingoGameForSession(state.session_id);
     res.json({
       ok: true,
       state: {
@@ -2699,6 +2823,7 @@ app.get("/api/admin/state", requireAdmin, async (_req, res) => {
         hostMessages: await listHostMessages(state.session_id),
         leaderboard: buildLeaderboardEntries(players),
         unsubmittedPlayers: buildUnsubmittedPlayerNames(state, players),
+        bingo: bingoRow ? serializeBingoPublicState(bingoRow) : null,
       },
     });
   } catch (error) {
@@ -2710,15 +2835,31 @@ app.get("/api/admin/players", requireAdmin, async (_req, res) => {
   try {
     const state = await getState();
     const players = await listPlayers(state.session_id);
+    const bingoRow = state.mode === "bingo"
+      ? await getLatestBingoGameForSession(state.session_id)
+      : null;
     const playersWithHistory = await Promise.all(players.map(async (player) => ({
       ...player,
       guessHistory: await listViewerGuessHistory(player.id, state, pool, { hostMode: true }),
+      bingo: bingoRow
+        ? computeBingoPlayerStatus({
+          display_name: player.displayName,
+          balls: player.balls,
+        }, bingoRow)
+        : null,
     })));
+    const bingoStatuses = playersWithHistory
+      .map((player) => player.bingo)
+      .filter(Boolean);
     res.json({
       ok: true,
       state: {
         session: serializeState(state),
         players: playersWithHistory,
+        bingo: bingoRow ? {
+          ...serializeBingoPublicState(bingoRow),
+          summary: summarizeBingoPlayerStatuses(bingoStatuses),
+        } : null,
       },
     });
   } catch (error) {
@@ -2966,25 +3107,15 @@ async function handleAdminAction(action, body) {
       return serializeState(await updateState(patch));
     }
     case "set-word-queue": {
-      const words = normalizeWordList(body.words || []).slice(0, HOST_WORD_QUEUE_MAX);
-      for (const word of words) {
-        if (!isFiveLetterWord(word)) {
-          throw new Error("Each queued word must be exactly 5 letters.");
-        }
-        if (!(await isLegalWord(pool, word))) {
-          throw new Error(`"${word}" is not a legal 5-letter Scrabble word.`);
-        }
+      const patch = await applyWordQueuePatch(state, body.words || []);
+      return serializeState(await updateState(patch));
+    }
+    case "load-word-set": {
+      const set = await loadWordSetById(body.setId);
+      if (!set.words.length) {
+        throw new Error(`Word set "${set.name}" is empty.`);
       }
-      const history = parseWordHistoryFromState(state.host_word_history);
-      const overlap = words.find((word) => history.includes(word));
-      if (overlap) {
-        throw new Error(`"${overlap}" was already played this session.`);
-      }
-      const patch = { host_word_queue: words };
-      const currentWord = normalizeWordInput(state.current_word);
-      if (!currentWord || !words.includes(currentWord)) {
-        patch.current_word = words[0] || "";
-      }
+      const patch = await applyWordQueuePatch(state, set.words);
       return serializeState(await updateState(patch));
     }
     case "set-champion":
@@ -3514,6 +3645,59 @@ app.get("/api/bingo/state", async (req, res) => {
       return;
     }
     res.json({ ok: true, bingo: serializeBingoPublicState(row) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.post("/api/admin/bingo/end", requireAdmin, async (_req, res) => {
+  try {
+    const state = await getState();
+    const nextState = await updateState({
+      mode: "lingo",
+      phase: "idle",
+      host_broadcast: "",
+    });
+    res.json({
+      ok: true,
+      state: serializeState(nextState),
+      bingo: state.mode === "bingo"
+        ? serializeBingoPublicState(await getLatestBingoGameForSession(state.session_id))
+        : null,
+    });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/admin/word-sets", requireAdmin, async (_req, res) => {
+  try {
+    const sets = await listWordSets();
+    res.json({ ok: true, sets });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/admin/bingo/players", requireAdmin, async (req, res) => {
+  try {
+    const state = await getState();
+    const gameId = String(req.query.game || req.query.gameId || "").trim();
+    const bingoRow = gameId
+      ? await getBingoGameRow(gameId)
+      : await getLatestBingoGameForSession(state.session_id);
+    if (!bingoRow) {
+      res.status(404).json({ ok: false, error: "No active bingo game found." });
+      return;
+    }
+    const players = await listBingoPlayerStatuses(state.session_id, bingoRow);
+    const statuses = players.map((player) => player.bingo).filter(Boolean);
+    res.json({
+      ok: true,
+      bingo: serializeBingoPublicState(bingoRow),
+      summary: summarizeBingoPlayerStatuses(statuses),
+      players,
+    });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
