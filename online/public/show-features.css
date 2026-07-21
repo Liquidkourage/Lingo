@@ -17,8 +17,7 @@
 .host-broadcast-banner[hidden],
 .player-broadcast-banner[hidden],
 .leaderboard-overlay[hidden],
-.ballsplosion-overlay[hidden],
-.bingo-call-hero[hidden] {
+.ballsplosion-overlay[hidden] {
   display: none !important;
 }
 
@@ -178,6 +177,13 @@
 .bingo-call-hero {
   margin: 0.5rem auto 0.65rem;
   text-align: center;
+  min-height: 5.5rem;
+}
+
+.bingo-call-hero[hidden] {
+  display: block !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .bingo-call-hero-ball {

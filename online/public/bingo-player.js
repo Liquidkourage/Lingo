@@ -15,6 +15,32 @@
     let playerState = null;
     let bingoState = null;
     let lastAnimatedCall = "";
+    let lastCardSignature = "";
+    let lastHistorySignature = "";
+
+    function findScrollParent(node) {
+      let el = node;
+      while (el && el !== document.body) {
+        const style = window.getComputedStyle(el);
+        const overflowY = style.overflowY;
+        if ((overflowY === "auto" || overflowY === "scroll") && el.scrollHeight > el.clientHeight) {
+          return el;
+        }
+        el = el.parentElement;
+      }
+      return document.scrollingElement || document.documentElement;
+    }
+
+    function withPreservedScroll(fn) {
+      const anchor = els.bingoBody || els.budgetLine || els.status;
+      const scroller = findScrollParent(anchor);
+      const top = scroller ? scroller.scrollTop : 0;
+      const windowX = window.scrollX;
+      const windowY = window.scrollY;
+      fn();
+      if (scroller) scroller.scrollTop = top;
+      window.scrollTo(windowX, windowY);
+    }
 
     function setStatus(text, type = "") {
       if (els.status) {
@@ -28,7 +54,11 @@
 
     function renderCard(calledNumbers) {
       if (!els.bingoBody || !grid.length) return;
-      const called = new Set(Array.isArray(calledNumbers) ? calledNumbers : []);
+      const called = Array.isArray(calledNumbers) ? calledNumbers : [];
+      const signature = `${grid.flat().join(",")}|${called.join(",")}`;
+      if (signature === lastCardSignature) return;
+      lastCardSignature = signature;
+      const calledSet = new Set(called);
       els.bingoBody.replaceChildren();
       for (let row = 0; row < 5; row += 1) {
         const tr = document.createElement("tr");
@@ -38,7 +68,7 @@
           const isFree = row === 2 && column === 2;
           td.textContent = isFree ? "FREE" : String(value);
           if (isFree) td.classList.add("free");
-          if (!isFree && called.has(value)) td.classList.add("called");
+          if (!isFree && calledSet.has(value)) td.classList.add("called");
           tr.appendChild(td);
         }
         els.bingoBody.appendChild(tr);
@@ -62,7 +92,12 @@
         }
       }
       if (els.callHistory && root.TypeoShow) {
-        root.TypeoShow.renderBingoCallHistory(els.callHistory, bingoState.called || [], lastCall);
+        const called = bingoState.called || [];
+        const historySignature = `${called.join(",")}|${lastCall}`;
+        if (historySignature !== lastHistorySignature) {
+          lastHistorySignature = historySignature;
+          root.TypeoShow.renderBingoCallHistory(els.callHistory, called, lastCall);
+        }
       }
     }
 
@@ -95,7 +130,8 @@
 
     function updateUi() {
       if (!bingoState) return;
-      renderCallUi();
+      withPreservedScroll(() => {
+        renderCallUi();
 
       if (bingoState.hasWinner) {
         if (els.winnerBanner) {
@@ -190,6 +226,7 @@
       }
 
       renderCard(bingoState.calledNumbers);
+      });
     }
 
     async function loadPlayerState(gameId) {

@@ -956,16 +956,9 @@
       display: none;
     }
 
-    .play-stage[data-bingo-mode="true"] .play-stats,
-    .play-stage[data-bingo-mode="true"] .phase-line,
-    .play-stage[data-bingo-mode="true"] .bingo-auto-note,
-    .play-stage[data-bingo-mode="true"] .bingo-last-call {
-      display: none !important;
-    }
-
-    .play-stage[data-bingo-mode="true"][data-viewer-joined="true"] .play-instructions,
-    .play-stage[data-bingo-mode="true"][data-viewer-joined="true"] .play-setup {
-      display: none;
+    .play-stage[data-bingo-mode="true"] .play-stats {
+      display: block;
+      margin-bottom: 0.65rem;
     }
 
     .play-stage[data-bingo-mode="true"] .play-round,
@@ -973,39 +966,18 @@
       display: none !important;
     }
 
-    .play-stage[data-bingo-mode="true"] .play-header {
-      position: static;
-      flex-shrink: 0;
-      margin-bottom: 0.35rem;
-      padding-bottom: 0.25rem;
-    }
-
-    .play-stage[data-bingo-mode="true"] .play-logo {
+    .play-stage[data-bingo-mode="true"] .play-stats .meta-slot:not(.meta-slot-balls-earned) {
       display: none;
     }
 
-    .play-stage[data-bingo-mode="true"] .phase-badge {
-      margin-bottom: 0.35rem;
-      padding: 0.35em 0.65em;
-      font-size: 0.66rem;
+    .play-stage[data-bingo-mode="true"] .play-stats .meta-rail {
+      display: grid;
+      grid-template-columns: 1fr;
     }
 
-    .play-stage[data-bingo-mode="true"] .play-card {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 0.55rem 0.5rem 0.45rem;
-    }
-
-    .play-stage[data-bingo-mode="true"] .play-bingo {
-      display: flex;
-      flex: 1 1 auto;
-      flex-direction: column;
-      gap: 0.45rem;
-      min-height: 0;
-      margin-bottom: 0;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+    .play-stage[data-bingo-mode="true"][data-viewer-joined="true"] .play-instructions,
+    .play-stage[data-bingo-mode="true"][data-viewer-joined="true"] .play-setup {
+      display: none;
     }
 
     .bingo-balls-rail {
@@ -1043,142 +1015,28 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .play-stage[data-bingo-mode="true"] .play-logo {
+      width: min(52%, 168px);
+      margin-bottom: 0.25rem;
+    }
+
+    .play-stage[data-bingo-mode="true"] .play-header {
+      margin-bottom: 0.55rem;
+      padding-bottom: 0.35rem;
+    }
+
+    .play-stage[data-bingo-mode="true"] .play-bingo {
+      display: block;
+      overflow-anchor: none;
+    }
+
     .play-bingo {
       display: none;
-      padding: 0.55rem 0.5rem 0.45rem;
+      padding: 0.85rem 0.65rem 1rem;
       border: 2px solid rgba(255, 204, 0, 0.45);
       border-radius: 0.2em;
       background: linear-gradient(180deg, rgba(0, 28, 64, 0.72) 0%, rgba(0, 8, 22, 0.92) 100%);
       box-shadow: 0 0 24px rgba(255, 204, 0, 0.12);
-    }
-
-    .bingo-top-strip {
-      position: sticky;
-      top: 0;
-      z-index: 6;
-      margin: -0.55rem -0.5rem 0;
-      padding: 0.45rem 0.5rem 0.35rem;
-      background: linear-gradient(180deg, rgba(2, 12, 30, 0.98) 78%, rgba(2, 8, 24, 0.92) 100%);
-      border-bottom: 1px solid rgba(255, 204, 0, 0.22);
-      /* Avoid sticky + content growth fighting scroll position mid-call */
-      flex-shrink: 0;
-    }
-
-    .bingo-call-row {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      margin-top: 0.4rem;
-      min-height: 3.4rem;
-    }
-
-    .bingo-call-row .bingo-call-hero {
-      flex: 0 0 auto;
-      margin: 0;
-      /* Keep layout stable before the first call appears */
-      min-width: 3.4rem;
-      min-height: 3.4rem;
-    }
-
-    .bingo-call-row .bingo-call-hero[hidden] {
-      display: block !important;
-      visibility: hidden;
-      pointer-events: none;
-    }
-
-    .bingo-call-row .bingo-call-history {
-      flex: 1 1 auto;
-      justify-content: flex-start;
-      margin: 0;
-      min-width: 0;
-      max-height: 3.4rem;
-      overflow: hidden;
-    }
-
-    .bingo-budget-card {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.3rem;
-      margin: 0;
-    }
-
-    .bingo-budget-stat.is-earned .bingo-budget-stat-value {
-      color: var(--show-green);
-      text-shadow: 0 0 12px rgba(0, 255, 85, 0.35);
-    }
-
-    .bingo-budget-note {
-      margin: 0.35rem 0 0;
-      text-align: left;
-      font-size: 0.72rem;
-      line-height: 1.35;
-      min-height: 2.7em;
-    }
-
-    .play-stage[data-bingo-mode="true"] .bingo-status {
-      margin: 0.35rem 0 0;
-      min-height: 1.2em;
-      text-align: left;
-      font-size: 0.74rem;
-    }
-
-    .play-stage[data-bingo-mode="true"] .bingo-call-hero-ball {
-      width: 3.4rem;
-      height: 3.4rem;
-      font-size: 0.95rem;
-      border-width: 2px;
-    }
-
-    .play-stage[data-bingo-mode="true"] table.bingo-card {
-      margin: 0 auto 0.35rem;
-      max-width: 100%;
-    }
-
-    .play-stage[data-bingo-mode="true"] table.bingo-card th {
-      padding: 0.28rem;
-      font-size: 0.72rem;
-    }
-
-    .play-stage[data-bingo-mode="true"] table.bingo-card td {
-      font-size: clamp(0.68rem, 2.8vw, 0.92rem);
-      border-width: 1px;
-    }
-
-    .play-stage[data-bingo-mode="true"] table.bingo-card td.free {
-      font-size: 0.5rem;
-    }
-
-    .play-stage[data-bingo-mode="true"] .bingo-claim-btn {
-      position: sticky;
-      bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
-      z-index: 6;
-      margin-bottom: 0.15rem;
-      max-width: 100%;
-      font-size: 0.95rem;
-      padding-top: 0.7rem;
-      padding-bottom: 0.7rem;
-    }
-
-    body[data-bingo-mode="true"] {
-      height: 100dvh;
-      min-height: 100dvh;
-      max-height: 100dvh;
-      overflow: hidden;
-    }
-
-    body[data-bingo-mode="true"] .play-stage {
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 auto;
-      min-height: 0;
-      max-height: none;
-    }
-
-    body[data-bingo-mode="true"] .play-card {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow: hidden;
-      max-height: none;
     }
 
     .bingo-auto-note {
@@ -1209,13 +1067,13 @@
 
     .bingo-budget-card {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.3rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.45rem;
       margin: 0 0 0.75rem;
     }
 
     .bingo-budget-stat {
-      padding: 0.45rem 0.25rem;
+      padding: 0.55rem 0.4rem;
       border: 2px solid rgba(255, 204, 0, 0.35);
       border-radius: 0.35em;
       background: rgba(0, 18, 42, 0.72);
@@ -1230,8 +1088,8 @@
 
     .bingo-budget-stat-label {
       display: block;
-      margin-bottom: 0.15rem;
-      font-size: 0.5rem;
+      margin-bottom: 0.2rem;
+      font-size: 0.56rem;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -1240,7 +1098,7 @@
 
     .bingo-budget-stat-value {
       display: block;
-      font-size: 1.1rem;
+      font-size: 1.35rem;
       font-weight: 900;
       line-height: 1;
       color: var(--show-gold-hot);
@@ -1259,6 +1117,7 @@
       font-weight: 600;
       line-height: 1.45;
       color: rgba(210, 225, 245, 0.9);
+      min-height: 2.4em;
     }
 
     .bingo-budget strong {
@@ -1772,49 +1631,6 @@
       .play-stage[data-phase="ended"] .meta-value {
         font-size: 1.35rem;
       }
-
-      .play-stage[data-bingo-mode="true"] .bingo-budget-stat {
-        padding: 0.28rem 0.12rem;
-      }
-
-      .play-stage[data-bingo-mode="true"] .bingo-budget-stat-label {
-        font-size: 0.42rem;
-        letter-spacing: 0.05em;
-      }
-
-      .play-stage[data-bingo-mode="true"] .bingo-budget-stat-value {
-        font-size: 0.92rem;
-      }
-
-      .play-stage[data-bingo-mode="true"] .bingo-budget-note,
-      .play-stage[data-bingo-mode="true"] .bingo-status {
-        font-size: 0.68rem;
-        line-height: 1.3;
-      }
-
-      .play-stage[data-bingo-mode="true"] .bingo-status {
-        display: none;
-      }
-
-      .play-stage[data-bingo-mode="true"] .bingo-call-hero-ball {
-        width: 2.75rem;
-        height: 2.75rem;
-        font-size: 0.82rem;
-      }
-
-      .play-stage[data-bingo-mode="true"] table.bingo-card th {
-        padding: 0.2rem;
-        font-size: 0.62rem;
-      }
-
-      .play-stage[data-bingo-mode="true"] table.bingo-card td {
-        font-size: clamp(0.58rem, 2.4vw, 0.8rem);
-        border-width: 1px;
-      }
-
-      .play-stage[data-bingo-mode="true"] table.bingo-card td.free {
-        font-size: 0.44rem;
-      }
     }
   </style>
 </head>
@@ -1982,42 +1798,34 @@
 
       <section class="play-block play-bingo" id="playBingo" hidden aria-label="Bingo finale">
         <p class="bingo-auto-note" id="bingoAutoNote"></p>
-        <div class="bingo-top-strip">
-          <div class="bingo-budget-card" id="bingoBudgetCard" aria-label="Bingo ball budget">
-            <div class="bingo-budget-stat is-earned">
-              <span class="bingo-budget-stat-label">Earned</span>
-              <span class="bingo-budget-stat-value" id="bingoBudgetEarned">—</span>
-            </div>
-            <div class="bingo-budget-stat">
-              <span class="bingo-budget-stat-label">By call</span>
-              <span class="bingo-budget-stat-value" id="bingoBudgetTarget">—</span>
-            </div>
-            <div class="bingo-budget-stat">
-              <span class="bingo-budget-stat-label">Calls</span>
-              <span class="bingo-budget-stat-value" id="bingoBudgetCalls">—</span>
-            </div>
-            <div class="bingo-budget-stat is-highlight">
-              <span class="bingo-budget-stat-label">Left</span>
-              <span class="bingo-budget-stat-value" id="bingoBudgetRemaining">—</span>
-            </div>
+        <div class="bingo-budget-card" id="bingoBudgetCard" aria-label="Bingo ball budget">
+          <div class="bingo-budget-stat">
+            <span class="bingo-budget-stat-label">Bingo by call</span>
+            <span class="bingo-budget-stat-value" id="bingoBudgetTarget">—</span>
           </div>
-          <div class="bingo-call-row">
-            <div class="bingo-call-hero" id="bingoCallHeroWrap" hidden>
-              <span class="bingo-call-hero-ball" id="bingoCallHero">—</span>
-            </div>
-            <ul class="bingo-call-history" id="bingoCallHistory" aria-label="Recent calls"></ul>
+          <div class="bingo-budget-stat">
+            <span class="bingo-budget-stat-label">Calls so far</span>
+            <span class="bingo-budget-stat-value" id="bingoBudgetCalls">—</span>
           </div>
-          <p class="bingo-budget-note" id="bingoBudgetLine">Loading your bingo card…</p>
-          <p class="bingo-status" id="bingoStatus" aria-live="polite"></p>
+          <div class="bingo-budget-stat is-highlight">
+            <span class="bingo-budget-stat-label">Budget left</span>
+            <span class="bingo-budget-stat-value" id="bingoBudgetRemaining">—</span>
+          </div>
         </div>
+        <p class="bingo-budget-note" id="bingoBudgetLine">Loading your bingo card…</p>
         <div class="scramble-panel" id="bingoScramblePanel" hidden>
           <strong>Unscramble the finale word</strong>
           <div class="scramble-letters" id="bingoScrambleLetters"></div>
         </div>
+        <div class="bingo-call-hero" id="bingoCallHeroWrap" hidden>
+          <span class="bingo-call-hero-ball" id="bingoCallHero">—</span>
+        </div>
+        <ul class="bingo-call-history" id="bingoCallHistory" aria-label="Recent calls"></ul>
         <p class="bingo-last-call">
           <span class="bingo-last-call-label">Last call</span>
           <span id="bingoLastCall">—</span>
         </p>
+        <p class="bingo-status" id="bingoStatus" aria-live="polite"></p>
         <table class="bingo-card" aria-label="Your bingo card — numbers mark automatically when called">
           <thead>
             <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
@@ -2115,7 +1923,6 @@
       bingoAutoNote: document.getElementById('bingoAutoNote'),
       bingoBudgetLine: document.getElementById('bingoBudgetLine'),
       bingoBudgetTarget: document.getElementById('bingoBudgetTarget'),
-      bingoBudgetEarned: document.getElementById('bingoBudgetEarned'),
       bingoBudgetCalls: document.getElementById('bingoBudgetCalls'),
       bingoBudgetRemaining: document.getElementById('bingoBudgetRemaining'),
       bingoScramblePanel: document.getElementById('bingoScramblePanel'),
@@ -2237,7 +2044,7 @@
         renderPhaseBadge(state);
         els.phaseLine.innerHTML = `${TypeoBrand.wrap()} is done — this is the finale. Watch your card light up as numbers are called.`;
         els.playRound.hidden = true;
-        els.playStats.hidden = true;
+        els.playStats.hidden = false;
         renderScramblePanel(state);
         if (justEnteredBingo && canJoinGame() && !isViewerJoined(state)) {
           joinGame()
@@ -2315,7 +2122,6 @@
     function renderBallsEarned(value) {
       const text = value == null ? '—' : String(value);
       if (els.metaYours) els.metaYours.textContent = text;
-      if (els.bingoBudgetEarned) els.bingoBudgetEarned.textContent = text;
     }
 
     async function maybeAutoAdvanceOnRoundStart(state, previousPhase) {
