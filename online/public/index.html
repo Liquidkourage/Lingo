@@ -3102,15 +3102,13 @@
 
       const windowKey = guessWindowKey(state);
       if (windowKey !== lastGuessWindowKey) {
+        // Always reset on a new guess window / word — never carry letters from the previous one.
         lastGuessWindowKey = windowKey;
-        const preserveDraft = guessDraftDirty && currentGuess().length > 0;
-        if (!preserveDraft) {
-          guessDraftDirty = false;
-          const saved = normalizedGuessText(state.viewer.roundGuess || '');
-          setGuessText(saved.length === 5 ? saved : '');
-          guessCaretIndex = null;
-          paintGuessSelection();
-        }
+        guessDraftDirty = false;
+        const saved = normalizedGuessText(state.viewer.roundGuess || '');
+        setGuessText(saved.length === 5 ? saved : '');
+        guessCaretIndex = null;
+        paintGuessSelection();
         return;
       }
 
@@ -4030,6 +4028,13 @@
       const phase = state.phase || 'idle';
       const previousPhase = lastPlayPhase;
       if (phase === 'results' && lastPlayPhase === 'guessing') {
+        setGuessText('');
+        guessDraftDirty = false;
+        guessCaretIndex = null;
+        paintGuessSelection();
+        updateSubmitEnabled();
+      } else if (phase === 'guessing' && lastPlayPhase && lastPlayPhase !== 'guessing') {
+        // Entering a fresh guess window after results/ended/idle — clear leftover tiles.
         setGuessText('');
         guessDraftDirty = false;
         guessCaretIndex = null;
