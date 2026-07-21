@@ -1060,6 +1060,8 @@
       padding: 0.45rem 0.5rem 0.35rem;
       background: linear-gradient(180deg, rgba(2, 12, 30, 0.98) 78%, rgba(2, 8, 24, 0.92) 100%);
       border-bottom: 1px solid rgba(255, 204, 0, 0.22);
+      /* Avoid sticky + content growth fighting scroll position mid-call */
+      flex-shrink: 0;
     }
 
     .bingo-call-row {
@@ -1067,11 +1069,21 @@
       align-items: center;
       gap: 0.45rem;
       margin-top: 0.4rem;
+      min-height: 3.4rem;
     }
 
     .bingo-call-row .bingo-call-hero {
       flex: 0 0 auto;
       margin: 0;
+      /* Keep layout stable before the first call appears */
+      min-width: 3.4rem;
+      min-height: 3.4rem;
+    }
+
+    .bingo-call-row .bingo-call-hero[hidden] {
+      display: block !important;
+      visibility: hidden;
+      pointer-events: none;
     }
 
     .bingo-call-row .bingo-call-history {
@@ -1079,6 +1091,8 @@
       justify-content: flex-start;
       margin: 0;
       min-width: 0;
+      max-height: 3.4rem;
+      overflow: hidden;
     }
 
     .bingo-budget-card {
@@ -1098,11 +1112,12 @@
       text-align: left;
       font-size: 0.72rem;
       line-height: 1.35;
+      min-height: 2.7em;
     }
 
     .play-stage[data-bingo-mode="true"] .bingo-status {
       margin: 0.35rem 0 0;
-      min-height: 0;
+      min-height: 1.2em;
       text-align: left;
       font-size: 0.74rem;
     }
@@ -2243,8 +2258,8 @@
           });
         }
         updateLobbyButtons();
-        if (justEnteredBingo || isViewerJoined(state)) {
-          scrollToGame();
+        if (justEnteredBingo) {
+          scrollToGame({ allowBingo: true });
         }
         return true;
       }
@@ -2280,7 +2295,15 @@
       els.bingoScrambleLetters.textContent = lastScrambleDisplay;
     }
 
-    function scrollToGame() {
+    function scrollToGame(options = {}) {
+      // During bingo, never auto-scroll on refreshes — that crawls the card on every ball call.
+      if (
+        !options.allowBingo
+        && document.body.dataset.bingoMode === 'true'
+        && !els.playBingo.hidden
+      ) {
+        return;
+      }
       const target = !els.playBingo.hidden
         ? els.playBingo
         : !els.playRound.hidden
