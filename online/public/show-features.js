@@ -1,4 +1,14 @@
 (function (root) {
+  const UI_FLASH_EFFECTS_ENABLED = false;
+
+  if (typeof document !== "undefined" && !UI_FLASH_EFFECTS_ENABLED) {
+    document.documentElement.setAttribute("data-ui-flash", "off");
+  }
+
+  function uiFlashEffectsEnabled() {
+    return UI_FLASH_EFFECTS_ENABLED;
+  }
+
   function patternSymbol(mark) {
     if (mark === "!") return "▪";
     if (mark === "?") return "○";
@@ -142,5 +152,6 @@
     triggerBallsplosion,
     renderBingoCallHistory,
     animateBingoCallBall,
+    uiFlashEffectsEnabled,
   };
 })(typeof window !== "undefined" ? window : globalThis);

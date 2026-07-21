@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-ui-flash="off">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -5840,9 +5840,14 @@
       }
 
       const phaseChanged = Boolean(lastPhase && lastPhase !== phase);
-      if (phaseChanged) {
+      if (phaseChanged && TypeoShow.uiFlashEffectsEnabled()) {
         els.stage.classList.add("is-phase-flash");
         window.setTimeout(() => els.stage.classList.remove("is-phase-flash"), 700);
+        lastPlayerBoardSignature = "";
+        lastPlayerBoardStructureKey = "";
+        lastWordTilesSignature = "";
+        lastWordClueSignature = "";
+      } else if (phaseChanged) {
         lastPlayerBoardSignature = "";
         lastPlayerBoardStructureKey = "";
         lastWordTilesSignature = "";

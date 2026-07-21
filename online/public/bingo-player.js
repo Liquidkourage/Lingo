@@ -71,6 +71,7 @@
         if (els.budgetTarget) els.budgetTarget.textContent = '—';
         if (els.budgetCalls) els.budgetCalls.textContent = '—';
         if (els.budgetRemainingValue) els.budgetRemainingValue.textContent = '—';
+        if (els.ballsRemainingValue) els.ballsRemainingValue.textContent = '—';
         return;
       }
       const {
@@ -86,6 +87,9 @@
       }
       if (els.budgetRemainingValue) {
         els.budgetRemainingValue.textContent = ballsEarned > 0 ? String(budgetRemaining) : '—';
+      }
+      if (els.ballsRemainingValue) {
+        els.ballsRemainingValue.textContent = String(budgetRemaining);
       }
     }
 
@@ -105,9 +109,6 @@
 
       if (!playerState) {
         renderBudgetCard(null);
-        if (els.ballsEarnedValue) {
-          els.ballsEarnedValue.textContent = '—';
-        }
         if (setBallsEarned) {
           setBallsEarned(null);
         }
@@ -128,9 +129,6 @@
         budgetRemaining,
       } = playerState;
 
-      if (els.ballsEarnedValue) {
-        els.ballsEarnedValue.textContent = String(ballsEarned);
-      }
       if (setBallsEarned) {
         setBallsEarned(ballsEarned);
       }

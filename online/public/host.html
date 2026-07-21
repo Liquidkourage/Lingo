@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-ui-flash="off">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -2421,6 +2421,16 @@
     }
 
     function triggerHostFlash(className) {
+      if (TypeoShow.uiFlashEffectsEnabled && !TypeoShow.uiFlashEffectsEnabled()) {
+        if (className === 'is-flash-critical') {
+          TypeoShow.playHostAlert('critical');
+        } else if (className === 'is-flash-all-in') {
+          TypeoShow.playHostAlert('all-in');
+        } else {
+          TypeoShow.playHostAlert('warn');
+        }
+        return;
+      }
       els.hostStage.classList.remove('is-flash-warn', 'is-flash-critical', 'is-flash-all-in');
       void els.hostStage.offsetWidth;
       els.hostStage.classList.add(className);

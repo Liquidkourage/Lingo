@@ -362,3 +362,35 @@
   color: rgba(180, 198, 220, 0.55);
   font-style: italic;
 }
+
+/* Disable strobing / rapid flash effects (event + stream friendly) */
+html[data-ui-flash="off"] .timer-flash,
+html[data-ui-flash="off"] .timer-flash.is-active {
+  display: none !important;
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+html[data-ui-flash="off"] .stage.is-phase-flash::after {
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+html[data-ui-flash="off"] .host-stage.is-flash-warn,
+html[data-ui-flash="off"] .host-stage.is-flash-critical,
+html[data-ui-flash="off"] .host-stage.is-flash-all-in {
+  animation: none !important;
+}
+
+html[data-ui-flash="off"] .play-stage[data-phase="guessing"] .phase-badge::before,
+html[data-ui-flash="off"] .play-stage[data-timer-paused="true"] .phase-badge-timer,
+html[data-ui-flash="off"] .timer-panel[data-urgency="low"],
+html[data-ui-flash="off"] .timer-panel[data-urgency="critical"],
+html[data-ui-flash="off"] .stage[data-phase="guessing"] .timer-panel[data-urgency="critical"],
+html[data-ui-flash="off"] .stage[data-phase="results"] .timer-panel[data-urgency="critical"],
+html[data-ui-flash="off"] .stage[data-phase="ended"] .timer-panel[data-urgency="critical"],
+html[data-ui-flash="off"] .stage[data-phase="guessing"] .status-badge,
+html[data-ui-flash="off"] .stage[data-phase="guessing"] .pending-row.is-sealed-guess.is-urgent .pending-dot,
+html[data-ui-flash="off"] .stage[data-phase="guessing"] .live-hud .timer-panel[data-urgency="critical"] {
+  animation: none !important;
+}
