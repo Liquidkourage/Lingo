@@ -1,6 +1,7 @@
 (function (root) {
   const MARK_MODE_STORAGE_KEY = "typeo_bingo_mark_mode";
-  const AUTO_MARK_COPY = "Auto-mark is on — called numbers light up for you. Switch to Manual if you want to tap the squares yourself. Tap BINGO! when you have a line.";
+  const AUTO_MARK_DELAY_MS = 1000;
+  const AUTO_MARK_COPY = "Auto-mark is on — called numbers light up for you about a second after each call (so Manual players get a fair beat). Tap BINGO! when you have a line.";
   const MANUAL_MARK_COPY = "Manual mark is on — when a number is called, tap it on your card to daub it. Only called numbers can be marked. Tap BINGO! when you have a line.";
 
   function create(options) {
@@ -22,6 +23,11 @@
     let markMode = loadMarkMode();
     let manualMarks = new Set();
     let marksGameId = "";
+    let displayedCalledNumbers = [];
+    let lastAppliedCallsMade = -1;
+    let autoMarkDelayTimer = null;
+    let autoClaimReadyAtMs = 0;
+    let autoClaimDelayTimer = null;
 
     function loadMarkMode() {
       try {
@@ -42,9 +48,92 @@
       syncMarkModeControls();
       updateMarkModeCopy();
       lastCardSignature = "";
+      autoClaimReadyAtMs = 0;
+      if (autoClaimDelayTimer) {
+        window.clearTimeout(autoClaimDelayTimer);
+        autoClaimDelayTimer = null;
+      }
       if (bingoState) {
+        syncDisplayedCalledNumbers({ forceImmediate: true });
         updateUi();
       }
+    }
+
+    function clearAutoMarkDelayTimer() {
+      if (autoMarkDelayTimer) {
+        window.clearTimeout(autoMarkDelayTimer);
+        autoMarkDelayTimer = null;
+      }
+    }
+
+    function syncDisplayedCalledNumbers(options = {}) {
+      const forceImmediate = Boolean(options.forceImmediate);
+      const liveCalled = Array.isArray(bingoState?.calledNumbers) ? bingoState.calledNumbers.slice() : [];
+      const callsMade = Number(bingoState?.callsMade || 0);
+
+      if (isManualMode() || forceImmediate || callsMade <= 0 || lastAppliedCallsMade < 0) {
+        clearAutoMarkDelayTimer();
+        displayedCalledNumbers = liveCalled;
+        lastAppliedCallsMade = callsMade;
+        return;
+      }
+
+      if (callsMade === lastAppliedCallsMade) {
+        return;
+      }
+
+      if (callsMade < lastAppliedCallsMade) {
+        // Reset / undo — snap immediately.
+        clearAutoMarkDelayTimer();
+        displayedCalledNumbers = liveCalled;
+        lastAppliedCallsMade = callsMade;
+        return;
+      }
+
+      // New call(s): keep prior marks visible for a beat, then light the new ones.
+      clearAutoMarkDelayTimer();
+      autoMarkDelayTimer = window.setTimeout(() => {
+        autoMarkDelayTimer = null;
+        displayedCalledNumbers = Array.isArray(bingoState?.calledNumbers)
+          ? bingoState.calledNumbers.slice()
+          : liveCalled;
+        lastAppliedCallsMade = Number(bingoState?.callsMade || callsMade);
+        lastCardSignature = "";
+        updateUi();
+      }, AUTO_MARK_DELAY_MS);
+    }
+
+    function autoClaimIsReady(canClaim) {
+      if (!canClaim) {
+        autoClaimReadyAtMs = 0;
+        if (autoClaimDelayTimer) {
+          window.clearTimeout(autoClaimDelayTimer);
+          autoClaimDelayTimer = null;
+        }
+        return false;
+      }
+      if (isManualMode()) {
+        autoClaimReadyAtMs = 0;
+        if (autoClaimDelayTimer) {
+          window.clearTimeout(autoClaimDelayTimer);
+          autoClaimDelayTimer = null;
+        }
+        return true;
+      }
+      const now = Date.now();
+      if (!autoClaimReadyAtMs) {
+        autoClaimReadyAtMs = now + AUTO_MARK_DELAY_MS;
+      }
+      if (now >= autoClaimReadyAtMs) {
+        return true;
+      }
+      if (!autoClaimDelayTimer) {
+        autoClaimDelayTimer = window.setTimeout(() => {
+          autoClaimDelayTimer = null;
+          updateUi();
+        }, autoClaimReadyAtMs - now);
+      }
+      return false;
     }
 
     function marksStorageKey(gameId) {
@@ -85,10 +174,16 @@
       if (!gameId) {
         manualMarks = new Set();
         marksGameId = "";
+        lastAppliedCallsMade = -1;
+        displayedCalledNumbers = [];
         return;
       }
       if (marksGameId !== gameId) {
         loadManualMarks(gameId);
+        lastAppliedCallsMade = -1;
+        displayedCalledNumbers = [];
+        clearAutoMarkDelayTimer();
+        autoClaimReadyAtMs = 0;
       }
     }
 
@@ -280,7 +375,7 @@
     function watchingStatusCopy() {
       return isManualMode()
         ? "Tap called numbers on your card to mark them."
-        : "Watch your card — called numbers light up automatically.";
+        : "Watch your card — marks appear about a second after each call.";
     }
 
     function updateUi() {
@@ -288,6 +383,7 @@
       withPreservedScroll(() => {
         syncMarkModeControls();
         updateMarkModeCopy();
+        syncDisplayedCalledNumbers();
         renderCallUi();
 
         if (bingoState.hasWinner) {
@@ -309,6 +405,7 @@
             els.budgetLine.innerHTML = "Join the game on this device to load your card.";
           }
           if (els.bingoBtn) els.bingoBtn.disabled = true;
+          renderCard(isManualMode() ? bingoState.calledNumbers : displayedCalledNumbers);
           return;
         }
 
@@ -321,6 +418,7 @@
           isWinner,
           budgetRemaining,
         } = playerState;
+        const claimReady = autoClaimIsReady(canClaim);
 
         if (setBallsEarned) {
           setBallsEarned(ballsEarned);
@@ -347,10 +445,12 @@
           if (els.bingoBtn) els.bingoBtn.disabled = true;
         } else {
           if (els.budgetLine) {
-            if (canClaim) {
+            if (canClaim && claimReady) {
               els.budgetLine.textContent = callsMade > ballsEarned
                 ? "You had bingo in time — tap BINGO! (A late tap is fine.)"
                 : "You have bingo within your ball budget — tap BINGO!";
+            } else if (canClaim && !claimReady) {
+              els.budgetLine.textContent = "Line coming in — get ready to tap BINGO!";
             } else if (hasLine && !earnedBingoInBudget) {
               els.budgetLine.textContent = `Your line completed after call ${ballsEarned} — too late to win.`;
             } else if (callsMade >= ballsEarned && !earnedBingoInBudget) {
@@ -361,7 +461,7 @@
               els.budgetLine.textContent = `Need a line before call ${ballsEarned + 1}. ${budgetRemaining} call${budgetRemaining === 1 ? "" : "s"} left in your budget.`;
             }
           }
-          if (canClaim) {
+          if (canClaim && claimReady) {
             const late = callsMade > ballsEarned;
             setStatus(
               late
@@ -370,6 +470,9 @@
               "success",
             );
             if (els.bingoBtn) els.bingoBtn.disabled = false;
+          } else if (canClaim && !claimReady) {
+            setStatus("Get ready…", "");
+            if (els.bingoBtn) els.bingoBtn.disabled = true;
           } else if (hasLine && !earnedBingoInBudget) {
             setStatus(`Your line came after call ${ballsEarned} — too late to win.`, "error");
             if (els.bingoBtn) els.bingoBtn.disabled = true;
@@ -382,7 +485,7 @@
           }
         }
 
-        renderCard(bingoState.calledNumbers);
+        renderCard(isManualMode() ? bingoState.calledNumbers : displayedCalledNumbers);
       });
     }
 
