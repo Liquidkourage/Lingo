@@ -504,10 +504,20 @@
       display: block;
     }
 
-    .play-stage[data-viewer-joined="true"][data-phase="guessing"] .play-setup,
-    .play-stage[data-viewer-joined="true"][data-phase="results"] .play-setup,
-    .play-stage[data-viewer-joined="true"][data-phase="ended"] .play-setup {
-      display: none;
+    .play-stage[data-viewer-joined="true"] .play-setup,
+    .play-stage[data-phase="guessing"] .play-setup,
+    .play-stage[data-phase="results"] .play-setup,
+    .play-stage[data-phase="ended"] .play-setup {
+      display: none !important;
+    }
+
+    /* Keep auth inputs out of autofill/tab order while playing — Chrome was jumping focus
+       to the Display name field after every typed letter. */
+    .play-stage[data-viewer-joined="true"] .auth-signed-out input,
+    .play-stage[data-phase="guessing"] .auth-signed-out input,
+    .play-stage[data-phase="results"] .auth-signed-out input,
+    .play-stage[data-phase="ended"] .auth-signed-out input {
+      pointer-events: none;
     }
 
     .play-setup-panel {
@@ -1673,7 +1683,7 @@
             <form id="authGuestForm" class="auth-form is-active" autocomplete="on">
               <div class="auth-field">
                 <label for="guestDisplayName">Display name</label>
-                <input id="guestDisplayName" type="text" maxlength="40" autocomplete="nickname" spellcheck="false" placeholder="How you appear on the venue screen" />
+                <input id="guestDisplayName" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="How you appear on the venue screen" />
               </div>
               <div class="auth-actions">
                 <button id="guestJoinBtn" class="good" type="submit">Join game</button>
@@ -1939,6 +1949,7 @@
       roundHistory: document.getElementById('roundHistory'),
       wordTiles: document.getElementById('wordTiles'),
       guessCapture: document.getElementById('guessCapture'),
+      playSetup: document.getElementById('playSetup'),
       playIdentity: document.getElementById('playIdentity'),
       authTabGuest: document.getElementById('authTabGuest'),
       authTabLogin: document.getElementById('authTabLogin'),
@@ -2693,12 +2704,63 @@
 
     function maybeFocusNameField(phase) {
       if (IS_DEMO || isSignedIn() || isViewerJoined()) return;
+      if (getPlayerToken()) return;
+      if (guessDraftDirty || isEditingGuessCapture()) return;
+      if (isLiveRound(phase)) return;
       if (phase !== 'idle') return;
       const focusGuest = els.authTabGuest.classList.contains('is-active');
       const target = focusGuest ? els.guestDisplayName : els.loginUsername;
-      if (document.activeElement !== target) {
-        window.requestAnimationFrame(() => target.focus({ preventScroll: true }));
+      if (!target || document.activeElement === target) return;
+      if (document.activeElement === els.guessCapture) return;
+      window.requestAnimationFrame(() => {
+        if (guessDraftDirty || isEditingGuessCapture() || isViewerJoined()) return;
+        target.focus({ preventScroll: true });
+      });
+    }
+
+    function updateAuthFieldsForPlayState(state) {
+      const lockAuth = isViewerJoined(state) || isLiveRound(state?.phase || 'idle') || Boolean(getPlayerToken());
+      const authInputs = [
+        els.guestDisplayName,
+        els.loginUsername,
+        els.loginPassword,
+        els.registerUsername,
+        els.registerPassword,
+        els.joinCodeInput,
+      ].filter(Boolean);
+      authInputs.forEach((input) => {
+        input.disabled = lockAuth;
+        input.tabIndex = lockAuth ? -1 : 0;
+        if (lockAuth) {
+          input.setAttribute('autocomplete', 'off');
+        }
+      });
+      if (els.playSetup) {
+        if (lockAuth) els.playSetup.setAttribute('inert', '');
+        else els.playSetup.removeAttribute('inert');
       }
+    }
+
+    function reclaimGuessFocusIfStolen() {
+      if (!canDraftGuess()) return;
+      if (!guessDraftDirty && !currentGuess()) return;
+      const active = document.activeElement;
+      const stolenByAuth = active === els.guestDisplayName
+        || active === els.loginUsername
+        || active === els.loginPassword
+        || active === els.registerUsername
+        || active === els.registerPassword
+        || active === els.joinCodeInput
+        || active === els.profileDisplayName;
+      if (!stolenByAuth) return;
+      focusGuessCapture();
+      const guess = currentGuess();
+      const caret = Math.min(guessCaretIndex ?? guess.length, guess.length);
+      window.requestAnimationFrame(() => {
+        if (!els.guessCapture) return;
+        els.guessCapture.setSelectionRange(caret, caret);
+        paintGuessSelection();
+      });
     }
 
     function normalizedGuessText(text) {
@@ -3958,9 +4020,11 @@
 
       if (getAuthToken() && accountUsername) {
         setAuthMode('signed-in', { playerMode: 'account' });
-      } else if (isViewerJoined(state) && activeUserName()) {
+      } else if ((isViewerJoined(state) || getPlayerToken()) && activeUserName()) {
+        // Keep guests signed-in locally even if one poll drops sessionValid —
+        // flipping to signed-out re-shows the name field and Chrome steals focus.
         setAuthMode('signed-in', { playerMode: 'guest' });
-      } else if (!IS_DEMO) {
+      } else if (!IS_DEMO && !getPlayerToken()) {
         setAuthMode('signed-out');
         if (els.guestDisplayName && getGuestDisplayName()) {
           els.guestDisplayName.value = getGuestDisplayName();
@@ -3981,9 +4045,11 @@
       syncKeyboardFromState(state);
       updateLobbyButtons();
       updateSubmitEnabled();
+      updateAuthFieldsForPlayState(state);
       syncGuessDraftFromState(state);
       schedulePolling();
       maybeFocusNameField(phase);
+      reclaimGuessFocusIfStolen();
       maybeAutoAdvanceOnRoundStart(state, previousPhase).catch(() => {});
     }
 
@@ -4228,6 +4294,8 @@
         const caret = els.guessCapture.selectionStart ?? guess.length;
         guessCaretIndex = Math.min(Math.max(0, caret), Math.max(0, guess.length));
         paintGuessSelection();
+        // Chrome sometimes jumps focus to the Display name autofill field mid-keystroke.
+        window.requestAnimationFrame(() => reclaimGuessFocusIfStolen());
       });
 
       els.guessCapture.addEventListener('keydown', (event) => {
