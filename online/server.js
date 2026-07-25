@@ -553,7 +553,10 @@ function getEffectiveChampion(state) {
 function isChampionPlayer(displayName, state) {
   const champion = getEffectiveChampion(state);
   if (!champion || !displayName) return false;
-  return String(displayName).trim().toLowerCase() === champion.toLowerCase();
+  const raw = String(displayName).trim().toLowerCase();
+  const champ = String(champion).trim().toLowerCase();
+  if (raw === champ) return true;
+  return normalizePlayerKey(displayName) === normalizePlayerKey(champion);
 }
 
 function isAmbassadorPlayer(displayName) {
