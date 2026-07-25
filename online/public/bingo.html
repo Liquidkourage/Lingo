@@ -106,6 +106,9 @@
       cursor: default;
       transition: background 0.15s;
     }
+    table.bingo[data-mark-mode="manual"] td:not(.free) {
+      pointer-events: auto;
+    }
     table.bingo td.free {
       background: rgba(255, 255, 255, 0.2);
       font-size: 0.85rem;
@@ -114,6 +117,33 @@
       background: rgba(255, 213, 79, 0.45);
       color: #111;
       box-shadow: inset 0 0 0 3px var(--called);
+      cursor: pointer;
+    }
+    table.bingo td.is-callable {
+      background: rgba(255, 213, 79, 0.18);
+      box-shadow: inset 0 0 0 2px rgba(255, 213, 79, 0.65);
+      cursor: pointer;
+      pointer-events: auto;
+      animation: bingo-callable-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes bingo-callable-pulse {
+      0%, 100% { background: rgba(255, 213, 79, 0.14); }
+      50% { background: rgba(255, 213, 79, 0.28); }
+    }
+    .mark-mode {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px 16px;
+      margin: 0 0 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .mark-mode label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
     }
     .winner-banner {
       text-align: center;
@@ -128,6 +158,16 @@
   <div class="wrap">
     <h1><span class="brand-typeo"><span class="brand-typeo-type">TYPE</span><span class="brand-typeo-o">O</span></span> Bingo</h1>
     <p class="sub">The finale after TYPEO — get a line before your ball budget runs out, then tap BINGO!</p>
+    <div class="mark-mode" role="radiogroup" aria-label="Bingo card mark mode">
+      <label>
+        <input type="radio" name="bingoMarkMode" id="markModeAuto" value="auto" checked />
+        Auto-mark
+      </label>
+      <label>
+        <input type="radio" name="bingoMarkMode" id="markModeManual" value="manual" />
+        Manual (tap squares)
+      </label>
+    </div>
     <p class="auto-mark-note" id="autoMarkNote"></p>
 
     <div class="panel" id="infoPanel">
@@ -142,7 +182,7 @@
 
     <div class="panel" id="cardPanel" hidden>
       <p class="winner-banner" id="winnerBanner" hidden></p>
-      <table class="bingo" aria-label="Your bingo card — numbers mark automatically when called">
+      <table class="bingo" id="bingoCard" data-mark-mode="auto" aria-label="Your bingo card — numbers mark automatically when called">
         <thead>
           <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
         </thead>
@@ -164,11 +204,13 @@
       bingoBtn: document.getElementById("bingoBtn"),
       cardPanel: document.getElementById("cardPanel"),
       bingoBody: document.getElementById("bingoBody"),
+      bingoCard: document.getElementById("bingoCard"),
       winnerBanner: document.getElementById("winnerBanner"),
+      autoMarkNote: document.getElementById("autoMarkNote"),
+      markModeAuto: document.getElementById("markModeAuto"),
+      markModeManual: document.getElementById("markModeManual"),
       statusClassBase: "message",
     };
-
-    document.getElementById("autoMarkNote").textContent = BingoPlayerUi.AUTO_MARK_COPY;
 
     const player = BingoPlayerUi.create({
       els,

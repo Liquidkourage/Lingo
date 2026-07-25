@@ -1067,6 +1067,47 @@
       color: var(--show-gold-hot);
     }
 
+    .bingo-mark-mode {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.55rem 0.9rem;
+      margin: 0 0 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: rgba(220, 235, 255, 0.92);
+    }
+
+    .bingo-mark-mode label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+    }
+
+    table.bingo-card td.is-callable {
+      background: rgba(255, 213, 79, 0.18);
+      box-shadow: inset 0 0 0 2px rgba(255, 213, 79, 0.65);
+      cursor: pointer;
+      pointer-events: auto;
+      animation: bingo-callable-pulse 1.4s ease-in-out infinite;
+    }
+
+    table.bingo-card[data-mark-mode="manual"] td:not(.free) {
+      pointer-events: auto;
+      cursor: default;
+    }
+
+    table.bingo-card[data-mark-mode="manual"] td.is-callable:active,
+    table.bingo-card[data-mark-mode="manual"] td.called:active {
+      transform: scale(0.96);
+    }
+
+    @keyframes bingo-callable-pulse {
+      0%, 100% { background: rgba(255, 213, 79, 0.14); }
+      50% { background: rgba(255, 213, 79, 0.28); }
+    }
+
     .bingo-budget {
       margin: 0 0 0.65rem;
       text-align: center;
@@ -1808,6 +1849,16 @@
       </section>
 
       <section class="play-block play-bingo" id="playBingo" hidden aria-label="Bingo finale">
+        <div class="bingo-mark-mode" role="radiogroup" aria-label="Bingo card mark mode">
+          <label>
+            <input type="radio" name="bingoMarkMode" id="bingoMarkModeAuto" value="auto" checked />
+            Auto-mark
+          </label>
+          <label>
+            <input type="radio" name="bingoMarkMode" id="bingoMarkModeManual" value="manual" />
+            Manual (tap squares)
+          </label>
+        </div>
         <p class="bingo-auto-note" id="bingoAutoNote"></p>
         <div class="bingo-budget-card" id="bingoBudgetCard" aria-label="Bingo ball budget">
           <div class="bingo-budget-stat">
@@ -1837,7 +1888,7 @@
           <span id="bingoLastCall">—</span>
         </p>
         <p class="bingo-status" id="bingoStatus" aria-live="polite"></p>
-        <table class="bingo-card" aria-label="Your bingo card — numbers mark automatically when called">
+        <table class="bingo-card" id="bingoCard" data-mark-mode="auto" aria-label="Your bingo card — numbers mark automatically when called">
           <thead>
             <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
           </thead>
@@ -1932,6 +1983,9 @@
       playStats: document.getElementById('playStats'),
       playBingo: document.getElementById('playBingo'),
       bingoAutoNote: document.getElementById('bingoAutoNote'),
+      bingoMarkModeAuto: document.getElementById('bingoMarkModeAuto'),
+      bingoMarkModeManual: document.getElementById('bingoMarkModeManual'),
+      bingoCard: document.getElementById('bingoCard'),
       bingoBudgetLine: document.getElementById('bingoBudgetLine'),
       bingoBudgetTarget: document.getElementById('bingoBudgetTarget'),
       bingoBudgetCalls: document.getElementById('bingoBudgetCalls'),
@@ -2018,6 +2072,10 @@
 
     const bingoPlayer = BingoPlayerUi.create({
       els: {
+        autoMarkNote: els.bingoAutoNote,
+        markModeAuto: els.bingoMarkModeAuto,
+        markModeManual: els.bingoMarkModeManual,
+        bingoCard: els.bingoCard,
         budgetLine: els.bingoBudgetLine,
         budgetTarget: els.bingoBudgetTarget,
         budgetCalls: els.bingoBudgetCalls,
@@ -2039,7 +2097,6 @@
       setBallsEarned: (value) => renderBallsEarned(value),
     });
 
-    els.bingoAutoNote.textContent = BingoPlayerUi.AUTO_MARK_COPY;
     els.bingoClaimBtn.addEventListener('click', () => {
       bingoPlayer.claim().catch(() => {});
     });
@@ -2054,7 +2111,7 @@
         els.stage.dataset.bingoMode = 'true';
         document.body.dataset.bingoMode = 'true';
         renderPhaseBadge(state);
-        els.phaseLine.innerHTML = `${TypeoBrand.wrap()} is done — this is the finale. Watch your card light up as numbers are called.`;
+        els.phaseLine.innerHTML = `${TypeoBrand.wrap()} is done — this is the finale. Mark your card and tap BINGO! when you have a line.`;
         els.playRound.hidden = true;
         els.playStats.hidden = false;
         renderScramblePanel(state);
