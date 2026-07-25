@@ -2723,8 +2723,17 @@
 
     function setGuessText(text) {
       const guess = normalizedGuessText(text);
-      if (els.guessCapture) els.guessCapture.value = guess;
+      if (els.guessCapture) {
+        // Re-assigning .value resets the caret and can blur mobile keyboards.
+        if (els.guessCapture.value !== guess) {
+          els.guessCapture.value = guess;
+        }
+      }
       syncGuessTilesFromCapture();
+    }
+
+    function isEditingGuessCapture() {
+      return Boolean(els.guessCapture && document.activeElement === els.guessCapture);
     }
 
     function paintGuessSelection() {
@@ -2917,7 +2926,9 @@
       const phase = state.phase || 'idle';
 
       if (phase === 'guessing' && state.viewer.isSolved) {
-        setGuessText('');
+        if (!isEditingGuessCapture()) {
+          setGuessText('');
+        }
         return;
       }
 
@@ -2930,9 +2941,15 @@
       }
 
       const windowKey = guessWindowKey(state);
+      const editing = guessDraftDirty || isEditingGuessCapture() || currentGuess().length > 0;
+
       if (windowKey !== lastGuessWindowKey) {
-        // Always reset on a new guess window / word — never carry letters from the previous one.
         lastGuessWindowKey = windowKey;
+        // Never wipe letters while the player is actively typing.
+        if (editing) {
+          guessDraftDirty = true;
+          return;
+        }
         guessDraftDirty = false;
         const saved = normalizedGuessText(state.viewer.roundGuess || '');
         setGuessText(saved.length === 5 ? saved : '');
@@ -2941,7 +2958,10 @@
         return;
       }
 
-      if (guessDraftDirty) return;
+      if (editing) {
+        guessDraftDirty = true;
+        return;
+      }
 
       const saved = normalizedGuessText(state.viewer.roundGuess || '');
       const local = currentGuess();
@@ -2959,8 +2979,6 @@
 
       if (saved.length === 5) {
         setGuessText(saved);
-      } else {
-        setGuessText('');
       }
     }
 
@@ -3007,6 +3025,26 @@
       if (!canDraftGuess()) return false;
       if (!hasUserName() || !isNameLocked()) return false;
 
+      const active = document.activeElement;
+      if (
+        active === els.guestDisplayName
+        || active === els.loginUsername
+        || active === els.loginPassword
+        || active === els.registerUsername
+        || active === els.registerPassword
+        || active === els.hostMessageInput
+      ) return false;
+
+      // Let the focused text box handle typing natively — intercepting it was fighting the caret.
+      if (active === els.guessCapture) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          if (canSubmitGuess()) submitGuess();
+          return true;
+        }
+        return false;
+      }
+
       const key = event.key;
       if (key === 'Enter') {
         event.preventDefault();
@@ -3021,16 +3059,6 @@
         return true;
       }
       if (!/^[a-zA-Z]$/.test(key)) return false;
-
-      const active = document.activeElement;
-      if (
-        active === els.guestDisplayName
-        || active === els.loginUsername
-        || active === els.loginPassword
-        || active === els.registerUsername
-        || active === els.registerPassword
-        || active === els.hostMessageInput
-      ) return false;
 
       event.preventDefault();
       insertGuessLetter(key);
@@ -3673,7 +3701,17 @@
         input.disabled = !canDraft;
       });
       if (els.guessCapture) {
-        els.guessCapture.disabled = !canDraft;
+        // Never use disabled=true while typing — that dismisses mobile keyboards.
+        els.guessCapture.disabled = false;
+        if (PREFERS_ON_SCREEN_KEYBOARD) {
+          els.guessCapture.setAttribute('readonly', '');
+          els.guessCapture.setAttribute('inputmode', 'none');
+        } else if (canDraft) {
+          els.guessCapture.removeAttribute('readonly');
+          els.guessCapture.setAttribute('inputmode', 'text');
+        } else {
+          els.guessCapture.setAttribute('readonly', '');
+        }
       }
       updateSubmitLabel();
     }
@@ -3857,17 +3895,21 @@
       const phase = state.phase || 'idle';
       const previousPhase = lastPlayPhase;
       if (phase === 'results' && lastPlayPhase === 'guessing') {
-        setGuessText('');
-        guessDraftDirty = false;
-        guessCaretIndex = null;
-        paintGuessSelection();
+        if (!isEditingGuessCapture()) {
+          setGuessText('');
+          guessDraftDirty = false;
+          guessCaretIndex = null;
+          paintGuessSelection();
+        }
         updateSubmitEnabled();
       } else if (phase === 'guessing' && lastPlayPhase && lastPlayPhase !== 'guessing') {
         // Entering a fresh guess window after results/ended/idle — clear leftover tiles.
-        setGuessText('');
-        guessDraftDirty = false;
-        guessCaretIndex = null;
-        paintGuessSelection();
+        if (!isEditingGuessCapture() && !guessDraftDirty && !currentGuess()) {
+          setGuessText('');
+          guessDraftDirty = false;
+          guessCaretIndex = null;
+          paintGuessSelection();
+        }
         updateSubmitEnabled();
       }
       lastPlayPhase = phase;
