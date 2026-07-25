@@ -1708,15 +1708,48 @@
         0 0 22px rgba(255, 204, 0, 0.42) !important;
     }
 
+    .player-champion-kicker {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      text-align: center;
+      font-size: 0.78em;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      line-height: 1.05;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--show-gold-hot);
+      text-shadow:
+        0 2px 0 #000,
+        0 0 16px rgba(255, 204, 0, 0.75),
+        0 0 28px rgba(255, 180, 0, 0.4);
+      flex-shrink: 0;
+      margin-bottom: 0.02em;
+    }
+
     .player-card[data-monarch="true"] .player-name {
       color: var(--show-gold-hot) !important;
       text-shadow: 0 2px 0 #000, 0 0 16px rgba(255, 204, 0, 0.85) !important;
-      /* Make room for the in-card crown */
       padding-left: 0.85em;
     }
 
     .stage[data-phase="idle"] .player-card[data-monarch="true"] {
       z-index: 3;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 0.04em;
+      min-height: 2.55em;
+      padding: 0.2em 0.42em 0.24em;
+    }
+
+    .stage[data-phase="idle"] .player-card[data-monarch="true"] .player-champion-kicker {
+      font-size: 0.52em;
+      letter-spacing: 0.1em;
+      margin-bottom: 0;
     }
 
     .stage[data-phase="idle"] .player-card[data-monarch="true"] .player-crown {
@@ -1729,6 +1762,23 @@
     .stage[data-phase="idle"] .player-card[data-monarch="true"] .player-name {
       color: var(--show-gold-hot) !important;
       padding-left: 0.75em;
+      -webkit-line-clamp: 1;
+      font-size: var(--chip-name-size, 0.8em) !important;
+    }
+
+    .stage[data-live-density="md"] .player-champion-kicker,
+    .stage[data-live-density="lg"] .player-champion-kicker,
+    .stage[data-live-density="xl"] .player-champion-kicker {
+      font-size: 0.68em;
+      letter-spacing: 0.08em;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-monarch="true"],
+    .stage[data-phase="results"] .player-card[data-monarch="true"],
+    .stage[data-phase="ended"] .player-card[data-monarch="true"] {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.06em;
     }
 
     .player-card.is-monarch-fanfare {
@@ -5210,6 +5260,42 @@
       return crown;
     }
 
+    function renderChampionKicker() {
+      const kicker = document.createElement("div");
+      kicker.className = "player-champion-kicker";
+      kicker.textContent = "Champion";
+      return kicker;
+    }
+
+    function ensureChampionChrome(card) {
+      card.dataset.monarch = "true";
+      let crownEl = card.querySelector(".player-crown");
+      if (!crownEl) {
+        crownEl = renderPlayerCrown();
+        card.insertBefore(crownEl, card.firstChild);
+      }
+      let kicker = card.querySelector(".player-champion-kicker");
+      if (!kicker) {
+        const nameEl = card.querySelector(".player-name");
+        kicker = renderChampionKicker();
+        if (nameEl) {
+          card.insertBefore(kicker, nameEl);
+        } else {
+          card.appendChild(kicker);
+        }
+      } else if (kicker.textContent !== "Champion") {
+        kicker.textContent = "Champion";
+      }
+      card.classList.toggle("is-monarch-fanfare", championFanfareActive);
+    }
+
+    function clearChampionChrome(card) {
+      delete card.dataset.monarch;
+      card.classList.remove("is-monarch-fanfare");
+      card.querySelector(".player-crown")?.remove();
+      card.querySelector(".player-champion-kicker")?.remove();
+    }
+
     function formatPlayerBalls(balls) {
       const total = Math.max(0, Number(balls || 0));
       return `${total} Ball${total === 1 ? "" : "s"}`;
@@ -5406,18 +5492,10 @@
         clearVillainChrome(card);
       }
 
-      let crownEl = card.querySelector(".player-crown");
       if (player.isChampion) {
-        if (!crownEl) {
-          crownEl = renderPlayerCrown();
-          card.insertBefore(crownEl, card.firstChild);
-        }
-        card.dataset.monarch = "true";
-        card.classList.toggle("is-monarch-fanfare", championFanfareActive);
+        ensureChampionChrome(card);
       } else {
-        crownEl?.remove();
-        delete card.dataset.monarch;
-        card.classList.remove("is-monarch-fanfare");
+        clearChampionChrome(card);
       }
 
       let nameEl = card.querySelector(".player-name");
@@ -5425,6 +5503,13 @@
         nameEl = document.createElement("div");
         nameEl.className = "player-name";
         card.appendChild(nameEl);
+      }
+      // Keep CHAMPION label above the name if chrome was added before the name existed.
+      if (player.isChampion) {
+        const kicker = card.querySelector(".player-champion-kicker");
+        if (kicker && kicker.nextElementSibling !== nameEl) {
+          card.insertBefore(kicker, nameEl);
+        }
       }
       nameEl.textContent = lobbyLabel;
       if (player.displayName && lobbyLabel !== player.displayName) {
