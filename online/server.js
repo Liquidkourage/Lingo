@@ -1073,11 +1073,13 @@ async function allActivePlayersSubmitted(state, client = pool) {
 }
 
 async function freezeGuessSubmissionFeedback(state, client = pool) {
+  // Lock rows so a concurrent submit cannot change guess under a stale pattern write.
   const submissions = await client.query(
     `select id, guess, player_id
      from guess_submissions
      where session_id = $1
-       and round_number = $2`,
+       and round_number = $2
+     for update`,
     [state.session_id, state.round_number],
   );
 
@@ -1112,7 +1114,7 @@ async function freezeGuessSubmissionFeedback(state, client = pool) {
 }
 
 async function performRevealResults(client) {
-  const currentState = await getState(client);
+  const currentState = await getStateForUpdate(client);
   if (currentState.phase !== "guessing") {
     throw new Error("Results can only be revealed during the guessing phase.");
   }
@@ -1355,7 +1357,9 @@ async function listViewerGuessHistory(playerId, state, client = pool, options = 
     let pattern = String(row.result_pattern || "");
     let resultLabel = String(row.result_label || "");
 
-    if (!pattern && reveal) {
+    // Always recompute on reveal so a frozen pattern can never disagree with the
+    // guess text (e.g. mid-phase amendment racing an auto-reveal).
+    if (reveal) {
       const feedback = await getGuessFeedback(state, guess, client);
       pattern = feedback.pattern;
       resultLabel = feedback.resultLabel;
@@ -1883,6 +1887,19 @@ async function getState(client = pool) {
   return result.rows[0];
 }
 
+/** Lock the event row so reveal and submit-guess cannot interleave mid-transaction. */
+async function getStateForUpdate(client = pool) {
+  const eventCode = currentEventCode();
+  const result = await client.query(
+    "select * from app_state where event_code = $1 for update",
+    [eventCode],
+  );
+  if (!result.rows[0]) {
+    throw new Error(`Unknown join code "${eventCode}". Check the code on the venue screen.`);
+  }
+  return result.rows[0];
+}
+
 async function updateState(patch, client = pool) {
   const state = await getState(client);
   const next = {
@@ -2134,12 +2151,11 @@ async function serializePublicDisplayPlayer(player, state, client = pool, contex
   }
 
   let resultPattern = "";
-  if (useWindowSubmission && windowSubmission.result_pattern) {
-    resultPattern = String(windowSubmission.result_pattern);
-    if (windowSubmission.result_label === "Not a word…") {
-      guessIsLegal = false;
-    }
-  } else if (guess && guessIsLegal) {
+  if (useWindowSubmission && windowSubmission.result_label === "Not a word…") {
+    guessIsLegal = false;
+  }
+  if (guess && guessIsLegal) {
+    // Recompute from the paired guess so display tiles never show a stale freeze.
     resultPattern = getLingoResultPattern(state.current_word, guess);
   }
 
@@ -2681,7 +2697,8 @@ app.post("/api/public/submit-guess", async (req, res) => {
   try {
     await client.query("begin");
 
-    const state = await getState(client);
+    // Serialize against reveal so we never amend a guess under a half-frozen pattern.
+    const state = await getStateForUpdate(client);
     if (state.phase !== "guessing") {
       throw new Error("Guesses are only accepted during the guessing phase.");
     }
@@ -2733,13 +2750,15 @@ app.post("/api/public/submit-guess", async (req, res) => {
          and player_id = $2
          and round_number = $3
        order by submitted_at desc, id desc
-       limit 1`,
+       limit 1
+       for update`,
       [state.session_id, player.id, state.round_number],
     );
     const lastRow = lastSubmission.rows[0];
     const lastGuess = lastRow ? normalizeWordInput(lastRow.guess) : "";
+    const guessChanged = lastGuess !== guess;
 
-    if (lastGuess !== guess) {
+    if (guessChanged) {
       if (lastRow && Number(lastRow.guess_window_seq || 0) === windowSeq) {
         await client.query(
           `update guess_submissions
@@ -2779,6 +2798,11 @@ app.post("/api/public/submit-guess", async (req, res) => {
       && getLingoResultPattern(state.current_word, guess) === "!!!!!";
 
     let nextState = await getState(client);
+    // Changing a guess during the all-in grace restarts the 10s window so
+    // auto-reveal cannot lock an in-progress amendment.
+    if (guessChanged && nextState.all_players_submitted_at) {
+      nextState = await updateState({ all_players_submitted_at: windowOpenedAtIso() }, client);
+    }
     nextState = await maybeAutoRevealIfAllSubmitted(nextState, client);
 
     await client.query("commit");
