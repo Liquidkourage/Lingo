@@ -3098,13 +3098,27 @@
         || active === els.hostMessageInput
       ) return false;
 
-      // Let the focused text box handle typing natively — intercepting it was fighting the caret.
       if (active === els.guessCapture) {
         if (event.key === 'Enter') {
           event.preventDefault();
           if (canSubmitGuess()) submitGuess();
           return true;
         }
+        // Phone mode keeps the capture readonly so the OS keyboard stays closed.
+        // That must not mute a real keyboard — route those keys like the on-screen keys.
+        if (els.guessCapture.hasAttribute('readonly')) {
+          if (event.key === 'Backspace') {
+            event.preventDefault();
+            backspaceGuess();
+            return true;
+          }
+          if (/^[a-zA-Z]$/.test(event.key)) {
+            event.preventDefault();
+            insertGuessLetter(event.key);
+            return true;
+          }
+        }
+        // Editable capture: let the browser handle caret/typing natively.
         return false;
       }
 
