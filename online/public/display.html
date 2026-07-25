@@ -1686,10 +1686,10 @@
 
     .player-crown {
       position: absolute;
-      top: -0.18em;
-      left: -0.08em;
-      width: 1.15em;
-      height: 1.15em;
+      top: 0.08em;
+      left: 0.1em;
+      width: 1.05em;
+      height: 1.05em;
       z-index: 5;
       filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 8px rgba(255, 204, 0, 0.55));
       pointer-events: none;
@@ -1706,28 +1706,29 @@
       box-shadow:
         0 0 0 1px #000,
         0 0 22px rgba(255, 204, 0, 0.42) !important;
-      overflow: visible;
     }
 
     .player-card[data-monarch="true"] .player-name {
       color: var(--show-gold-hot) !important;
       text-shadow: 0 2px 0 #000, 0 0 16px rgba(255, 204, 0, 0.85) !important;
+      /* Make room for the in-card crown */
+      padding-left: 0.85em;
     }
 
     .stage[data-phase="idle"] .player-card[data-monarch="true"] {
-      overflow: visible;
       z-index: 3;
     }
 
     .stage[data-phase="idle"] .player-card[data-monarch="true"] .player-crown {
-      top: -0.28em;
-      left: -0.18em;
-      width: 1.05em;
-      height: 1.05em;
+      top: 0.04em;
+      left: 0.08em;
+      width: 0.95em;
+      height: 0.95em;
     }
 
     .stage[data-phase="idle"] .player-card[data-monarch="true"] .player-name {
       color: var(--show-gold-hot) !important;
+      padding-left: 0.75em;
     }
 
     .player-card.is-monarch-fanfare {
