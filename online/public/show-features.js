@@ -81,7 +81,7 @@
         const gem = document.createElement("span");
         gem.className = "leaderboard-badge leaderboard-badge--ambassador";
         gem.textContent = "◆";
-        gem.title = "Ambassador";
+        gem.title = "Lingo Ambassador";
         badges.appendChild(gem);
       }
       name.append(badges, document.createTextNode(entry.displayName || "Player"));
