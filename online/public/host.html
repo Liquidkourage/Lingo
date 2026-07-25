@@ -1786,8 +1786,12 @@
     let lastRevealFanfareKey = '';
     let hostSolveFanfareTimer = null;
     let lastHostPhase = 'idle';
-    let hostTimerRemainingLocal = null;
-    let hostTimerFetchedAt = 0;
+    const ALL_SUBMITTED_GRACE_SECONDS = 10;
+    const hostTimer = {
+      windowKey: '',
+      deadlineMs: null,
+      pausedRemaining: null,
+    };
     let rosterPlayers = [];
     let rosterFilter = 'all';
     let rosterSearchQuery = '';
@@ -2400,15 +2404,90 @@
       }
     }
 
-    function hostActiveTimerRemaining(state) {
-      if (!state || state.timerPaused) return null;
-      if (state.phase === 'guessing') {
-        return hostTimerRemainingLocal ?? state.guessWindowRemainingSeconds;
+    function hostTimerWindowKey(state) {
+      if (!state) return '';
+      const phase = state.phase || 'idle';
+      if (state.timerPaused) {
+        return `paused:${phase}:${state.roundNumber || 0}:${state.timerPausedRemainingSeconds}`;
       }
-      if (state.phase === 'results') {
-        return hostTimerRemainingLocal ?? state.resultsWindowRemainingSeconds;
+      if (phase === 'guessing') {
+        return `g:${state.roundNumber || 0}:${state.guessWindowSeq || 0}:${state.guessWindowOpenedAtIso || ''}:${state.guessWindowSeconds || ''}:${state.allPlayersSubmittedAtIso || ''}`;
+      }
+      if (phase === 'results') {
+        return `r:${state.roundNumber || 0}:${state.resultsWindowOpenedAtIso || ''}:${state.resultsWindowSeconds || ''}`;
+      }
+      return '';
+    }
+
+    function hostPhaseDeadlineMs(state) {
+      const phase = state.phase || 'idle';
+      if (phase === 'guessing') {
+        const openedMs = Date.parse(state.guessWindowOpenedAtIso || '');
+        const totalSec = Number(state.guessWindowSeconds || 0);
+        if (Number.isNaN(openedMs) || !totalSec) return null;
+        let deadlineMs = openedMs + totalSec * 1000;
+        const graceStartMs = Date.parse(state.allPlayersSubmittedAtIso || '');
+        if (!Number.isNaN(graceStartMs)) {
+          deadlineMs = Math.min(deadlineMs, graceStartMs + ALL_SUBMITTED_GRACE_SECONDS * 1000);
+        }
+        return deadlineMs;
+      }
+      if (phase === 'results') {
+        const openedMs = Date.parse(state.resultsWindowOpenedAtIso || '');
+        const totalSec = Number(state.resultsWindowSeconds || 0);
+        if (Number.isNaN(openedMs) || !totalSec) return null;
+        return openedMs + totalSec * 1000;
       }
       return null;
+    }
+
+    function syncHostTimerFromState(state) {
+      const key = hostTimerWindowKey(state);
+      if (!key) {
+        hostTimer.windowKey = '';
+        hostTimer.deadlineMs = null;
+        hostTimer.pausedRemaining = null;
+        return;
+      }
+
+      if (state.timerPaused) {
+        hostTimer.windowKey = key;
+        hostTimer.deadlineMs = null;
+        const paused = state.timerPausedRemainingSeconds != null
+          ? Number(state.timerPausedRemainingSeconds)
+          : (state.phase === 'guessing'
+            ? state.guessWindowRemainingSeconds
+            : state.resultsWindowRemainingSeconds);
+        hostTimer.pausedRemaining = paused != null ? Math.max(0, Number(paused)) : null;
+        return;
+      }
+
+      // Only (re)bind the deadline when the window identity changes. Reseeding from
+      // server "remaining seconds" every poll causes 0↔1 flicker near expiry.
+      if (key !== hostTimer.windowKey) {
+        hostTimer.windowKey = key;
+        hostTimer.pausedRemaining = null;
+        hostTimer.deadlineMs = hostPhaseDeadlineMs(state);
+        if (hostTimer.deadlineMs == null) {
+          const serverRem = state.phase === 'guessing'
+            ? state.guessWindowRemainingSeconds
+            : state.resultsWindowRemainingSeconds;
+          if (serverRem != null) {
+            hostTimer.deadlineMs = Date.now() + Number(serverRem) * 1000;
+          }
+        }
+      }
+    }
+
+    function hostActiveTimerRemaining(state) {
+      if (!state) return null;
+      const phase = state.phase || 'idle';
+      if (phase !== 'guessing' && phase !== 'results') return null;
+      if (state.timerPaused) {
+        return hostTimer.pausedRemaining;
+      }
+      if (hostTimer.deadlineMs == null) return null;
+      return Math.max(0, Math.floor((hostTimer.deadlineMs - Date.now()) / 1000));
     }
 
     function syncHostTimerDisplay(state) {
@@ -2556,33 +2635,14 @@
       }
     }
 
-    function captureHostTimerFromState(state) {
-      if (!state || state.timerPaused) {
-        hostTimerRemainingLocal = null;
-        return;
-      }
-      if (state.phase === 'guessing' && state.guessWindowRemainingSeconds != null) {
-        hostTimerRemainingLocal = Number(state.guessWindowRemainingSeconds);
-        hostTimerFetchedAt = Date.now();
-      } else if (state.phase === 'results' && state.resultsWindowRemainingSeconds != null) {
-        hostTimerRemainingLocal = Number(state.resultsWindowRemainingSeconds);
-        hostTimerFetchedAt = Date.now();
-      } else {
-        hostTimerRemainingLocal = null;
-      }
-    }
-
     function scheduleHostTick() {
       if (hostTickTimer) window.clearInterval(hostTickTimer);
       hostTickTimer = window.setInterval(() => {
         if (!currentState) return;
         const phase = currentState.phase || 'idle';
         if (phase !== 'guessing' && phase !== 'results') return;
-        if (currentState.timerPaused || hostTimerRemainingLocal == null) return;
-        const elapsed = Math.floor((Date.now() - hostTimerFetchedAt) / 1000);
-        const remaining = Math.max(0, hostTimerRemainingLocal - elapsed);
-        syncHostTimerDisplay({ ...currentState, guessWindowRemainingSeconds: remaining, resultsWindowRemainingSeconds: remaining });
-        syncHostTimerAlerts({ ...currentState, guessWindowRemainingSeconds: remaining, resultsWindowRemainingSeconds: remaining });
+        syncHostTimerDisplay(currentState);
+        syncHostTimerAlerts(currentState);
       }, 250);
     }
 
@@ -2653,7 +2713,7 @@
       lastHostPhase = phase;
 
       els.hostStage.dataset.phase = phase;
-      captureHostTimerFromState(state);
+      syncHostTimerFromState(state);
       syncHostTimerDisplay(state);
       syncHostTimerAlerts(state);
       syncHostAllInAlert(state);

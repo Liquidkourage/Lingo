@@ -3256,15 +3256,21 @@
         return;
       }
 
-      if (serverRemaining != null && serverRemaining >= 0) {
-        timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
-        timerDisplay.baseRemaining = null;
+      // Bind the deadline once per window. Reseeding from server remaining every
+      // poll causes 0↔1 flicker when the grace/window is about to expire.
+      if (!keyChanged && timerDisplay.deadlineMs != null) {
         return;
       }
 
       const openedDeadlineMs = phaseDeadlineMs(state);
       if (openedDeadlineMs != null) {
         timerDisplay.deadlineMs = openedDeadlineMs;
+        timerDisplay.baseRemaining = null;
+        return;
+      }
+
+      if (serverRemaining != null && serverRemaining >= 0) {
+        timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
         timerDisplay.baseRemaining = null;
         return;
       }
