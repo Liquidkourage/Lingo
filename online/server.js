@@ -1357,9 +1357,9 @@ async function listViewerGuessHistory(playerId, state, client = pool, options = 
     let pattern = String(row.result_pattern || "");
     let resultLabel = String(row.result_label || "");
 
-    // Always recompute on reveal so a frozen pattern can never disagree with the
-    // guess text (e.g. mid-phase amendment racing an auto-reveal).
-    if (reveal) {
+    // Prefer the frozen pattern for this guess. Recomputing against current_word
+    // would mis-color old guesses if the next word is staged before Start Round.
+    if (!pattern && reveal) {
       const feedback = await getGuessFeedback(state, guess, client);
       pattern = feedback.pattern;
       resultLabel = feedback.resultLabel;
@@ -2154,8 +2154,10 @@ async function serializePublicDisplayPlayer(player, state, client = pool, contex
   if (useWindowSubmission && windowSubmission.result_label === "Not a word…") {
     guessIsLegal = false;
   }
-  if (guess && guessIsLegal) {
-    // Recompute from the paired guess so display tiles never show a stale freeze.
+  if (useWindowSubmission && windowSubmission.result_pattern) {
+    // Use the freeze from reveal time — never re-score against a newly staged word.
+    resultPattern = String(windowSubmission.result_pattern);
+  } else if (guess && guessIsLegal) {
     resultPattern = getLingoResultPattern(state.current_word, guess);
   }
 
@@ -2950,6 +2952,22 @@ async function handleAdminAction(action, body) {
       if (word && (state.phase === "guessing" || state.phase === "results")) {
         throw new Error("Cannot change the word during an active round.");
       }
+      // While the venue still shows the completed word + old guess colors, only
+      // stage the next word in the queue. Replacing current_word early flips the
+      // first-letter tiles / letter stats before Start Round clears guesses.
+      if (word && state.phase === "ended" && state.answer_revealed) {
+        const completed = normalizeWordInput(state.current_word);
+        let queue = parseWordQueueFromState(state.host_word_queue)
+          .filter((entry) => entry !== word && entry !== completed);
+        queue.unshift(word);
+        const patch = {
+          host_word_queue: queue.slice(0, HOST_WORD_QUEUE_MAX),
+        };
+        if (body.hostNote !== undefined) {
+          patch.host_note = String(body.hostNote || "");
+        }
+        return serializeState(await updateState(patch));
+      }
       const patch = {
         current_word: word,
         answer_revealed: false,
@@ -3127,13 +3145,20 @@ async function handleAdminAction(action, body) {
       const word = normalizeWordInput(body.word);
       const queue = parseWordQueueFromState(state.host_word_queue).filter((item) => item !== word);
       const patch = { host_word_queue: queue };
-      if (normalizeWordInput(state.current_word) === word) {
+      // Never advance current_word while the completed answer is still on screen.
+      if (
+        normalizeWordInput(state.current_word) === word
+        && !(state.phase === "ended" && state.answer_revealed)
+      ) {
         patch.current_word = queue[0] || "";
       }
       return serializeState(await updateState(patch));
     }
     case "set-word-queue": {
       const patch = await applyWordQueuePatch(state, body.words || []);
+      if (state.phase === "ended" && state.answer_revealed) {
+        delete patch.current_word;
+      }
       return serializeState(await updateState(patch));
     }
     case "set-champion":

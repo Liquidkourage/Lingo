@@ -5092,10 +5092,11 @@
     function shouldShowHudWordTiles(state) {
       const phase = state.phase || "idle";
       if (phase === "guessing" || phase === "results") return true;
+      // During ended, only show the fully revealed completed word — never the
+      // next word's first-letter tiles while old guess colors are still up.
       if (phase === "ended" && state.answerRevealed) {
         return String(state.revealedWord || "").trim().length === 5;
       }
-      if (phase === "ended" && !state.answerRevealed && state.publicFirstLetter) return true;
       return false;
     }
 
@@ -5535,7 +5536,10 @@
         ballsEl.remove();
       }
 
-      const showRevealBoxes = (phase === "results" || phase === "ended")
+      const showRevealBoxes = (
+        phase === "results"
+        || (phase === "ended" && state.answerRevealed)
+      )
         && player.hasSubmitted
         && (player.resultPattern || player.guessIsLegal === false);
       const revealPattern = player.resultPattern

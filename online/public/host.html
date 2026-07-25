@@ -2677,7 +2677,15 @@
       els.phaseValue.textContent = phase;
       els.roundValue.textContent = String(state.roundNumber ?? 0);
       els.ballsValue.textContent = String(displayPotBalls(state));
-      assignHostField(els.wordInput, 'word', state.currentWord || '');
+      // After reveal, Set word stages into the queue — show that next word in the
+      // input so the host sees what will start, not a flicker of the old answer.
+      const nextQueued = Array.isArray(state.wordQueue) && state.wordQueue.length
+        ? String(state.wordQueue[0] || '')
+        : '';
+      const wordFieldValue = (phase === 'ended' && state.answerRevealed && nextQueued)
+        ? nextQueued
+        : (state.currentWord || '');
+      assignHostField(els.wordInput, 'word', wordFieldValue);
       assignHostField(els.guessSecondsInput, 'guessSeconds', String(state.guessWindowSeconds || 100));
       assignHostField(els.resultsSecondsInput, 'resultsSeconds', String(state.resultsWindowSeconds || 20));
       assignHostField(els.ballsInput, 'balls', String(state.ballsRemaining ?? 0));
@@ -2934,7 +2942,13 @@
       const confirmMessage = (phase === 'guessing' || phase === 'results')
         ? 'Change the word during an active round? Players may see inconsistent results.'
         : '';
-      await runAction('set-word', { word }, `Selected ${word}.`, { confirmMessage });
+      const staged = phase === 'ended' && currentState?.answerRevealed;
+      await runAction(
+        'set-word',
+        { word },
+        staged ? `Queued ${word} for the next round.` : `Selected ${word}.`,
+        { confirmMessage },
+      );
     }
 
     async function excludeSuggestedWord(word) {
@@ -2962,7 +2976,14 @@
       const confirmMessage = (phase === 'guessing' || phase === 'results')
         ? 'Change the word during an active round? Players may see inconsistent results.'
         : '';
-      return runAction('set-word', { word: els.wordInput.value }, 'Current word updated.', { confirmMessage });
+      const word = String(els.wordInput.value || '').trim().toUpperCase();
+      const staged = phase === 'ended' && currentState?.answerRevealed;
+      return runAction(
+        'set-word',
+        { word: els.wordInput.value },
+        staged ? `Queued ${word || 'word'} for the next round.` : 'Current word updated.',
+        { confirmMessage },
+      );
     }
 
     els.connectBtn.addEventListener('click', async () => {
