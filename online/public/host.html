@@ -730,6 +730,55 @@
       color: rgba(235, 245, 255, 0.92);
     }
 
+    .bingo-call-controls {
+      margin: 0 0 0.85rem;
+      padding: 0.75rem;
+      border: 1px solid rgba(62, 200, 232, 0.28);
+      border-radius: 0.35em;
+      background: rgba(0, 0, 0, 0.28);
+    }
+
+    .bingo-call-controls[hidden] {
+      display: none !important;
+    }
+
+    .bingo-last-call-host {
+      margin: 0 0 0.55rem;
+      text-align: center;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      color: #ffd54f;
+    }
+
+    .bingo-call-mode-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.55rem 0.85rem;
+      margin: 0 0 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: rgba(220, 235, 255, 0.9);
+    }
+
+    .bingo-call-mode-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+    }
+
+    .bingo-call-mode-row input[type="number"] {
+      width: 3.6rem;
+      padding: 0.25rem 0.35rem;
+      border-radius: 0.25em;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #0a1220;
+      color: #fff;
+      font-weight: 700;
+    }
+
     .bingo-host-table-wrap {
       max-height: min(42vh, 360px);
       overflow: auto;
@@ -1665,11 +1714,31 @@
         <button class="secondary" type="button" data-close-modal>Close</button>
       </div>
       <div class="host-modal-body">
-        <p class="panel-copy">Finale after TYPEO. Players stay on the main play link — their phones switch to bingo automatically. Cards mark themselves when numbers are called; players only tap BINGO!</p>
+        <p class="panel-copy">Finale after TYPEO. Call balls here with <strong>Call next</strong> (manual) or switch to <strong>Auto-call</strong>. Player cards mark themselves; they only tap BINGO!</p>
         <div class="flow-actions">
           <button id="startBingoBtn" class="good btn-flow" type="button">Start bingo game</button>
           <button id="endBingoBtn" class="danger btn-flow" type="button">End bingo</button>
           <a id="bingoCallsLink" class="secondary btn-flow" href="/bingo/calls" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Open call sheet</a>
+        </div>
+        <div id="bingoCallControls" class="bingo-call-controls" hidden>
+          <p class="bingo-last-call-host" id="bingoHostLastCall">—</p>
+          <div class="bingo-call-mode-row">
+            <label>
+              <input type="radio" name="bingoCallMode" id="bingoModeManual" value="manual" checked />
+              Manual
+            </label>
+            <label>
+              <input type="radio" name="bingoCallMode" id="bingoModeAuto" value="auto" />
+              Auto-call every
+            </label>
+            <input id="bingoAutoSeconds" type="number" min="3" max="60" step="1" value="8" aria-label="Auto-call interval seconds" />
+            <span>sec</span>
+          </div>
+          <div class="flow-actions">
+            <button id="bingoPrevBtn" class="secondary btn-flow" type="button">Previous</button>
+            <button id="bingoNextBtn" class="good btn-flow" type="button">Call next</button>
+            <button id="bingoResetCallsBtn" class="secondary btn-flow" type="button">Reset calls</button>
+          </div>
         </div>
         <div id="bingoHostSummary" class="bingo-host-summary" hidden></div>
         <div class="bingo-host-table-wrap" id="bingoHostTableWrap" hidden>
@@ -1755,6 +1824,14 @@
       startBingoBtn: document.getElementById('startBingoBtn'),
       endBingoBtn: document.getElementById('endBingoBtn'),
       bingoCallsLink: document.getElementById('bingoCallsLink'),
+      bingoCallControls: document.getElementById('bingoCallControls'),
+      bingoHostLastCall: document.getElementById('bingoHostLastCall'),
+      bingoModeManual: document.getElementById('bingoModeManual'),
+      bingoModeAuto: document.getElementById('bingoModeAuto'),
+      bingoAutoSeconds: document.getElementById('bingoAutoSeconds'),
+      bingoPrevBtn: document.getElementById('bingoPrevBtn'),
+      bingoNextBtn: document.getElementById('bingoNextBtn'),
+      bingoResetCallsBtn: document.getElementById('bingoResetCallsBtn'),
       bingoHostStatus: document.getElementById('bingoHostStatus'),
       bingoHostSummary: document.getElementById('bingoHostSummary'),
       bingoHostTableWrap: document.getElementById('bingoHostTableWrap'),
@@ -1796,6 +1873,125 @@
     let rosterFilter = 'all';
     let rosterSearchQuery = '';
     let lastBingoHostSnapshot = null;
+    let bingoAutoCallTimer = null;
+
+    function activeBingoGameId() {
+      return String(currentState?.bingo?.gameId || lastBingoHostSnapshot?.bingo?.gameId || '').trim();
+    }
+
+    function isBingoAutoCallMode() {
+      return Boolean(els.bingoModeAuto?.checked);
+    }
+
+    function bingoAutoCallIntervalMs() {
+      const seconds = Math.max(3, Math.min(60, Number(els.bingoAutoSeconds?.value || 8)));
+      return seconds * 1000;
+    }
+
+    function stopBingoAutoCallTimerOnly() {
+      if (bingoAutoCallTimer) {
+        window.clearInterval(bingoAutoCallTimer);
+        bingoAutoCallTimer = null;
+      }
+    }
+
+    function stopBingoAutoCall() {
+      stopBingoAutoCallTimerOnly();
+      if (els.bingoModeManual) els.bingoModeManual.checked = true;
+      if (els.bingoModeAuto) els.bingoModeAuto.checked = false;
+    }
+
+    function startBingoAutoCallTimer() {
+      stopBingoAutoCallTimerOnly();
+      if (!isBingoMode() || !isBingoAutoCallMode()) return;
+      const bingo = currentState?.bingo || lastBingoHostSnapshot?.bingo || {};
+      if (bingo.hasWinner) {
+        stopBingoAutoCall();
+        return;
+      }
+      if (Number(bingo.callsMade || 0) >= Number(bingo.totalCalls || 75)) {
+        stopBingoAutoCall();
+        return;
+      }
+      bingoAutoCallTimer = window.setInterval(() => {
+        advanceBingoCall('next', { fromAuto: true }).catch((error) => {
+          setStatus(els.bingoHostStatus, error.message || 'Auto-call stopped.', 'error');
+          stopBingoAutoCall();
+        });
+      }, bingoAutoCallIntervalMs());
+    }
+
+    function syncBingoCallControls(bingo = null) {
+      if (!els.bingoCallControls) return;
+      const active = isBingoMode() && Boolean(activeBingoGameId());
+      els.bingoCallControls.hidden = !active;
+      if (!active) {
+        stopBingoAutoCall();
+        if (els.bingoHostLastCall) els.bingoHostLastCall.textContent = '—';
+        return;
+      }
+
+      const state = bingo || currentState?.bingo || lastBingoHostSnapshot?.bingo || {};
+      if (els.bingoHostLastCall) {
+        els.bingoHostLastCall.textContent = state.lastCall || '—';
+      }
+      const hasWinner = Boolean(state.hasWinner);
+      const atStart = Number(state.callIndex ?? -1) < 0;
+      const atEnd = Number(state.callsMade || 0) >= Number(state.totalCalls || 75);
+      if (els.bingoPrevBtn) els.bingoPrevBtn.disabled = hasWinner || atStart;
+      if (els.bingoNextBtn) els.bingoNextBtn.disabled = hasWinner || atEnd;
+      if (els.bingoResetCallsBtn) els.bingoResetCallsBtn.disabled = hasWinner;
+      if (els.bingoModeAuto) els.bingoModeAuto.disabled = hasWinner;
+      if (els.bingoModeManual) els.bingoModeManual.disabled = hasWinner;
+      if (els.bingoAutoSeconds) els.bingoAutoSeconds.disabled = hasWinner;
+      if (hasWinner || atEnd) {
+        stopBingoAutoCallTimerOnly();
+        if (els.bingoModeAuto?.checked) stopBingoAutoCall();
+      } else if (isBingoAutoCallMode() && !bingoAutoCallTimer) {
+        startBingoAutoCallTimer();
+      } else if (!isBingoAutoCallMode()) {
+        stopBingoAutoCallTimerOnly();
+      }
+    }
+
+    async function advanceBingoCall(action, options = {}) {
+      const gameId = activeBingoGameId();
+      if (!gameId) throw new Error('Start a bingo game first.');
+      const response = await adminFetch('/api/admin/bingo/advance', {
+        method: 'POST',
+        body: JSON.stringify({ gameId, action }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'Could not advance bingo.');
+      }
+      currentState = {
+        ...(currentState || {}),
+        mode: 'bingo',
+        bingo: payload.bingo,
+      };
+      if (lastBingoHostSnapshot) {
+        lastBingoHostSnapshot = {
+          ...lastBingoHostSnapshot,
+          bingo: payload.bingo,
+        };
+      }
+      syncBingoCallControls(payload.bingo);
+      await loadBingoHostPlayers();
+      if (!options.fromAuto) {
+        setStatus(
+          els.bingoHostStatus,
+          action === 'next' && payload.bingo?.lastCall
+            ? `Called ${payload.bingo.lastCall}`
+            : (action === 'reset' ? 'Calls reset.' : ''),
+          action === 'next' || action === 'reset' ? 'success' : '',
+        );
+      }
+      if (payload.bingo?.hasWinner || Number(payload.bingo?.callsMade || 0) >= Number(payload.bingo?.totalCalls || 75)) {
+        stopBingoAutoCall();
+      }
+      return payload.bingo;
+    }
 
     function isValidJoinCode(code) {
       const normalized = String(code || '').trim().toLowerCase();
@@ -2045,6 +2241,7 @@
         els.bingoHostSummary.hidden = true;
         els.bingoHostTableWrap.hidden = true;
         els.bingoHostPlayersBody.replaceChildren();
+        syncBingoCallControls(null);
         return;
       }
 
@@ -2056,6 +2253,7 @@
 
       els.bingoHostSummary.hidden = false;
       els.bingoHostTableWrap.hidden = false;
+      syncBingoCallControls(bingo);
 
       if (winner) {
         els.bingoHostSummary.textContent = `${winner} won bingo after ${callsMade} calls. ${summary.canClaim || 0} player(s) could still claim when it ended.`;
@@ -3286,10 +3484,12 @@
         els.bingoPlayerLink.textContent = 'Players on / — no new link needed. Cards auto-mark; they tap BINGO! when ready.';
         els.bingoCallsLink.href = payload.hostCallsUrl || `/bingo/calls?game=${encodeURIComponent(payload.bingo.gameId)}`;
         currentState = { ...(currentState || {}), mode: 'bingo', bingo: payload.bingo };
+        stopBingoAutoCall();
+        syncBingoCallControls(payload.bingo);
         await loadState();
         await loadBingoHostPlayers();
         scheduleHostPolling();
-        setStatus(els.bingoHostStatus, 'Bingo started — player phones and venue display switched to bingo.', 'success');
+        setStatus(els.bingoHostStatus, 'Bingo started — use Call next (manual) or switch to Auto-call.', 'success');
       } catch (error) {
         setStatus(els.bingoHostStatus, error.message || 'Could not start bingo.', 'error');
       }
@@ -3306,6 +3506,7 @@
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || 'Could not end bingo.');
         }
+        stopBingoAutoCall();
         currentState = payload.state || currentState;
         renderState();
         await loadPlayers(true);
@@ -3315,6 +3516,42 @@
       } catch (error) {
         setStatus(els.bingoHostStatus, error.message || 'Could not end bingo.', 'error');
       }
+    });
+
+    els.bingoNextBtn?.addEventListener('click', () => {
+      advanceBingoCall('next').catch((error) => {
+        setStatus(els.bingoHostStatus, error.message || 'Could not call next.', 'error');
+      });
+    });
+    els.bingoPrevBtn?.addEventListener('click', () => {
+      advanceBingoCall('prev').catch((error) => {
+        setStatus(els.bingoHostStatus, error.message || 'Could not undo call.', 'error');
+      });
+    });
+    els.bingoResetCallsBtn?.addEventListener('click', () => {
+      if (!window.confirm('Reset all bingo calls for this game?')) return;
+      advanceBingoCall('reset').catch((error) => {
+        setStatus(els.bingoHostStatus, error.message || 'Could not reset calls.', 'error');
+      });
+    });
+    els.bingoModeManual?.addEventListener('change', () => {
+      if (els.bingoModeManual.checked) {
+        stopBingoAutoCallTimerOnly();
+        setStatus(els.bingoHostStatus, 'Manual call mode — hit Call next when ready.', 'success');
+      }
+    });
+    els.bingoModeAuto?.addEventListener('change', () => {
+      if (els.bingoModeAuto.checked) {
+        startBingoAutoCallTimer();
+        setStatus(
+          els.bingoHostStatus,
+          `Auto-call every ${Number(els.bingoAutoSeconds?.value || 8)}s — you can still hit Call next.`,
+          'success',
+        );
+      }
+    });
+    els.bingoAutoSeconds?.addEventListener('change', () => {
+      if (isBingoAutoCallMode()) startBingoAutoCallTimer();
     });
 
     els.rosterSearchInput.addEventListener('input', () => {

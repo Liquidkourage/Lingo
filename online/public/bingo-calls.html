@@ -146,6 +146,19 @@
       <div class="progress" id="progressLine"></div>
       <div class="last-call" id="lastCall">—</div>
 
+      <div class="row no-print" style="align-items:center;">
+        <label style="display:inline-flex;align-items:center;gap:6px;font-weight:700;margin:0;">
+          <input type="radio" name="callMode" id="modeManual" value="manual" checked />
+          Manual
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-weight:700;margin:0;">
+          <input type="radio" name="callMode" id="modeAuto" value="auto" />
+          Auto-call every
+        </label>
+        <input id="autoSeconds" type="number" min="3" max="60" step="1" value="8" style="width:4rem;padding:8px;border-radius:8px;border:none;font-weight:700;" aria-label="Auto-call interval seconds" />
+        <span style="font-weight:700;">sec</span>
+      </div>
+
       <div class="row no-print">
         <button type="button" id="prevBtn" class="secondary">Previous</button>
         <button type="button" id="nextBtn">Call next</button>
@@ -183,6 +196,9 @@
       nextBtn: document.getElementById("nextBtn"),
       resetBtn: document.getElementById("resetBtn"),
       endBingoBtn: document.getElementById("endBingoBtn"),
+      modeManual: document.getElementById("modeManual"),
+      modeAuto: document.getElementById("modeAuto"),
+      autoSeconds: document.getElementById("autoSeconds"),
       callHistory: document.getElementById("callHistory"),
       callSheet: document.getElementById("callSheet"),
       gameStatus: document.getElementById("gameStatus"),
@@ -190,6 +206,7 @@
 
     let bingoState = null;
     let fullCallOrder = [];
+    let autoCallTimer = null;
 
     function storedKey() {
       return localStorage.getItem("lingo_host_admin_key") || "";
@@ -227,6 +244,42 @@
       });
     }
 
+    function isAutoMode() {
+      return Boolean(els.modeAuto?.checked);
+    }
+
+    function autoIntervalMs() {
+      return Math.max(3, Math.min(60, Number(els.autoSeconds?.value || 8))) * 1000;
+    }
+
+    function stopAutoCallTimer() {
+      if (autoCallTimer) {
+        window.clearInterval(autoCallTimer);
+        autoCallTimer = null;
+      }
+    }
+
+    function stopAutoCall() {
+      stopAutoCallTimer();
+      if (els.modeManual) els.modeManual.checked = true;
+      if (els.modeAuto) els.modeAuto.checked = false;
+    }
+
+    function startAutoCallTimer() {
+      stopAutoCallTimer();
+      if (!isAutoMode() || !bingoState || bingoState.hasWinner) return;
+      if (bingoState.callsMade >= bingoState.totalCalls) {
+        stopAutoCall();
+        return;
+      }
+      autoCallTimer = window.setInterval(() => {
+        advance("next", { fromAuto: true }).catch((error) => {
+          setGameStatus(error.message || "Auto-call stopped.", "error");
+          stopAutoCall();
+        });
+      }, autoIntervalMs());
+    }
+
     function renderGame() {
       if (!bingoState) return;
       els.gamePanel.hidden = false;
@@ -242,11 +295,23 @@
         els.nextBtn.disabled = true;
         els.prevBtn.disabled = true;
         els.resetBtn.disabled = true;
+        if (els.modeAuto) els.modeAuto.disabled = true;
+        if (els.modeManual) els.modeManual.disabled = true;
+        if (els.autoSeconds) els.autoSeconds.disabled = true;
+        stopAutoCall();
       } else {
         els.winnerLine.hidden = true;
         els.nextBtn.disabled = bingoState.callIndex >= bingoState.totalCalls - 1;
         els.prevBtn.disabled = bingoState.callIndex < 0;
         els.resetBtn.disabled = false;
+        if (els.modeAuto) els.modeAuto.disabled = false;
+        if (els.modeManual) els.modeManual.disabled = false;
+        if (els.autoSeconds) els.autoSeconds.disabled = false;
+        if (bingoState.callsMade >= bingoState.totalCalls) {
+          stopAutoCall();
+        } else if (isAutoMode() && !autoCallTimer) {
+          startAutoCallTimer();
+        }
       }
 
       els.progressLine.textContent = `${bingoState.callsMade} / ${bingoState.totalCalls} called`;
@@ -303,7 +368,7 @@
       renderGame();
     }
 
-    async function advance(action) {
+    async function advance(action, options = {}) {
       const payload = await adminFetch("/api/admin/bingo/advance", {
         method: "POST",
         body: JSON.stringify({ gameId, action }),
@@ -313,7 +378,12 @@
         fullCallOrder = payload.bingo.callOrder.slice();
       }
       renderGame();
-      setGameStatus(action === "next" ? `Called ${bingoState.lastCall}` : "", action === "next" ? "success" : "");
+      if (!options.fromAuto) {
+        setGameStatus(action === "next" ? `Called ${bingoState.lastCall}` : "", action === "next" ? "success" : "");
+      }
+      if (bingoState.hasWinner || bingoState.callsMade >= bingoState.totalCalls) {
+        stopAutoCall();
+      }
     }
 
     els.startGameBtn.addEventListener("click", () => {
@@ -330,11 +400,27 @@
       advance("reset").catch((error) => setGameStatus(error.message, "error"));
     });
     els.endBingoBtn.addEventListener("click", () => {
+      stopAutoCall();
       adminFetch("/api/admin/bingo/end", { method: "POST", body: "{}" })
         .then(() => {
           setGameStatus("Bingo ended — players returned to the lobby screen.", "success");
         })
         .catch((error) => setGameStatus(error.message, "error"));
+    });
+    els.modeManual.addEventListener("change", () => {
+      if (els.modeManual.checked) {
+        stopAutoCallTimer();
+        setGameStatus("Manual mode — hit Call next when ready.", "success");
+      }
+    });
+    els.modeAuto.addEventListener("change", () => {
+      if (els.modeAuto.checked) {
+        startAutoCallTimer();
+        setGameStatus(`Auto-call every ${Number(els.autoSeconds.value || 8)}s.`, "success");
+      }
+    });
+    els.autoSeconds.addEventListener("change", () => {
+      if (isAutoMode()) startAutoCallTimer();
     });
 
     els.adminKey.value = storedKey();
