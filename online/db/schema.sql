@@ -16,6 +16,7 @@ create table if not exists app_state (
   host_word_exclusions jsonb not null default '[]'::jsonb,
   host_word_queue jsonb not null default '[]'::jsonb,
   host_word_history jsonb not null default '[]'::jsonb,
+  planned_rounds integer not null default 8,
   champion_display_name text not null default '',
   first_solver_player_id bigint,
   guess_window_opened_at timestamptz,
@@ -34,6 +35,7 @@ alter table app_state add column if not exists host_word_suggestions jsonb not n
 alter table app_state add column if not exists host_word_exclusions jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists host_word_queue jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists host_word_history jsonb not null default '[]'::jsonb;
+alter table app_state add column if not exists planned_rounds integer not null default 8;
 alter table app_state add column if not exists round_ball_stakes jsonb not null default '[]'::jsonb;
 alter table app_state add column if not exists guess_window_seq integer not null default 0;
 alter table app_state add column if not exists all_players_submitted_at timestamptz;

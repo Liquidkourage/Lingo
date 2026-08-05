@@ -167,7 +167,11 @@ async function createEventRow(eventCode, client = pool) {
 const staticDir = path.join(__dirname, "public");
 const schemaPath = path.join(__dirname, "db", "schema.sql");
 const HOST_WORD_SUGGESTION_COUNT = 100;
-const HOST_WORD_QUEUE_MAX = 8;
+const HOST_PLANNED_ROUNDS_DEFAULT = 8;
+const HOST_PLANNED_ROUNDS_MIN = 1;
+const HOST_PLANNED_ROUNDS_MAX = 20;
+/** @deprecated Use planned rounds / word slots. Kept as alias for the default slot count. */
+const HOST_WORD_QUEUE_MAX = HOST_PLANNED_ROUNDS_DEFAULT;
 const HOST_BROADCAST_MAX_LENGTH = 200;
 const PROFILE_DISPLAY_NAME_MAX_LENGTH = 40;
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -644,12 +648,97 @@ function parseWordListFromState(value) {
   return [];
 }
 
-function parseWordQueueFromState(value) {
-  return parseWordListFromState(value).slice(0, HOST_WORD_QUEUE_MAX);
+function clampPlannedRounds(value) {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n)) return HOST_PLANNED_ROUNDS_DEFAULT;
+  return Math.min(HOST_PLANNED_ROUNDS_MAX, Math.max(HOST_PLANNED_ROUNDS_MIN, n));
+}
+
+function parseRawWordArray(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeWordInput(item));
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((item) => normalizeWordInput(item)) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function slotWordOrEmpty(value) {
+  const word = normalizeWordInput(value);
+  return isFiveLetterWord(word) ? word : "";
+}
+
+function parseWordSlotsFromState(queueValue, plannedRounds, historyValue = []) {
+  const planned = clampPlannedRounds(plannedRounds);
+  const raw = parseRawWordArray(queueValue);
+  const hasExplicitEmpties = raw.some((word) => word === "");
+  const looksLegacyCompact = !hasExplicitEmpties
+    && raw.length > 0
+    && raw.length < planned
+    && raw.every((word) => isFiveLetterWord(word));
+
+  if (looksLegacyCompact) {
+    const history = parseWordHistoryFromState(historyValue);
+    const upcoming = normalizeWordList(raw).filter((word) => !history.includes(word));
+    const merged = [...history, ...upcoming];
+    return Array.from({ length: planned }, (_, index) => slotWordOrEmpty(merged[index] || ""));
+  }
+
+  return Array.from({ length: planned }, (_, index) => slotWordOrEmpty(raw[index] || ""));
+}
+
+function wordSlotsFromAppState(state = {}) {
+  return parseWordSlotsFromState(
+    state.host_word_queue ?? state.wordQueue,
+    state.planned_rounds ?? state.plannedRounds,
+    state.host_word_history ?? state.wordHistory,
+  );
+}
+
+function filledWordSlots(slots) {
+  return (Array.isArray(slots) ? slots : []).filter((word) => isFiveLetterWord(word));
+}
+
+/** Compact non-empty list — used where callers still expect a queue of filled words only. */
+function parseWordQueueFromState(value, plannedRounds = HOST_PLANNED_ROUNDS_DEFAULT) {
+  return filledWordSlots(parseWordSlotsFromState(value, plannedRounds));
 }
 
 function parseWordHistoryFromState(value) {
   return parseWordListFromState(value);
+}
+
+function nextWordSlotIndex(state) {
+  const roundNumber = Number(state.round_number || state.roundNumber || 0);
+  const phase = String(state.phase || "idle");
+  if (roundNumber <= 0) return 0;
+  if (phase === "ended") return roundNumber;
+  return Math.max(0, roundNumber - 1);
+}
+
+function wordSlotLockReason(state, index) {
+  const slots = wordSlotsFromAppState(state);
+  if (index < 0 || index >= slots.length) {
+    return "That round slot does not exist.";
+  }
+  const roundNumber = Number(state.round_number || state.roundNumber || 0);
+  const phase = String(state.phase || "idle");
+  const round = index + 1;
+  if (roundNumber <= 0) return "";
+  if (round < roundNumber) return "That round already played.";
+  if (round === roundNumber && (phase === "guessing" || phase === "results")) {
+    return "Cannot change the word during an active round.";
+  }
+  if (round === roundNumber && phase === "ended") {
+    return "That round already played.";
+  }
+  return "";
 }
 
 async function listGlobalHostWordBans(client = pool) {
@@ -694,11 +783,12 @@ async function migrateEventExclusionsToGlobalBans(client = pool) {
 
 async function hostWordPoolExclusions(state, client = pool) {
   const globalBans = await listGlobalHostWordBans(client);
+  const slots = wordSlotsFromAppState(state);
   return normalizeWordList([
     ...globalBans,
     ...parseWordListFromState(state.host_word_exclusions),
     ...parseWordHistoryFromState(state.host_word_history),
-    ...parseWordQueueFromState(state.host_word_queue),
+    ...filledWordSlots(slots),
   ]);
 }
 
@@ -713,17 +803,13 @@ function buildWordQueueAdvancePatch(state) {
     history.push(completed);
   }
 
-  let queue = parseWordQueueFromState(state.host_word_queue);
-  if (queue.length > 0 && queue[0] === completed) {
-    queue = queue.slice(1);
-  } else {
-    queue = queue.filter((word) => word !== completed);
-  }
+  const slots = wordSlotsFromAppState(state);
+  const nextIndex = Number(state.round_number || 0);
+  const nextWord = slotWordOrEmpty(slots[nextIndex] || "");
 
   return {
     host_word_history: history,
-    host_word_queue: queue,
-    current_word: queue[0] || "",
+    current_word: nextWord,
   };
 }
 
@@ -743,7 +829,12 @@ async function buildHostWordSuggestions(exclusions, count = HOST_WORD_SUGGESTION
 }
 
 async function resetHostWordPool(state = {}, client = pool) {
-  const exclusions = await hostWordPoolExclusions(state, client);
+  const planned = clampPlannedRounds(state.planned_rounds);
+  const exclusions = await hostWordPoolExclusions({
+    ...state,
+    host_word_queue: Array.from({ length: planned }, () => ""),
+    host_word_history: [],
+  }, client);
   const suggestions = await buildHostWordSuggestions(
     exclusions,
     HOST_WORD_SUGGESTION_COUNT,
@@ -751,7 +842,7 @@ async function resetHostWordPool(state = {}, client = pool) {
   );
   return {
     host_word_suggestions: suggestions,
-    host_word_queue: [],
+    host_word_queue: Array.from({ length: planned }, () => ""),
     host_word_history: [],
   };
 }
@@ -1755,27 +1846,60 @@ async function listBingoPlayerStatuses(sessionId, bingoRow, client = pool) {
   }));
 }
 
-async function applyWordQueuePatch(state, words, client = pool) {
-  const queue = normalizeWordList(words).slice(0, HOST_WORD_QUEUE_MAX);
-  for (const word of queue) {
-    if (!isFiveLetterWord(word)) {
-      throw new Error("Each queued word must be exactly 5 letters.");
+async function applyWordSlotsPatch(state, words, client = pool) {
+  const planned = clampPlannedRounds(state.planned_rounds);
+  const incoming = Array.isArray(words) ? words : [];
+  const slots = Array.from({ length: planned }, (_, index) => slotWordOrEmpty(incoming[index] || ""));
+  const history = parseWordHistoryFromState(state.host_word_history);
+  const roundNumber = Number(state.round_number || 0);
+  const phase = String(state.phase || "idle");
+  const seen = new Set();
+
+  for (let index = 0; index < slots.length; index += 1) {
+    const word = slots[index];
+    if (!word) continue;
+    if (seen.has(word)) {
+      throw new Error(`Duplicate word "${word}" in the round list.`);
     }
+    seen.add(word);
     if (!(await isLegalWord(client, word))) {
       throw new Error(`"${word}" is not a legal 5-letter Scrabble word.`);
     }
+    const round = index + 1;
+    const alreadyPlayedSlot = round < roundNumber
+      || (round === roundNumber && phase === "ended");
+    if (!alreadyPlayedSlot && history.includes(word)) {
+      throw new Error(`"${word}" was already played this session.`);
+    }
   }
-  const history = parseWordHistoryFromState(state.host_word_history);
-  const overlap = queue.find((word) => history.includes(word));
-  if (overlap) {
-    throw new Error(`"${overlap}" was already played this session.`);
-  }
-  const patch = { host_word_queue: queue };
+
+  const patch = {
+    host_word_queue: slots,
+    planned_rounds: planned,
+  };
+  const nextIndex = nextWordSlotIndex(state);
+  const nextWord = slots[nextIndex] || "";
   const currentWord = normalizeWordInput(state.current_word);
-  if (!currentWord || !queue.includes(currentWord)) {
-    patch.current_word = queue[0] || "";
+  if (!(state.phase === "ended" && state.answer_revealed)) {
+    if (!currentWord || currentWord !== nextWord) {
+      patch.current_word = nextWord;
+    }
   }
   return patch;
+}
+
+/** @deprecated Prefer applyWordSlotsPatch — kept for older callers that pass compact lists. */
+async function applyWordQueuePatch(state, words, client = pool) {
+  const planned = clampPlannedRounds(state.planned_rounds);
+  const incoming = Array.isArray(words) ? words : [];
+  const hasEmpties = incoming.some((item) => String(item || "").trim() === "");
+  const compact = normalizeWordList(incoming);
+  if (compact.length && compact.length <= planned && !hasEmpties) {
+    // Treat as filling from slot 0 for legacy paste-style payloads.
+    const legacySlots = Array.from({ length: planned }, (_, index) => compact[index] || "");
+    return applyWordSlotsPatch(state, legacySlots, client);
+  }
+  return applyWordSlotsPatch(state, words, client);
 }
 
 async function buildPublicStatePayload(state, displayName, playerToken, client = pool, options = {}) {
@@ -1845,7 +1969,8 @@ function serializeState(row) {
     firstSolverPlayerId: row.first_solver_player_id ? Number(row.first_solver_player_id) : null,
     wordSuggestions: parseWordListFromState(row.host_word_suggestions),
     wordExclusions: parseWordListFromState(row.host_word_exclusions),
-    wordQueue: parseWordQueueFromState(row.host_word_queue),
+    plannedRounds: clampPlannedRounds(row.planned_rounds),
+    wordQueue: wordSlotsFromAppState(row),
     wordHistory: parseWordHistoryFromState(row.host_word_history),
     guessWindowOpenedAtIso: row.guess_window_opened_at ? new Date(row.guess_window_opened_at).toISOString() : null,
     resultsWindowOpenedAtIso: row.results_window_opened_at ? new Date(row.results_window_opened_at).toISOString() : null,
@@ -1935,7 +2060,12 @@ async function updateState(patch, client = pool) {
     patchOrState("first_solver_player_id"),
     JSON.stringify(parseWordListFromState(next.host_word_suggestions ?? state.host_word_suggestions)),
     JSON.stringify(parseWordListFromState(next.host_word_exclusions ?? state.host_word_exclusions)),
-    JSON.stringify(parseWordQueueFromState(next.host_word_queue ?? state.host_word_queue)),
+    JSON.stringify(wordSlotsFromAppState({
+      ...next,
+      host_word_queue: next.host_word_queue ?? state.host_word_queue,
+      planned_rounds: next.planned_rounds ?? state.planned_rounds,
+      host_word_history: next.host_word_history ?? state.host_word_history,
+    })),
     JSON.stringify(parseWordHistoryFromState(next.host_word_history ?? state.host_word_history)),
     JSON.stringify(parseRoundBallStakesPreserveOrder(next)),
     patchOrState("all_players_submitted_at"),
@@ -1944,6 +2074,7 @@ async function updateState(patch, client = pool) {
     Boolean(patchOrState("leaderboard_visible", false)),
     Number(patchOrState("award_all_balls_seq", 0)),
     String(patchOrState("scramble_word", "")),
+    clampPlannedRounds(next.planned_rounds ?? state.planned_rounds),
     currentEventCode(),
   ];
 
@@ -1978,8 +2109,9 @@ async function updateState(patch, client = pool) {
          leaderboard_visible = $27,
          award_all_balls_seq = $28,
          scramble_word = $29,
+         planned_rounds = $30,
          updated_at = now()
-     where event_code = $30
+     where event_code = $31
      returning *`,
     params
   );
@@ -2952,16 +3084,29 @@ async function handleAdminAction(action, body) {
       if (word && (state.phase === "guessing" || state.phase === "results")) {
         throw new Error("Cannot change the word during an active round.");
       }
+      const slots = wordSlotsFromAppState(state);
+      const slotIndex = nextWordSlotIndex(state);
+      const lockReason = wordSlotLockReason(state, slotIndex);
+      // Staging the next word after reveal is allowed even though that slot's
+      // prior round is locked — nextWordSlotIndex points at the upcoming slot.
+      if (lockReason && !(state.phase === "ended" && state.answer_revealed)) {
+        throw new Error(lockReason);
+      }
+      if (word) {
+        const duplicateIndex = slots.findIndex((item, index) => item === word && index !== slotIndex);
+        if (duplicateIndex >= 0) {
+          throw new Error(`"${word}" is already assigned to round ${duplicateIndex + 1}.`);
+        }
+      }
+      if (slotIndex >= 0 && slotIndex < slots.length) {
+        slots[slotIndex] = word || "";
+      }
       // While the venue still shows the completed word + old guess colors, only
-      // stage the next word in the queue. Replacing current_word early flips the
+      // stage the next word in the slots. Replacing current_word early flips the
       // first-letter tiles / letter stats before Start Round clears guesses.
       if (word && state.phase === "ended" && state.answer_revealed) {
-        const completed = normalizeWordInput(state.current_word);
-        let queue = parseWordQueueFromState(state.host_word_queue)
-          .filter((entry) => entry !== word && entry !== completed);
-        queue.unshift(word);
         const patch = {
-          host_word_queue: queue.slice(0, HOST_WORD_QUEUE_MAX),
+          host_word_queue: slots,
         };
         if (body.hostNote !== undefined) {
           patch.host_note = String(body.hostNote || "");
@@ -2971,6 +3116,7 @@ async function handleAdminAction(action, body) {
       const patch = {
         current_word: word,
         answer_revealed: false,
+        host_word_queue: slots,
       };
       if (body.hostNote !== undefined) {
         patch.host_note = String(body.hostNote || "");
@@ -2980,15 +3126,19 @@ async function handleAdminAction(action, body) {
     case "start-round": {
       const queueAdvance = wordQueueAdvancePatchForStartRound(state);
       const stateAfterQueue = { ...state, ...queueAdvance };
+      const nextRound = Number(state.round_number || 0) + 1;
+      const slots = wordSlotsFromAppState(stateAfterQueue);
       let activeWord = normalizeWordInput(stateAfterQueue.current_word);
       if (!activeWord) {
-        const queue = parseWordQueueFromState(stateAfterQueue.host_word_queue);
-        activeWord = queue[0] || "";
+        activeWord = slotWordOrEmpty(slots[nextRound - 1] || "");
       }
       if (!activeWord) {
-        throw new Error("Set a 5-letter word or add words to the queue before starting a round.");
+        throw new Error(`Set a word for round ${nextRound} before starting.`);
       }
-      const nextRound = Number(state.round_number || 0) + 1;
+      if (slots[nextRound - 1] !== activeWord) {
+        slots[nextRound - 1] = activeWord;
+        queueAdvance.host_word_queue = slots;
+      }
       const multiplier = Number(state.ball_multiplier || 1);
       const client = await pool.connect();
       try {
@@ -3123,39 +3273,122 @@ async function handleAdminAction(action, body) {
       if (!(await isLegalWord(pool, word))) {
         throw new Error("Word must be a legal 5-letter Scrabble word.");
       }
-      const queue = parseWordQueueFromState(state.host_word_queue);
-      if (queue.length >= HOST_WORD_QUEUE_MAX) {
-        throw new Error(`Queue holds up to ${HOST_WORD_QUEUE_MAX} words.`);
-      }
-      if (queue.includes(word)) {
-        throw new Error("Word is already in the queue.");
+      const slots = wordSlotsFromAppState(state);
+      if (slots.includes(word)) {
+        throw new Error("Word is already in the round list.");
       }
       const history = parseWordHistoryFromState(state.host_word_history);
       if (history.includes(word)) {
         throw new Error("Word was already played this session.");
       }
-      queue.push(word);
-      const patch = { host_word_queue: queue };
-      if (!normalizeWordInput(state.current_word) && queue.length === 1) {
+      const preferredIndex = Number.isFinite(Number(body.index))
+        ? Math.floor(Number(body.index))
+        : nextWordSlotIndex(state);
+      let slotIndex = -1;
+      if (
+        preferredIndex >= 0
+        && preferredIndex < slots.length
+        && !slots[preferredIndex]
+        && !wordSlotLockReason(state, preferredIndex)
+      ) {
+        slotIndex = preferredIndex;
+      } else {
+        for (let index = 0; index < slots.length; index += 1) {
+          if (!slots[index] && !wordSlotLockReason(state, index)) {
+            slotIndex = index;
+            break;
+          }
+        }
+      }
+      if (slotIndex < 0) {
+        throw new Error("No empty round slots left.");
+      }
+      slots[slotIndex] = word;
+      const patch = { host_word_queue: slots };
+      if (
+        slotIndex === nextWordSlotIndex(state)
+        && !(state.phase === "ended" && state.answer_revealed)
+      ) {
         patch.current_word = word;
       }
       return serializeState(await updateState(patch));
     }
-    case "remove-from-word-queue": {
-      const word = normalizeWordInput(body.word);
-      const queue = parseWordQueueFromState(state.host_word_queue).filter((item) => item !== word);
-      const patch = { host_word_queue: queue };
-      // Never advance current_word while the completed answer is still on screen.
+    case "set-word-slot": {
+      const index = Math.floor(Number(body.index));
+      const slots = wordSlotsFromAppState(state);
+      const lockReason = wordSlotLockReason(state, index);
+      if (lockReason) {
+        throw new Error(lockReason);
+      }
+      const rawWord = body.word == null ? "" : body.word;
+      const word = rawWord === "" ? "" : normalizeWordInput(rawWord);
+      if (word) {
+        if (!isFiveLetterWord(word)) {
+          throw new Error("Word must be exactly 5 letters.");
+        }
+        if (!(await isLegalWord(pool, word))) {
+          throw new Error("Word must be a legal 5-letter Scrabble word.");
+        }
+        const duplicateIndex = slots.findIndex((item, slotIndex) => item === word && slotIndex !== index);
+        if (duplicateIndex >= 0) {
+          throw new Error(`"${word}" is already assigned to round ${duplicateIndex + 1}.`);
+        }
+        const history = parseWordHistoryFromState(state.host_word_history);
+        if (history.includes(word)) {
+          throw new Error("Word was already played this session.");
+        }
+      }
+      slots[index] = word;
+      const patch = { host_word_queue: slots };
       if (
-        normalizeWordInput(state.current_word) === word
+        index === nextWordSlotIndex(state)
         && !(state.phase === "ended" && state.answer_revealed)
       ) {
-        patch.current_word = queue[0] || "";
+        patch.current_word = word;
+        if (word) {
+          patch.answer_revealed = false;
+        }
+      }
+      return serializeState(await updateState(patch));
+    }
+    case "set-planned-rounds": {
+      const planned = clampPlannedRounds(body.plannedRounds ?? body.planned_rounds);
+      const roundNumber = Number(state.round_number || 0);
+      if (planned < roundNumber) {
+        throw new Error(`Need at least ${roundNumber} rounds — that many have already started.`);
+      }
+      const currentSlots = wordSlotsFromAppState(state);
+      const slots = Array.from({ length: planned }, (_, index) => currentSlots[index] || "");
+      return serializeState(await updateState({
+        planned_rounds: planned,
+        host_word_queue: slots,
+      }));
+    }
+    case "remove-from-word-queue": {
+      const word = normalizeWordInput(body.word);
+      const slots = wordSlotsFromAppState(state);
+      const index = Number.isFinite(Number(body.index))
+        ? Math.floor(Number(body.index))
+        : slots.findIndex((item) => item === word);
+      if (index < 0 || index >= slots.length) {
+        return serializeState(state);
+      }
+      const lockReason = wordSlotLockReason(state, index);
+      if (lockReason) {
+        throw new Error(lockReason);
+      }
+      slots[index] = "";
+      const patch = { host_word_queue: slots };
+      if (
+        index === nextWordSlotIndex(state)
+        && !(state.phase === "ended" && state.answer_revealed)
+      ) {
+        patch.current_word = "";
       }
       return serializeState(await updateState(patch));
     }
     case "set-word-queue": {
-      const patch = await applyWordQueuePatch(state, body.words || []);
+      const patch = await applyWordSlotsPatch(state, body.words || []);
       if (state.phase === "ended" && state.answer_revealed) {
         delete patch.current_word;
       }

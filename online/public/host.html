@@ -671,40 +671,113 @@
       border-bottom: 1px solid rgba(62, 200, 232, 0.18);
     }
 
-    .word-custom-list {
+    .word-round-setup {
       display: grid;
-      gap: 0.55rem;
-      margin-bottom: 0.75rem;
+      grid-template-columns: minmax(10rem, 0.9fr) minmax(14rem, 1.2fr);
+      gap: 0.85rem 1rem;
+      margin-bottom: 0.85rem;
+      align-items: start;
     }
 
-    .word-custom-list textarea {
+    @media (max-width: 720px) {
+      .word-round-setup {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .word-bank-panel,
+    .word-slots-panel {
+      min-width: 0;
+    }
+
+    .word-planned-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 0.55rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .word-planned-row .field {
+      flex: 0 0 auto;
+      min-width: 7rem;
+      margin: 0;
+    }
+
+    .word-planned-row input {
+      width: 5.5rem;
+    }
+
+    .word-slot-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.4rem;
+      max-height: 22rem;
+      overflow: auto;
+    }
+
+    .word-slot-list li {
+      display: grid;
+      grid-template-columns: 4.2rem minmax(0, 1fr) 2.2rem;
+      gap: 0.4rem;
+      align-items: center;
+      padding: 0.35rem 0.4rem;
+      border: 1px solid rgba(62, 200, 232, 0.22);
+      border-radius: 0.3em;
+      background: rgba(0, 0, 0, 0.22);
+    }
+
+    .word-slot-list li.is-selected {
+      border-color: rgba(255, 204, 0, 0.7);
+      box-shadow: inset 0 0 0 1px rgba(255, 204, 0, 0.35);
+    }
+
+    .word-slot-list li.is-played,
+    .word-slot-list li.is-active {
+      opacity: 0.72;
+    }
+
+    .word-slot-list li.is-active {
+      border-color: rgba(62, 200, 232, 0.55);
+    }
+
+    .word-slot-round {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.78);
+    }
+
+    .word-slot-list input[type="text"] {
       width: 100%;
-      min-height: 5.5rem;
-      resize: vertical;
-      padding: 0.65rem 0.75rem;
-      border: var(--stroke) solid rgba(62, 200, 232, 0.35);
-      border-radius: calc(var(--radius) - 2px);
+      min-width: 0;
+      padding: 0.45rem 0.5rem;
+      border: 1px solid rgba(62, 200, 232, 0.28);
+      border-radius: 0.25em;
       background: var(--show-black);
       color: var(--show-white);
       font-family: Montserrat, Arial, sans-serif;
-      font-size: 0.88rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      line-height: 1.45;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
     }
 
-    .word-custom-list-actions {
-      display: flex;
-      gap: 0.45rem;
-      flex-wrap: wrap;
+    .word-slot-list input[type="text"]:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
     }
 
-    .word-custom-list-actions button {
-      flex: 1 1 160px;
+    .word-slot-clear {
+      min-width: 2.2rem;
+      padding: 0.35rem 0.4rem;
     }
 
-    .word-custom-hint {
-      margin: 0;
+    .word-slot-hint {
+      margin: 0.45rem 0 0;
       font-size: 0.72rem;
       line-height: 1.4;
       color: rgba(180, 198, 220, 0.72);
@@ -1578,22 +1651,28 @@
         <button class="secondary" type="button" data-close-modal>Close</button>
       </div>
       <div class="host-modal-body">
-        <p class="panel-copy">Paste your own words · up to 8 in the queue · double-click a suggestion to add one · click a queued word to set it · right-click to remove</p>
-        <div class="word-set-section">
-          <p class="word-set-heading">Your word list</p>
-          <div class="word-custom-list">
-            <label class="sr-only" for="customWordListInput">Your words for the queue</label>
-            <textarea id="customWordListInput" placeholder="Paste or type words — one per line, or separated by commas&#10;APPLE&#10;HOUSE&#10;PLANT"></textarea>
-            <p class="word-custom-hint">Uses the first 8 valid 5-letter words. Illegal or already-played words are rejected when you load.</p>
-            <div class="word-custom-list-actions">
-              <button id="loadCustomWordListBtn" class="good" type="button">Load into queue</button>
-              <button id="clearCustomWordListBtn" class="secondary" type="button">Clear</button>
+        <p class="panel-copy">One slot per round — select a slot, tap a bank word to fill it, or type your own. Right-click a bank word to ban it.</p>
+        <div class="word-planned-row">
+          <div class="field">
+            <label for="plannedRoundsInput">Rounds</label>
+            <input id="plannedRoundsInput" type="number" min="1" max="20" step="1" value="8" />
+          </div>
+          <button id="applyPlannedRoundsBtn" class="secondary" type="button">Apply</button>
+        </div>
+        <div class="word-round-setup">
+          <div class="word-bank-panel">
+            <p class="word-set-heading">Word bank</p>
+            <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
+            <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Word bank"></ul>
+            <div class="row" style="margin-top:0.65rem;">
+              <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh bank</button>
             </div>
           </div>
-        </div>
-        <div class="word-queue-section">
-          <p class="word-queue-heading">Up next <span id="wordQueueCount"></span></p>
-          <ul id="wordQueueList" class="word-queue-list" aria-label="Upcoming words"></ul>
+          <div class="word-slots-panel">
+            <p class="word-set-heading">Round words <span id="wordQueueCount"></span></p>
+            <ul id="wordQueueList" class="word-slot-list" aria-label="Round word slots"></ul>
+            <p class="word-slot-hint">Played and active rounds stay locked. Future slots stay editable.</p>
+          </div>
         </div>
         <div class="word-history-section">
           <p class="word-history-heading">Played this session</p>
@@ -1602,11 +1681,6 @@
         <div class="word-exclusions-section">
           <p class="word-exclusions-heading">Removed from pool (permanent) <span id="wordExclusionsCount"></span></p>
           <ul id="wordExclusionsList" class="word-exclusions-list" aria-label="Removed words"></ul>
-        </div>
-        <div class="word-pool-meta" id="wordPoolMeta">Connect to load suggestions.</div>
-        <ul id="wordSuggestionList" class="word-suggestion-list" aria-label="Suggested words"></ul>
-        <div class="row" style="margin-top:0.65rem;">
-          <button id="refreshWordPoolBtn" class="secondary" type="button">Refresh pool</button>
         </div>
         <div id="wordPoolStatus" class="status"></div>
       </div>
@@ -1821,6 +1895,8 @@
       wordExclusionsList: document.getElementById('wordExclusionsList'),
       wordExclusionsCount: document.getElementById('wordExclusionsCount'),
       refreshWordPoolBtn: document.getElementById('refreshWordPoolBtn'),
+      plannedRoundsInput: document.getElementById('plannedRoundsInput'),
+      applyPlannedRoundsBtn: document.getElementById('applyPlannedRoundsBtn'),
       startBingoBtn: document.getElementById('startBingoBtn'),
       endBingoBtn: document.getElementById('endBingoBtn'),
       bingoCallsLink: document.getElementById('bingoCallsLink'),
@@ -1836,9 +1912,6 @@
       bingoHostSummary: document.getElementById('bingoHostSummary'),
       bingoHostTableWrap: document.getElementById('bingoHostTableWrap'),
       bingoHostPlayersBody: document.getElementById('bingoHostPlayersBody'),
-      customWordListInput: document.getElementById('customWordListInput'),
-      loadCustomWordListBtn: document.getElementById('loadCustomWordListBtn'),
-      clearCustomWordListBtn: document.getElementById('clearCustomWordListBtn'),
       bingoPlayerLink: document.getElementById('bingoPlayerLink'),
       hostTimerValue: document.getElementById('hostTimerValue'),
       hostMessageQueue: document.getElementById('hostMessageQueue'),
@@ -1874,6 +1947,7 @@
     let rosterSearchQuery = '';
     let lastBingoHostSnapshot = null;
     let bingoAutoCallTimer = null;
+    let selectedWordSlotIndex = 0;
 
     function activeBingoGameId() {
       return String(currentState?.bingo?.gameId || lastBingoHostSnapshot?.bingo?.gameId || '').trim();
@@ -2324,57 +2398,6 @@
         renderBingoHostPanel(payload);
       } catch (_error) {
         // Keep the last good snapshot while polling.
-      }
-    }
-
-    function restoreCustomWordListDraft() {
-      if (!els.customWordListInput) return;
-      const saved = localStorage.getItem(customWordListStorageKey());
-      if (saved != null) {
-        els.customWordListInput.value = saved;
-        return;
-      }
-      const queue = Array.isArray(currentState?.wordQueue) ? currentState.wordQueue : [];
-      if (queue.length) {
-        els.customWordListInput.value = queue.join('\n');
-      }
-    }
-
-    function saveCustomWordListDraft() {
-      if (!els.customWordListInput) return;
-      localStorage.setItem(customWordListStorageKey(), els.customWordListInput.value || '');
-    }
-
-    function parseHostWordListInput(text) {
-      const tokens = String(text || '')
-        .toUpperCase()
-        .split(/[\s,;]+/)
-        .map((token) => token.replace(/[^A-Z]/g, ''))
-        .filter((token) => token.length === 5);
-      return [...new Set(tokens)];
-    }
-
-    async function loadCustomWordList() {
-      setStatus(els.wordPoolStatus, '');
-      const parsed = parseHostWordListInput(els.customWordListInput?.value || '');
-      if (!parsed.length) {
-        setStatus(els.wordPoolStatus, 'Enter at least one valid 5-letter word.', 'error');
-        return;
-      }
-      const words = parsed.slice(0, HOST_WORD_QUEUE_MAX);
-      try {
-        await runAction('set-word-queue', { words }, `Loaded ${words.length} words into the queue.`);
-        saveCustomWordListDraft();
-        const skipped = parsed.length - words.length;
-        setStatus(
-          els.wordPoolStatus,
-          skipped > 0
-            ? `Loaded ${words.length} words into the queue (${skipped} extra ignored — max ${HOST_WORD_QUEUE_MAX}).`
-            : `Loaded ${words.length} word${words.length === 1 ? '' : 's'} into the queue.`,
-          'success',
-        );
-      } catch (error) {
-        setStatus(els.wordPoolStatus, error.message || 'Could not load your word list.', 'error');
       }
     }
 
@@ -2857,9 +2880,47 @@
     }
 
     function updateToolsBar() {
-      const queue = Array.isArray(currentState?.wordQueue) ? currentState.wordQueue : [];
+      const slots = Array.isArray(currentState?.wordQueue) ? currentState.wordQueue : [];
+      const filled = slots.filter((word) => /^[A-Z]{5}$/.test(String(word || ''))).length;
+      const planned = Number(currentState?.plannedRounds || slots.length || 0);
       if (els.toolsWordsBtn) {
-        els.toolsWordsBtn.textContent = queue.length ? `Words (${queue.length})` : 'Words';
+        els.toolsWordsBtn.textContent = planned
+          ? `Words (${filled}/${planned})`
+          : 'Words';
+      }
+    }
+
+    function wordSlotStatus(index, state = currentState || {}) {
+      const roundNumber = Number(state.roundNumber || 0);
+      const phase = String(state.phase || 'idle');
+      const round = index + 1;
+      if (roundNumber <= 0) return 'upcoming';
+      if (round < roundNumber) return 'played';
+      if (round === roundNumber && (phase === 'guessing' || phase === 'results')) return 'active';
+      if (round === roundNumber && phase === 'ended') return 'played';
+      return 'upcoming';
+    }
+
+    function firstEditableWordSlotIndex(state = currentState || {}) {
+      const slots = Array.isArray(state.wordQueue) ? state.wordQueue : [];
+      for (let index = 0; index < slots.length; index += 1) {
+        if (wordSlotStatus(index, state) === 'upcoming') return index;
+      }
+      return Math.max(0, slots.length - 1);
+    }
+
+    function ensureSelectedWordSlot(state = currentState || {}) {
+      const slots = Array.isArray(state.wordQueue) ? state.wordQueue : [];
+      if (!slots.length) {
+        selectedWordSlotIndex = 0;
+        return;
+      }
+      if (
+        selectedWordSlotIndex < 0
+        || selectedWordSlotIndex >= slots.length
+        || wordSlotStatus(selectedWordSlotIndex, state) !== 'upcoming'
+      ) {
+        selectedWordSlotIndex = firstEditableWordSlotIndex(state);
       }
     }
 
@@ -2870,7 +2931,8 @@
       modal.removeAttribute('hidden');
       document.body.classList.add('host-modal-open');
       if (modalId === 'wordsModal') {
-        restoreCustomWordListDraft();
+        ensureSelectedWordSlot(currentState || {});
+        renderWordPool();
       }
       if (modalId === 'bingoModal') {
         loadBingoHostPlayers().catch(() => {});
@@ -2935,10 +2997,12 @@
       els.phaseValue.textContent = phase;
       els.roundValue.textContent = String(state.roundNumber ?? 0);
       els.ballsValue.textContent = String(displayPotBalls(state));
-      // After reveal, Set word stages into the queue — show that next word in the
-      // input so the host sees what will start, not a flicker of the old answer.
-      const nextQueued = Array.isArray(state.wordQueue) && state.wordQueue.length
-        ? String(state.wordQueue[0] || '')
+      // After reveal, Set word stages into the next round slot — show that word
+      // in the input so the host sees what will start, not a flicker of the old answer.
+      const slots = Array.isArray(state.wordQueue) ? state.wordQueue : [];
+      const nextSlotIndex = Number(state.roundNumber || 0);
+      const nextQueued = (phase === 'ended' && state.answerRevealed)
+        ? String(slots[nextSlotIndex] || '')
         : '';
       const wordFieldValue = (phase === 'ended' && state.answerRevealed && nextQueued)
         ? nextQueued
@@ -2984,74 +3048,106 @@
       if (active && !active.disabled) active.classList.add('is-emphasis');
     }
 
-    const HOST_WORD_QUEUE_MAX = 8;
-
     function renderWordQueue() {
       const state = currentState || {};
-      const queue = Array.isArray(state.wordQueue) ? state.wordQueue : [];
-      const currentWord = String(state.currentWord || '').toUpperCase();
+      const slots = Array.isArray(state.wordQueue) ? state.wordQueue : [];
+      const planned = Number(state.plannedRounds || slots.length || 0);
+      const filled = slots.filter((word) => /^[A-Z]{5}$/.test(String(word || ''))).length;
+      const activeEl = document.activeElement;
+      if (activeEl && els.wordQueueList.contains(activeEl) && activeEl.tagName === 'INPUT') {
+        if (els.plannedRoundsInput && document.activeElement !== els.plannedRoundsInput) {
+          // keep count badge fresh without wiping the field being edited
+          els.wordQueueCount.textContent = planned ? `(${filled}/${planned})` : '';
+        }
+        return;
+      }
 
-      els.wordQueueCount.textContent = queue.length ? `(${queue.length}/${HOST_WORD_QUEUE_MAX})` : '';
+      ensureSelectedWordSlot(state);
+      if (els.plannedRoundsInput && document.activeElement !== els.plannedRoundsInput) {
+        els.plannedRoundsInput.value = String(planned || 8);
+      }
+      els.wordQueueCount.textContent = planned ? `(${filled}/${planned})` : '';
       els.wordQueueList.replaceChildren();
 
-      if (!queue.length) {
+      if (!slots.length) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'is-empty';
-        emptyItem.textContent = 'No words queued. Double-click suggestions below.';
+        emptyItem.textContent = 'Set the number of rounds to create slots.';
         els.wordQueueList.appendChild(emptyItem);
         return;
       }
 
-      queue.forEach((word, index) => {
+      slots.forEach((word, index) => {
+        const status = wordSlotStatus(index, state);
+        const locked = status !== 'upcoming';
         const item = document.createElement('li');
-        if (word === currentWord) {
-          item.classList.add('is-current');
-        }
+        item.classList.add(`is-${status}`);
+        if (index === selectedWordSlotIndex) item.classList.add('is-selected');
 
-        const label = document.createElement('span');
-        label.className = 'word-queue-label';
-        label.textContent = `${index + 1}. ${word}`;
-        label.addEventListener('click', () => {
-          selectQueuedWord(word);
+        const roundLabel = document.createElement('span');
+        roundLabel.className = 'word-slot-round';
+        roundLabel.textContent = status === 'active'
+          ? `R${index + 1} · live`
+          : status === 'played'
+            ? `R${index + 1} · done`
+            : `Round ${index + 1}`;
+        item.appendChild(roundLabel);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 5;
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+        input.value = String(word || '');
+        input.placeholder = locked ? '' : 'Type…';
+        input.disabled = locked;
+        input.setAttribute('aria-label', `Word for round ${index + 1}`);
+        input.addEventListener('focus', () => {
+          if (locked) return;
+          selectedWordSlotIndex = index;
+          els.wordQueueList.querySelectorAll('li').forEach((row, rowIndex) => {
+            row.classList.toggle('is-selected', rowIndex === selectedWordSlotIndex);
+          });
         });
-        item.appendChild(label);
+        input.addEventListener('input', () => {
+          input.value = String(input.value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
+        });
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            commitWordSlot(index, input.value).catch(() => {});
+          }
+        });
+        input.addEventListener('blur', () => {
+          const next = String(input.value || '').toUpperCase();
+          const prev = String(word || '').toUpperCase();
+          if (next === prev) return;
+          commitWordSlot(index, next).catch(() => {});
+        });
+        item.appendChild(input);
 
-        const actions = document.createElement('span');
-        actions.className = 'word-queue-actions';
-
-        const upBtn = document.createElement('button');
-        upBtn.type = 'button';
-        upBtn.className = 'secondary';
-        upBtn.textContent = '↑';
-        upBtn.disabled = index === 0;
-        upBtn.addEventListener('click', (event) => {
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'secondary word-slot-clear';
+        clearBtn.textContent = '✕';
+        clearBtn.title = 'Clear slot';
+        clearBtn.disabled = locked || !word;
+        clearBtn.addEventListener('click', (event) => {
           event.stopPropagation();
-          reorderQueuedWord(index, index - 1);
+          selectedWordSlotIndex = index;
+          clearWordSlot(index).catch(() => {});
         });
-        actions.appendChild(upBtn);
+        item.appendChild(clearBtn);
 
-        const downBtn = document.createElement('button');
-        downBtn.type = 'button';
-        downBtn.className = 'secondary';
-        downBtn.textContent = '↓';
-        downBtn.disabled = index === queue.length - 1;
-        downBtn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          reorderQueuedWord(index, index + 1);
+        item.addEventListener('click', (event) => {
+          if (locked || event.target === input || event.target === clearBtn) return;
+          selectedWordSlotIndex = index;
+          els.wordQueueList.querySelectorAll('li').forEach((row, rowIndex) => {
+            row.classList.toggle('is-selected', rowIndex === selectedWordSlotIndex);
+          });
+          input.focus();
         });
-        actions.appendChild(downBtn);
 
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'secondary';
-        removeBtn.textContent = '✕';
-        removeBtn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          removeQueuedWord(word);
-        });
-        actions.appendChild(removeBtn);
-
-        item.appendChild(actions);
         els.wordQueueList.appendChild(item);
       });
     }
@@ -3083,7 +3179,7 @@
       if (!exclusions.length) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'is-empty';
-        emptyItem.textContent = 'Right-click a suggestion to remove it. Removals persist across events.';
+        emptyItem.textContent = 'Right-click a bank word to remove it. Removals persist across events.';
         els.wordExclusionsList.appendChild(emptyItem);
         return;
       }
@@ -3116,42 +3212,41 @@
       const exclusionSet = new Set(exclusions);
       const suggestions = (Array.isArray(state.wordSuggestions) ? state.wordSuggestions : [])
         .filter((word) => !exclusionSet.has(word));
-      const queue = Array.isArray(state.wordQueue) ? state.wordQueue : [];
+      const slots = Array.isArray(state.wordQueue) ? state.wordQueue : [];
       const history = Array.isArray(state.wordHistory) ? state.wordHistory : [];
-      const currentWord = String(state.currentWord || '').toUpperCase();
+      const filled = slots.filter((word) => /^[A-Z]{5}$/.test(String(word || '')));
+      const planned = Number(state.plannedRounds || slots.length || 0);
       const available = state.availableWordCount;
 
+      ensureSelectedWordSlot(state);
       renderWordQueue();
       renderWordHistory();
       renderWordExclusions();
 
       els.wordPoolMeta.textContent = suggestions.length
-        ? `${suggestions.length} suggestions · ${queue.length} queued · ${history.length} played · ${exclusions.length} removed · ${available ?? '—'} left`
-        : `${queue.length} queued · ${history.length} played · ${exclusions.length} removed · ${available ?? '—'} left`;
+        ? `${suggestions.length} in bank · ${filled.length}/${planned || '—'} slots filled · ${history.length} played · ${exclusions.length} banned · ${available ?? '—'} left`
+        : `${filled.length}/${planned || '—'} slots filled · ${history.length} played · ${exclusions.length} banned · ${available ?? '—'} left`;
 
       els.wordSuggestionList.innerHTML = '';
       if (!suggestions.length) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'is-empty';
-        emptyItem.textContent = 'No suggestions loaded. Click Refresh pool.';
+        emptyItem.textContent = 'No bank words loaded. Click Refresh bank.';
         els.wordSuggestionList.appendChild(emptyItem);
         return;
       }
 
-      const queued = new Set(queue);
+      const assigned = new Set(filled);
       const played = new Set(history);
 
       suggestions.forEach((word) => {
         const item = document.createElement('li');
         item.textContent = word;
-        if (word === currentWord) {
-          item.classList.add('is-selected');
-        }
-        if (queued.has(word) || played.has(word)) {
+        if (assigned.has(word) || played.has(word)) {
           item.style.opacity = '0.45';
         }
-        item.addEventListener('dblclick', () => {
-          queueSuggestedWord(word);
+        item.addEventListener('click', () => {
+          fillSelectedSlotFromBank(word);
         });
         item.addEventListener('contextmenu', (event) => {
           event.preventDefault();
@@ -3161,52 +3256,72 @@
       });
     }
 
-    async function queueSuggestedWord(word) {
+    async function commitWordSlot(index, rawWord) {
       setStatus(els.wordPoolStatus, '');
+      const word = String(rawWord || '').trim().toUpperCase();
       try {
-        await runAction('add-to-word-queue', { word }, `Queued ${word}.`);
-        setStatus(els.wordPoolStatus, `Queued ${word}.`, 'success');
+        await runAction(
+          'set-word-slot',
+          { index, word },
+          word ? `Round ${index + 1} set to ${word}.` : `Cleared round ${index + 1}.`,
+        );
+        if (word) {
+          els.wordInput.value = word;
+        }
+        setStatus(
+          els.wordPoolStatus,
+          word ? `Round ${index + 1}: ${word}` : `Cleared round ${index + 1}.`,
+          'success',
+        );
       } catch (error) {
-        setStatus(els.wordPoolStatus, error.message || 'Could not add word to queue.', 'error');
+        setStatus(els.wordPoolStatus, error.message || 'Could not update that slot.', 'error');
+        renderWordQueue();
+        throw error;
       }
     }
 
-    async function removeQueuedWord(word) {
+    async function clearWordSlot(index) {
+      return commitWordSlot(index, '');
+    }
+
+    async function fillSelectedSlotFromBank(word) {
+      ensureSelectedWordSlot(currentState || {});
+      const index = selectedWordSlotIndex;
+      if (wordSlotStatus(index, currentState || {}) !== 'upcoming') {
+        setStatus(els.wordPoolStatus, 'Select an open round slot first.', 'error');
+        return;
+      }
       setStatus(els.wordPoolStatus, '');
       try {
-        await runAction('remove-from-word-queue', { word }, `Removed ${word} from queue.`);
-        setStatus(els.wordPoolStatus, `Removed ${word} from queue.`, 'success');
+        await runAction(
+          'set-word-slot',
+          { index, word },
+          `Round ${index + 1} set to ${word}.`,
+        );
+        els.wordInput.value = word;
+        setStatus(els.wordPoolStatus, `Round ${index + 1}: ${word}`, 'success');
+        const state = currentState || {};
+        const slots = Array.isArray(state.wordQueue) ? state.wordQueue : [];
+        for (let next = index + 1; next < slots.length; next += 1) {
+          if (wordSlotStatus(next, state) === 'upcoming' && !slots[next]) {
+            selectedWordSlotIndex = next;
+            break;
+          }
+        }
       } catch (error) {
-        setStatus(els.wordPoolStatus, error.message || 'Could not remove word from queue.', 'error');
+        setStatus(els.wordPoolStatus, error.message || 'Could not fill that slot.', 'error');
       }
     }
 
-    async function reorderQueuedWord(fromIndex, toIndex) {
-      const queue = Array.isArray(currentState?.wordQueue) ? [...currentState.wordQueue] : [];
-      if (toIndex < 0 || toIndex >= queue.length) return;
-      const [moved] = queue.splice(fromIndex, 1);
-      queue.splice(toIndex, 0, moved);
+    async function applyPlannedRounds() {
+      const plannedRounds = Number(els.plannedRoundsInput?.value || 8);
       setStatus(els.wordPoolStatus, '');
       try {
-        await runAction('set-word-queue', { words: queue }, 'Queue reordered.');
+        await runAction('set-planned-rounds', { plannedRounds }, `Set to ${plannedRounds} rounds.`);
+        setStatus(els.wordPoolStatus, `Show set for ${plannedRounds} rounds.`, 'success');
       } catch (error) {
-        setStatus(els.wordPoolStatus, error.message || 'Could not reorder queue.', 'error');
+        setStatus(els.wordPoolStatus, error.message || 'Could not update round count.', 'error');
       }
-    }
-
-    async function selectQueuedWord(word) {
-      els.wordInput.value = word;
-      const phase = currentState?.phase || 'idle';
-      const confirmMessage = (phase === 'guessing' || phase === 'results')
-        ? 'Change the word during an active round? Players may see inconsistent results.'
-        : '';
-      const staged = phase === 'ended' && currentState?.answerRevealed;
-      await runAction(
-        'set-word',
-        { word },
-        staged ? `Queued ${word} for the next round.` : `Selected ${word}.`,
-        { confirmMessage },
-      );
     }
 
     async function excludeSuggestedWord(word) {
@@ -3326,21 +3441,17 @@
     els.refreshWordPoolBtn.addEventListener('click', () => runAction(
       'refresh-word-suggestions',
       {},
-      'Loaded a fresh set of word suggestions.',
+      'Loaded a fresh word bank.',
     ));
-    els.loadCustomWordListBtn?.addEventListener('click', () => {
-      loadCustomWordList().catch((error) => {
-        setStatus(els.wordPoolStatus, error.message || 'Could not load your word list.', 'error');
-      });
+    els.applyPlannedRoundsBtn?.addEventListener('click', () => {
+      applyPlannedRounds().catch(() => {});
     });
-    els.clearCustomWordListBtn?.addEventListener('click', () => {
-      if (els.customWordListInput) {
-        els.customWordListInput.value = '';
-        saveCustomWordListDraft();
+    els.plannedRoundsInput?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyPlannedRounds().catch(() => {});
       }
-      setStatus(els.wordPoolStatus, '');
     });
-    els.customWordListInput?.addEventListener('input', saveCustomWordListDraft);
     els.startRoundBtn.addEventListener('click', () => runAction('start-round', {
       guessWindowSeconds: Number(els.guessSecondsInput.value),
       resultsWindowSeconds: Number(els.resultsSecondsInput.value),
