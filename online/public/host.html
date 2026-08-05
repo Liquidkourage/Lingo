@@ -1678,10 +1678,14 @@
           <p class="word-history-heading">Played this session</p>
           <ul id="wordHistoryList" class="word-history-list" aria-label="Played words"></ul>
         </div>
-        <div class="word-exclusions-section">
-          <p class="word-exclusions-heading">Removed from pool (permanent) <span id="wordExclusionsCount"></span></p>
-          <ul id="wordExclusionsList" class="word-exclusions-list" aria-label="Removed words"></ul>
-        </div>
+        <details class="word-exclusions-section">
+          <summary>
+            <span class="word-exclusions-heading">Removed from bank <span id="wordExclusionsCount"></span></span>
+          </summary>
+          <div class="word-exclusions-body">
+            <ul id="wordExclusionsList" class="word-exclusions-list" aria-label="Removed words"></ul>
+          </div>
+        </details>
         <div id="wordPoolStatus" class="status"></div>
       </div>
     </div>
@@ -3179,7 +3183,7 @@
       if (!exclusions.length) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'is-empty';
-        emptyItem.textContent = 'Right-click a bank word to remove it. Removals persist across events.';
+        emptyItem.textContent = 'Right-click a bank word to ban it from future suggestions. Bans do not block player guesses.';
         els.wordExclusionsList.appendChild(emptyItem);
         return;
       }
