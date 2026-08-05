@@ -1050,6 +1050,38 @@
       line-height: 1;
     }
 
+    details.word-exclusions-section > summary {
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+
+    details.word-exclusions-section > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.word-exclusions-section > summary .word-exclusions-heading {
+      display: inline;
+      margin: 0;
+    }
+
+    details.word-exclusions-section > summary::before {
+      content: '▸ ';
+      color: rgba(62, 200, 232, 0.75);
+    }
+
+    details.word-exclusions-section[open] > summary::before {
+      content: '▾ ';
+    }
+
+    details.word-exclusions-section > summary:hover .word-exclusions-heading {
+      color: rgba(235, 245, 255, 0.92);
+    }
+
+    details.word-exclusions-section .word-exclusions-body {
+      margin-top: 0.45rem;
+    }
+
     .roster-stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
