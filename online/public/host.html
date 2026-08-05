@@ -3300,14 +3300,6 @@
         );
         els.wordInput.value = word;
         setStatus(els.wordPoolStatus, `Round ${index + 1}: ${word}`, 'success');
-        const state = currentState || {};
-        const slots = Array.isArray(state.wordQueue) ? state.wordQueue : [];
-        for (let next = index + 1; next < slots.length; next += 1) {
-          if (wordSlotStatus(next, state) === 'upcoming' && !slots[next]) {
-            selectedWordSlotIndex = next;
-            break;
-          }
-        }
       } catch (error) {
         setStatus(els.wordPoolStatus, error.message || 'Could not fill that slot.', 'error');
       }
