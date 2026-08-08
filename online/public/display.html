@@ -50,6 +50,7 @@
       --live-stats-min-height: 3.2em;
       --live-stat-label-size: 0.62em;
       --live-player-board-font: clamp(18px, 4.6cqh, 56px);
+      /* Board chrome scale only — live cards size their own type via cqh. */
       --live-player-card-text-scale: 0.5;
       --live-board-pad: 0.28em;
       --live-chrome-stack-gap: var(--live-v-gap);
@@ -1439,29 +1440,30 @@
     }
 
     .unsubmitted-chip {
-      font-size: calc(var(--chip-name-size, 0.62em) * var(--live-player-card-text-scale, 1));
+      font-size: var(--chip-name-size, 0.72em);
       font-weight: 900;
       letter-spacing: 0.03em;
-      padding: 0.24em 0.52em;
+      padding: 0.32em 0.52em;
       border-radius: 0.15em;
       border: 2px solid var(--show-gold);
       background: var(--show-black);
       color: var(--show-gold-hot);
-      white-space: normal;
+      white-space: nowrap;
       text-align: center;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       box-shadow: 0 0 14px rgba(255, 204, 0, 0.35);
       text-shadow: 0 1px 0 #000;
+      line-height: 1.2;
     }
 
     .stage[data-phase="guessing"] .unsubmitted-chip,
     .stage[data-phase="results"] .unsubmitted-chip,
     .stage[data-phase="ended"] .unsubmitted-chip {
-      font-size: calc(var(--chip-name-size, 0.68em) * var(--live-player-card-text-scale, 1));
-      padding: 0.28em 0.42em;
-      line-height: 1.15;
+      font-size: var(--chip-name-size, 0.78em);
+      padding: 0.34em 0.48em;
+      line-height: 1.2;
     }
 
     .unsubmitted-chips.is-empty::after {
@@ -1566,15 +1568,17 @@
       min-width: 0;
       min-height: 0;
       height: 100%;
-      padding: 0.18em 0.28em;
+      padding: 0.14em 0.28em;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      gap: 0.04em;
+      justify-content: center;
+      gap: 0.06em;
       overflow: hidden;
       font-size: calc(1em * var(--live-card-scale, 1));
+      container-type: size;
+      container-name: live-player-card;
     }
 
     .stage[data-phase="results"] .player-card,
@@ -1584,15 +1588,17 @@
       min-width: 0;
       min-height: 0;
       height: 100%;
-      padding: 0.16em 0.24em;
+      padding: 0.12em 0.24em;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      gap: 0.04em;
+      justify-content: center;
+      gap: 0.06em;
       overflow: hidden;
       font-size: calc(1em * var(--live-card-scale, 1));
+      container-type: size;
+      container-name: live-player-card;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin],
@@ -2270,14 +2276,14 @@
     .stage[data-phase="guessing"] .player-name,
     .stage[data-phase="results"] .player-name,
     .stage[data-phase="ended"] .player-name {
-      font-size: 1.02em;
+      font-size: clamp(0.55em, 36cqh, 1.05em);
       max-width: 100%;
-      line-height: 1.08;
+      line-height: 1.05;
       flex: 0 0 auto;
       overflow: hidden;
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 1;
       text-overflow: ellipsis;
       word-break: break-word;
     }
@@ -2285,9 +2291,16 @@
     .stage[data-phase="guessing"] .player-balls,
     .stage[data-phase="results"] .player-balls,
     .stage[data-phase="ended"] .player-balls {
-      font-size: 0.78em;
-      line-height: 1.08;
+      font-size: clamp(0.42em, 24cqh, 0.78em);
+      line-height: 1.05;
       flex: 0 0 auto;
+      margin-top: 0;
+    }
+
+    .stage[data-live-rows="1"] .player-name,
+    .stage[data-live-rows="2"] .player-name {
+      -webkit-line-clamp: 2;
+      font-size: clamp(0.6em, 28cqh, 1.08em);
     }
 
     .stage[data-phase="guessing"] .player-status,
@@ -4034,9 +4047,9 @@
     const LIVE_LAYOUT_TIERS = [
       { maxPlayers: 5, cols: 5, gapPx: 12 },
       { maxPlayers: 10, cols: 5, gapPx: 12 },
-      { maxPlayers: 15, cols: 5, gapPx: 10 },
-      { maxPlayers: 20, cols: 5, gapPx: 10 },
-      { maxPlayers: 25, cols: 5, gapPx: 9 },
+      { maxPlayers: 12, cols: 6, gapPx: 10 },
+      { maxPlayers: 18, cols: 6, gapPx: 10 },
+      { maxPlayers: 24, cols: 6, gapPx: 9 },
       { maxPlayers: 30, cols: 6, gapPx: 9 },
       { maxPlayers: 36, cols: 6, gapPx: 8 },
       { maxPlayers: 42, cols: 7, gapPx: 8 },
@@ -4049,12 +4062,12 @@
     const LIVE_CARD_SCALE_BY_ROWS = {
       1: 1.18,
       2: 1.08,
-      3: 1.02,
-      4: 0.96,
-      5: 0.90,
-      6: 0.84,
-      7: 0.78,
-      8: 0.74,
+      3: 1.0,
+      4: 0.9,
+      5: 0.82,
+      6: 0.76,
+      7: 0.72,
+      8: 0.68,
     };
     const ALL_SUBMITTED_GRACE_SECONDS = 10;
     const SEALED_GUESS_DOTS_SECONDS = 10;
@@ -4504,6 +4517,7 @@
       els.stage.style.removeProperty("--live-grid-height");
       els.stage.style.setProperty("--live-card-scale", layout.scale.toFixed(3));
       els.stage.dataset.liveLayout = `${layout.cols}x${layout.rows}`;
+      els.stage.dataset.liveRows = String(layout.rows);
 
       applyLiveLayoutDensity(playerCount);
       return layout;
@@ -5987,6 +6001,7 @@
       } else {
         delete els.stage.dataset.liveDensity;
         delete els.stage.dataset.liveLayout;
+        delete els.stage.dataset.liveRows;
         lastLiveLayoutApplyKey = "";
         els.stage.style.removeProperty("--live-cols");
         els.stage.style.removeProperty("--live-rows");
