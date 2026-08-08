@@ -1341,6 +1341,7 @@
       width: 100%;
       max-width: none;
       height: auto;
+      max-height: min(38cqh, 22em);
       min-height: 0;
       flex-shrink: 0;
       z-index: 4;
@@ -1403,6 +1404,9 @@
 
     .stat-cell--unsubmitted {
       min-width: 0;
+      min-height: 0;
+      justify-content: flex-start;
+      overflow: hidden;
     }
 
     .stage[data-phase="guessing"] .stat-cell--unsubmitted,
@@ -1410,8 +1414,9 @@
     .stage[data-phase="ended"] .stat-cell--unsubmitted {
       padding: 0.24em 0.14em 0.28em;
       gap: 0.1em;
-      min-height: 9em;
+      min-height: 0;
       flex: 1 1 auto;
+      overflow: hidden;
     }
 
     .stage[data-phase="guessing"] .stat-cell--unsubmitted .stat-icon,
@@ -1419,24 +1424,28 @@
     .stage[data-phase="ended"] .stat-cell--unsubmitted .stat-icon {
       width: 1.15em;
       height: 1.15em;
+      flex: 0 0 auto;
     }
 
     .stage[data-phase="guessing"] .stat-cell--unsubmitted .stat-label,
     .stage[data-phase="results"] .stat-cell--unsubmitted .stat-label,
     .stage[data-phase="ended"] .stat-cell--unsubmitted .stat-label {
       font-size: calc(var(--live-stat-label-size) * 1.04);
+      flex: 0 0 auto;
     }
 
     .unsubmitted-chips {
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 0.28em;
+      gap: 0.22em;
       width: 100%;
       max-width: 100%;
       padding: 0.08em 0.1em 0.12em;
-      min-height: 1.55em;
+      min-height: 0;
+      flex: 1 1 auto;
       flex-wrap: nowrap;
+      overflow: hidden;
     }
 
     .unsubmitted-chip {
@@ -1456,6 +1465,7 @@
       box-shadow: 0 0 14px rgba(255, 204, 0, 0.35);
       text-shadow: 0 1px 0 #000;
       line-height: 1.2;
+      flex: 0 0 auto;
     }
 
     .stage[data-phase="guessing"] .unsubmitted-chip,
@@ -1464,6 +1474,16 @@
       font-size: var(--chip-name-size, 0.78em);
       padding: 0.34em 0.48em;
       line-height: 1.2;
+    }
+
+    .unsubmitted-chip.is-more {
+      border-style: dashed;
+      border-color: rgba(255, 204, 0, 0.55);
+      color: rgba(255, 220, 120, 0.9);
+      box-shadow: none;
+      font-size: 0.62em;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
     .unsubmitted-chips.is-empty::after {
@@ -3659,6 +3679,9 @@
     .stage[data-phase="results"] .live-stats-rail,
     .stage[data-phase="ended"] .live-stats-rail {
       --live-timer-stack: 5.8em;
+      max-height: min(42cqh, 24em);
+      min-height: 0;
+      overflow: hidden;
     }
 
     .stage[data-phase="guessing"] .timer-panel,
@@ -3883,7 +3906,7 @@
               <div class="stat-cell stat-cell--unsubmitted">
                 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="#f0a830" stroke-width="2" stroke-dasharray="3.5 2.5"/><path d="M8.5 12h7M12 8.5v7" stroke="#f0a830" stroke-width="2" stroke-linecap="round"/></svg>
                 <span class="stat-label">Unsubmitted</span>
-                <div class="unsubmitted-chips is-empty" id="statUnsubmitted" aria-live="polite"></div>
+                <div class="unsubmitted-chips is-empty" id="statUnsubmitted"></div>
               </div>
             </div>
           </aside>
@@ -5021,28 +5044,62 @@
       return "0.48em";
     }
 
+    const UNSUBMITTED_VISIBLE_MAX = 8;
+    let lastUnsubmittedSignature = "";
+
     function renderUnsubmittedStat(state) {
       const phase = state.phase || "idle";
-      els.statUnsubmitted.replaceChildren();
-      els.statUnsubmitted.classList.toggle("is-empty", true);
-
-      if (phase === "idle") return;
+      if (phase === "idle") {
+        if (lastUnsubmittedSignature !== "idle") {
+          els.statUnsubmitted.replaceChildren();
+          els.statUnsubmitted.classList.add("is-empty");
+          lastUnsubmittedSignature = "idle";
+        }
+        return;
+      }
 
       const players = Array.isArray(state.players) ? state.players : [];
-      const waiting = players.filter((player) => !playerLockedIn(player));
+      const waiting = players
+        .filter((player) => !playerLockedIn(player))
+        .map((player) => {
+          const label = String(player.displayName || player.lobbyLabel || "Player").trim() || "Player";
+          return {
+            key: playerLobbyKey(player),
+            label,
+          };
+        })
+        .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
 
-      if (!waiting.length) return;
+      const visible = waiting.slice(0, UNSUBMITTED_VISIBLE_MAX);
+      const overflowCount = Math.max(0, waiting.length - visible.length);
+      const signature = `${visible.map((item) => item.key).join("|")}::+${overflowCount}`;
+      if (signature === lastUnsubmittedSignature) {
+        return;
+      }
+      lastUnsubmittedSignature = signature;
+
+      els.statUnsubmitted.replaceChildren();
+      if (!waiting.length) {
+        els.statUnsubmitted.classList.add("is-empty");
+        return;
+      }
 
       els.statUnsubmitted.classList.remove("is-empty");
-      waiting.forEach((player) => {
+      visible.forEach((item) => {
         const chip = document.createElement("span");
         chip.className = "unsubmitted-chip";
-        const label = player.displayName || player.lobbyLabel || "Player";
-        chip.textContent = label;
-        chip.style.setProperty("--chip-name-size", unsubmittedChipSize(label));
-        if (label.length > 13) chip.title = label;
+        chip.textContent = item.label;
+        chip.style.setProperty("--chip-name-size", unsubmittedChipSize(item.label));
+        if (item.label.length > 13) chip.title = item.label;
         els.statUnsubmitted.appendChild(chip);
       });
+      if (overflowCount > 0) {
+        const more = document.createElement("span");
+        more.className = "unsubmitted-chip is-more";
+        more.textContent = `+${overflowCount} more`;
+        more.title = waiting.slice(UNSUBMITTED_VISIBLE_MAX).map((item) => item.label).join(", ");
+        els.statUnsubmitted.appendChild(more);
+      }
     }
 
     function phaseCopy(phase, state) {
