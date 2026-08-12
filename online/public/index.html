@@ -4042,12 +4042,10 @@
         updateSubmitEnabled();
       } else if (phase === 'guessing' && lastPlayPhase && lastPlayPhase !== 'guessing') {
         // Entering a fresh guess window after results/ended/idle — clear leftover tiles.
-        if (!isEditingGuessCapture() && !guessDraftDirty && !currentGuess()) {
-          setGuessText('');
-          guessDraftDirty = false;
-          guessCaretIndex = null;
-          paintGuessSelection();
-        }
+        setGuessText('');
+        guessDraftDirty = false;
+        guessCaretIndex = null;
+        paintGuessSelection();
         updateSubmitEnabled();
       }
       lastPlayPhase = phase;
