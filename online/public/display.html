@@ -3580,6 +3580,73 @@
     .stage[data-phase="results"] .live-stats-rail,
     .stage[data-phase="ended"] .live-stats-rail {
       --live-timer-stack: 5.8em;
+      gap: 0.45em;
+    }
+
+    .live-join-dock {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.28em;
+      width: 100%;
+      padding: 0.45em 0.35em 0.5em;
+      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.55);
+      border-radius: 0.2em;
+      background: var(--show-panel);
+      box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.22);
+      text-align: center;
+    }
+
+    .stage[data-phase="guessing"] .live-join-dock,
+    .stage[data-phase="results"] .live-join-dock,
+    .stage[data-phase="ended"] .live-join-dock {
+      display: flex;
+    }
+
+    .live-join-label {
+      margin: 0;
+      font-size: 0.58em;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255, 220, 120, 0.9);
+    }
+
+    .live-join-code {
+      margin: 0;
+      font-size: 1.35em;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      line-height: 1;
+      color: var(--show-gold-hot);
+      text-shadow: 0 2px 0 #000, 0 0 14px rgba(255, 204, 0, 0.55);
+    }
+
+    .live-join-qr-shell {
+      width: 4.6em;
+      height: 4.6em;
+      padding: 0.18em;
+      border-radius: 0.15em;
+      background: #fff;
+      box-shadow: 0 0 0 1px #000;
+    }
+
+    .live-join-qr {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .live-join-url {
+      margin: 0;
+      max-width: 100%;
+      font-size: 0.48em;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+      color: rgba(210, 228, 248, 0.88);
+      word-break: break-all;
     }
 
     .stage[data-phase="guessing"] .timer-panel,
@@ -3801,6 +3868,14 @@
                 <span class="stat-value submitted" id="statSubmitted">0</span>
               </div>
             </div>
+            <div class="live-join-dock" id="liveJoinDock" aria-label="How to join">
+              <p class="live-join-label">Join code</p>
+              <p class="live-join-code" id="liveJoinCode">—————</p>
+              <div class="live-join-qr-shell">
+                <img class="live-join-qr" id="liveJoinQr" width="160" height="160" alt="" />
+              </div>
+              <p class="live-join-url" id="liveJoinUrl"></p>
+            </div>
           </aside>
         </div>
 
@@ -3887,6 +3962,10 @@
       playQr: document.getElementById("playQr"),
       idleJoinWrap: document.getElementById("idleJoinWrap"),
       idleJoinCode: document.getElementById("idleJoinCode"),
+      liveJoinDock: document.getElementById("liveJoinDock"),
+      liveJoinCode: document.getElementById("liveJoinCode"),
+      liveJoinQr: document.getElementById("liveJoinQr"),
+      liveJoinUrl: document.getElementById("liveJoinUrl"),
       idleCta: document.getElementById("idleCta"),
       idleCtaText: document.querySelector("#idleCta .idle-cta-text"),
       idleHostNote: document.getElementById("idleHostNote"),
@@ -5297,6 +5376,33 @@
       }
     }
 
+    function renderLiveJoinDock(state = {}) {
+      if (!els.liveJoinDock) return;
+      const phase = state.phase || "idle";
+      const live = phase === "guessing" || phase === "results" || phase === "ended";
+      if (!live) return;
+
+      const joinCode = String(state.joinCode || TypeoEvent.formatJoinCodeDisplay(state.eventCode) || "").trim();
+      const code = String(state.eventCode || TypeoEvent.current()).trim().toLowerCase();
+      if (els.liveJoinCode) {
+        els.liveJoinCode.textContent = joinCode || "—————";
+      }
+      if (els.liveJoinUrl) {
+        els.liveJoinUrl.textContent = playSiteBaseDisplay(state);
+      }
+      if (els.liveJoinQr) {
+        const qrUrl = code && code !== TypeoEvent.DEFAULT_EVENT_CODE
+          ? `/api/play-qr?join=${encodeURIComponent(code)}`
+          : "/api/play-qr";
+        if (els.liveJoinQr.getAttribute("src") !== qrUrl) {
+          els.liveJoinQr.src = qrUrl;
+        }
+        els.liveJoinQr.alt = joinCode
+          ? `QR code to join ${joinCode}`
+          : `QR code for ${playSiteBaseDisplay(state)}`;
+      }
+    }
+
     function renderWordClue(state) {
       const phase = state.phase || "idle";
 
@@ -5913,6 +6019,7 @@
         els.subtitle.textContent = "";
       } else {
         renderSubtitle(currentState);
+        renderLiveJoinDock(currentState);
       }
 
       syncDisplayBallSnapshot(currentState, previousPhase);
