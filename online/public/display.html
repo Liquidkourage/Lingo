@@ -861,16 +861,13 @@
 
     .live-stats-rail {
       grid-area: stats;
-      position: relative;
       display: flex;
       flex-direction: column;
       align-items: stretch;
       align-self: start;
       min-width: 0;
       padding-top: calc(var(--live-timer-stack, 0px));
-      /* Keep chrome height tied to word tiles / score — join dock overlays below. */
       height: fit-content;
-      z-index: 6;
     }
 
     .live-chrome .live-hud {
@@ -1120,6 +1117,7 @@
       margin: 0 !important;
       z-index: 4;
       flex-direction: column;
+      overflow: visible;
     }
 
     .live-score-rail {
@@ -3579,8 +3577,9 @@
       max-height: none;
       margin: 0 !important;
       transform: none !important;
-      z-index: 4;
+      z-index: 8;
       flex-direction: column;
+      overflow: visible;
     }
 
     .stage[data-phase="guessing"] .live-stats-rail,
@@ -3592,20 +3591,20 @@
     .live-join-dock {
       display: none;
       position: absolute;
-      top: calc(100% + 0.45em);
-      left: 0;
       right: 0;
+      bottom: calc(100% + 0.4em);
+      left: 0;
       flex-direction: column;
       align-items: center;
-      gap: 0.28em;
+      gap: 0.22em;
       width: 100%;
-      padding: 0.45em 0.35em 0.5em;
+      padding: 0.4em 0.3em 0.45em;
       border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.55);
       border-radius: 0.2em;
       background: var(--show-panel);
       box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.22);
       text-align: center;
-      z-index: 7;
+      z-index: 9;
       pointer-events: none;
     }
 
@@ -3835,6 +3834,14 @@
 
         <div class="live-chrome" id="liveChrome">
           <aside class="live-score-rail" id="liveScoreRail" aria-label="Round and balls">
+            <div class="live-join-dock" id="liveJoinDock" aria-label="How to join">
+              <p class="live-join-label">Join code</p>
+              <p class="live-join-code" id="liveJoinCode">—————</p>
+              <div class="live-join-qr-shell">
+                <img class="live-join-qr" id="liveJoinQr" width="160" height="160" alt="" />
+              </div>
+              <p class="live-join-url" id="liveJoinUrl"></p>
+            </div>
             <div class="score-slot score-slot--round">
               <span class="score-label">Round</span>
               <span class="score-value round" id="statRound">0</span>
@@ -3879,14 +3886,6 @@
                 <span class="stat-label">Submitted</span>
                 <span class="stat-value submitted" id="statSubmitted">0</span>
               </div>
-            </div>
-            <div class="live-join-dock" id="liveJoinDock" aria-label="How to join">
-              <p class="live-join-label">Join code</p>
-              <p class="live-join-code" id="liveJoinCode">—————</p>
-              <div class="live-join-qr-shell">
-                <img class="live-join-qr" id="liveJoinQr" width="160" height="160" alt="" />
-              </div>
-              <p class="live-join-url" id="liveJoinUrl"></p>
             </div>
           </aside>
         </div>
