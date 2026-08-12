@@ -3061,15 +3061,12 @@
       }
 
       const windowKey = guessWindowKey(state);
-      const editing = guessDraftDirty || isEditingGuessCapture() || currentGuess().length > 0;
 
       if (windowKey !== lastGuessWindowKey) {
+        // New word / guess window: never keep letters from the previous one.
+        // Manual on-screen typing leaves guessDraftDirty + leftover tiles, which
+        // used to look like "still editing" and blocked the clear.
         lastGuessWindowKey = windowKey;
-        // Never wipe letters while the player is actively typing.
-        if (editing) {
-          guessDraftDirty = true;
-          return;
-        }
         guessDraftDirty = false;
         const saved = normalizedGuessText(state.viewer.roundGuess || '');
         setGuessText(saved.length === 5 ? saved : '');
@@ -3078,6 +3075,7 @@
         return;
       }
 
+      const editing = guessDraftDirty || isEditingGuessCapture();
       if (editing) {
         guessDraftDirty = true;
         return;
