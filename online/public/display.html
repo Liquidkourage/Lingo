@@ -34,8 +34,8 @@
       --feedback-present-text: #141100;
       --feedback-present-glow: rgba(255, 204, 0, 0.88);
       --contrast-stroke: 3px;
-      /* Live UI starts under logo; leave air above the floating join dock */
-      --live-logo-reserve: 13.25%;
+      /* Live UI: logo band, then in-flow chrome — no absolute overlays */
+      --live-logo-reserve: 10.5%;
       --live-chrome-top: calc(var(--live-logo-reserve) + 0.12em);
       --live-chrome-inset: 1%;
       --live-rail-width: 10.75em;
@@ -54,8 +54,7 @@
       --live-player-card-text-scale: 0.5;
       --live-board-pad: 0.28em;
       --live-chrome-stack-gap: var(--live-v-gap);
-      --live-chrome-board-gap: max(0.2em, 0.35cqh);
-      --live-board-lift: 1.6%;
+      --live-chrome-board-gap: max(0.4em, 0.65cqh);
       --live-board-bottom-inset: 2px;
       --live-card-width: min(100%, 9.2em);
       --live-card-min-height: 2.85em;
@@ -847,6 +846,15 @@
 
     .live-score-rail {
       grid-area: score;
+      display: none;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--live-v-gap);
+      min-width: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
     }
 
     .live-center {
@@ -866,8 +874,8 @@
       flex-direction: column;
       align-items: stretch;
       align-self: start;
+      gap: var(--live-v-gap);
       min-width: 0;
-      padding-top: calc(var(--live-timer-stack, 0px));
       height: fit-content;
     }
 
@@ -995,18 +1003,19 @@
     .stage[data-phase="guessing"] .timer-panel,
     .stage[data-phase="results"] .timer-panel,
     .stage[data-phase="ended"] .timer-panel {
-      position: absolute !important;
-      top: var(--live-chrome-top);
-      right: var(--live-chrome-inset);
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
       left: auto !important;
       bottom: auto !important;
       transform: none !important;
-      width: var(--live-rail-width);
+      width: 100%;
       min-width: 0;
-      max-width: 14%;
-      z-index: 35;
+      max-width: none;
+      z-index: 4;
       margin: 0;
       padding: 0.5em 0.55em 0.55em;
+      box-sizing: border-box;
     }
 
     .stage[data-phase="guessing"] .timer-label,
@@ -1121,8 +1130,8 @@
       overflow: visible;
     }
 
-    .live-score-rail {
-      display: none;
+    .live-score-stack {
+      display: flex;
       flex-direction: column;
       border-radius: 0.2em;
       border: var(--contrast-stroke) solid var(--show-gold);
@@ -1410,7 +1419,7 @@
       justify-self: stretch;
       width: 100%;
       max-width: none;
-      margin: calc(var(--live-board-lift) * -1) 0 0;
+      margin: 0;
       min-height: 0;
       height: 100%;
       max-height: none;
@@ -3561,7 +3570,7 @@
       transform: none !important;
     }
 
-    /* Corner chrome: timer pinned top right; side rails are in-flow */
+    /* Corner chrome: all live panels stay in-flow — no absolute stacking */
     .stage[data-phase="guessing"] .live-score-rail,
     .stage[data-phase="results"] .live-score-rail,
     .stage[data-phase="ended"] .live-score-rail {
@@ -3578,23 +3587,14 @@
       max-height: none;
       margin: 0 !important;
       transform: none !important;
-      z-index: 8;
+      z-index: 4;
       flex-direction: column;
       overflow: visible;
     }
 
-    .stage[data-phase="guessing"] .live-stats-rail,
-    .stage[data-phase="results"] .live-stats-rail,
-    .stage[data-phase="ended"] .live-stats-rail {
-      --live-timer-stack: 5.8em;
-    }
-
     .live-join-dock {
       display: none;
-      position: absolute;
-      right: 0;
-      bottom: calc(100% + 0.32em);
-      left: 0;
+      position: relative;
       flex-direction: column;
       align-items: center;
       gap: 0.14em;
@@ -3605,8 +3605,9 @@
       background: var(--show-panel);
       box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.22);
       text-align: center;
-      z-index: 9;
+      z-index: 4;
       pointer-events: none;
+      box-sizing: border-box;
     }
 
     .stage[data-phase="guessing"] .live-join-dock,
@@ -3664,16 +3665,16 @@
     .stage[data-phase="guessing"] .timer-panel,
     .stage[data-phase="results"] .timer-panel,
     .stage[data-phase="ended"] .timer-panel {
-      position: absolute !important;
-      top: var(--live-chrome-top) !important;
-      right: var(--live-chrome-inset) !important;
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
       left: auto !important;
       bottom: auto !important;
       transform: none !important;
-      z-index: 35;
-      width: var(--live-rail-width);
+      z-index: 4;
+      width: 100%;
       min-width: 0;
-      max-width: 14%;
+      max-width: none;
     }
 
     .stage[data-phase="guessing"] .universal-hud,
@@ -3843,13 +3844,15 @@
               </div>
               <p class="live-join-url" id="liveJoinUrl"></p>
             </div>
-            <div class="score-slot score-slot--round">
-              <span class="score-label">Round</span>
-              <span class="score-value round" id="statRound">0</span>
-            </div>
-            <div class="score-slot score-slot--balls">
-              <span class="score-label">Balls</span>
-              <span class="score-value balls" id="statBalls">0</span>
+            <div class="live-score-stack">
+              <div class="score-slot score-slot--round">
+                <span class="score-label">Round</span>
+                <span class="score-value round" id="statRound">0</span>
+              </div>
+              <div class="score-slot score-slot--balls">
+                <span class="score-label">Balls</span>
+                <span class="score-value balls" id="statBalls">0</span>
+              </div>
             </div>
           </aside>
 
@@ -3876,6 +3879,11 @@
           </div>
 
           <aside class="live-stats-rail" aria-label="Session stats">
+            <div class="timer-panel" aria-live="polite">
+              <p class="timer-label" id="timerLabel">Next round starts soon</p>
+              <p class="timer-value" id="timerValue"></p>
+              <p class="timer-unit" id="timerUnit">seconds</p>
+            </div>
             <div class="stats-row" aria-label="Game stats">
               <div class="stat-cell">
                 <svg class="stat-icon" viewBox="0 0 24 24" fill="#9828a8" aria-hidden="true"><circle cx="9" cy="10" r="3" fill="#9828a8"/><circle cx="16" cy="11" r="2.5" fill="#9828a8"/><path d="M4 18c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#9828a8" stroke-width="2" fill="none"/><path d="M13 17c0-1.8 1.5-3.2 3.2-3.2" stroke="#9828a8" stroke-width="2" fill="none"/></svg>
@@ -3890,12 +3898,6 @@
             </div>
           </aside>
         </div>
-
-        <aside class="timer-panel" aria-live="polite">
-          <p class="timer-label" id="timerLabel">Next round starts soon</p>
-          <p class="timer-value" id="timerValue"></p>
-          <p class="timer-unit" id="timerUnit">seconds</p>
-        </aside>
 
         <div class="idle-deck" id="idleDeck">
           <div class="idle-info" id="idleInfo" aria-live="polite">

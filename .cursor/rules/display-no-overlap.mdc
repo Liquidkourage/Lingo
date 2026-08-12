@@ -1,0 +1,21 @@
+---
+description: Public /display live UI — no overlapping objects
+globs: online/public/display.html
+alwaysApply: false
+---
+
+# Display: no overlapping UI
+
+On the venue `/display` live screen, **UI objects must never overlap**.
+
+## Hard rules
+
+- Panels, docks, rails, tiles, timer, stats, logo, and the player board must not share screen space.
+- Prefer **normal document flow** (grid/flex + gap). Do not use absolute/fixed positioning to stack chrome on top of other chrome.
+- Do not use negative margins, negative gaps, or “board lift” tricks that pull one region into another.
+- Gaps between regions are required; near-touching is OK, overlapping is not.
+- The join/QR dock may sit upper-left above Round/Balls as a **stacked** column with clear gap — that is not overlap. It must not cover Round/Balls, tiles, timer, stats, or player cards.
+
+## When changing layout
+
+If a change would cause overlap, shrink or reflow in-flow content instead of layering with z-index.
