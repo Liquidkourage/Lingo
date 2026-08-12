@@ -34,15 +34,15 @@
       --feedback-present-text: #141100;
       --feedback-present-glow: rgba(255, 204, 0, 0.88);
       --contrast-stroke: 3px;
-      /* Live UI starts just under visible logo foot (PNG has bottom transparency) */
-      --live-logo-reserve: 11.5%;
+      /* Live UI starts under logo; leave air above the floating join dock */
+      --live-logo-reserve: 13.25%;
       --live-chrome-top: calc(var(--live-logo-reserve) + 0.12em);
       --live-chrome-inset: 1%;
       --live-rail-width: 10.75em;
       --live-score-rail-height: auto;
       --live-score-rail-width: var(--live-rail-width);
       /* Shared vertical rhythm between logo, tiles, stats, and player board */
-      --live-v-gap: max(0.55em, 0.9cqh);
+      --live-v-gap: max(0.4em, 0.7cqh);
       --live-tile-size: 2.85em;
       --live-tile-gap: 0.48em;
       --live-tile-font: 1.92em;
@@ -54,7 +54,8 @@
       --live-player-card-text-scale: 0.5;
       --live-board-pad: 0.28em;
       --live-chrome-stack-gap: var(--live-v-gap);
-      --live-chrome-board-gap: var(--live-v-gap);
+      --live-chrome-board-gap: max(0.2em, 0.35cqh);
+      --live-board-lift: 1.6%;
       --live-board-bottom-inset: 2px;
       --live-card-width: min(100%, 9.2em);
       --live-card-min-height: 2.85em;
@@ -1031,7 +1032,7 @@
     .stage[data-phase="guessing"] .logo-wrap,
     .stage[data-phase="results"] .logo-wrap,
     .stage[data-phase="ended"] .logo-wrap {
-      top: 0.5%;
+      top: 1.15%;
       width: 28%;
     }
 
@@ -1409,7 +1410,7 @@
       justify-self: stretch;
       width: 100%;
       max-width: none;
-      margin: 0;
+      margin: calc(var(--live-board-lift) * -1) 0 0;
       min-height: 0;
       height: 100%;
       max-height: none;
@@ -3592,13 +3593,13 @@
       display: none;
       position: absolute;
       right: 0;
-      bottom: calc(100% + 0.4em);
+      bottom: calc(100% + 0.32em);
       left: 0;
       flex-direction: column;
       align-items: center;
-      gap: 0.22em;
+      gap: 0.14em;
       width: 100%;
-      padding: 0.4em 0.3em 0.45em;
+      padding: 0.28em 0.22em 0.3em;
       border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.55);
       border-radius: 0.2em;
       background: var(--show-panel);
@@ -3616,7 +3617,7 @@
 
     .live-join-label {
       margin: 0;
-      font-size: 0.58em;
+      font-size: 0.5em;
       font-weight: 800;
       letter-spacing: 0.14em;
       text-transform: uppercase;
@@ -3625,18 +3626,18 @@
 
     .live-join-code {
       margin: 0;
-      font-size: 1.35em;
+      font-size: 1.1em;
       font-weight: 900;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.16em;
       line-height: 1;
       color: var(--show-gold-hot);
       text-shadow: 0 2px 0 #000, 0 0 14px rgba(255, 204, 0, 0.55);
     }
 
     .live-join-qr-shell {
-      width: 4.6em;
-      height: 4.6em;
-      padding: 0.18em;
+      width: 3.35em;
+      height: 3.35em;
+      padding: 0.14em;
       border-radius: 0.15em;
       background: #fff;
       box-shadow: 0 0 0 1px #000;
@@ -3652,10 +3653,10 @@
     .live-join-url {
       margin: 0;
       max-width: 100%;
-      font-size: 0.48em;
+      font-size: 0.42em;
       font-weight: 700;
       letter-spacing: 0.04em;
-      line-height: 1.2;
+      line-height: 1.15;
       color: rgba(210, 228, 248, 0.88);
       word-break: break-all;
     }
