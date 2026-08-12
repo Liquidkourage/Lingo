@@ -541,7 +541,15 @@
     }
 
     #joinCodeField {
-      margin-bottom: 0.75rem;
+      margin: 0 0 0.85rem;
+      padding: 0.75rem 0.85rem 0.85rem;
+      border: 1px solid rgba(62, 200, 232, 0.28);
+      border-radius: 0.35em;
+      background: rgba(0, 0, 0, 0.28);
+    }
+
+    #joinCodeField .join-code-hint {
+      margin: 0.35rem 0 0;
     }
 
     .auth-tabs {
@@ -601,10 +609,6 @@
       letter-spacing: 0.24em;
       font-weight: 800;
       text-align: center;
-    }
-
-    #joinCodeField[hidden] {
-      display: none;
     }
 
     .auth-actions {
@@ -1710,13 +1714,15 @@
         <p class="rules-full-link"><a href="/rules">Read the full rules</a></p>
       </details>
 
+      <div class="auth-field join-code-field" id="joinCodeField">
+        <label for="joinCodeInput">Enter game code here</label>
+        <input id="joinCodeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="5-letter code on the venue screen" inputmode="text" />
+        <p class="auth-hint join-code-hint">Use the code on the big screen — old links will not lock you into a past game.</p>
+      </div>
+
       <div class="play-setup" id="playSetup">
         <section class="play-setup-panel" id="playIdentity" data-auth-mode="signed-out" aria-label="Join the game">
           <div class="auth-signed-out" id="authSignedOut">
-            <div class="auth-field" id="joinCodeField">
-              <label for="joinCodeInput">Join code</label>
-              <input id="joinCodeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="5-letter word on screen" />
-            </div>
             <div class="auth-tabs" role="tablist" aria-label="How to join">
               <button id="authTabGuest" class="secondary auth-tab is-active" type="button" data-auth-tab="guest">Guest</button>
               <button id="authTabLogin" class="secondary auth-tab" type="button" data-auth-tab="login">Log in</button>
@@ -1730,7 +1736,7 @@
               <div class="auth-actions">
                 <button id="guestJoinBtn" class="good" type="submit">Join game</button>
               </div>
-              <p class="auth-hint">Enter the join code from the venue screen, pick a name, then join.</p>
+              <p class="auth-hint">Enter the game code above, pick a name, then join.</p>
             </form>
             <form id="authLoginForm" class="auth-form" autocomplete="on">
               <div class="auth-field">
@@ -1744,7 +1750,7 @@
               <div class="auth-actions">
                 <button id="loginBtn" class="good" type="submit">Log in &amp; join</button>
               </div>
-              <p class="auth-hint">Use the join code above, then log in with your account.</p>
+              <p class="auth-hint">Enter the game code above, then log in with your account.</p>
               <details class="auth-recovery">
                 <summary>Forgot password?</summary>
                 <div class="auth-field">
@@ -1779,7 +1785,7 @@
               <div class="auth-actions">
                 <button id="registerBtn" class="good" type="submit">Create account &amp; join</button>
               </div>
-              <p class="auth-hint">At least 6 characters. Enter the join code above first. Your username is shown on the venue display.</p>
+              <p class="auth-hint">At least 6 characters. Enter the game code above first. Your username is shown on the venue display.</p>
             </form>
           </div>
           <div class="auth-signed-in" id="authSignedIn">
@@ -2681,7 +2687,7 @@
     async function joinAfterSignIn(prefixMessage) {
       const joinCode = activeJoinCode();
       if (!joinCode) {
-        setMessage(`${prefixMessage} Enter the join code from the venue screen, then tap Join game.`, 'error');
+        setMessage(`${prefixMessage} Enter the game code from the venue screen, then tap Join game.`, 'error');
         els.joinCodeInput?.focus();
         return;
       }
@@ -2735,7 +2741,7 @@
       if (event) event.preventDefault();
       const joinCode = activeJoinCode();
       if (!joinCode) {
-        setMessage('Enter the 5-letter join code from the venue screen.', 'error');
+        setMessage('Enter the game code from the venue screen.', 'error');
         els.joinCodeInput?.focus();
         return;
       }
@@ -2784,7 +2790,6 @@
         els.loginPassword,
         els.registerUsername,
         els.registerPassword,
-        els.joinCodeInput,
       ].filter(Boolean);
       authInputs.forEach((input) => {
         input.disabled = lockAuth;
@@ -2793,7 +2798,10 @@
           input.setAttribute('autocomplete', 'off');
         }
       });
-      if (els.playSetup) {
+      if (els.playIdentity) {
+        if (lockAuth) els.playIdentity.setAttribute('inert', '');
+        else els.playIdentity.removeAttribute('inert');
+      } else if (els.playSetup) {
         if (lockAuth) els.playSetup.setAttribute('inert', '');
         else els.playSetup.removeAttribute('inert');
       }
@@ -2808,7 +2816,6 @@
         || active === els.loginPassword
         || active === els.registerUsername
         || active === els.registerPassword
-        || active === els.joinCodeInput
         || active === els.profileDisplayName;
       if (!stolenByAuth) return;
       focusGuessCapture();
@@ -4224,8 +4231,9 @@
       if (els.joinCodeInput) {
         els.joinCodeInput.value = code ? code.toUpperCase() : '';
       }
+      // Always keep the game-code field visible — URL join params only prefill.
       if (els.joinCodeField) {
-        els.joinCodeField.hidden = Boolean(fromUrl);
+        els.joinCodeField.hidden = false;
       }
       if (code && TypeoEvent.isJoinCodeFormat(code)) {
         TypeoEvent.rememberJoinCode(code);
@@ -4236,6 +4244,11 @@
       const typed = els.joinCodeInput?.value.trim().toLowerCase() || '';
       if (typed && TypeoEvent.isJoinCodeFormat(typed) && typed !== TypeoEvent.DEFAULT_EVENT_CODE) {
         return typed;
+      }
+      // Prefer stored code over a stale URL leftover when the field is empty.
+      const stored = TypeoEvent.storedJoinCode();
+      if (stored && stored !== TypeoEvent.DEFAULT_EVENT_CODE) {
+        return stored;
       }
       const current = TypeoEvent.current();
       return current !== TypeoEvent.DEFAULT_EVENT_CODE ? current : '';
@@ -4467,10 +4480,15 @@
     els.joinCodeInput?.addEventListener('change', async () => {
       const joinCode = activeJoinCode();
       if (!joinCode) return;
+      const previous = TypeoEvent.storedJoinCode() || TypeoEvent.resolveJoinCodeFromUrl();
       TypeoEvent.applyJoinCode(joinCode);
+      // Switching games — drop the old session token so re-join is clean.
+      if (previous && previous !== joinCode) {
+        clearPlayerToken();
+      }
       try {
         await fetchPublicState();
-        setMessage('');
+        setMessage(`Game code set to ${joinCode.toUpperCase()}. Tap Join game when ready.`, 'success');
       } catch (error) {
         setMessage(error.message || 'Could not load game state.', 'error');
       }
@@ -4493,7 +4511,7 @@
 
       const joinCode = activeJoinCode();
       if (!joinCode) {
-        setMessage('Enter the 5-letter join code from the venue screen.', 'error');
+        setMessage('Enter the game code from the venue screen.', 'error');
         els.joinCodeInput?.focus();
         startTimerTick();
         return;
