@@ -562,6 +562,10 @@
       text-transform: uppercase;
     }
 
+    .timer-session-stats {
+      display: none;
+    }
+
     .status-badge {
       position: absolute;
       left: 50%;
@@ -1014,8 +1018,74 @@
       max-width: none;
       z-index: 4;
       margin: 0;
-      padding: 0.5em 0.55em 0.55em;
+      padding: 0.42em 0.4em 0.35em;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stage[data-phase="guessing"] .timer-session-stats,
+    .stage[data-phase="results"] .timer-session-stats,
+    .stage[data-phase="ended"] .timer-session-stats {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: calc(100% + 0.8em);
+      margin: 0.4em -0.4em -0.35em;
+      padding: 0;
+      border-top: 1px solid rgba(0, 212, 255, 0.35);
+    }
+
+    .stage[data-phase="guessing"] .timer-session-stats .stat-cell,
+    .stage[data-phase="results"] .timer-session-stats .stat-cell,
+    .stage[data-phase="ended"] .timer-session-stats .stat-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.04em;
+      min-height: 0;
+      padding: 0.28em 0.12em 0.3em;
+      border-right: none;
+      border-bottom: 1px solid rgba(60, 130, 200, 0.25);
+    }
+
+    .stage[data-phase="guessing"] .timer-session-stats .stat-cell:last-child,
+    .stage[data-phase="results"] .timer-session-stats .stat-cell:last-child,
+    .stage[data-phase="ended"] .timer-session-stats .stat-cell:last-child {
+      border-bottom: none;
+    }
+
+    .stage[data-phase="guessing"] .timer-session-stats .stat-label,
+    .stage[data-phase="results"] .timer-session-stats .stat-label,
+    .stage[data-phase="ended"] .timer-session-stats .stat-label {
+      font-size: 0.52em;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(220, 235, 255, 0.9);
+    }
+
+    .stage[data-phase="guessing"] .timer-session-stats .stat-value,
+    .stage[data-phase="results"] .timer-session-stats .stat-value,
+    .stage[data-phase="ended"] .timer-session-stats .stat-value {
+      font-size: 1.15em;
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 2px 0 #000, 0 0 12px currentColor;
+    }
+
+    .stage[data-phase="guessing"] .timer-session-stats .stat-value.players,
+    .stage[data-phase="results"] .timer-session-stats .stat-value.players,
+    .stage[data-phase="ended"] .timer-session-stats .stat-value.players {
+      color: #e070ff;
+    }
+
+    .stage[data-phase="guessing"] .timer-session-stats .stat-value.submitted,
+    .stage[data-phase="results"] .timer-session-stats .stat-value.submitted,
+    .stage[data-phase="ended"] .timer-session-stats .stat-value.submitted {
+      color: var(--show-cyan);
     }
 
     .stage[data-phase="guessing"] .timer-label,
@@ -1351,61 +1421,7 @@
     .stage[data-phase="guessing"] .stats-row,
     .stage[data-phase="results"] .stats-row,
     .stage[data-phase="ended"] .stats-row {
-      width: 100%;
-      max-width: none;
-      height: auto;
-      min-height: 0;
-      flex-shrink: 0;
-      z-index: 4;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      background: var(--show-panel);
-      border: var(--contrast-stroke) solid var(--show-cyan);
-      box-shadow: 0 0 24px rgba(0, 212, 255, 0.22);
-    }
-
-    .stage[data-phase="guessing"] .stat-cell,
-    .stage[data-phase="results"] .stat-cell,
-    .stage[data-phase="ended"] .stat-cell {
-      min-height: 4.4em;
-      padding: 0.3em 0.12em;
-      gap: 0.06em;
-      border-right: none;
-      border-bottom: 1px solid rgba(60, 130, 200, 0.25);
-    }
-
-    .stage[data-phase="guessing"] .stat-cell:last-child,
-    .stage[data-phase="results"] .stat-cell:last-child,
-    .stage[data-phase="ended"] .stat-cell:last-child {
-      border-bottom: none;
-    }
-
-    .stage[data-phase="guessing"] .stat-icon,
-    .stage[data-phase="results"] .stat-icon,
-    .stage[data-phase="ended"] .stat-icon {
-      display: block;
-      width: 1.15em;
-      height: 1.15em;
-    }
-
-    .stage[data-phase="guessing"] .stat-label,
-    .stage[data-phase="results"] .stat-label,
-    .stage[data-phase="ended"] .stat-label {
-      font-size: var(--live-stat-label-size);
-      line-height: 1.05;
-      color: var(--show-white);
-      font-weight: 900;
-    }
-
-    .stage[data-phase="guessing"] .stat-value,
-    .stage[data-phase="results"] .stat-value,
-    .stage[data-phase="ended"] .stat-value {
-      font-size: 1.45em;
-      font-weight: 900;
-      text-shadow: 0 2px 0 #000, 0 0 14px currentColor;
+      display: none !important;
     }
 
     .stage[data-phase="guessing"] .player-board,
@@ -3883,17 +3899,15 @@
               <p class="timer-label" id="timerLabel">Next round starts soon</p>
               <p class="timer-value" id="timerValue"></p>
               <p class="timer-unit" id="timerUnit">seconds</p>
-            </div>
-            <div class="stats-row" aria-label="Game stats">
-              <div class="stat-cell">
-                <svg class="stat-icon" viewBox="0 0 24 24" fill="#9828a8" aria-hidden="true"><circle cx="9" cy="10" r="3" fill="#9828a8"/><circle cx="16" cy="11" r="2.5" fill="#9828a8"/><path d="M4 18c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#9828a8" stroke-width="2" fill="none"/><path d="M13 17c0-1.8 1.5-3.2 3.2-3.2" stroke="#9828a8" stroke-width="2" fill="none"/></svg>
-                <span class="stat-label">Players</span>
-                <span class="stat-value players" id="statPlayers">0</span>
-              </div>
-              <div class="stat-cell">
-                <svg class="stat-icon" viewBox="0 0 24 24" fill="#18a8d8" aria-hidden="true"><path d="M3 12l18-7-7 18-2-7-7-4z" fill="#18a8d8"/></svg>
-                <span class="stat-label">Submitted</span>
-                <span class="stat-value submitted" id="statSubmitted">0</span>
+              <div class="timer-session-stats" aria-label="Game stats">
+                <div class="stat-cell">
+                  <span class="stat-label">Players</span>
+                  <span class="stat-value players" id="statPlayers">0</span>
+                </div>
+                <div class="stat-cell">
+                  <span class="stat-label">Submitted</span>
+                  <span class="stat-value submitted" id="statSubmitted">0</span>
+                </div>
               </div>
             </div>
           </aside>
