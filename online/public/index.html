@@ -505,19 +505,13 @@
       display: block;
     }
 
-    .play-stage[data-viewer-joined="true"] .play-setup,
-    .play-stage[data-phase="guessing"] .play-setup,
-    .play-stage[data-phase="results"] .play-setup,
-    .play-stage[data-phase="ended"] .play-setup {
+    .play-stage[data-viewer-joined="true"] .play-setup {
       display: none !important;
     }
 
     /* Keep auth inputs out of autofill/tab order while playing — Chrome was jumping focus
-       to the Display name field after every typed letter. */
-    .play-stage[data-viewer-joined="true"] .auth-signed-out input,
-    .play-stage[data-phase="guessing"] .auth-signed-out input,
-    .play-stage[data-phase="results"] .auth-signed-out input,
-    .play-stage[data-phase="ended"] .auth-signed-out input {
+       to the Display name field after every typed letter. Only after the viewer has joined. */
+    .play-stage[data-viewer-joined="true"] .auth-signed-out input {
       pointer-events: none;
     }
 
@@ -2783,7 +2777,11 @@
     }
 
     function updateAuthFieldsForPlayState(state) {
-      const lockAuth = isViewerJoined(state) || isLiveRound(state?.phase || 'idle') || Boolean(getPlayerToken());
+      // Only freeze the identity panel once this device is actually in-session.
+      // A leftover lingo_player_token (or a live round while not joined) used to set
+      // inert + disabled on the whole join form — name field and buttons looked fine
+      // but nothing accepted taps/typing.
+      const lockAuth = isViewerJoined(state);
       const authInputs = [
         els.guestDisplayName,
         els.loginUsername,
@@ -4101,11 +4099,17 @@
 
       if (getAuthToken() && accountUsername) {
         setAuthMode('signed-in', { playerMode: 'account' });
-      } else if ((isViewerJoined(state) || getPlayerToken()) && activeUserName()) {
-        // Keep guests signed-in locally even if one poll drops sessionValid —
+      } else if (isViewerJoined(state) && activeUserName()) {
+        // Keep guests signed-in locally even if one poll briefly flickers —
         // flipping to signed-out re-shows the name field and Chrome steals focus.
         setAuthMode('signed-in', { playerMode: 'guest' });
-      } else if (!IS_DEMO && !getPlayerToken()) {
+      } else if (getPlayerToken() && activeUserName() && !isViewerJoined(state)) {
+        // Stale token still on device: show Join game, do not freeze the panel.
+        setAuthMode('signed-in', { playerMode: 'guest' });
+      } else if (!IS_DEMO) {
+        if (getPlayerToken() && !isViewerJoined(state)) {
+          clearPlayerToken();
+        }
         setAuthMode('signed-out');
         if (els.guestDisplayName && getGuestDisplayName()) {
           els.guestDisplayName.value = getGuestDisplayName();
