@@ -26,7 +26,7 @@
       --show-panel: #020818;
       --show-navy: #010818;
       --feedback-correct: #00b826;
-      --feedback-correct-border: #00991f;
+      --feedback-correct-border: #007a1a;
       --feedback-correct-text: #ffffff;
       --feedback-correct-glow: rgba(0, 184, 38, 0.75);
       --feedback-present: var(--show-gold);
@@ -751,10 +751,15 @@
       place-items: center;
       border-radius: 0.15em;
       border: var(--contrast-stroke) solid var(--show-cyan);
-      background: var(--show-black);
+      background:
+        linear-gradient(160deg, rgba(80, 200, 255, 0.22) 0%, transparent 42%),
+        var(--show-black);
       box-shadow:
         0 0 0 1px #000,
+        0 3px 0 rgba(0, 0, 0, 0.55),
         0 0 22px rgba(0, 212, 255, 0.5),
+        inset 2px 2px 0 rgba(255, 255, 255, 0.16),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.45),
         inset 0 0 12px rgba(0, 100, 200, 0.2);
       font-size: 1.35em;
       font-weight: 900;
@@ -767,7 +772,9 @@
     .word-tile.is-letter.is-consensus {
       color: var(--feedback-correct-text);
       border-color: var(--feedback-correct-border);
-      background: var(--feedback-correct);
+      background:
+        linear-gradient(160deg, rgba(180, 255, 200, 0.28) 0%, transparent 46%),
+        var(--feedback-correct);
       /* Meme-style white fill with thick black outline */
       -webkit-text-stroke: 0.045em #000;
       paint-order: stroke fill;
@@ -782,7 +789,12 @@
         0.045em -0.045em 0 #000,
         -0.045em -0.045em 0 #000,
         0 0 16px var(--feedback-correct-glow);
-      box-shadow: 0 0 22px var(--feedback-correct-glow);
+      box-shadow:
+        0 0 0 1px #000,
+        0 3px 0 rgba(0, 0, 0, 0.55),
+        0 0 22px var(--feedback-correct-glow),
+        inset 2px 2px 0 rgba(255, 255, 255, 0.28),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.35);
     }
 
     .word-tile.is-hidden {
@@ -837,14 +849,21 @@
       display: grid;
       place-items: center;
       border-radius: 0.15em;
-      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.8);
-      background: rgba(255, 204, 0, 0.18);
+      border: var(--contrast-stroke) solid #c4ad00;
+      background:
+        linear-gradient(160deg, rgba(255, 255, 220, 0.35) 0%, transparent 46%),
+        rgba(255, 204, 0, 0.28);
       color: var(--show-gold-hot);
       font-size: calc(var(--live-tile-font) * 0.75);
       font-weight: 900;
       line-height: 1;
       text-shadow: 0 1px 0 #000, 0 0 12px rgba(255, 204, 0, 0.55);
-      box-shadow: 0 0 0 1px #000, 0 0 14px rgba(255, 204, 0, 0.28);
+      box-shadow:
+        0 0 0 1px #000,
+        0 3px 0 rgba(0, 0, 0, 0.55),
+        0 0 14px rgba(255, 204, 0, 0.28),
+        inset 2px 2px 0 rgba(255, 255, 255, 0.3),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.35);
     }
 
     @keyframes tile-enter {
@@ -1460,7 +1479,9 @@
 
     .stage[data-phase="ended"] .word-tile.is-revealed {
       border-color: var(--feedback-correct-border);
-      background: var(--feedback-correct);
+      background:
+        linear-gradient(160deg, rgba(180, 255, 200, 0.28) 0%, transparent 46%),
+        var(--feedback-correct);
       color: var(--feedback-correct-text);
       font-size: calc(var(--live-tile-font) * 1.12);
       -webkit-text-stroke: 0.045em #000;
@@ -1476,7 +1497,12 @@
         0.045em -0.045em 0 #000,
         -0.045em -0.045em 0 #000,
         0 0 16px var(--feedback-correct-glow);
-      box-shadow: 0 0 18px var(--feedback-correct-glow);
+      box-shadow:
+        0 0 0 1px #000,
+        0 3px 0 rgba(0, 0, 0, 0.55),
+        0 0 18px var(--feedback-correct-glow),
+        inset 2px 2px 0 rgba(255, 255, 255, 0.28),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.35);
       animation: clue-reveal 0.55s cubic-bezier(0.22, 1.35, 0.36, 1) both;
       animation-delay: calc(var(--tile-index, 0) * 0.07s);
     }
