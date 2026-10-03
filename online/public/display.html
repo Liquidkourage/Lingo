@@ -763,13 +763,7 @@
       text-shadow: 0 2px 0 #000, 0 0 18px rgba(0, 212, 255, 0.8);
     }
 
-    .word-tile.is-letter {
-      color: var(--show-gold-hot);
-      border-color: var(--show-gold);
-      background: #1a1000;
-      text-shadow: 0 2px 0 #000, 0 0 24px rgba(255, 204, 0, 1);
-    }
-
+    .word-tile.is-letter,
     .word-tile.is-letter.is-consensus {
       color: var(--feedback-correct-text);
       border-color: var(--feedback-correct-border);
@@ -787,6 +781,53 @@
     .word-tiles:not([hidden]) .word-tile {
       animation: tile-enter 0.55s cubic-bezier(0.22, 1.25, 0.36, 1) both;
       animation-delay: calc(var(--tile-index, 0) * 70ms);
+    }
+
+    .known-letter-bank {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.28em;
+      margin-top: 0.45em;
+      width: 100%;
+      max-width: 22em;
+    }
+
+    .known-letter-bank:not([hidden]) {
+      display: flex;
+    }
+
+    .known-letter-bank-label {
+      font-size: 0.52em;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255, 220, 120, 0.88);
+      text-shadow: 0 1px 0 #000;
+    }
+
+    .known-letter-bank-letters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.28em;
+      justify-content: center;
+    }
+
+    .known-letter-chip {
+      min-width: 1.35em;
+      height: 1.35em;
+      padding: 0 0.28em;
+      display: grid;
+      place-items: center;
+      border-radius: 0.15em;
+      border: 2px solid rgba(255, 204, 0, 0.75);
+      background: rgba(255, 204, 0, 0.18);
+      color: var(--show-gold-hot);
+      font-size: 0.95em;
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 1px 0 #000, 0 0 12px rgba(255, 204, 0, 0.55);
+      box-shadow: 0 0 0 1px #000, 0 0 12px rgba(255, 204, 0, 0.22);
     }
 
     @keyframes tile-enter {
@@ -3900,6 +3941,10 @@
               <p class="subtitle" id="subtitle" hidden></p>
 
               <div class="word-tiles" id="wordTiles" hidden aria-label="Word progress"></div>
+              <div class="known-letter-bank" id="knownLetterBank" hidden aria-label="Letters everyone knows">
+                <span class="known-letter-bank-label">Known letters</span>
+                <div class="known-letter-bank-letters" id="knownLetterBankLetters"></div>
+              </div>
 
               <div class="word-clue" id="wordClue" hidden aria-live="polite">
                 <span class="word-clue-label" id="wordClueLabel"></span>
@@ -4026,6 +4071,8 @@
       viewport: document.querySelector(".viewport"),
       wordClue: document.getElementById("wordClue"),
       wordTiles: document.getElementById("wordTiles"),
+      knownLetterBank: document.getElementById("knownLetterBank"),
+      knownLetterBankLetters: document.getElementById("knownLetterBankLetters"),
       wordClueLabel: document.getElementById("wordClueLabel"),
       wordClueValue: document.getElementById("wordClueValue"),
       statRound: document.getElementById("statRound"),
@@ -4057,6 +4104,7 @@
     let lastPlayerBoardSignature = "";
     let lastPlayerBoardStructureKey = "";
     let lastWordTilesSignature = "";
+    let lastKnownLettersSignature = "";
     let lastWordClueSignature = "";
     let knownLobbyPlayerIds = null;
     let apiConnected = false;
@@ -4278,6 +4326,7 @@
         hostNote: "",
         publicFirstLetter: phase === "idle" ? "" : "L.N.O",
         publicLetterMask: phase === "idle" ? "" : "L.N.O",
+        publicKnownLetters: phase === "idle" || phase === "ended" ? "" : "GT",
         guessWindowSeconds: 100,
         resultsWindowSeconds: 20,
         guessWindowOpenedAtIso: phase === "guessing"
@@ -5124,6 +5173,45 @@
       return false;
     }
 
+    function hideKnownLetterBank() {
+      if (!els.knownLetterBank) return;
+      if (lastKnownLettersSignature !== "hidden") {
+        lastKnownLettersSignature = "hidden";
+        els.knownLetterBank.hidden = true;
+        if (els.knownLetterBankLetters) els.knownLetterBankLetters.replaceChildren();
+      }
+    }
+
+    function renderKnownLetterBank(state) {
+      if (!els.knownLetterBank || !els.knownLetterBankLetters) return;
+      const phase = state.phase || "idle";
+      if (phase === "ended" && state.answerRevealed) {
+        hideKnownLetterBank();
+        return;
+      }
+      const letters = String(state.publicKnownLetters || "")
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "");
+      const unique = [...new Set(letters.split(""))].filter(Boolean).sort().join("");
+      if (!unique) {
+        hideKnownLetterBank();
+        return;
+      }
+      const signature = `${Number(state.roundNumber || 0)}:${unique}`;
+      if (signature === lastKnownLettersSignature && !els.knownLetterBank.hidden) {
+        return;
+      }
+      lastKnownLettersSignature = signature;
+      els.knownLetterBank.hidden = false;
+      els.knownLetterBankLetters.replaceChildren();
+      for (const letter of unique) {
+        const chip = document.createElement("span");
+        chip.className = "known-letter-chip";
+        chip.textContent = letter;
+        els.knownLetterBankLetters.appendChild(chip);
+      }
+    }
+
     function renderWordTiles(state) {
       const phase = state.phase || "idle";
 
@@ -5133,6 +5221,7 @@
           els.wordTiles.hidden = true;
           els.wordTiles.replaceChildren();
         }
+        hideKnownLetterBank();
         return;
       }
 
@@ -5144,6 +5233,7 @@
             els.wordTiles.hidden = true;
             els.wordTiles.replaceChildren();
           }
+          hideKnownLetterBank();
           return;
         }
 
@@ -5151,6 +5241,7 @@
         els.wordTiles.hidden = false;
         els.wordTiles.dataset.livePhase = "ended";
         els.wordTiles.setAttribute("aria-label", `The word was ${word}`);
+        hideKnownLetterBank();
         if (tilesSignature === lastWordTilesSignature && els.wordTiles.childElementCount === 5) {
           return;
         }
@@ -5186,6 +5277,7 @@
             : `Round ${roundNum || "?"}, ${balls} ball${balls === 1 ? "" : "s"} remaining, ${revealedCount} of 5 letters revealed`,
         );
         els.wordTiles.dataset.livePhase = ariaPhase;
+        renderKnownLetterBank(state);
 
         if (tilesSignature === lastWordTilesSignature && els.wordTiles.childElementCount === 5) {
           return;
@@ -5199,8 +5291,7 @@
           tile.style.setProperty("--tile-index", String(index));
           const ch = mask.charAt(index);
           if (ch && ch !== ".") {
-            tile.classList.add("is-letter");
-            if (index > 0) tile.classList.add("is-consensus");
+            tile.classList.add("is-letter", "is-consensus");
             tile.textContent = ch;
           } else {
             tile.classList.add("is-hidden");
@@ -5216,6 +5307,7 @@
         els.wordTiles.hidden = true;
         els.wordTiles.replaceChildren();
       }
+      hideKnownLetterBank();
     }
 
     function shouldShowSealedGuessDots(state) {
@@ -6007,11 +6099,13 @@
         lastPlayerBoardSignature = "";
         lastPlayerBoardStructureKey = "";
         lastWordTilesSignature = "";
+        lastKnownLettersSignature = "";
         lastWordClueSignature = "";
       } else if (phaseChanged) {
         lastPlayerBoardSignature = "";
         lastPlayerBoardStructureKey = "";
         lastWordTilesSignature = "";
+        lastKnownLettersSignature = "";
         lastWordClueSignature = "";
       }
       const previousPhase = lastPhase;

@@ -178,6 +178,7 @@ alter table app_state add column if not exists leaderboard_visible boolean not n
 alter table app_state add column if not exists award_all_balls_seq integer not null default 0;
 alter table app_state add column if not exists scramble_word text not null default '';
 alter table app_state add column if not exists public_letter_mask text not null default '';
+alter table app_state add column if not exists public_known_letters text not null default '';
 
 alter table users add column if not exists profile_display_name text not null default '';
 alter table users add column if not exists email text not null default '';

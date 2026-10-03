@@ -1188,30 +1188,40 @@ function normalizePublicLetterMask(mask, word) {
 }
 
 /**
- * Progressive venue reveal: a letter appears in its tile only after every
- * still-active (unsolved) player has locked a legal guess with green (!) there,
- * and only after the all-submitted 10s grace has finished (results phase).
- * Once revealed for the current word, letters stick across guess windows.
+ * Progressive venue hints (after all-submitted grace / results):
+ * - mask: green lock in a tile when every cohort member has ! there
+ * - known letters: tray of letters every cohort member has as ! or ? somewhere
+ * Sticky for the current word across guess windows.
  */
-async function syncPublicLetterMask(state, client = pool) {
+async function syncPublicWordHints(state, client = pool) {
   const word = normalizeWordInput(state.current_word);
   if (!isFiveLetterWord(word)) {
-    if (String(state.public_letter_mask || "")) {
+    if (String(state.public_letter_mask || "") || String(state.public_known_letters || "")) {
       await client.query(
         `update app_state
          set public_letter_mask = '',
+             public_known_letters = '',
              updated_at = now()
          where event_code = $1`,
         [currentEventCode()],
       );
       state.public_letter_mask = "";
+      state.public_known_letters = "";
     }
-    return "";
+    return { mask: "", knownLetters: "" };
   }
 
   let mask = normalizePublicLetterMask(state.public_letter_mask, word);
+  let knownLetters = String(state.public_known_letters || "")
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "");
+  // Drop stale bank letters that aren't in the current word.
+  knownLetters = [...new Set(knownLetters.split(""))]
+    .filter((letter) => word.includes(letter))
+    .sort()
+    .join("");
+
   const phase = String(state.phase || "idle");
-  // Hold new consensus letters until the post-all-in grace ends (then results).
   const canExpand = phase === "results"
     || phase === "ended"
     || (phase === "guessing" && allSubmittedGraceExpired(state));
@@ -1220,8 +1230,6 @@ async function syncPublicLetterMask(state, client = pool) {
     const players = await listPlayers(state.session_id, client);
     const round = Number(state.round_number || 0);
     const awaiting = players.filter((player) => !player.solvedCurrentWord);
-    // After scoring, everyone may already be solved — still score the window's
-    // locked guesses so unanimous greens can land on the venue board.
     const cohort = awaiting.length
       ? awaiting
       : players.filter(
@@ -1229,45 +1237,80 @@ async function syncPublicLetterMask(state, client = pool) {
       );
 
     if (cohort.length) {
-      const patterns = [];
+      const scored = [];
       for (const player of cohort) {
         const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
         if (!submitted) {
-          patterns.push(null);
+          scored.push(null);
           continue;
         }
         const guess = normalizeWordInput(player.currentGuess);
         if (!(await isLegalWord(client, guess))) {
-          patterns.push(null);
+          scored.push(null);
           continue;
         }
         const pattern = getLingoResultPattern(word, guess);
-        patterns.push(pattern.length === 5 ? pattern : null);
+        if (pattern.length !== 5) {
+          scored.push(null);
+          continue;
+        }
+        scored.push({ guess, pattern });
       }
 
       const chars = mask.split("");
       for (let index = 1; index < 5; index += 1) {
         if (chars[index] === word.charAt(index)) continue;
-        const allGreen = patterns.every((pattern) => pattern && pattern.charAt(index) === "!");
+        const allGreen = scored.every(
+          (entry) => entry && entry.pattern.charAt(index) === "!",
+        );
         if (allGreen) {
           chars[index] = word.charAt(index);
         }
       }
       mask = chars.join("");
+
+      const knownSet = new Set(knownLetters.split("").filter(Boolean));
+      for (const letter of new Set(word.split(""))) {
+        if (knownSet.has(letter)) continue;
+        const everyoneKnows = scored.every((entry) => {
+          if (!entry) return false;
+          for (let index = 0; index < 5; index += 1) {
+            if (entry.guess.charAt(index) !== letter) continue;
+            const mark = entry.pattern.charAt(index);
+            if (mark === "!" || mark === "?") return true;
+          }
+          return false;
+        });
+        if (everyoneKnows) knownSet.add(letter);
+      }
+      knownLetters = [...knownSet].sort().join("");
     }
   }
 
-  if (mask !== String(state.public_letter_mask || "")) {
+  // Venue bank: known-in-word letters not fully placed in the mask yet.
+  const bankLetters = [...knownLetters].filter((letter) => {
+    const inWord = [...word].filter((ch) => ch === letter).length;
+    const inMask = [...mask].filter((ch) => ch === letter).length;
+    return inMask < inWord;
+  }).join("");
+
+  if (
+    mask !== String(state.public_letter_mask || "")
+    || knownLetters !== String(state.public_known_letters || "")
+  ) {
     await client.query(
       `update app_state
        set public_letter_mask = $1,
+           public_known_letters = $2,
            updated_at = now()
-       where event_code = $2`,
-      [mask, currentEventCode()],
+       where event_code = $3`,
+      [mask, knownLetters, currentEventCode()],
     );
     state.public_letter_mask = mask;
+    state.public_known_letters = knownLetters;
   }
-  return mask;
+
+  return { mask, knownLetters: bankLetters };
 }
 
 async function freezeGuessSubmissionFeedback(state, client = pool) {
@@ -2011,7 +2054,7 @@ async function applyWordQueuePatch(state, words, client = pool) {
 
 async function buildPublicStatePayload(state, displayName, playerToken, client = pool, options = {}) {
   const metrics = await getPublicMetrics(state.session_id, state.round_number, client);
-  const publicLetterMask = await syncPublicLetterMask(state, client);
+  const { mask: publicLetterMask, knownLetters: publicKnownLetters } = await syncPublicWordHints(state, client);
   const players = await getPublicDisplayPlayers(state, client);
   const viewer = await buildViewerContext(displayName, playerToken, state, client, options);
   const bingoRow = await getLatestBingoGameForSession(state.session_id, client);
@@ -2024,6 +2067,7 @@ async function buildPublicStatePayload(state, displayName, playerToken, client =
     ...publicState,
     publicLetterMask: publicLetterMask || publicState.publicFirstLetter || "",
     publicFirstLetter: publicLetterMask || publicState.publicFirstLetter || "",
+    publicKnownLetters,
     ...metrics,
     players,
     viewer,
@@ -2236,6 +2280,7 @@ async function updateState(patch, client = pool) {
       const maskResult = await client.query(
         `update app_state
          set public_letter_mask = $1,
+             public_known_letters = '',
              updated_at = now()
          where event_code = $2
          returning *`,
