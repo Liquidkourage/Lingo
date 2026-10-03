@@ -766,9 +766,18 @@
     .word-tile.is-letter,
     .word-tile.is-letter.is-consensus {
       color: var(--feedback-correct-text);
-      border-color: var(--feedback-correct-border);
+      border-color: #000;
       background: var(--feedback-correct);
-      text-shadow: 0 2px 0 #000, 0 0 22px var(--feedback-correct-glow);
+      text-shadow:
+        0 1px 0 #000,
+        0 -1px 0 #000,
+        1px 0 0 #000,
+        -1px 0 0 #000,
+        0 2px 0 #000,
+        0 0 18px var(--feedback-correct-glow);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 22px var(--feedback-correct-glow);
     }
 
     .word-tile.is-hidden {
@@ -1440,10 +1449,19 @@
     }
 
     .stage[data-phase="ended"] .word-tile.is-revealed {
-      border-color: var(--feedback-correct-border);
+      border-color: #000;
       background: var(--feedback-correct);
       color: var(--feedback-correct-text);
-      box-shadow: 0 0 18px var(--feedback-correct-glow);
+      text-shadow:
+        0 1px 0 #000,
+        0 -1px 0 #000,
+        1px 0 0 #000,
+        -1px 0 0 #000,
+        0 2px 0 #000,
+        0 0 18px var(--feedback-correct-glow);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 18px var(--feedback-correct-glow);
       animation: clue-reveal 0.55s cubic-bezier(0.22, 1.35, 0.36, 1) both;
       animation-delay: calc(var(--tile-index, 0) * 0.07s);
     }
