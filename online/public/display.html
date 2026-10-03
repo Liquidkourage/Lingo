@@ -771,7 +771,7 @@
     .word-tile.is-letter,
     .word-tile.is-letter.is-consensus {
       color: var(--feedback-correct-text);
-      border-color: var(--feedback-correct-border);
+      border: var(--contrast-stroke) solid #007a1a;
       background:
         linear-gradient(160deg, rgba(180, 255, 200, 0.28) 0%, transparent 46%),
         var(--feedback-correct);
@@ -790,7 +790,6 @@
         -0.045em -0.045em 0 #000,
         0 0 16px var(--feedback-correct-glow);
       box-shadow:
-        0 0 0 1px #000,
         0 3px 0 rgba(0, 0, 0, 0.55),
         0 0 22px var(--feedback-correct-glow),
         inset 2px 2px 0 rgba(255, 255, 255, 0.28),
@@ -1478,7 +1477,7 @@
     }
 
     .stage[data-phase="ended"] .word-tile.is-revealed {
-      border-color: var(--feedback-correct-border);
+      border: var(--contrast-stroke) solid #007a1a;
       background:
         linear-gradient(160deg, rgba(180, 255, 200, 0.28) 0%, transparent 46%),
         var(--feedback-correct);
@@ -1498,7 +1497,6 @@
         -0.045em -0.045em 0 #000,
         0 0 16px var(--feedback-correct-glow);
       box-shadow:
-        0 0 0 1px #000,
         0 3px 0 rgba(0, 0, 0, 0.55),
         0 0 18px var(--feedback-correct-glow),
         inset 2px 2px 0 rgba(255, 255, 255, 0.28),
