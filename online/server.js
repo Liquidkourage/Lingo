@@ -1220,10 +1220,17 @@ async function syncPublicLetterMask(state, client = pool) {
     const players = await listPlayers(state.session_id, client);
     const round = Number(state.round_number || 0);
     const awaiting = players.filter((player) => !player.solvedCurrentWord);
+    // After scoring, everyone may already be solved — still score the window's
+    // locked guesses so unanimous greens can land on the venue board.
+    const cohort = awaiting.length
+      ? awaiting
+      : players.filter(
+        (player) => Number(player.roundNumber) === round && !!player.currentGuess,
+      );
 
-    if (awaiting.length) {
+    if (cohort.length) {
       const patterns = [];
-      for (const player of awaiting) {
+      for (const player of cohort) {
         const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
         if (!submitted) {
           patterns.push(null);
