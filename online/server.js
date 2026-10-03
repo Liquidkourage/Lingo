@@ -1163,6 +1163,97 @@ async function allActivePlayersSubmitted(state, client = pool) {
   );
 }
 
+function seedPublicLetterMask(word) {
+  const normalized = normalizeWordInput(word);
+  if (!isFiveLetterWord(normalized)) return "";
+  return `${normalized.charAt(0).toUpperCase()}....`;
+}
+
+function normalizePublicLetterMask(mask, word) {
+  const normalized = normalizeWordInput(word);
+  if (!isFiveLetterWord(normalized)) return "";
+  const seed = seedPublicLetterMask(normalized);
+  const raw = String(mask || "").toUpperCase();
+  if (raw.length !== 5 || raw.charAt(0) !== seed.charAt(0)) {
+    return seed;
+  }
+  const chars = seed.split("");
+  for (let index = 1; index < 5; index += 1) {
+    const letter = raw.charAt(index);
+    if (letter === normalized.charAt(index)) {
+      chars[index] = letter;
+    }
+  }
+  return chars.join("");
+}
+
+/**
+ * Progressive venue reveal: a letter appears in its tile only after every
+ * still-active (unsolved) player has locked a legal guess with green (!) there.
+ * Once revealed for the current word, letters stick across guess windows.
+ */
+async function syncPublicLetterMask(state, client = pool) {
+  const word = normalizeWordInput(state.current_word);
+  if (!isFiveLetterWord(word)) {
+    if (String(state.public_letter_mask || "")) {
+      await client.query(
+        `update app_state
+         set public_letter_mask = '',
+             updated_at = now()
+         where event_code = $1`,
+        [currentEventCode()],
+      );
+      state.public_letter_mask = "";
+    }
+    return "";
+  }
+
+  let mask = normalizePublicLetterMask(state.public_letter_mask, word);
+  const players = await listPlayers(state.session_id, client);
+  const round = Number(state.round_number || 0);
+  const awaiting = players.filter((player) => !player.solvedCurrentWord);
+
+  if (awaiting.length) {
+    const patterns = [];
+    for (const player of awaiting) {
+      const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
+      if (!submitted) {
+        patterns.push(null);
+        continue;
+      }
+      const guess = normalizeWordInput(player.currentGuess);
+      if (!(await isLegalWord(client, guess))) {
+        patterns.push(null);
+        continue;
+      }
+      const pattern = getLingoResultPattern(word, guess);
+      patterns.push(pattern.length === 5 ? pattern : null);
+    }
+
+    const chars = mask.split("");
+    for (let index = 1; index < 5; index += 1) {
+      if (chars[index] === word.charAt(index)) continue;
+      const allGreen = patterns.every((pattern) => pattern && pattern.charAt(index) === "!");
+      if (allGreen) {
+        chars[index] = word.charAt(index);
+      }
+    }
+    mask = chars.join("");
+  }
+
+  if (mask !== String(state.public_letter_mask || "")) {
+    await client.query(
+      `update app_state
+       set public_letter_mask = $1,
+           updated_at = now()
+       where event_code = $2`,
+      [mask, currentEventCode()],
+    );
+    state.public_letter_mask = mask;
+  }
+  return mask;
+}
+
 async function freezeGuessSubmissionFeedback(state, client = pool) {
   // Lock rows so a concurrent submit cannot change guess under a stale pattern write.
   const submissions = await client.query(
@@ -1904,6 +1995,7 @@ async function applyWordQueuePatch(state, words, client = pool) {
 
 async function buildPublicStatePayload(state, displayName, playerToken, client = pool, options = {}) {
   const metrics = await getPublicMetrics(state.session_id, state.round_number, client);
+  const publicLetterMask = await syncPublicLetterMask(state, client);
   const players = await getPublicDisplayPlayers(state, client);
   const viewer = await buildViewerContext(displayName, playerToken, state, client, options);
   const bingoRow = await getLatestBingoGameForSession(state.session_id, client);
@@ -1911,8 +2003,11 @@ async function buildPublicStatePayload(state, displayName, playerToken, client =
   const correctGuessWinners = buildCorrectGuessWinners(players);
   const leaderboard = buildLeaderboardEntries(players);
   const unsubmittedPlayers = buildUnsubmittedPlayerNames(state, players);
+  const publicState = serializePublicState(state);
   return {
-    ...serializePublicState(state),
+    ...publicState,
+    publicLetterMask: publicLetterMask || publicState.publicFirstLetter || "",
+    publicFirstLetter: publicLetterMask || publicState.publicFirstLetter || "",
     ...metrics,
     players,
     viewer,
@@ -2116,7 +2211,25 @@ async function updateState(patch, client = pool) {
     params
   );
 
-  return result.rows[0];
+  const updated = result.rows[0];
+  if (Object.prototype.hasOwnProperty.call(patch, "current_word")) {
+    const previousWord = normalizeWordInput(state.current_word);
+    const nextWord = normalizeWordInput(updated.current_word);
+    if (previousWord !== nextWord) {
+      const mask = seedPublicLetterMask(nextWord);
+      const maskResult = await client.query(
+        `update app_state
+         set public_letter_mask = $1,
+             updated_at = now()
+         where event_code = $2
+         returning *`,
+        [mask, currentEventCode()],
+      );
+      return maskResult.rows[0];
+    }
+  }
+
+  return updated;
 }
 
 async function listPlayers(sessionId, client = pool) {

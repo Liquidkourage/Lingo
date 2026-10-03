@@ -770,6 +770,13 @@
       text-shadow: 0 2px 0 #000, 0 0 24px rgba(255, 204, 0, 1);
     }
 
+    .word-tile.is-letter.is-consensus {
+      color: var(--feedback-correct-text);
+      border-color: var(--feedback-correct-border);
+      background: var(--feedback-correct);
+      text-shadow: 0 2px 0 #000, 0 0 22px var(--feedback-correct-glow);
+    }
+
     .word-tile.is-hidden {
       font-size: 1.8em;
       font-weight: 900;
@@ -4269,7 +4276,8 @@
             : count - 1,
         championDisplayName: DEMO_CHAMPION,
         hostNote: "",
-        publicFirstLetter: phase === "idle" ? "" : "L....",
+        publicFirstLetter: phase === "idle" ? "" : "L.N.O",
+        publicLetterMask: phase === "idle" ? "" : "L.N.O",
         guessWindowSeconds: 100,
         resultsWindowSeconds: 20,
         guessWindowOpenedAtIso: phase === "guessing"
@@ -5159,18 +5167,23 @@
         return;
       }
 
-      const letter = (state.publicFirstLetter || "").charAt(0).toUpperCase();
+      const mask = String(state.publicLetterMask || state.publicFirstLetter || "")
+        .toUpperCase()
+        .padEnd(5, ".")
+        .slice(0, 5);
+      const letter = mask.charAt(0);
       const roundNum = Number(state.roundNumber || 0);
       const balls = displayPotBallsPublic(state);
       if (letter && letter !== ".") {
-        const tilesSignature = `${roundNum}:${letter}`;
+        const tilesSignature = `${roundNum}:${mask}`;
         els.wordTiles.hidden = false;
         const ariaPhase = phase === "results" ? "results" : "guessing";
+        const revealedCount = [...mask].filter((ch) => ch && ch !== ".").length;
         els.wordTiles.setAttribute(
           "aria-label",
           phase === "results"
-            ? `Round ${roundNum || "?"}, results for word starting with ${letter}`
-            : `Round ${roundNum || "?"}, ${balls} ball${balls === 1 ? "" : "s"} remaining, five-letter word starting with ${letter}`,
+            ? `Round ${roundNum || "?"}, results, ${revealedCount} of 5 letters revealed`
+            : `Round ${roundNum || "?"}, ${balls} ball${balls === 1 ? "" : "s"} remaining, ${revealedCount} of 5 letters revealed`,
         );
         els.wordTiles.dataset.livePhase = ariaPhase;
 
@@ -5184,9 +5197,11 @@
           const tile = document.createElement("div");
           tile.className = "word-tile";
           tile.style.setProperty("--tile-index", String(index));
-          if (index === 0) {
+          const ch = mask.charAt(index);
+          if (ch && ch !== ".") {
             tile.classList.add("is-letter");
-            tile.textContent = letter;
+            if (index > 0) tile.classList.add("is-consensus");
+            tile.textContent = ch;
           } else {
             tile.classList.add("is-hidden");
             tile.textContent = "·";
