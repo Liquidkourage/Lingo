@@ -1189,7 +1189,8 @@ function normalizePublicLetterMask(mask, word) {
 
 /**
  * Progressive venue reveal: a letter appears in its tile only after every
- * still-active (unsolved) player has locked a legal guess with green (!) there.
+ * still-active (unsolved) player has locked a legal guess with green (!) there,
+ * and only after the all-submitted 10s grace has finished (results phase).
  * Once revealed for the current word, letters stick across guess windows.
  */
 async function syncPublicLetterMask(state, client = pool) {
@@ -1209,36 +1210,44 @@ async function syncPublicLetterMask(state, client = pool) {
   }
 
   let mask = normalizePublicLetterMask(state.public_letter_mask, word);
-  const players = await listPlayers(state.session_id, client);
-  const round = Number(state.round_number || 0);
-  const awaiting = players.filter((player) => !player.solvedCurrentWord);
+  const phase = String(state.phase || "idle");
+  // Hold new consensus letters until the post-all-in grace ends (then results).
+  const canExpand = phase === "results"
+    || phase === "ended"
+    || (phase === "guessing" && allSubmittedGraceExpired(state));
 
-  if (awaiting.length) {
-    const patterns = [];
-    for (const player of awaiting) {
-      const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
-      if (!submitted) {
-        patterns.push(null);
-        continue;
-      }
-      const guess = normalizeWordInput(player.currentGuess);
-      if (!(await isLegalWord(client, guess))) {
-        patterns.push(null);
-        continue;
-      }
-      const pattern = getLingoResultPattern(word, guess);
-      patterns.push(pattern.length === 5 ? pattern : null);
-    }
+  if (canExpand) {
+    const players = await listPlayers(state.session_id, client);
+    const round = Number(state.round_number || 0);
+    const awaiting = players.filter((player) => !player.solvedCurrentWord);
 
-    const chars = mask.split("");
-    for (let index = 1; index < 5; index += 1) {
-      if (chars[index] === word.charAt(index)) continue;
-      const allGreen = patterns.every((pattern) => pattern && pattern.charAt(index) === "!");
-      if (allGreen) {
-        chars[index] = word.charAt(index);
+    if (awaiting.length) {
+      const patterns = [];
+      for (const player of awaiting) {
+        const submitted = Number(player.roundNumber) === round && !!player.currentGuess;
+        if (!submitted) {
+          patterns.push(null);
+          continue;
+        }
+        const guess = normalizeWordInput(player.currentGuess);
+        if (!(await isLegalWord(client, guess))) {
+          patterns.push(null);
+          continue;
+        }
+        const pattern = getLingoResultPattern(word, guess);
+        patterns.push(pattern.length === 5 ? pattern : null);
       }
+
+      const chars = mask.split("");
+      for (let index = 1; index < 5; index += 1) {
+        if (chars[index] === word.charAt(index)) continue;
+        const allGreen = patterns.every((pattern) => pattern && pattern.charAt(index) === "!");
+        if (allGreen) {
+          chars[index] = word.charAt(index);
+        }
+      }
+      mask = chars.join("");
     }
-    mask = chars.join("");
   }
 
   if (mask !== String(state.public_letter_mask || "")) {
