@@ -766,18 +766,23 @@
     .word-tile.is-letter,
     .word-tile.is-letter.is-consensus {
       color: var(--feedback-correct-text);
-      border-color: #000;
+      border-color: var(--feedback-correct-border);
       background: var(--feedback-correct);
+      /* Meme-style white fill with thick black outline */
+      -webkit-text-stroke: 0.045em #000;
+      paint-order: stroke fill;
       text-shadow:
-        0 1px 0 #000,
-        0 -1px 0 #000,
-        1px 0 0 #000,
-        -1px 0 0 #000,
-        0 2px 0 #000,
-        0 0 18px var(--feedback-correct-glow);
-      box-shadow:
-        0 0 0 1px #000,
-        0 0 22px var(--feedback-correct-glow);
+        0 0 0.02em #000,
+        0.06em 0 0 #000,
+        -0.06em 0 0 #000,
+        0 0.06em 0 #000,
+        0 -0.06em 0 #000,
+        0.045em 0.045em 0 #000,
+        -0.045em 0.045em 0 #000,
+        0.045em -0.045em 0 #000,
+        -0.045em -0.045em 0 #000,
+        0 0 16px var(--feedback-correct-glow);
+      box-shadow: 0 0 22px var(--feedback-correct-glow);
     }
 
     .word-tile.is-hidden {
@@ -1412,6 +1417,11 @@
       line-height: 1;
     }
 
+    .stage[data-phase="guessing"] .word-tile.is-letter,
+    .stage[data-phase="results"] .word-tile.is-letter {
+      font-size: calc(var(--live-tile-font) * 1.12);
+    }
+
     .stage[data-phase="guessing"] .word-tile.is-hidden,
     .stage[data-phase="results"] .word-tile.is-hidden {
       font-weight: 900;
@@ -1449,19 +1459,24 @@
     }
 
     .stage[data-phase="ended"] .word-tile.is-revealed {
-      border-color: #000;
+      border-color: var(--feedback-correct-border);
       background: var(--feedback-correct);
       color: var(--feedback-correct-text);
+      font-size: calc(var(--live-tile-font) * 1.12);
+      -webkit-text-stroke: 0.045em #000;
+      paint-order: stroke fill;
       text-shadow:
-        0 1px 0 #000,
-        0 -1px 0 #000,
-        1px 0 0 #000,
-        -1px 0 0 #000,
-        0 2px 0 #000,
-        0 0 18px var(--feedback-correct-glow);
-      box-shadow:
-        0 0 0 1px #000,
-        0 0 18px var(--feedback-correct-glow);
+        0 0 0.02em #000,
+        0.06em 0 0 #000,
+        -0.06em 0 0 #000,
+        0 0.06em 0 #000,
+        0 -0.06em 0 #000,
+        0.045em 0.045em 0 #000,
+        -0.045em 0.045em 0 #000,
+        0.045em -0.045em 0 #000,
+        -0.045em -0.045em 0 #000,
+        0 0 16px var(--feedback-correct-glow);
+      box-shadow: 0 0 18px var(--feedback-correct-glow);
       animation: clue-reveal 0.55s cubic-bezier(0.22, 1.35, 0.36, 1) both;
       animation-delay: calc(var(--tile-index, 0) * 0.07s);
     }
@@ -4132,7 +4147,8 @@
     let displayShellReady = false;
     let pendingDisplayState = null;
     let lastLiveLayoutApplyKey = "";
-    /** Pot ball count snapshotted during guessing; refreshed when results begin (after scoring). */
+    /** Pot ball count snapshotted during guessing; held through results/ended so the
+     *  room still sees the stake that was on the line for that guess window. */
     let displayBallSnapshot = null;
 
     const LOBBY_PAGE_COLS = 4;
@@ -5493,9 +5509,11 @@
     function syncDisplayBallSnapshot(state, previousPhase) {
       const phase = state?.phase || "idle";
       if (phase === "guessing") {
+        // Next guess timer / live guessing — show the current pot.
         captureDisplayBallSnapshot(state);
       } else if (phase === "results" || phase === "ended") {
-        if (previousPhase === "guessing") {
+        // Keep the last guessing pot (do not adopt the post-scoring value yet).
+        if (!displayBallSnapshot) {
           captureDisplayBallSnapshot(state);
         }
       } else if (phase === "idle") {
