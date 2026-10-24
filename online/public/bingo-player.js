@@ -378,6 +378,30 @@
         : "Watch your card — marks appear about a second after each call.";
     }
 
+    function hasManualBingoLine(calledNumbers) {
+      if (!grid.length) return false;
+      const called = new Set(Array.isArray(calledNumbers) ? calledNumbers : []);
+      const marked = Array.from({ length: 5 }, () => Array(5).fill(false));
+      for (let row = 0; row < 5; row += 1) {
+        for (let column = 0; column < 5; column += 1) {
+          if (row === 2 && column === 2) {
+            marked[row][column] = true;
+            continue;
+          }
+          const value = grid[row][column];
+          marked[row][column] = manualMarks.has(value) && called.has(value);
+        }
+      }
+      const filled = (cells) => cells.every(Boolean);
+      for (let index = 0; index < 5; index += 1) {
+        if (filled(marked[index])) return true;
+        if (filled(marked.map((row) => row[index]))) return true;
+      }
+      if (filled(marked.map((row, index) => row[index]))) return true;
+      if (filled(marked.map((row, index) => row[4 - index]))) return true;
+      return false;
+    }
+
     function updateUi() {
       if (!bingoState) return;
       withPreservedScroll(() => {
@@ -419,6 +443,8 @@
           budgetRemaining,
         } = playerState;
         const claimReady = autoClaimIsReady(canClaim);
+        const manualLine = !isManualMode() || hasManualBingoLine(bingoState.calledNumbers);
+        const showClaim = canClaim && manualLine && claimReady;
 
         if (setBallsEarned) {
           setBallsEarned(ballsEarned);
@@ -445,13 +471,15 @@
           if (els.bingoBtn) els.bingoBtn.disabled = true;
         } else {
           if (els.budgetLine) {
-            if (canClaim && claimReady) {
+            if (showClaim) {
               els.budgetLine.textContent = callsMade > ballsEarned
                 ? "You had bingo in time — tap BINGO! (A late tap is fine.)"
                 : "You have bingo within your ball budget — tap BINGO!";
+            } else if (isManualMode() && canClaim && !manualLine) {
+              els.budgetLine.textContent = "Tap the called numbers on your card, then tap BINGO!";
             } else if (canClaim && !claimReady) {
               els.budgetLine.textContent = "Line coming in — get ready to tap BINGO!";
-            } else if (hasLine && !earnedBingoInBudget) {
+            } else if (hasLine && !earnedBingoInBudget && manualLine) {
               els.budgetLine.textContent = `Your line completed after call ${ballsEarned} — too late to win.`;
             } else if (callsMade >= ballsEarned && !earnedBingoInBudget) {
               els.budgetLine.textContent = `No bingo by call ${ballsEarned} — you're out of the running.`;
@@ -461,7 +489,7 @@
               els.budgetLine.textContent = `Need a line before call ${ballsEarned + 1}. ${budgetRemaining} call${budgetRemaining === 1 ? "" : "s"} left in your budget.`;
             }
           }
-          if (canClaim && claimReady) {
+          if (showClaim) {
             const late = callsMade > ballsEarned;
             setStatus(
               late
@@ -470,10 +498,13 @@
               "success",
             );
             if (els.bingoBtn) els.bingoBtn.disabled = false;
+          } else if (isManualMode() && canClaim && !manualLine) {
+            setStatus("Tap called numbers on your card to mark them.", "");
+            if (els.bingoBtn) els.bingoBtn.disabled = true;
           } else if (canClaim && !claimReady) {
             setStatus("Get ready…", "");
             if (els.bingoBtn) els.bingoBtn.disabled = true;
-          } else if (hasLine && !earnedBingoInBudget) {
+          } else if (hasLine && !earnedBingoInBudget && manualLine) {
             setStatus(`Your line came after call ${ballsEarned} — too late to win.`, "error");
             if (els.bingoBtn) els.bingoBtn.disabled = true;
           } else if (callsMade >= ballsEarned && !earnedBingoInBudget) {
