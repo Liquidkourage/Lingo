@@ -32,6 +32,7 @@ const {
   evaluateBingoClaim,
   bingoAchievedWithinBudget,
 } = require("./bingo-logic");
+const playerAccounts = require("./player-accounts");
 require("dotenv").config();
 
 const QRCode = require("qrcode");
@@ -384,12 +385,59 @@ async function getUserByAuthToken(authToken, client = pool) {
   const token = normalizePlayerToken(authToken);
   if (!token) return null;
   const result = await client.query(
-    `select id, username, normalized_username, auth_token, created_at, updated_at
+    `select *
      from users
      where auth_token = $1`,
     [token],
   );
   return result.rows[0] || null;
+}
+
+async function findUserByLogin(identifier, client = pool) {
+  const raw = String(identifier || "").trim();
+  if (!raw) return null;
+  if (raw.includes("@")) {
+    const email = playerAccounts.normalizeEmail(raw);
+    if (!playerAccounts.isValidEmail(email)) return null;
+    const result = await client.query(
+      `select * from users where lower(email) = $1`,
+      [email],
+    );
+    return result.rows[0] || null;
+  }
+  if (raw.length < MIN_USERNAME_LENGTH || raw.length > MAX_USERNAME_LENGTH) return null;
+  if (!USERNAME_PATTERN.test(raw)) return null;
+  const result = await client.query(
+    `select * from users where normalized_username = $1`,
+    [normalizedUsernameKey(raw)],
+  );
+  return result.rows[0] || null;
+}
+
+async function allocateUsernameForEmail(email, client) {
+  const local = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "");
+  let base = local.slice(0, 16);
+  if (base.length < MIN_USERNAME_LENGTH) {
+    base = `p${base}`.padEnd(MIN_USERNAME_LENGTH, "x").slice(0, MAX_USERNAME_LENGTH);
+  }
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const candidate = attempt === 0
+      ? base
+      : `${base.slice(0, 12)}${crypto.randomBytes(2).toString("hex")}`.slice(0, MAX_USERNAME_LENGTH);
+    const existing = await client.query(
+      `select id from users where normalized_username = $1`,
+      [candidate.toLowerCase()],
+    );
+    if (!existing.rows.length) {
+      return candidate;
+    }
+  }
+  throw new Error("Could not create that account. Try again.");
+}
+
+function displayNameFromEmail(email) {
+  const local = email.split("@")[0].replace(/[._+-]+/g, " ").trim();
+  return local.slice(0, PROFILE_DISPLAY_NAME_MAX_LENGTH) || "Player";
 }
 
 async function getPlayerByUserId(sessionId, userId, client = pool) {
@@ -424,30 +472,105 @@ async function createUserAccount(username, password, client = pool) {
   return result.rows[0];
 }
 
-async function loginUserAccount(username, password, client = pool) {
-  const normalizedKey = normalizedUsernameKey(validateUsername(username));
+async function createEmailAccount({ email, password, displayName }, client = pool) {
+  const normalizedEmail = playerAccounts.normalizeEmail(email);
+  if (!playerAccounts.isValidEmail(normalizedEmail)) {
+    throw new Error("Enter a valid email address.");
+  }
   validatePassword(password);
-  const result = await client.query(
-    `select * from users where normalized_username = $1`,
-    [normalizedKey],
+  const profileName = displayName
+    ? validateProfileDisplayName(displayName)
+    : validateProfileDisplayName(displayNameFromEmail(normalizedEmail));
+  const taken = await client.query(
+    `select id from users where lower(email) = $1 and email <> ''`,
+    [normalizedEmail],
   );
-  const user = result.rows[0];
+  if (taken.rows.length) {
+    throw new Error("An account with this email already exists.");
+  }
+  const username = await allocateUsernameForEmail(normalizedEmail, client);
+  const authToken = newAuthToken();
+  const result = await client.query(
+    `insert into users (
+       username, normalized_username, password_hash, auth_token,
+       profile_display_name, email, updated_at
+     )
+     values ($1, $2, $3, $4, $5, $6, now())
+     returning *`,
+    [
+      username,
+      username.toLowerCase(),
+      hashPassword(password),
+      authToken,
+      profileName,
+      normalizedEmail,
+    ],
+  );
+  return result.rows[0];
+}
+
+async function loginUserAccount(identifier, password, client = pool) {
+  const raw = String(identifier || "").trim();
+  if (!raw) {
+    throw new Error("Email and password are required.");
+  }
+  validatePassword(password);
+  const user = await findUserByLogin(raw, client);
   if (!user || !verifyPassword(password, user.password_hash)) {
-    throw new Error("Invalid username or password.");
+    throw new Error("Invalid email or password.");
   }
   const authToken = newAuthToken();
-  await client.query(
+  const result = await client.query(
     `update users
      set auth_token = $1,
          updated_at = now()
-     where id = $2`,
+     where id = $2
+     returning *`,
     [authToken, user.id],
   );
+  return result.rows[0];
+}
+
+async function publicAccountResponse(user, client = pool) {
+  const career = await playerAccounts.loadCareer(client, user.id);
   return {
-    id: user.id,
-    username: user.username,
-    auth_token: authToken,
+    user: serializeUserPublic(user),
+    ...career,
   };
+}
+
+async function assignSeatClientId(sessionId, playerId, clientId, client) {
+  const cid = playerAccounts.normalizeClientId(clientId);
+  if (!cid) return;
+  await client.query(
+    `update players
+     set client_id = null,
+         updated_at = now()
+     where session_id = $1
+       and client_id = $2
+       and id <> $3`,
+    [sessionId, cid, playerId],
+  );
+  await client.query(
+    `update players
+     set client_id = $1,
+         updated_at = now()
+     where id = $2`,
+    [cid, playerId],
+  );
+}
+
+async function getPlayerByClientId(sessionId, clientId, client = pool) {
+  const cid = playerAccounts.normalizeClientId(clientId);
+  if (!cid) return null;
+  const result = await client.query(
+    `select *
+     from players
+     where session_id = $1
+       and client_id = $2`,
+    [sessionId, cid],
+  );
+  return result.rows[0] || null;
 }
 
 async function logoutUserAccount(authToken, client = pool) {
@@ -460,14 +583,56 @@ async function logoutUserAccount(authToken, client = pool) {
   );
 }
 
-async function upsertLobbyPlayerForUser(sessionId, user, client = pool) {
+async function upsertLobbyPlayerForUser(sessionId, user, client = pool, clientId = null) {
   const userId = Number(user.id);
   const displayName = userProfileDisplayName(user);
   const normalized = normalizePlayerKey(displayName);
+  const cid = playerAccounts.normalizeClientId(clientId);
 
   const existingByUser = await getPlayerByUserId(sessionId, userId, client);
   if (existingByUser) {
+    if (cid) {
+      await client.query(
+        `delete from players
+         where session_id = $1
+           and client_id = $2
+           and user_id is null
+           and id <> $3`,
+        [sessionId, cid, existingByUser.id],
+      );
+    }
+    await assignSeatClientId(sessionId, existingByUser.id, cid, client);
+    await playerAccounts.recordShowJoin(client, userId, sessionId);
     return ensurePlayerToken(existingByUser, client);
+  }
+
+  if (cid) {
+    const guestSeat = await getPlayerByClientId(sessionId, cid, client);
+    if (guestSeat && !guestSeat.user_id) {
+      const conflict = await client.query(
+        `select id
+         from players
+         where session_id = $1
+           and normalized_display_name = $2
+           and id <> $3`,
+        [sessionId, normalized, guestSeat.id],
+      );
+      if (conflict.rows.length) {
+        throw new Error("That name is already taken in this session.");
+      }
+      const updated = await client.query(
+        `update players
+         set display_name = $1,
+             normalized_display_name = $2,
+             user_id = $3,
+             updated_at = now()
+         where id = $4
+         returning *`,
+        [displayName, normalized, userId, guestSeat.id],
+      );
+      await playerAccounts.recordShowJoin(client, userId, sessionId);
+      return ensurePlayerToken(updated.rows[0], client);
+    }
   }
 
   const conflict = await client.query(
@@ -489,12 +654,14 @@ async function upsertLobbyPlayerForUser(sessionId, user, client = pool) {
        normalized_display_name,
        player_token,
        user_id,
+       client_id,
        updated_at
      )
-     values ($1, $2, $3, $4, $5, now())
+     values ($1, $2, $3, $4, $5, $6, now())
      returning *`,
-    [sessionId, displayName, normalized, newPlayerToken(), userId],
+    [sessionId, displayName, normalized, newPlayerToken(), userId, cid],
   );
+  await playerAccounts.recordShowJoin(client, userId, sessionId);
   return ensurePlayerToken(result.rows[0], client);
 }
 
@@ -1056,34 +1223,51 @@ async function ensurePlayerToken(row, client = pool) {
   return result.rows[0];
 }
 
-async function upsertLobbyPlayer(sessionId, displayName, playerToken, client = pool) {
+async function claimGuestSeat(sessionId, displayName, existing, client, clientId) {
+  const normalized = normalizePlayerKey(displayName);
+  if (existing.user_id) {
+    throw new Error("This phone is already in the game on an account. Log in to rejoin.");
+  }
+  const conflict = await client.query(
+    `select id
+     from players
+     where session_id = $1
+       and normalized_display_name = $2
+       and id <> $3`,
+    [sessionId, normalized, existing.id],
+  );
+  if (conflict.rows.length) {
+    throw new Error("That name is already taken.");
+  }
+  const updated = await client.query(
+    `update players
+     set display_name = $1,
+         normalized_display_name = $2,
+         updated_at = now()
+     where id = $3
+     returning *`,
+    [displayName, normalized, existing.id],
+  );
+  await assignSeatClientId(sessionId, updated.rows[0].id, clientId, client);
+  return ensurePlayerToken(updated.rows[0], client);
+}
+
+async function upsertLobbyPlayer(sessionId, displayName, playerToken, client = pool, clientId = null) {
   const normalized = normalizePlayerKey(displayName);
   const token = normalizePlayerToken(playerToken);
+  const cid = playerAccounts.normalizeClientId(clientId);
 
   if (token) {
     const existing = await getPlayerByToken(sessionId, token, client);
     if (existing) {
-      const conflict = await client.query(
-        `select id
-         from players
-         where session_id = $1
-           and normalized_display_name = $2
-           and id <> $3`,
-        [sessionId, normalized, existing.id],
-      );
-      if (conflict.rows.length) {
-        throw new Error("That name is already taken.");
-      }
-      const updated = await client.query(
-        `update players
-         set display_name = $1,
-             normalized_display_name = $2,
-             updated_at = now()
-         where id = $3
-         returning *`,
-        [displayName, normalized, existing.id],
-      );
-      return ensurePlayerToken(updated.rows[0], client);
+      return claimGuestSeat(sessionId, displayName, existing, client, cid);
+    }
+  }
+
+  if (cid) {
+    const byClient = await getPlayerByClientId(sessionId, cid, client);
+    if (byClient) {
+      return claimGuestSeat(sessionId, displayName, byClient, client, cid);
     }
   }
 
@@ -1104,11 +1288,12 @@ async function upsertLobbyPlayer(sessionId, displayName, playerToken, client = p
        display_name,
        normalized_display_name,
        player_token,
+       client_id,
        updated_at
      )
-     values ($1, $2, $3, $4, now())
+     values ($1, $2, $3, $4, $5, now())
      returning *`,
-    [sessionId, displayName, normalized, newPlayerToken()],
+    [sessionId, displayName, normalized, newPlayerToken(), cid],
   );
   const row = result.rows[0];
   return ensurePlayerToken(row, client);
@@ -1838,8 +2023,8 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
       found: false,
       sessionValid: false,
       accountSignedIn: Boolean(accountUser),
-      accountUsername: accountUser?.username || "",
-      displayName: accountUser?.username || normalized,
+      accountUsername: accountUser ? userProfileDisplayName(accountUser) : "",
+      displayName: accountUser ? userProfileDisplayName(accountUser) : normalized,
       balls: 0,
       lockedIn: false,
       resultPattern: "",
@@ -1890,7 +2075,7 @@ async function buildViewerContext(displayName, playerToken, state, client = pool
     found: true,
     sessionValid,
     accountSignedIn: Boolean(accountUser),
-    accountUsername: accountUser?.username || "",
+    accountUsername: accountUser ? userProfileDisplayName(accountUser) : "",
     displayName: player.displayName,
     balls: Number(player.balls || 0),
     lockedIn: phase === "guessing" && submitted && !player.solvedCurrentWord,
@@ -2415,6 +2600,7 @@ async function listPlayers(sessionId, client = pool) {
     submissionCount: Number(row.submission_count || 0),
     balls: Number(row.balls || 0),
     solvedCurrentWord: Boolean(row.solved_current_word),
+    userId: row.user_id ? Number(row.user_id) : null,
   }));
 }
 
@@ -2488,6 +2674,14 @@ async function applyRevealResultsScoring(state, client) {
        where id = $2`,
       [stakeAtReveal, player.id]
     );
+    await playerAccounts.recordSolve(client, {
+      userId: player.userId,
+      sessionId: state.session_id,
+      roundNumber: state.round_number,
+      displayName: player.displayName,
+      word: state.current_word,
+      balls: stakeAtReveal,
+    });
 
     if (!firstSolverId) {
       firstSolverId = player.id;
@@ -2747,7 +2941,7 @@ app.get("/api/public/me", async (req, res) => {
     }
     res.json({
       ok: true,
-      user: serializeUserPublic(user),
+      ...(await publicAccountResponse(user)),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
@@ -2757,25 +2951,71 @@ app.get("/api/public/me", async (req, res) => {
 app.post("/api/public/update-profile", async (req, res) => {
   const authToken = normalizePlayerToken(req.body.authToken);
   const profileDisplayName = validateProfileDisplayName(req.body.profileDisplayName);
-  const email = String(req.body.email || "").trim().toLowerCase();
+  const requestedEmail = playerAccounts.normalizeEmail(req.body.email);
+  const db = await pool.connect();
   try {
-    const user = await getUserByAuthToken(authToken);
+    await db.query("begin");
+    const user = await getUserByAuthToken(authToken, db);
     if (!user) {
       throw new Error("Sign in to update your profile.");
     }
-    const result = await pool.query(
+    let email = String(user.email || "").trim().toLowerCase();
+    if (!email && requestedEmail) {
+      if (!playerAccounts.isValidEmail(requestedEmail)) {
+        throw new Error("Enter a valid email address.");
+      }
+      const taken = await db.query(
+        `select id from users where lower(email) = $1 and id <> $2`,
+        [requestedEmail, user.id],
+      );
+      if (taken.rows.length) {
+        throw new Error("An account with this email already exists.");
+      }
+      email = requestedEmail;
+    }
+    const result = await db.query(
       `update users
        set profile_display_name = $1,
            email = $2,
-           email_verified = case when $2 = '' then false else email_verified end,
            updated_at = now()
        where id = $3
        returning *`,
       [profileDisplayName, email, user.id],
     );
-    res.json({ ok: true, user: serializeUserPublic(result.rows[0]) });
+    const updated = result.rows[0];
+    const state = await getState(db);
+    const seat = await getPlayerByUserId(state.session_id, updated.id, db);
+    if (seat && seat.normalized_display_name !== normalizePlayerKey(profileDisplayName)) {
+      const conflict = await db.query(
+        `select id
+         from players
+         where session_id = $1
+           and normalized_display_name = $2
+           and id <> $3`,
+        [state.session_id, normalizePlayerKey(profileDisplayName), seat.id],
+      );
+      if (conflict.rows.length) {
+        throw new Error("That name is already taken in this session.");
+      }
+      await db.query(
+        `update players
+         set display_name = $1,
+             normalized_display_name = $2,
+             updated_at = now()
+         where id = $3`,
+        [profileDisplayName, normalizePlayerKey(profileDisplayName), seat.id],
+      );
+    }
+    await db.query("commit");
+    res.json({
+      ok: true,
+      ...(await publicAccountResponse(updated)),
+    });
   } catch (error) {
+    await db.query("rollback");
     res.status(400).json({ ok: false, error: error.message });
+  } finally {
+    db.release();
   }
 });
 
@@ -2802,13 +3042,13 @@ app.post("/api/public/change-password", async (req, res) => {
 });
 
 app.post("/api/public/request-password-reset", async (req, res) => {
-  const username = validateUsername(req.body.username);
+  const identifier = String(req.body.email || req.body.username || "").trim();
+  if (!identifier) {
+    res.status(400).json({ ok: false, error: "Enter the email on the account." });
+    return;
+  }
   try {
-    const result = await pool.query(
-      `select id from users where normalized_username = $1`,
-      [normalizedUsernameKey(username)],
-    );
-    const user = result.rows[0];
+    const user = await findUserByLogin(identifier);
     if (!user) {
       res.json({ ok: true, message: "If that account exists, a reset token was created." });
       return;
@@ -2915,13 +3155,17 @@ app.post("/api/public/verify-email", async (req, res) => {
 });
 
 app.post("/api/public/register", async (req, res) => {
-  const username = normalizeUsername(req.body.username);
+  const email = String(req.body.email || "").trim();
+  const displayName = normalizeDisplayName(req.body.displayName);
   const password = String(req.body.password || "");
+  const username = normalizeUsername(req.body.username);
   try {
-    const user = await createUserAccount(username, password);
+    const user = email
+      ? await createEmailAccount({ email, password, displayName })
+      : await createUserAccount(username, password);
     res.json({
       ok: true,
-      user: serializeUserPublic(user),
+      ...(await publicAccountResponse(user)),
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message });
@@ -2929,14 +3173,13 @@ app.post("/api/public/register", async (req, res) => {
 });
 
 app.post("/api/public/login", async (req, res) => {
-  const username = normalizeUsername(req.body.username);
+  const identifier = String(req.body.email || req.body.username || "").trim();
   const password = String(req.body.password || "");
   try {
-    const user = await loginUserAccount(username, password);
-    const fullUser = await getUserByAuthToken(user.auth_token);
+    const user = await loginUserAccount(identifier, password);
     res.json({
       ok: true,
-      user: serializeUserPublic(fullUser),
+      ...(await publicAccountResponse(user)),
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message });
@@ -2957,6 +3200,7 @@ app.post("/api/public/join", async (req, res) => {
   const authToken = normalizePlayerToken(req.body.authToken);
   const displayName = normalizeDisplayName(req.body.displayName);
   const playerToken = normalizePlayerToken(req.body.playerToken);
+  const clientId = playerAccounts.normalizeClientId(req.body.clientId);
 
   const client = await pool.connect();
   try {
@@ -2968,7 +3212,7 @@ app.post("/api/public/join", async (req, res) => {
       if (!user) {
         throw new Error("Sign in to join the game.");
       }
-      player = await upsertLobbyPlayerForUser(state.session_id, user, client);
+      player = await upsertLobbyPlayerForUser(state.session_id, user, client, clientId);
     } else {
       if (!displayName) {
         throw new Error("Enter a display name or sign in to join the game.");
@@ -2976,7 +3220,7 @@ app.post("/api/public/join", async (req, res) => {
       if (displayName.length > 40) {
         throw new Error("User name must be 40 characters or fewer.");
       }
-      player = await upsertLobbyPlayer(state.session_id, displayName, playerToken, client);
+      player = await upsertLobbyPlayer(state.session_id, displayName, playerToken, client, clientId);
     }
     await client.query("commit");
 
@@ -3194,6 +3438,12 @@ app.post("/api/public/submit-guess", async (req, res) => {
             windowSeq,
           ],
         );
+        await playerAccounts.recordGuess(client, {
+          userId: player.user_id,
+          sessionId: state.session_id,
+          roundNumber: state.round_number,
+          displayName: player.display_name,
+        });
       }
     }
 
@@ -4351,6 +4601,18 @@ app.post("/api/bingo/claim", async (req, res) => {
        returning *`,
       [playerRow.id, playerRow.display_name, gameId],
     );
+    const roundRow = await client.query(
+      `select round_number
+       from app_state
+       where session_id = $1`,
+      [row.session_id],
+    );
+    await playerAccounts.recordBingoWin(client, {
+      userId: playerRow.user_id,
+      sessionId: row.session_id,
+      roundNumber: roundRow.rows[0]?.round_number,
+      displayName: playerRow.display_name,
+    });
 
     await client.query("commit");
     res.json({

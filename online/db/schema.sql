@@ -188,3 +188,54 @@ alter table users add column if not exists password_reset_token text;
 alter table users add column if not exists password_reset_expires_at timestamptz;
 create unique index if not exists idx_users_password_reset_token
   on users(password_reset_token) where password_reset_token is not null;
+
+create unique index if not exists idx_users_email_lower
+  on users (lower(email))
+  where email <> '';
+
+alter table players add column if not exists client_id text;
+create unique index if not exists idx_players_session_client
+  on players (session_id, client_id)
+  where client_id is not null and client_id <> '';
+
+create table if not exists player_stats (
+  user_id bigint primary key references users(id) on delete cascade,
+  shows_joined integer not null default 0,
+  guesses_made integer not null default 0,
+  words_solved integer not null default 0,
+  balls_earned integer not null default 0,
+  bingos_won integer not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists player_show_joins (
+  user_id bigint not null references users(id) on delete cascade,
+  session_id text not null,
+  joined_at timestamptz not null default now(),
+  primary key (user_id, session_id)
+);
+
+create table if not exists player_round_history (
+  id bigserial primary key,
+  user_id bigint not null references users(id) on delete cascade,
+  session_id text not null,
+  round_number integer not null,
+  display_name text not null default '',
+  word text not null default '',
+  guesses integer not null default 0,
+  solved boolean not null default false,
+  balls_earned integer not null default 0,
+  bingo_won boolean not null default false,
+  started_at timestamptz not null default now(),
+  unique (user_id, session_id, round_number)
+);
+
+create index if not exists idx_player_round_history_user
+  on player_round_history (user_id, started_at desc);
+
+create table if not exists player_achievements (
+  user_id bigint not null references users(id) on delete cascade,
+  achievement_id text not null,
+  unlocked_at timestamptz not null default now(),
+  primary key (user_id, achievement_id)
+);
