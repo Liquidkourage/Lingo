@@ -1285,7 +1285,8 @@
 
     .live-score-stack {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      align-items: stretch;
       border-radius: 0.2em;
       border: var(--contrast-stroke) solid var(--show-gold);
       background: var(--show-panel);
@@ -1301,21 +1302,21 @@
     }
 
     .score-slot {
-      flex: 0 0 auto;
+      flex: 1 1 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.08em;
+      gap: 0.06em;
       min-width: 0;
       min-height: 0;
-      padding: 0.28em 0.22em;
+      padding: 0.32em 0.12em 0.28em;
       text-align: center;
     }
 
     .score-slot--round {
-      border-right: none;
-      border-bottom: var(--contrast-stroke) solid rgba(255, 204, 0, 0.65);
+      border-right: var(--contrast-stroke) solid rgba(255, 204, 0, 0.65);
+      border-bottom: none;
       background: rgba(255, 204, 0, 0.08);
     }
 
@@ -1324,12 +1325,13 @@
     }
 
     .score-label {
-      font-size: 0.95em;
+      font-size: 0.68em;
       font-weight: 900;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--show-white);
       line-height: 1.1;
+      white-space: nowrap;
     }
 
     .score-value {
@@ -1339,13 +1341,13 @@
     }
 
     .score-value.round {
-      font-size: clamp(2.1em, 6.5cqh, 3.4em);
+      font-size: clamp(1.55em, 4.4cqh, 2.35em);
       color: var(--show-gold-hot);
       text-shadow: 0 2px 0 #000, 0 0 32px rgba(255, 204, 0, 1);
     }
 
     .score-value.balls {
-      font-size: clamp(2.1em, 6.5cqh, 3.4em);
+      font-size: clamp(1.55em, 4.4cqh, 2.35em);
       color: var(--show-cyan);
       text-shadow: 0 2px 0 #000, 0 0 32px rgba(0, 212, 255, 1);
     }
@@ -3767,9 +3769,10 @@
     }
 
     .live-join-qr-shell {
-      width: 3.35em;
-      height: 3.35em;
-      padding: 0.14em;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+      padding: 0.18em;
       border-radius: 0.15em;
       background: #fff;
       box-shadow: 0 0 0 1px #000;
