@@ -1187,11 +1187,40 @@ function normalizePublicLetterMask(mask, word) {
   return chars.join("");
 }
 
+function letterCounts(value) {
+  const counts = new Map();
+  for (const letter of String(value || "")) {
+    if (!/[A-Z]/.test(letter)) continue;
+    counts.set(letter, (counts.get(letter) || 0) + 1);
+  }
+  return counts;
+}
+
+function serializeLetterCounts(counts) {
+  return [...counts.keys()]
+    .sort()
+    .map((letter) => letter.repeat(counts.get(letter) || 0))
+    .join("");
+}
+
+function markedCopyCount(entry, letter) {
+  if (!entry) return 0;
+  let count = 0;
+  for (let index = 0; index < 5; index += 1) {
+    if (entry.guess.charAt(index) !== letter) continue;
+    const mark = entry.pattern.charAt(index);
+    if (mark === "!" || mark === "?") count += 1;
+  }
+  return count;
+}
+
 /**
  * Progressive venue hints (after all-submitted grace / results):
  * - mask: green lock in a tile when every cohort member has ! there
- * - known letters: tray of letters every cohort member has as ! or ? somewhere
- * Sticky for the current word across guess windows.
+ * - known letters: copies every cohort member has as ! or ?
+ * A green tile absorbs one confirmed copy. The tray keeps a letter only while
+ * the room has confirmed more copies than the mask is already showing.
+ * Counts stick for the current word across guess windows.
  */
 async function syncPublicWordHints(state, client = pool) {
   const word = normalizeWordInput(state.current_word);
@@ -1215,11 +1244,9 @@ async function syncPublicWordHints(state, client = pool) {
   let knownLetters = String(state.public_known_letters || "")
     .toUpperCase()
     .replace(/[^A-Z]/g, "");
-  // Drop stale bank letters that aren't in the current word.
-  knownLetters = [...new Set(knownLetters.split(""))]
-    .filter((letter) => word.includes(letter))
-    .sort()
-    .join("");
+  // Drop stale bank letters that aren't in the current word. Keep repeats:
+  // each repeat is one copy the room has confirmed.
+  knownLetters = [...knownLetters].filter((letter) => word.includes(letter)).join("");
 
   const phase = String(state.phase || "idle");
   const canExpand = phase === "results"
@@ -1269,29 +1296,31 @@ async function syncPublicWordHints(state, client = pool) {
       }
       mask = chars.join("");
 
-      const knownSet = new Set(knownLetters.split("").filter(Boolean));
+      const counts = letterCounts(knownLetters);
       for (const letter of new Set(word.split(""))) {
-        if (knownSet.has(letter)) continue;
-        const everyoneKnows = scored.every((entry) => {
-          if (!entry) return false;
-          for (let index = 0; index < 5; index += 1) {
-            if (entry.guess.charAt(index) !== letter) continue;
-            const mark = entry.pattern.charAt(index);
-            if (mark === "!" || mark === "?") return true;
+        let confirmed = Infinity;
+        for (const entry of scored) {
+          if (!entry) {
+            confirmed = 0;
+            break;
           }
-          return false;
-        });
-        if (everyoneKnows) knownSet.add(letter);
+          confirmed = Math.min(confirmed, markedCopyCount(entry, letter));
+        }
+        if (!Number.isFinite(confirmed)) confirmed = 0;
+        const next = Math.max(counts.get(letter) || 0, confirmed);
+        if (next > 0) counts.set(letter, next);
+        else counts.delete(letter);
       }
-      knownLetters = [...knownSet].sort().join("");
+      knownLetters = serializeLetterCounts(counts);
     }
   }
 
-  // Venue bank: known-in-word letters not fully placed in the mask yet.
-  const bankLetters = [...knownLetters].filter((letter) => {
-    const inWord = [...word].filter((ch) => ch === letter).length;
+  // A green tile absorbs one confirmed copy. The chip stays only for copies
+  // the whole room has marked beyond those tiles.
+  const counts = letterCounts(knownLetters);
+  const bankLetters = [...counts.keys()].sort().filter((letter) => {
     const inMask = [...mask].filter((ch) => ch === letter).length;
-    return inMask < inWord;
+    return (counts.get(letter) || 0) > inMask;
   }).join("");
 
   if (
