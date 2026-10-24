@@ -1214,30 +1214,56 @@ function markedCopyCount(entry, letter) {
   return count;
 }
 
+function guessLetterMarks(entry, letter) {
+  const result = { used: false, present: false, allAbsent: false };
+  if (!entry) return result;
+  let allAbsent = true;
+  for (let index = 0; index < 5; index += 1) {
+    if (entry.guess.charAt(index) !== letter) continue;
+    result.used = true;
+    const mark = entry.pattern.charAt(index);
+    if (mark === "!" || mark === "?") {
+      result.present = true;
+      allAbsent = false;
+    } else if (mark !== "/") {
+      allAbsent = false;
+    }
+  }
+  result.allAbsent = result.used && allAbsent;
+  return result;
+}
+
 /**
  * Progressive venue hints (after all-submitted grace / results):
  * - mask: green lock in a tile when every cohort member has ! there
  * - known letters: copies every cohort member has as ! or ?
  * A green tile absorbs one confirmed copy. The tray keeps a letter only while
  * the room has confirmed more copies than the mask is already showing.
- * Counts stick for the current word across guess windows.
+ * Absent letters are ones every cohort member has used with only gray marks.
+ * Counts and absent letters stick for the current word across guess windows.
  */
 async function syncPublicWordHints(state, client = pool) {
   const word = normalizeWordInput(state.current_word);
   if (!isFiveLetterWord(word)) {
-    if (String(state.public_letter_mask || "") || String(state.public_known_letters || "")) {
+    if (
+      String(state.public_letter_mask || "")
+      || String(state.public_known_letters || "")
+      || String(state.public_absent_letters || "")
+    ) {
       await client.query(
         `update app_state
          set public_letter_mask = '',
              public_known_letters = '',
+             public_absent_letters = '',
              updated_at = now()
          where event_code = $1`,
         [currentEventCode()],
       );
       state.public_letter_mask = "";
       state.public_known_letters = "";
+      state.public_absent_letters = "";
     }
-    return { mask: "", knownLetters: "" };
+    return { mask: "", knownLetters: "", absentLetters: "" };
   }
 
   let mask = normalizePublicLetterMask(state.public_letter_mask, word);
@@ -1247,6 +1273,9 @@ async function syncPublicWordHints(state, client = pool) {
   // Drop stale bank letters that aren't in the current word. Keep repeats:
   // each repeat is one copy the room has confirmed.
   knownLetters = [...knownLetters].filter((letter) => word.includes(letter)).join("");
+  let absentLetters = [...new Set(
+    String(state.public_absent_letters || "").toUpperCase().replace(/[^A-Z]/g, "").split(""),
+  )].filter((letter) => letter && !word.includes(letter)).sort().join("");
 
   const phase = String(state.phase || "idle");
   const canExpand = phase === "results"
@@ -1312,6 +1341,34 @@ async function syncPublicWordHints(state, client = pool) {
         else counts.delete(letter);
       }
       knownLetters = serializeLetterCounts(counts);
+
+      const absentSet = new Set(absentLetters.split("").filter(Boolean));
+      const candidates = new Set(absentSet);
+      for (const entry of scored) {
+        if (!entry) continue;
+        for (const letter of entry.guess) candidates.add(letter);
+      }
+      const blocked = scored.some((entry) => !entry);
+      for (const letter of candidates) {
+        if (word.includes(letter)) {
+          absentSet.delete(letter);
+          continue;
+        }
+        let provedPresent = false;
+        let allAbsent = scored.length > 0;
+        for (const entry of scored) {
+          if (!entry) {
+            allAbsent = false;
+            continue;
+          }
+          const marks = guessLetterMarks(entry, letter);
+          if (marks.present) provedPresent = true;
+          if (!marks.used || !marks.allAbsent) allAbsent = false;
+        }
+        if (provedPresent) absentSet.delete(letter);
+        else if (!blocked && allAbsent) absentSet.add(letter);
+      }
+      absentLetters = [...absentSet].sort().join("");
     }
   }
 
@@ -1326,20 +1383,23 @@ async function syncPublicWordHints(state, client = pool) {
   if (
     mask !== String(state.public_letter_mask || "")
     || knownLetters !== String(state.public_known_letters || "")
+    || absentLetters !== String(state.public_absent_letters || "")
   ) {
     await client.query(
       `update app_state
        set public_letter_mask = $1,
            public_known_letters = $2,
+           public_absent_letters = $3,
            updated_at = now()
-       where event_code = $3`,
-      [mask, knownLetters, currentEventCode()],
+       where event_code = $4`,
+      [mask, knownLetters, absentLetters, currentEventCode()],
     );
     state.public_letter_mask = mask;
     state.public_known_letters = knownLetters;
+    state.public_absent_letters = absentLetters;
   }
 
-  return { mask, knownLetters: bankLetters };
+  return { mask, knownLetters: bankLetters, absentLetters };
 }
 
 async function freezeGuessSubmissionFeedback(state, client = pool) {
@@ -2083,7 +2143,11 @@ async function applyWordQueuePatch(state, words, client = pool) {
 
 async function buildPublicStatePayload(state, displayName, playerToken, client = pool, options = {}) {
   const metrics = await getPublicMetrics(state.session_id, state.round_number, client);
-  const { mask: publicLetterMask, knownLetters: publicKnownLetters } = await syncPublicWordHints(state, client);
+  const {
+    mask: publicLetterMask,
+    knownLetters: publicKnownLetters,
+    absentLetters: publicAbsentLetters,
+  } = await syncPublicWordHints(state, client);
   const players = await getPublicDisplayPlayers(state, client);
   const viewer = await buildViewerContext(displayName, playerToken, state, client, options);
   const bingoRow = await getLatestBingoGameForSession(state.session_id, client);
@@ -2097,6 +2161,7 @@ async function buildPublicStatePayload(state, displayName, playerToken, client =
     publicLetterMask: publicLetterMask || publicState.publicFirstLetter || "",
     publicFirstLetter: publicLetterMask || publicState.publicFirstLetter || "",
     publicKnownLetters,
+    publicAbsentLetters,
     ...metrics,
     players,
     viewer,
@@ -2310,6 +2375,7 @@ async function updateState(patch, client = pool) {
         `update app_state
          set public_letter_mask = $1,
              public_known_letters = '',
+             public_absent_letters = '',
              updated_at = now()
          where event_code = $2
          returning *`,
