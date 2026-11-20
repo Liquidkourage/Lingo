@@ -84,6 +84,12 @@
       --live-glow-cyan: 0 0 24px rgba(0, 212, 255, 0.4);
       --live-glow-gold: 0 0 22px rgba(255, 204, 0, 0.42);
       --live-tile-edge: rgba(255, 214, 90, 0.95);
+      /* Upstage rake — faces lean away like the renders (not flat to camera) */
+      --live-rake-tile: rotateX(-12deg) translateZ(10px);
+      --live-rake-chip: rotateX(-10deg) translateZ(8px);
+      --live-rake-card: rotateX(-9deg) translateZ(8px);
+      --live-rake-chrome: rotateX(-6deg) translateZ(6px);
+      --live-rake-origin: 50% 100%;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -828,7 +834,37 @@
       line-height: 1;
       color: var(--show-white);
       text-shadow: 0 2px 0 #000, 0 0 14px rgba(0, 212, 255, 0.55);
-      transform-origin: center;
+      transform-origin: var(--live-rake-origin);
+    }
+
+    .stage[data-phase="guessing"] .word-tile,
+    .stage[data-phase="results"] .word-tile,
+    .stage[data-phase="ended"] .word-tile {
+      transform: var(--live-rake-tile);
+    }
+
+    .stage[data-phase="guessing"] .known-letter-chip,
+    .stage[data-phase="results"] .known-letter-chip,
+    .stage[data-phase="ended"] .known-letter-chip,
+    .stage[data-phase="guessing"] .absent-letter-chip,
+    .stage[data-phase="results"] .absent-letter-chip,
+    .stage[data-phase="ended"] .absent-letter-chip {
+      transform: var(--live-rake-chip);
+      transform-origin: var(--live-rake-origin);
+    }
+
+    .stage[data-phase="guessing"] .live-join-dock,
+    .stage[data-phase="results"] .live-join-dock,
+    .stage[data-phase="ended"] .live-join-dock,
+    .stage[data-phase="guessing"] .live-score-stack,
+    .stage[data-phase="results"] .live-score-stack,
+    .stage[data-phase="ended"] .live-score-stack,
+    .stage[data-phase="guessing"] .live-hud,
+    .stage[data-phase="results"] .live-hud,
+    .stage[data-phase="ended"] .live-hud {
+      transform: var(--live-rake-chrome) !important;
+      transform-origin: var(--live-rake-origin) !important;
+      transform-style: preserve-3d;
     }
 
     .word-tile.is-letter,
@@ -866,7 +902,7 @@
 
     @keyframes tile-letter-reveal {
       0% {
-        transform: scale(0.55);
+        transform: var(--live-rake-tile) scale(0.55);
         filter: brightness(2.2) saturate(1.4);
         box-shadow:
           0 0 0 1px #000,
@@ -874,11 +910,11 @@
           0 0 72px rgba(0, 255, 120, 1);
       }
       40% {
-        transform: scale(1.14);
+        transform: var(--live-rake-tile) scale(1.14);
         filter: brightness(1.45);
       }
       100% {
-        transform: scale(1);
+        transform: var(--live-rake-tile) scale(1);
         filter: brightness(1);
       }
     }
@@ -954,8 +990,8 @@
     }
 
     @keyframes chip-settle {
-      from { opacity: 0; transform: translateY(0.25em) scale(0.85); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: var(--live-rake-chip) translateY(0.25em) scale(0.85); }
+      to { opacity: 1; transform: var(--live-rake-chip) scale(1); }
     }
 
     .absent-letter-bank {
@@ -1017,8 +1053,8 @@
     }
 
     @keyframes tile-enter {
-      from { opacity: 0; transform: scale(0.55) translateY(0.35em); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
+      from { opacity: 0; transform: var(--live-rake-tile) scale(0.55) translateY(0.35em); }
+      to { opacity: 1; transform: var(--live-rake-tile) scale(1); }
     }
 
     .subtitle .word-hint-letter {
@@ -1076,6 +1112,9 @@
       align-items: start;
       gap: 0.55em;
       width: 100%;
+      perspective: 1600px;
+      perspective-origin: 50% 18%;
+      transform-style: preserve-3d;
       max-width: 100%;
       justify-self: center;
       padding: 0 1.5%;
@@ -1246,7 +1285,8 @@
       right: auto !important;
       left: auto !important;
       bottom: auto !important;
-      transform: none !important;
+      transform: var(--live-rake-chrome) !important;
+      transform-origin: var(--live-rake-origin) !important;
       width: 100%;
       min-width: 0;
       max-width: none;
@@ -1371,8 +1411,14 @@
     }
 
     @keyframes timer-critical-grid {
-      0%, 100% { box-shadow: 0 0 28px rgba(255, 60, 40, 0.55); transform: scale(1); }
-      50% { box-shadow: 0 0 52px rgba(255, 80, 60, 0.9); transform: scale(1.03); }
+      0%, 100% {
+        box-shadow: 0 0 28px rgba(255, 60, 40, 0.55);
+        transform: var(--live-rake-chrome) scale(1);
+      }
+      50% {
+        box-shadow: 0 0 52px rgba(255, 80, 60, 0.9);
+        transform: var(--live-rake-chrome) scale(1.03);
+      }
     }
 
     .stage[data-phase="idle"] .live-hud {
@@ -1776,6 +1822,9 @@
       flex-direction: column;
       align-items: stretch;
       justify-content: stretch;
+      perspective: 1400px;
+      perspective-origin: 50% 0%;
+      transform-style: preserve-3d;
     }
 
     .stage[data-phase="guessing"] .player-grid {
@@ -1860,6 +1909,9 @@
       border-radius: 0.32em;
       border-width: 2px;
       border-style: solid;
+      transform: var(--live-rake-card);
+      transform-origin: var(--live-rake-origin);
+      transform-style: preserve-3d;
     }
 
     /* Production live player card — plastic bevel + polish face */
@@ -2118,9 +2170,15 @@
     }
 
     @keyframes monarch-crown-pop {
-      0% { transform: scale(1); box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.35); }
-      35% { transform: scale(1.08); box-shadow: 0 0 0 1px #000, 0 0 48px rgba(255, 220, 80, 0.95); }
-      100% { transform: scale(1); }
+      0% {
+        transform: var(--live-rake-card) scale(1);
+        box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.35);
+      }
+      35% {
+        transform: var(--live-rake-card) scale(1.08);
+        box-shadow: 0 0 0 1px #000, 0 0 48px rgba(255, 220, 80, 0.95);
+      }
+      100% { transform: var(--live-rake-card) scale(1); }
     }
 
     .champion-fanfare {
@@ -4111,7 +4169,8 @@
       right: auto !important;
       left: auto !important;
       bottom: auto !important;
-      transform: none !important;
+      transform: var(--live-rake-chrome) !important;
+      transform-origin: var(--live-rake-origin) !important;
       z-index: 4;
       width: 100%;
       min-width: 0;
