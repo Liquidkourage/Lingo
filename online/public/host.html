@@ -151,16 +151,34 @@
     }
 
     .host-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.45rem;
       margin: 0 0 1rem;
-      text-align: center;
-      font-size: 0.82rem;
-      font-weight: 500;
-      color: rgba(180, 198, 220, 0.72);
     }
 
-    .host-links strong {
-      color: var(--show-cyan);
+    .host-links a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0.45rem 0.85rem;
+      border: var(--stroke) solid rgba(62, 200, 232, 0.4);
+      border-radius: var(--radius);
+      background: var(--show-panel-raised);
+      color: var(--show-white);
+      font: inherit;
+      font-size: 0.78rem;
       font-weight: 600;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .host-links a:hover {
+      border-color: rgba(62, 200, 232, 0.6);
+      filter: brightness(1.08);
     }
 
     .meta-slot {
@@ -266,6 +284,10 @@
 
     .host-links {
       margin: 0 0 0.85rem;
+    }
+
+    .host-links a {
+      min-height: 40px;
     }
 
     .host-status {
@@ -1548,7 +1570,13 @@
         </div>
       </div>
 
-      <p class="host-links" id="hostLinks">Players <strong>/play</strong> · Venue <strong>/display</strong> · Bingo <strong><a href="/bingo/calls" style="color:inherit;">/bingo/calls</a></strong> · Rehearsal <strong><a href="/rehearsal" style="color:inherit;">/rehearsal</a></strong></p>
+      <nav class="host-links" id="hostLinks" aria-label="Open show pages">
+        <a href="/play" target="_blank" rel="noopener noreferrer">Players</a>
+        <a href="/" target="_blank" rel="noopener noreferrer">Site</a>
+        <a href="/display" target="_blank" rel="noopener noreferrer">Venue</a>
+        <a href="/bingo/calls" target="_blank" rel="noopener noreferrer">Bingo</a>
+        <a href="/rehearsal" target="_blank" rel="noopener noreferrer">Rehearsal</a>
+      </nav>
 
       <div class="host-status" aria-label="Live session">
         <div class="meta-slot">
@@ -2161,12 +2189,21 @@
       if (!els.hostLinks) return;
       const code = String(eventCode || hostEventCode()).trim().toLowerCase() || 'default';
       const query = code === 'default' ? '' : `?join=${encodeURIComponent(code)}`;
-      els.hostLinks.innerHTML = [
-        `Players <strong>/play${query}</strong> · site <strong>/play</strong> + code <strong>${code === 'default' ? '—' : code.toUpperCase()}</strong>`,
-        `Venue <strong>/display${query}</strong>`,
-        `Bingo <strong><a href="/bingo/calls${query}" style="color:inherit;">/bingo/calls</a></strong>`,
-        `Rehearsal <strong><a href="/rehearsal${query}" style="color:inherit;">/rehearsal</a></strong>`,
-      ].join(' · ');
+      const pages = [
+        { label: 'Players', href: `/play${query}` },
+        { label: 'Site', href: '/' },
+        { label: 'Venue', href: `/display${query}` },
+        { label: 'Bingo', href: `/bingo/calls${query}` },
+        { label: 'Rehearsal', href: `/rehearsal${query}` },
+      ];
+      els.hostLinks.replaceChildren(...pages.map((page) => {
+        const link = document.createElement('a');
+        link.href = page.href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = page.label;
+        return link;
+      }));
     }
 
     function storedKey() {
