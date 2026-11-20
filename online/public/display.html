@@ -43,9 +43,9 @@
       --live-score-rail-width: var(--live-rail-width);
       /* Shared vertical rhythm between logo, tiles, stats, and player board */
       --live-v-gap: max(0.4em, 0.7cqh);
-      --live-tile-size: 3.05em;
-      --live-tile-gap: 0.52em;
-      --live-tile-font: 2.05em;
+      --live-tile-size: 3.35em;
+      --live-tile-gap: 0.55em;
+      --live-tile-font: 2.2em;
       --live-chrome-side-inset: 0;
       --live-stats-min-height: 3.2em;
       --live-stat-label-size: 0.62em;
@@ -59,11 +59,11 @@
       --live-card-width: min(100%, 9.2em);
       --live-card-min-height: 2.85em;
       /* Live polish: glass panels + controlled glow */
-      --live-glass: linear-gradient(165deg, rgba(18, 36, 72, 0.92) 0%, rgba(4, 10, 28, 0.96) 100%);
-      --live-glass-edge: rgba(120, 200, 255, 0.42);
-      --live-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-      --live-glow-cyan: 0 0 22px rgba(0, 212, 255, 0.28);
-      --live-glow-gold: 0 0 22px rgba(255, 204, 0, 0.22);
+      --live-glass: linear-gradient(165deg, rgba(24, 48, 92, 0.94) 0%, rgba(4, 10, 28, 0.97) 100%);
+      --live-glass-edge: rgba(0, 212, 255, 0.72);
+      --live-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      --live-glow-cyan: 0 0 28px rgba(0, 212, 255, 0.45);
+      --live-glow-gold: 0 0 28px rgba(255, 204, 0, 0.4);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -841,19 +841,19 @@
 
     @keyframes tile-letter-reveal {
       0% {
-        transform: scale(0.72) rotateX(28deg);
-        filter: brightness(1.55);
+        transform: scale(0.55);
+        filter: brightness(2.2) saturate(1.4);
         box-shadow:
           0 0 0 1px #000,
-          0 0 36px rgba(255, 255, 255, 0.55),
-          0 0 48px rgba(0, 255, 120, 0.75);
+          0 0 48px rgba(255, 255, 255, 0.85),
+          0 0 72px rgba(0, 255, 120, 1);
       }
-      55% {
-        transform: scale(1.06) rotateX(0deg);
-        filter: brightness(1.2);
+      40% {
+        transform: scale(1.14);
+        filter: brightness(1.45);
       }
       100% {
-        transform: scale(1) rotateX(0deg);
+        transform: scale(1);
         filter: brightness(1);
       }
     }
@@ -1232,12 +1232,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      border-radius: 0.28em;
-      border-color: var(--live-glass-edge);
+      border-radius: 0.3em;
+      border-width: 4px;
+      border-color: var(--show-cyan);
       background: var(--live-glass);
       box-shadow:
         0 0 0 1px #000,
         var(--live-glow-cyan),
+        0 0 36px rgba(0, 212, 255, 0.35),
         var(--live-glass-highlight);
       backdrop-filter: blur(8px);
     }
@@ -1387,9 +1389,42 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 0.12em;
-      padding: 0;
+      gap: 0.28em;
+      padding: 0.55em 0.85em 0.65em;
       min-height: 0;
+      width: fit-content;
+      max-width: 100%;
+      border-radius: 0.35em;
+      border: var(--contrast-stroke) solid rgba(0, 212, 255, 0.55);
+      background:
+        linear-gradient(180deg, rgba(0, 212, 255, 0.12) 0%, transparent 28%),
+        linear-gradient(165deg, rgba(10, 24, 56, 0.88) 0%, rgba(2, 8, 22, 0.92) 100%);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 36px rgba(0, 212, 255, 0.28),
+        0 0 48px rgba(255, 204, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    .stage[data-phase="results"] .live-hud,
+    .stage[data-phase="ended"] .live-hud {
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 0.28em;
+      padding: 0.55em 0.85em 0.65em;
+      min-height: 0;
+      width: fit-content;
+      max-width: 100%;
+      border-radius: 0.35em;
+      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.55);
+      background:
+        linear-gradient(180deg, rgba(255, 204, 0, 0.12) 0%, transparent 28%),
+        linear-gradient(165deg, rgba(10, 24, 56, 0.88) 0%, rgba(2, 8, 22, 0.92) 100%);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 36px rgba(255, 204, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
     }
 
     /* Guessing: tiles carry the round — badge duplicates stats-bar context */
@@ -1421,8 +1456,8 @@
       display: flex;
       flex-direction: row;
       align-items: stretch;
-      border-radius: 0.28em;
-      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.78);
+      border-radius: 0.3em;
+      border: 4px solid var(--show-gold);
       background: var(--live-glass);
       box-shadow:
         0 0 0 1px #000,
@@ -1870,33 +1905,58 @@
       z-index: 0;
     }
 
-    /* Waiting: calm breathe. Locked: soft settle pulse. */
+    /* Waiting vs locked should read from across the room. */
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="waiting"] {
-      animation: card-waiting-breathe 2.4s ease-in-out infinite;
+      border-style: dashed;
+      border-color: rgba(0, 212, 255, 0.95);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 22px rgba(0, 212, 255, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      animation: card-waiting-breathe 1.6s ease-in-out infinite;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"],
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"] {
-      border-color: rgba(255, 214, 80, 0.92);
+      border-style: solid;
+      border-color: var(--show-gold);
+      border-width: 4px;
       box-shadow:
         0 0 0 1px #000,
-        0 0 20px rgba(255, 204, 0, 0.38),
-        inset 0 1px 0 rgba(255, 255, 255, 0.14);
-      animation: card-locked-settle 1.8s ease-in-out infinite;
+        0 0 28px rgba(255, 204, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      animation: card-locked-settle 1.4s ease-in-out infinite;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="waiting"] .player-status {
+      color: var(--show-cyan);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-shadow: 0 1px 0 #000, 0 0 12px rgba(0, 212, 255, 0.65);
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"] .player-status,
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"] .player-status {
+      color: var(--show-gold-hot);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-shadow: 0 1px 0 #000, 0 0 14px rgba(255, 204, 0, 0.75);
     }
 
     @keyframes card-waiting-breathe {
       0%, 100% {
         box-shadow:
           0 0 0 1px #000,
-          0 0 12px rgba(160, 80, 255, 0.22),
+          0 0 14px rgba(0, 212, 255, 0.28),
           inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        filter: brightness(0.92);
       }
       50% {
         box-shadow:
           0 0 0 1px #000,
-          0 0 22px rgba(0, 212, 255, 0.28),
-          inset 0 1px 0 rgba(255, 255, 255, 0.14);
+          0 0 32px rgba(0, 212, 255, 0.55),
+          inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        filter: brightness(1.08);
       }
     }
 
@@ -1904,14 +1964,14 @@
       0%, 100% {
         box-shadow:
           0 0 0 1px #000,
-          0 0 16px rgba(255, 204, 0, 0.3),
-          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+          0 0 18px rgba(255, 204, 0, 0.38),
+          inset 0 1px 0 rgba(255, 255, 255, 0.14);
       }
       50% {
         box-shadow:
           0 0 0 1px #000,
-          0 0 26px rgba(255, 214, 80, 0.48),
-          inset 0 1px 0 rgba(255, 255, 255, 0.16);
+          0 0 36px rgba(255, 214, 80, 0.7),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
       }
     }
 
@@ -2409,9 +2469,14 @@
       }
     }
 
-    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"],
-    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="solved"],
-    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="winner"],
+    .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"] {
+      border-color: var(--show-gold);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 28px rgba(255, 204, 0, 0.58),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="resolved"] {
       border-color: var(--show-magenta);
       box-shadow:
@@ -2443,24 +2508,27 @@
       text-shadow: 0 1px 0 #000, 0 0 16px rgba(0, 212, 255, 0.9);
     }
 
-    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"],
-    .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="locked"],
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="solved"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="solved"],
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="winner"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="winner"],
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="resolved"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="resolved"] {
-      border-color: rgba(190, 165, 255, 0.62);
+      border-color: var(--show-green);
       box-shadow:
-        0 4px 14px rgba(0, 0, 0, 0.34),
-        0 0 20px rgba(100, 60, 180, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        0 0 0 1px #000,
+        0 0 24px rgba(0, 255, 85, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="waiting"] {
-      border-color: rgba(187, 68, 255, 0.58);
+      border-color: var(--show-cyan);
       border-style: dashed;
+      border-width: 3px;
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 24px rgba(0, 212, 255, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
 
     .stage[data-phase="results"] .player-card[data-card-skin][data-status="waiting"],
@@ -2473,7 +2541,18 @@
 
     .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="locked"],
     .stage[data-phase="results"] .player-card[data-card-skin][data-status="locked"],
-    .stage[data-phase="ended"] .player-card[data-card-skin][data-status="locked"],
+    .stage[data-phase="ended"] .player-card[data-card-skin][data-status="locked"] {
+      opacity: 1;
+      filter: none;
+      border-style: solid;
+      border-width: 4px;
+      border-color: var(--show-gold);
+      box-shadow:
+        0 0 0 1px #000,
+        0 0 28px rgba(255, 204, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
     .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="solved"],
     .stage[data-phase="results"] .player-card[data-card-skin][data-status="solved"],
     .stage[data-phase="ended"] .player-card[data-card-skin][data-status="solved"],
@@ -2486,10 +2565,11 @@
       opacity: 1;
       filter: none;
       border-style: solid;
+      border-color: var(--show-green);
       box-shadow:
         0 0 0 1px #000,
-        0 0 18px rgba(187, 68, 255, 0.45),
-        0 0 12px rgba(255, 204, 0, 0.35);
+        0 0 24px rgba(0, 255, 85, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin] .player-name,
@@ -3915,19 +3995,33 @@
       align-items: center;
       gap: 0.14em;
       width: 100%;
-      padding: 0.32em 0.24em 0.34em;
-      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.62);
-      border-radius: 0.28em;
+      padding: 0.38em 0.26em 0.36em;
+      border: 4px solid var(--show-gold);
+      border-radius: 0.3em;
       background: var(--live-glass);
       box-shadow:
         0 0 0 1px #000,
         var(--live-glow-gold),
+        0 0 34px rgba(255, 204, 0, 0.28),
         var(--live-glass-highlight);
       text-align: center;
       z-index: 4;
       pointer-events: none;
       box-sizing: border-box;
       backdrop-filter: blur(8px);
+    }
+
+    .live-join-dock::before {
+      content: "";
+      position: absolute;
+      left: 0.35em;
+      right: 0.35em;
+      top: 0.22em;
+      height: 0.18em;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, var(--show-gold-hot), transparent);
+      box-shadow: 0 0 12px rgba(255, 204, 0, 0.75);
+      pointer-events: none;
     }
 
     .stage[data-phase="guessing"] .live-join-dock,
