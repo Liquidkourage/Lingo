@@ -126,7 +126,6 @@
       --live-rake-left: perspective(var(--live-rake-depth)) rotateY(20deg) rotateX(-2deg);
       --live-rake-right: perspective(var(--live-rake-depth)) rotateY(-20deg) rotateX(-2deg);
       --live-rake-center: perspective(var(--live-rake-depth)) rotateX(-2deg);
-      --live-rake-board-x: -5deg;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1838,8 +1837,9 @@
       height: 100%;
       max-height: none;
       z-index: 5;
-      overflow: visible;
-      /* Kill lobby absolute centering + cyan lobby chrome; stage tray matches gold plastic */
+      overflow: hidden;
+      /* Kill lobby absolute centering + cyan lobby chrome; stage tray matches gold plastic.
+         Player board stays flat — no rake (left/right chrome keep the wing fold). */
       border: 4px solid var(--show-gold) !important;
       border-radius: 0.28em;
       background: var(--live-glass) !important;
@@ -1848,11 +1848,7 @@
         var(--live-glow-gold),
         var(--live-bevel-chrome) !important;
       backdrop-filter: blur(6px);
-      transform: perspective(var(--live-rake-depth, 1000px)) rotateX(var(--live-rake-board-x, -5deg)) !important;
-      transform-origin: 50% 100% !important;
-      transform-style: preserve-3d;
-      perspective: 1200px;
-      perspective-origin: 50% 0%;
+      transform: none !important;
     }
 
     .stage[data-phase="guessing"] .player-board-header,
@@ -1886,7 +1882,6 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      transform-style: preserve-3d;
     }
 
     .stage[data-phase="guessing"] .player-grid,
@@ -1906,9 +1901,8 @@
       place-content: stretch;
       place-items: stretch;
       gap: var(--live-gap, 0.55em);
-      overflow: visible;
+      overflow: hidden;
       margin: 0;
-      transform-style: preserve-3d;
     }
 
     /*
@@ -1993,9 +1987,7 @@
       border-radius: 0.32em;
       border-width: 3px;
       border-style: solid;
-      /* Tray already carries rotateX — cards only fold toward center by column */
-      transform: perspective(var(--live-rake-depth, 1000px)) rotateY(var(--card-rake-y, 0deg));
-      transform-origin: var(--card-rake-origin, 50% 100%);
+      transform: none;
     }
 
     /* Production live player card — plastic bevel + polish face */
@@ -2280,15 +2272,15 @@
 
     @keyframes monarch-crown-pop {
       0% {
-        transform: perspective(var(--live-rake-depth, 1000px)) rotateY(var(--card-rake-y, 0deg)) scale(1);
+        transform: scale(1);
         box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.35);
       }
       35% {
-        transform: perspective(var(--live-rake-depth, 1000px)) rotateY(var(--card-rake-y, 0deg)) scale(1.08);
+        transform: scale(1.08);
         box-shadow: 0 0 0 1px #000, 0 0 48px rgba(255, 220, 80, 0.95);
       }
       100% {
-        transform: perspective(var(--live-rake-depth, 1000px)) rotateY(var(--card-rake-y, 0deg)) scale(1);
+        transform: scale(1);
       }
     }
 
@@ -6344,28 +6336,6 @@
       }
     }
 
-    function liveBoardCols() {
-      const raw = getComputedStyle(els.stage).getPropertyValue("--live-cols").trim();
-      const n = Number.parseInt(raw, 10);
-      return Number.isFinite(n) && n > 0 ? n : 1;
-    }
-
-    function applyLiveCardRake(card, index, phase) {
-      if (phase === "idle") {
-        card.style.removeProperty("--card-rake-y");
-        card.style.removeProperty("--card-rake-origin");
-        return;
-      }
-      const cols = liveBoardCols();
-      const col = index % cols;
-      const center = (cols - 1) / 2;
-      const angle = center === 0 ? 0 : ((center - col) / center) * 20;
-      card.style.setProperty("--card-rake-y", `${angle.toFixed(2)}deg`);
-      // Hinge toward center: left cards pivot on their right edge, right on left
-      const originX = angle > 1 ? "90%" : angle < -1 ? "10%" : "50%";
-      card.style.setProperty("--card-rake-origin", `${originX} 100%`);
-    }
-
     function createPlayerCard(player, index, phase, state, options, newArrivals) {
       const card = document.createElement("article");
       card.className = "player-card";
@@ -6377,7 +6347,6 @@
           card.style.setProperty("--chip-enter-delay", `${index * 45}ms`);
         }
       }
-      applyLiveCardRake(card, index, phase);
       applyPlayerCardContent(card, player, index, phase, state, options);
       return card;
     }
@@ -6404,7 +6373,6 @@
       }
 
       visiblePlayers.forEach((player, index) => {
-        applyLiveCardRake(cards[index], index, phase);
         applyPlayerCardContent(cards[index], player, index, phase, state, options);
       });
       return true;
