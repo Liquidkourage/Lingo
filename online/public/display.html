@@ -1803,15 +1803,21 @@
       height: 100%;
       max-height: none;
       z-index: 5;
-      overflow: hidden;
-      /* Kill lobby absolute centering translate — it shifts the live grid off-screen */
-      transform: none !important;
-      perspective: 1300px;
-      perspective-origin: 50% 0%;
+      overflow: visible;
+      /* Kill lobby absolute centering + cyan lobby chrome; stage tray matches gold plastic */
+      border: 4px solid var(--show-gold) !important;
+      border-radius: 0.28em;
+      background: var(--live-glass) !important;
+      box-shadow:
+        var(--live-bevel-raised),
+        var(--live-glow-gold),
+        var(--live-bevel-chrome) !important;
+      backdrop-filter: blur(6px);
+      transform: perspective(var(--live-rake-depth, 1000px)) rotateX(var(--live-rake-board-x, -5deg)) !important;
+      transform-origin: 50% 100% !important;
       transform-style: preserve-3d;
-      background:
-        linear-gradient(180deg, rgba(12, 16, 36, 0.72) 0%, rgba(2, 4, 12, 0.92) 100%);
-      border-top: var(--contrast-stroke) solid rgba(255, 204, 0, 0.55);
+      perspective: 1200px;
+      perspective-origin: 50% 0%;
     }
 
     .stage[data-phase="guessing"] .player-board-header,
@@ -1836,37 +1842,19 @@
     .stage[data-phase="results"] .player-board-body,
     .stage[data-phase="ended"] .player-board-body {
       font-size: calc(var(--live-player-board-font) * var(--live-player-card-text-scale, 1));
-      padding: var(--live-board-pad);
+      padding: clamp(0.35em, 1.2cqh, 0.7em) clamp(0.4em, 1.2cqi, 0.85em);
       min-height: 0;
       flex: 1 1 auto;
       height: 100%;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      align-items: stretch;
-      justify-content: stretch;
+      align-items: center;
+      justify-content: center;
       transform-style: preserve-3d;
     }
 
-    .stage[data-phase="guessing"] .player-grid {
-      flex: 1 1 auto;
-      width: 100%;
-      height: 100%;
-      max-width: min(100%, 96%);
-      max-height: 100%;
-      min-height: 0;
-      margin-inline: auto;
-      /* Grid structure: LIVE_LAYOUT_TIERS in display.html (data-live-layout e.g. "5x3") */
-      grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
-      grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
-      place-content: stretch;
-      place-items: stretch;
-      gap: var(--live-gap, 0.55em);
-      overflow: hidden;
-      margin: 0;
-      transform-style: preserve-3d;
-    }
-
+    .stage[data-phase="guessing"] .player-grid,
     .stage[data-phase="results"] .player-grid,
     .stage[data-phase="ended"] .player-grid {
       flex: 1 1 auto;
@@ -1876,35 +1864,73 @@
       max-height: 100%;
       min-height: 0;
       margin-inline: auto;
+      /* Grid structure: LIVE_LAYOUT_TIERS in display.html (data-live-layout e.g. "5x3") */
+      display: grid;
       grid-template-columns: repeat(var(--live-cols, 4), minmax(0, 1fr));
       grid-template-rows: repeat(var(--live-rows, 2), minmax(0, 1fr));
       place-content: stretch;
       place-items: stretch;
       gap: var(--live-gap, 0.55em);
-      overflow: hidden;
+      overflow: visible;
       margin: 0;
       transform-style: preserve-3d;
     }
 
-    .stage[data-phase="guessing"] .player-card {
-      width: 100%;
+    /* Sparse boards: tray hugs the cards — never a giant empty billboard */
+    .stage[data-live-rows="1"] .player-board {
+      height: auto;
+      max-height: 100%;
+      width: auto;
       max-width: 100%;
-      min-width: 0;
-      min-height: 0;
-      height: 100%;
-      padding: 0.14em 0.28em;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.06em;
-      overflow: hidden;
-      font-size: calc(1em * var(--live-card-scale, 1));
-      container-type: size;
-      container-name: live-player-card;
+      justify-self: center;
+      align-self: center;
+      flex: 0 1 auto;
     }
 
+    .stage[data-live-rows="1"] .player-board-body {
+      flex: 0 0 auto;
+      height: auto;
+      min-height: 0;
+    }
+
+    .stage[data-live-rows="1"] .player-grid {
+      flex: 0 0 auto;
+      width: min(96%, calc(var(--live-cols, 1) * 12em + (var(--live-cols, 1) - 1) * var(--live-gap, 12px)));
+      height: clamp(8.5em, 26vh, 12.5em);
+      place-content: stretch;
+    }
+
+    .stage[data-live-layout="1x1"] .player-board {
+      /* Solo: drop the outer tray chrome so one plastic card is the hero */
+      border-color: transparent !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      backdrop-filter: none;
+      padding: 0;
+    }
+
+    .stage[data-live-layout="1x1"] .player-board-body {
+      padding: 0;
+    }
+
+    .stage[data-live-layout="1x1"] .player-grid {
+      width: min(34vw, 20em);
+      height: clamp(9.5em, 28vh, 13.5em);
+    }
+
+    .stage[data-live-layout="2x1"] .player-grid {
+      width: min(58vw, 34em);
+    }
+
+    .stage[data-live-layout="3x1"] .player-grid {
+      width: min(74vw, 46em);
+    }
+
+    .stage[data-live-layout="4x1"] .player-grid {
+      width: min(88vw, 58em);
+    }
+
+    .stage[data-phase="guessing"] .player-card,
     .stage[data-phase="results"] .player-card,
     .stage[data-phase="ended"] .player-card {
       width: 100%;
@@ -1912,13 +1938,13 @@
       min-width: 0;
       min-height: 0;
       height: 100%;
-      padding: 0.12em 0.24em;
+      padding: 0.22em 0.4em;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.06em;
+      gap: 0.08em;
       overflow: hidden;
       font-size: calc(1em * var(--live-card-scale, 1));
       container-type: size;
@@ -1930,10 +1956,10 @@
     .stage[data-phase="ended"] .player-card[data-card-skin] {
       position: relative;
       border-radius: 0.32em;
-      border-width: 2px;
+      border-width: 3px;
       border-style: solid;
-      /* Column rake: --card-rake-y folds each card toward stage center */
-      transform: perspective(var(--live-rake-depth, 900px)) rotateY(var(--card-rake-y, 0deg)) rotateX(var(--live-rake-board-x, -7deg));
+      /* Tray already carries rotateX — cards only fold toward center by column */
+      transform: perspective(var(--live-rake-depth, 1000px)) rotateY(var(--card-rake-y, 0deg));
       transform-origin: var(--card-rake-origin, 50% 100%);
     }
 
@@ -2194,15 +2220,15 @@
 
     @keyframes monarch-crown-pop {
       0% {
-        transform: perspective(var(--live-rake-depth, 900px)) rotateY(var(--card-rake-y, 0deg)) rotateX(var(--live-rake-board-x, -7deg)) scale(1);
+        transform: perspective(var(--live-rake-depth, 1000px)) rotateY(var(--card-rake-y, 0deg)) scale(1);
         box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.35);
       }
       35% {
-        transform: perspective(var(--live-rake-depth, 900px)) rotateY(var(--card-rake-y, 0deg)) rotateX(var(--live-rake-board-x, -7deg)) scale(1.08);
+        transform: perspective(var(--live-rake-depth, 1000px)) rotateY(var(--card-rake-y, 0deg)) scale(1.08);
         box-shadow: 0 0 0 1px #000, 0 0 48px rgba(255, 220, 80, 0.95);
       }
       100% {
-        transform: perspective(var(--live-rake-depth, 900px)) rotateY(var(--card-rake-y, 0deg)) rotateX(var(--live-rake-board-x, -7deg)) scale(1);
+        transform: perspective(var(--live-rake-depth, 1000px)) rotateY(var(--card-rake-y, 0deg)) scale(1);
       }
     }
 
@@ -4616,7 +4642,7 @@
     ];
     /** Fixed card text scale by row count — set once per layout tier / phase. */
     const LIVE_CARD_SCALE_BY_ROWS = {
-      1: 1.18,
+      1: 1.28,
       2: 1.08,
       3: 1.0,
       4: 0.9,
@@ -5025,6 +5051,12 @@
       const rows = Math.ceil(count / cols);
       const gap = tier.gapPx;
       let scale = LIVE_CARD_SCALE_BY_ROWS[rows] || LIVE_CARD_SCALE_MIN;
+      // Solo / duo: punch type so a single card still reads from the venue
+      if (count === 1) {
+        scale = Math.max(scale, 1.32);
+      } else if (count === 2) {
+        scale = Math.max(scale, 1.22);
+      }
       if (phase === "results" || phase === "ended") {
         scale = Math.max(LIVE_CARD_SCALE_MIN, scale * 0.94);
       }
@@ -5077,6 +5109,7 @@
       els.stage.style.setProperty("--live-card-scale", layout.scale.toFixed(3));
       els.stage.dataset.liveLayout = `${layout.cols}x${layout.rows}`;
       els.stage.dataset.liveRows = String(layout.rows);
+      els.stage.dataset.livePlayers = String(layout.count);
 
       applyLiveLayoutDensity(playerCount);
       return layout;
@@ -6692,6 +6725,7 @@
         delete els.stage.dataset.liveDensity;
         delete els.stage.dataset.liveLayout;
         delete els.stage.dataset.liveRows;
+        delete els.stage.dataset.livePlayers;
         lastLiveLayoutApplyKey = "";
         els.stage.style.removeProperty("--live-cols");
         els.stage.style.removeProperty("--live-rows");
