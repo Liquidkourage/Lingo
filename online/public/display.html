@@ -84,13 +84,14 @@
       --live-glow-cyan: 0 0 24px rgba(0, 212, 255, 0.4);
       --live-glow-gold: 0 0 22px rgba(255, 204, 0, 0.42);
       --live-tile-edge: rgba(255, 214, 90, 0.95);
-      /* Upstage rake — faces lean away like the renders (not flat to camera) */
-      /* Stronger rake so depth reads on a venue screen once perspective reaches children */
-      --live-rake-tile: rotateX(-22deg) translateZ(18px);
-      --live-rake-chip: rotateX(-18deg) translateZ(14px);
-      --live-rake-card: rotateX(-16deg) translateZ(14px);
-      --live-rake-chrome: rotateX(-12deg) translateZ(12px);
-      --live-rake-origin: 50% 100%;
+      /* Center-converging stage rake — perspective() baked into each wing so
+         vanishing-point fold survives flattened ancestors. Wings open toward
+         camera (outer edges nearer); cards fold the same way by column. */
+      --live-rake-depth: 1000px;
+      --live-rake-left: perspective(var(--live-rake-depth)) rotateY(20deg) rotateX(-2deg);
+      --live-rake-right: perspective(var(--live-rake-depth)) rotateY(-20deg) rotateX(-2deg);
+      --live-rake-center: perspective(var(--live-rake-depth)) rotateX(-2deg);
+      --live-rake-board-x: -5deg;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -835,37 +836,7 @@
       line-height: 1;
       color: var(--show-white);
       text-shadow: 0 2px 0 #000, 0 0 14px rgba(0, 212, 255, 0.55);
-      transform-origin: var(--live-rake-origin);
-    }
-
-    .stage[data-phase="guessing"] .word-tile,
-    .stage[data-phase="results"] .word-tile,
-    .stage[data-phase="ended"] .word-tile {
-      transform: var(--live-rake-tile);
-    }
-
-    .stage[data-phase="guessing"] .known-letter-chip,
-    .stage[data-phase="results"] .known-letter-chip,
-    .stage[data-phase="ended"] .known-letter-chip,
-    .stage[data-phase="guessing"] .absent-letter-chip,
-    .stage[data-phase="results"] .absent-letter-chip,
-    .stage[data-phase="ended"] .absent-letter-chip {
-      transform: var(--live-rake-chip);
-      transform-origin: var(--live-rake-origin);
-    }
-
-    .stage[data-phase="guessing"] .live-join-dock,
-    .stage[data-phase="results"] .live-join-dock,
-    .stage[data-phase="ended"] .live-join-dock,
-    .stage[data-phase="guessing"] .live-score-stack,
-    .stage[data-phase="results"] .live-score-stack,
-    .stage[data-phase="ended"] .live-score-stack,
-    .stage[data-phase="guessing"] .live-hud,
-    .stage[data-phase="results"] .live-hud,
-    .stage[data-phase="ended"] .live-hud {
-      transform: var(--live-rake-chrome) !important;
-      transform-origin: var(--live-rake-origin) !important;
-      transform-style: preserve-3d;
+      transform-origin: center;
     }
 
     .word-tile.is-letter,
@@ -903,7 +874,7 @@
 
     @keyframes tile-letter-reveal {
       0% {
-        transform: var(--live-rake-tile) scale(0.55);
+        transform: scale(0.55);
         filter: brightness(2.2) saturate(1.4);
         box-shadow:
           0 0 0 1px #000,
@@ -911,11 +882,11 @@
           0 0 72px rgba(0, 255, 120, 1);
       }
       40% {
-        transform: var(--live-rake-tile) scale(1.14);
+        transform: scale(1.14);
         filter: brightness(1.45);
       }
       100% {
-        transform: var(--live-rake-tile) scale(1);
+        transform: scale(1);
         filter: brightness(1);
       }
     }
@@ -991,8 +962,8 @@
     }
 
     @keyframes chip-settle {
-      from { opacity: 0; transform: var(--live-rake-chip) translateY(0.25em) scale(0.85); }
-      to { opacity: 1; transform: var(--live-rake-chip) scale(1); }
+      from { opacity: 0; transform: translateY(0.25em) scale(0.85); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .absent-letter-bank {
@@ -1054,8 +1025,8 @@
     }
 
     @keyframes tile-enter {
-      from { opacity: 0; transform: var(--live-rake-tile) scale(0.55) translateY(0.35em); }
-      to { opacity: 1; transform: var(--live-rake-tile) scale(1); }
+      from { opacity: 0; transform: scale(0.55) translateY(0.35em); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
     .subtitle .word-hint-letter {
@@ -1113,8 +1084,8 @@
       align-items: start;
       gap: 0.55em;
       width: 100%;
-      perspective: 1600px;
-      perspective-origin: 50% 18%;
+      perspective: 1400px;
+      perspective-origin: 50% 45%;
       transform-style: preserve-3d;
       max-width: 100%;
       justify-self: center;
@@ -1133,9 +1104,14 @@
       background: transparent;
       box-shadow: none;
       overflow: visible;
-      perspective: 1400px;
-      perspective-origin: 50% 30%;
       transform-style: preserve-3d;
+    }
+
+    .stage[data-phase="guessing"] .live-score-rail,
+    .stage[data-phase="results"] .live-score-rail,
+    .stage[data-phase="ended"] .live-score-rail {
+      transform: var(--live-rake-left) !important;
+      transform-origin: 100% 55% !important;
     }
 
     .live-center {
@@ -1147,9 +1123,14 @@
       gap: var(--live-chrome-stack-gap);
       min-width: 0;
       width: 100%;
-      perspective: 1400px;
-      perspective-origin: 50% 40%;
       transform-style: preserve-3d;
+    }
+
+    .stage[data-phase="guessing"] .live-center,
+    .stage[data-phase="results"] .live-center,
+    .stage[data-phase="ended"] .live-center {
+      transform: var(--live-rake-center);
+      transform-origin: 50% 100%;
     }
 
     .live-stats-rail {
@@ -1161,9 +1142,14 @@
       gap: var(--live-v-gap);
       min-width: 0;
       height: fit-content;
-      perspective: 1400px;
-      perspective-origin: 50% 30%;
       transform-style: preserve-3d;
+    }
+
+    .stage[data-phase="guessing"] .live-stats-rail,
+    .stage[data-phase="results"] .live-stats-rail,
+    .stage[data-phase="ended"] .live-stats-rail {
+      transform: var(--live-rake-right) !important;
+      transform-origin: 0% 55% !important;
     }
 
     .live-chrome .live-hud {
@@ -1310,8 +1296,7 @@
       right: auto !important;
       left: auto !important;
       bottom: auto !important;
-      transform: var(--live-rake-chrome) !important;
-      transform-origin: var(--live-rake-origin) !important;
+      transform: none !important;
       width: 100%;
       min-width: 0;
       max-width: none;
@@ -1438,11 +1423,11 @@
     @keyframes timer-critical-grid {
       0%, 100% {
         box-shadow: 0 0 28px rgba(255, 60, 40, 0.55);
-        transform: var(--live-rake-chrome) scale(1);
+        transform: scale(1);
       }
       50% {
         box-shadow: 0 0 52px rgba(255, 80, 60, 0.9);
-        transform: var(--live-rake-chrome) scale(1.03);
+        transform: scale(1.03);
       }
     }
 
@@ -1478,9 +1463,6 @@
       bottom: auto !important;
       left: auto !important;
       transform: none !important;
-      transform-style: preserve-3d !important;
-      perspective: 1200px;
-      perspective-origin: 50% 100%;
     }
 
     .stage:not([data-phase="idle"]) .live-hud .status-badge {
@@ -1822,6 +1804,11 @@
       max-height: none;
       z-index: 5;
       overflow: hidden;
+      /* Kill lobby absolute centering translate — it shifts the live grid off-screen */
+      transform: none !important;
+      perspective: 1300px;
+      perspective-origin: 50% 0%;
+      transform-style: preserve-3d;
       background:
         linear-gradient(180deg, rgba(12, 16, 36, 0.72) 0%, rgba(2, 4, 12, 0.92) 100%);
       border-top: var(--contrast-stroke) solid rgba(255, 204, 0, 0.55);
@@ -1858,8 +1845,6 @@
       flex-direction: column;
       align-items: stretch;
       justify-content: stretch;
-      perspective: 1400px;
-      perspective-origin: 50% 0%;
       transform-style: preserve-3d;
     }
 
@@ -1879,8 +1864,6 @@
       gap: var(--live-gap, 0.55em);
       overflow: hidden;
       margin: 0;
-      perspective: 1200px;
-      perspective-origin: 50% 0%;
       transform-style: preserve-3d;
     }
 
@@ -1900,8 +1883,6 @@
       gap: var(--live-gap, 0.55em);
       overflow: hidden;
       margin: 0;
-      perspective: 1200px;
-      perspective-origin: 50% 0%;
       transform-style: preserve-3d;
     }
 
@@ -1951,9 +1932,9 @@
       border-radius: 0.32em;
       border-width: 2px;
       border-style: solid;
-      transform: var(--live-rake-card);
-      transform-origin: var(--live-rake-origin);
-      transform-style: preserve-3d;
+      /* Column rake: --card-rake-y folds each card toward stage center */
+      transform: perspective(var(--live-rake-depth, 900px)) rotateY(var(--card-rake-y, 0deg)) rotateX(var(--live-rake-board-x, -7deg));
+      transform-origin: var(--card-rake-origin, 50% 100%);
     }
 
     /* Production live player card — plastic bevel + polish face */
@@ -2213,14 +2194,16 @@
 
     @keyframes monarch-crown-pop {
       0% {
-        transform: var(--live-rake-card) scale(1);
+        transform: perspective(var(--live-rake-depth, 900px)) rotateY(var(--card-rake-y, 0deg)) rotateX(var(--live-rake-board-x, -7deg)) scale(1);
         box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 204, 0, 0.35);
       }
       35% {
-        transform: var(--live-rake-card) scale(1.08);
+        transform: perspective(var(--live-rake-depth, 900px)) rotateY(var(--card-rake-y, 0deg)) rotateX(var(--live-rake-board-x, -7deg)) scale(1.08);
         box-shadow: 0 0 0 1px #000, 0 0 48px rgba(255, 220, 80, 0.95);
       }
-      100% { transform: var(--live-rake-card) scale(1); }
+      100% {
+        transform: perspective(var(--live-rake-depth, 900px)) rotateY(var(--card-rake-y, 0deg)) rotateX(var(--live-rake-board-x, -7deg)) scale(1);
+      }
     }
 
     .champion-fanfare {
@@ -4115,7 +4098,8 @@
       min-height: 0;
       max-height: none;
       margin: 0 !important;
-      transform: none !important;
+      transform: var(--live-rake-left) !important;
+      transform-origin: 100% 55% !important;
       z-index: 4;
       flex-direction: column;
       overflow: visible;
@@ -4221,8 +4205,7 @@
       right: auto !important;
       left: auto !important;
       bottom: auto !important;
-      transform: var(--live-rake-chrome) !important;
-      transform-origin: var(--live-rake-origin) !important;
+      transform: none !important;
       z-index: 4;
       width: 100%;
       min-width: 0;
@@ -6274,6 +6257,28 @@
       }
     }
 
+    function liveBoardCols() {
+      const raw = getComputedStyle(els.stage).getPropertyValue("--live-cols").trim();
+      const n = Number.parseInt(raw, 10);
+      return Number.isFinite(n) && n > 0 ? n : 1;
+    }
+
+    function applyLiveCardRake(card, index, phase) {
+      if (phase === "idle") {
+        card.style.removeProperty("--card-rake-y");
+        card.style.removeProperty("--card-rake-origin");
+        return;
+      }
+      const cols = liveBoardCols();
+      const col = index % cols;
+      const center = (cols - 1) / 2;
+      const angle = center === 0 ? 0 : ((center - col) / center) * 20;
+      card.style.setProperty("--card-rake-y", `${angle.toFixed(2)}deg`);
+      // Hinge toward center: left cards pivot on their right edge, right on left
+      const originX = angle > 1 ? "90%" : angle < -1 ? "10%" : "50%";
+      card.style.setProperty("--card-rake-origin", `${originX} 100%`);
+    }
+
     function createPlayerCard(player, index, phase, state, options, newArrivals) {
       const card = document.createElement("article");
       card.className = "player-card";
@@ -6285,6 +6290,7 @@
           card.style.setProperty("--chip-enter-delay", `${index * 45}ms`);
         }
       }
+      applyLiveCardRake(card, index, phase);
       applyPlayerCardContent(card, player, index, phase, state, options);
       return card;
     }
@@ -6311,6 +6317,7 @@
       }
 
       visiblePlayers.forEach((player, index) => {
+        applyLiveCardRake(cards[index], index, phase);
         applyPlayerCardContent(cards[index], player, index, phase, state, options);
       });
       return true;
