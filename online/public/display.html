@@ -1876,11 +1876,15 @@
       transform-style: preserve-3d;
     }
 
-    /* Sparse boards: tray hugs the cards — never a giant empty billboard */
+    /*
+     * Single-row boards (1–5 players): keep a readable card strip.
+     * Size with vh/px — not board em/cqh — so the tray can't collapse into
+     * unreadable vertical strips when the board height goes auto.
+     */
     .stage[data-live-rows="1"] .player-board {
       height: auto;
-      max-height: 100%;
-      width: auto;
+      max-height: min(34vh, 280px);
+      width: 100%;
       max-width: 100%;
       justify-self: center;
       align-self: center;
@@ -1891,17 +1895,20 @@
       flex: 0 0 auto;
       height: auto;
       min-height: 0;
+      font-size: clamp(22px, 3.2vh, 40px);
     }
 
     .stage[data-live-rows="1"] .player-grid {
       flex: 0 0 auto;
-      width: min(96%, calc(var(--live-cols, 1) * 12em + (var(--live-cols, 1) - 1) * var(--live-gap, 12px)));
-      height: clamp(8.5em, 26vh, 12.5em);
+      width: min(96%, 100%);
+      height: clamp(130px, 22vh, 210px);
       place-content: stretch;
     }
 
     .stage[data-live-layout="1x1"] .player-board {
       /* Solo: drop the outer tray chrome so one plastic card is the hero */
+      width: auto;
+      max-height: min(38vh, 300px);
       border-color: transparent !important;
       background: transparent !important;
       box-shadow: none !important;
@@ -1914,20 +1921,13 @@
     }
 
     .stage[data-live-layout="1x1"] .player-grid {
-      width: min(34vw, 20em);
-      height: clamp(9.5em, 28vh, 13.5em);
+      width: min(34vw, 420px);
+      height: clamp(160px, 26vh, 240px);
     }
 
     .stage[data-live-layout="2x1"] .player-grid {
-      width: min(58vw, 34em);
-    }
-
-    .stage[data-live-layout="3x1"] .player-grid {
-      width: min(74vw, 46em);
-    }
-
-    .stage[data-live-layout="4x1"] .player-grid {
-      width: min(88vw, 58em);
+      width: min(70vw, 720px);
+      height: clamp(140px, 24vh, 220px);
     }
 
     .stage[data-phase="guessing"] .player-card,
