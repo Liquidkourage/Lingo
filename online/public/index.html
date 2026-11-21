@@ -535,6 +535,7 @@
     }
 
     #joinCodeField {
+      position: relative;
       margin: 0 0 0.85rem;
       padding: 0.75rem 0.85rem 0.85rem;
       border: 1px solid rgba(62, 200, 232, 0.28);
@@ -544,6 +545,17 @@
 
     #joinCodeField .join-code-hint {
       margin: 0.35rem 0 0;
+    }
+
+    .autofill-trap {
+      position: absolute;
+      left: -10000px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .auth-tabs {
@@ -1799,7 +1811,28 @@
 
       <div class="auth-field join-code-field" id="joinCodeField">
         <label for="joinCodeInput">Enter game code here</label>
-        <input id="joinCodeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="5-letter code on the venue screen" inputmode="text" />
+        <!-- Decoy credentials soak password-manager autofill so it skips the venue code. -->
+        <div class="autofill-trap" aria-hidden="true">
+          <input type="text" tabindex="-1" autocomplete="username" name="username" value="" />
+          <input type="password" tabindex="-1" autocomplete="current-password" name="password" value="" />
+        </div>
+        <input
+          id="joinCodeInput"
+          name="venue-screen-join-code"
+          type="text"
+          maxlength="5"
+          autocapitalize="characters"
+          autocomplete="one-time-code"
+          spellcheck="false"
+          placeholder="5-letter code on the venue screen"
+          inputmode="text"
+          enterkeyhint="done"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+          readonly
+        />
         <p class="auth-hint join-code-hint">Use the code on the big screen — old links will not lock you into a past game.</p>
       </div>
 
@@ -4658,9 +4691,27 @@
     buildKeyboard();
     clearInputs(false);
 
+    // Readonly until focus — many password managers skip readonly fields on page load.
+    els.joinCodeInput?.addEventListener('focus', () => {
+      els.joinCodeInput.removeAttribute('readonly');
+    });
+    els.joinCodeInput?.addEventListener('blur', () => {
+      // Re-arm after blur so a later autofill pass still hits a readonly field.
+      if (!els.joinCodeInput.value) {
+        els.joinCodeInput.setAttribute('readonly', '');
+      }
+    });
     els.joinCodeInput?.addEventListener('input', () => {
       if (!els.joinCodeInput) return;
-      els.joinCodeInput.value = els.joinCodeInput.value.replace(/[^a-z]/gi, '').slice(0, 5).toUpperCase();
+      const rawLetters = els.joinCodeInput.value.replace(/[^a-z]/gi, '');
+      // Password managers often dump a full username here; truncating that to 5
+      // letters invents a fake venue code. Reject the dump instead.
+      if (rawLetters.length > 5) {
+        els.joinCodeInput.value = '';
+        setMessage('That looked like a login autofill — type the 5-letter code from the venue screen.', 'error');
+        return;
+      }
+      els.joinCodeInput.value = rawLetters.slice(0, 5).toUpperCase();
     });
     els.joinCodeInput?.addEventListener('change', async () => {
       const joinCode = activeJoinCode();
