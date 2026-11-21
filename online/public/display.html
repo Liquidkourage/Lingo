@@ -85,10 +85,11 @@
       --live-glow-gold: 0 0 22px rgba(255, 204, 0, 0.42);
       --live-tile-edge: rgba(255, 214, 90, 0.95);
       /* Upstage rake — faces lean away like the renders (not flat to camera) */
-      --live-rake-tile: rotateX(-12deg) translateZ(10px);
-      --live-rake-chip: rotateX(-10deg) translateZ(8px);
-      --live-rake-card: rotateX(-9deg) translateZ(8px);
-      --live-rake-chrome: rotateX(-6deg) translateZ(6px);
+      /* Stronger rake so depth reads on a venue screen once perspective reaches children */
+      --live-rake-tile: rotateX(-22deg) translateZ(18px);
+      --live-rake-chip: rotateX(-18deg) translateZ(14px);
+      --live-rake-card: rotateX(-16deg) translateZ(14px);
+      --live-rake-chrome: rotateX(-12deg) translateZ(12px);
       --live-rake-origin: 50% 100%;
     }
 
@@ -1132,6 +1133,9 @@
       background: transparent;
       box-shadow: none;
       overflow: visible;
+      perspective: 1400px;
+      perspective-origin: 50% 30%;
+      transform-style: preserve-3d;
     }
 
     .live-center {
@@ -1143,6 +1147,9 @@
       gap: var(--live-chrome-stack-gap);
       min-width: 0;
       width: 100%;
+      perspective: 1400px;
+      perspective-origin: 50% 40%;
+      transform-style: preserve-3d;
     }
 
     .live-stats-rail {
@@ -1154,6 +1161,9 @@
       gap: var(--live-v-gap);
       min-width: 0;
       height: fit-content;
+      perspective: 1400px;
+      perspective-origin: 50% 30%;
+      transform-style: preserve-3d;
     }
 
     .live-chrome .live-hud {
@@ -1175,6 +1185,7 @@
       margin: 0 auto;
     }
 
+    /* Keep live-hud / tiles / cards free to use upstage rake — only clear absolute positioning here */
     .stage[data-phase="guessing"] .stage-ui .live-hud,
     .stage[data-phase="results"] .stage-ui .live-hud,
     .stage[data-phase="ended"] .stage-ui .live-hud,
@@ -1200,9 +1211,23 @@
       right: auto !important;
       bottom: auto !important;
       left: auto !important;
-      transform: none !important;
       margin-left: 0 !important;
       margin-right: 0 !important;
+    }
+
+    .stage[data-phase="guessing"] .live-hud .status-badge,
+    .stage[data-phase="results"] .live-hud .status-badge,
+    .stage[data-phase="ended"] .live-hud .status-badge,
+    .stage[data-phase="guessing"] .live-hud .subtitle,
+    .stage[data-phase="results"] .live-hud .subtitle,
+    .stage[data-phase="ended"] .live-hud .subtitle,
+    .stage[data-phase="guessing"] .live-hud .word-clue,
+    .stage[data-phase="results"] .live-hud .word-clue,
+    .stage[data-phase="ended"] .live-hud .word-clue,
+    .stage[data-phase="guessing"] .stage-ui .stats-row,
+    .stage[data-phase="results"] .stage-ui .stats-row,
+    .stage[data-phase="ended"] .stage-ui .stats-row {
+      transform: none !important;
     }
 
     .stage[data-phase="results"] .stage-ui > .ui-topline,
@@ -1437,7 +1462,6 @@
 
     .stage:not([data-phase="idle"]) .live-hud .status-badge,
     .stage:not([data-phase="idle"]) .live-hud .subtitle,
-    .stage:not([data-phase="idle"]) .live-hud .word-tiles,
     .stage:not([data-phase="idle"]) .live-hud .word-clue {
       position: relative !important;
       top: auto !important;
@@ -1445,6 +1469,18 @@
       bottom: auto !important;
       left: auto !important;
       transform: none !important;
+    }
+
+    .stage:not([data-phase="idle"]) .live-hud .word-tiles {
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      left: auto !important;
+      transform: none !important;
+      transform-style: preserve-3d !important;
+      perspective: 1200px;
+      perspective-origin: 50% 100%;
     }
 
     .stage:not([data-phase="idle"]) .live-hud .status-badge {
@@ -1843,6 +1879,9 @@
       gap: var(--live-gap, 0.55em);
       overflow: hidden;
       margin: 0;
+      perspective: 1200px;
+      perspective-origin: 50% 0%;
+      transform-style: preserve-3d;
     }
 
     .stage[data-phase="results"] .player-grid,
@@ -1861,6 +1900,9 @@
       gap: var(--live-gap, 0.55em);
       overflow: hidden;
       margin: 0;
+      perspective: 1200px;
+      perspective-origin: 50% 0%;
+      transform-style: preserve-3d;
     }
 
     .stage[data-phase="guessing"] .player-card {
@@ -4025,15 +4067,12 @@
     /* Live phases: neutralize legacy absolute mockup coordinates */
     .stage[data-phase="guessing"] .live-hud .status-badge,
     .stage[data-phase="guessing"] .live-hud .subtitle,
-    .stage[data-phase="guessing"] .live-hud .word-tiles,
     .stage[data-phase="guessing"] .live-hud .word-clue,
     .stage[data-phase="results"] .live-hud .status-badge,
     .stage[data-phase="results"] .live-hud .subtitle,
-    .stage[data-phase="results"] .live-hud .word-tiles,
     .stage[data-phase="results"] .live-hud .word-clue,
     .stage[data-phase="ended"] .live-hud .status-badge,
     .stage[data-phase="ended"] .live-hud .subtitle,
-    .stage[data-phase="ended"] .live-hud .word-tiles,
     .stage[data-phase="ended"] .live-hud .word-clue,
     .stage[data-phase="guessing"] .stage-ui .stats-row,
     .stage[data-phase="results"] .stage-ui .stats-row,
@@ -4045,6 +4084,19 @@
       bottom: auto !important;
       left: auto !important;
       transform: none !important;
+    }
+
+    .stage[data-phase="guessing"] .live-hud .word-tiles,
+    .stage[data-phase="results"] .live-hud .word-tiles,
+    .stage[data-phase="ended"] .live-hud .word-tiles {
+      position: static !important;
+      inset: auto !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      left: auto !important;
+      transform: none !important;
+      transform-style: preserve-3d !important;
     }
 
     /* Corner chrome: all live panels stay in-flow — no absolute stacking */
