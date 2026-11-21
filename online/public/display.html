@@ -80,6 +80,41 @@
         0 0 0 1px #000,
         0 6px 0 rgba(0, 0, 0, 0.78),
         0 12px 22px rgba(0, 0, 0, 0.48);
+      /* Refine-10 card frame: double-lip metallic plastic */
+      --live-card-frame-gold:
+        0 0 0 1px #000,
+        0 7px 0 rgba(0, 0, 0, 0.8),
+        0 14px 26px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(255, 204, 0, 0.38),
+        inset 0 0 0 1px rgba(255, 245, 200, 0.92),
+        inset 3px 3px 0 rgba(255, 255, 255, 0.62),
+        inset 6px 6px 0 rgba(255, 220, 120, 0.28),
+        inset -3px -3px 0 rgba(0, 0, 0, 0.72),
+        inset -6px -6px 0 rgba(50, 28, 0, 0.5),
+        inset 0 0 18px rgba(0, 0, 0, 0.28);
+      --live-card-frame-cyan:
+        0 0 0 1px #000,
+        0 7px 0 rgba(0, 0, 0, 0.8),
+        0 14px 26px rgba(0, 0, 0, 0.5),
+        0 0 22px rgba(0, 212, 255, 0.48),
+        inset 0 0 0 1px rgba(200, 250, 255, 0.9),
+        inset 3px 3px 0 rgba(255, 255, 255, 0.55),
+        inset 6px 6px 0 rgba(80, 220, 255, 0.28),
+        inset -3px -3px 0 rgba(0, 0, 0, 0.72),
+        inset -6px -6px 0 rgba(0, 30, 50, 0.55),
+        inset 0 0 18px rgba(0, 0, 0, 0.28);
+      --live-card-frame-green:
+        0 0 0 1px #000,
+        0 7px 0 rgba(0, 0, 0, 0.8),
+        0 14px 26px rgba(0, 0, 0, 0.5),
+        0 0 22px rgba(0, 255, 120, 0.42),
+        inset 0 0 0 1px rgba(210, 255, 220, 0.88),
+        inset 3px 3px 0 rgba(255, 255, 255, 0.55),
+        inset 6px 6px 0 rgba(80, 255, 140, 0.28),
+        inset -3px -3px 0 rgba(0, 0, 0, 0.72),
+        inset -6px -6px 0 rgba(0, 40, 20, 0.55),
+        inset 0 0 18px rgba(0, 0, 0, 0.28);
+      --live-card-face: url("/assets/live-card-face-texture.jpg");
       --live-glass-highlight: var(--live-bevel-chrome);
       --live-glow-cyan: 0 0 24px rgba(0, 212, 255, 0.4);
       --live-glow-gold: 0 0 22px rgba(255, 204, 0, 0.42);
@@ -1975,17 +2010,18 @@
       50% { opacity: 0.82; transform: scale(1.02); }
     }
 
+    /* Live cards — refine-10 plastic polish (CSS + face texture) */
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"],
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"] {
-      background: #0a0c1c;
-      border-color: rgba(255, 214, 100, 0.85);
-      border-width: 3px;
-      box-shadow:
-        var(--live-bevel-raised),
-        0 0 12px rgba(255, 204, 0, 0.18),
-        var(--live-bevel-chrome);
+      background: #070a16;
+      border-color: #e0b84a;
+      border-width: 5px;
+      border-style: solid;
+      border-radius: 0.38em;
+      box-shadow: var(--live-card-frame-gold);
       overflow: hidden;
+      isolation: isolate;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"]::before,
@@ -1995,16 +2031,17 @@
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      background: linear-gradient(
-        155deg,
-        #2a3868 0%,
-        #161e42 28%,
-        #0a0e22 52%,
-        #1a2050 78%,
-        #060814 100%
-      );
-      background-size: 220% 220%;
-      animation: card-liquid-flow 22s ease-in-out infinite;
+      background:
+        linear-gradient(
+          155deg,
+          rgba(28, 40, 78, 0.92) 0%,
+          rgba(12, 18, 40, 0.88) 32%,
+          rgba(6, 10, 24, 0.94) 58%,
+          rgba(14, 20, 48, 0.9) 100%
+        ),
+        var(--live-card-face) center / cover no-repeat;
+      background-blend-mode: soft-light, normal;
+      opacity: 1;
       pointer-events: none;
       z-index: 0;
     }
@@ -2017,102 +2054,102 @@
       inset: 0;
       border-radius: inherit;
       background:
-        linear-gradient(145deg, rgba(255, 255, 255, 0.28) 0%, transparent 38%),
-        linear-gradient(325deg, rgba(0, 0, 0, 0.35) 0%, transparent 42%),
-        radial-gradient(ellipse 80% 60% at 18% 22%, rgba(90, 120, 255, 0.18), transparent 58%);
+        linear-gradient(125deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.08) 18%, transparent 42%),
+        linear-gradient(305deg, rgba(0, 0, 0, 0.45) 0%, transparent 40%),
+        linear-gradient(155deg, transparent 40%, rgba(120, 170, 255, 0.12) 58%, transparent 72%),
+        radial-gradient(ellipse 90% 70% at 16% 18%, rgba(100, 140, 255, 0.22), transparent 55%);
       animation: card-liquid-bloom 26s ease-in-out infinite;
       pointer-events: none;
       z-index: 0;
+      mix-blend-mode: soft-light;
     }
 
-    /* Waiting vs locked should read from across the room. */
+    /* Waiting = cyan metallic frame (refine 10); locked = gold metallic */
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="waiting"] {
-      border-style: dashed;
-      border-color: rgba(0, 212, 255, 0.95);
-      box-shadow:
-        var(--live-bevel-raised),
-        0 0 20px rgba(0, 212, 255, 0.4),
-        var(--live-bevel-chrome);
-      animation: card-waiting-breathe 1.6s ease-in-out infinite;
+      border-style: solid;
+      border-color: #3ad8ff;
+      border-width: 5px;
+      box-shadow: var(--live-card-frame-cyan);
+      animation: card-waiting-breathe 1.7s ease-in-out infinite;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"],
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"] {
       border-style: solid;
-      border-color: var(--show-gold);
-      border-width: 4px;
-      box-shadow:
-        var(--live-bevel-raised),
-        0 0 24px rgba(255, 204, 0, 0.5),
-        var(--live-bevel-chrome);
-      animation: card-locked-settle 1.4s ease-in-out infinite;
+      border-color: #f0c84a;
+      border-width: 5px;
+      box-shadow: var(--live-card-frame-gold);
+      animation: card-locked-settle 1.5s ease-in-out infinite;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="waiting"] .player-status {
-      color: var(--show-cyan);
+      color: var(--show-gold-hot);
       font-weight: 900;
       letter-spacing: 0.08em;
-      text-shadow: 0 1px 0 #000, 0 0 12px rgba(0, 212, 255, 0.65);
+      text-shadow: 0 1px 0 #000, 0 0 12px rgba(255, 204, 0, 0.65);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="locked"] .player-status,
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"][data-status="locked"] .player-status {
-      color: var(--show-gold-hot);
+      color: rgba(255, 255, 255, 0.95);
       font-weight: 900;
       letter-spacing: 0.08em;
-      text-shadow: 0 1px 0 #000, 0 0 14px rgba(255, 204, 0, 0.75);
+      text-shadow: 0 1px 0 #000, 0 0 10px rgba(255, 220, 140, 0.35);
     }
 
     @keyframes card-waiting-breathe {
       0%, 100% {
-        box-shadow:
-          var(--live-bevel-raised),
-          0 0 12px rgba(0, 212, 255, 0.28),
-          var(--live-bevel-chrome);
-        filter: brightness(0.94);
+        box-shadow: var(--live-card-frame-cyan);
+        filter: brightness(0.96);
       }
       50% {
         box-shadow:
-          var(--live-bevel-raised),
-          0 0 28px rgba(0, 212, 255, 0.55),
-          var(--live-bevel-chrome);
-        filter: brightness(1.08);
+          0 0 0 1px #000,
+          0 7px 0 rgba(0, 0, 0, 0.8),
+          0 14px 26px rgba(0, 0, 0, 0.5),
+          0 0 34px rgba(0, 220, 255, 0.7),
+          inset 0 0 0 1px rgba(200, 250, 255, 0.95),
+          inset 3px 3px 0 rgba(255, 255, 255, 0.65),
+          inset 6px 6px 0 rgba(80, 220, 255, 0.35),
+          inset -3px -3px 0 rgba(0, 0, 0, 0.72),
+          inset -6px -6px 0 rgba(0, 30, 50, 0.55),
+          inset 0 0 18px rgba(0, 0, 0, 0.28);
+        filter: brightness(1.06);
       }
     }
 
     @keyframes card-locked-settle {
       0%, 100% {
-        box-shadow:
-          var(--live-bevel-raised),
-          0 0 16px rgba(255, 204, 0, 0.35),
-          var(--live-bevel-chrome);
+        box-shadow: var(--live-card-frame-gold);
       }
       50% {
         box-shadow:
-          var(--live-bevel-raised),
-          0 0 32px rgba(255, 214, 80, 0.65),
-          var(--live-bevel-chrome);
+          0 0 0 1px #000,
+          0 7px 0 rgba(0, 0, 0, 0.8),
+          0 14px 26px rgba(0, 0, 0, 0.5),
+          0 0 36px rgba(255, 214, 80, 0.72),
+          inset 0 0 0 1px rgba(255, 245, 200, 0.98),
+          inset 3px 3px 0 rgba(255, 255, 255, 0.7),
+          inset 6px 6px 0 rgba(255, 220, 120, 0.35),
+          inset -3px -3px 0 rgba(0, 0, 0, 0.72),
+          inset -6px -6px 0 rgba(50, 28, 0, 0.5),
+          inset 0 0 18px rgba(0, 0, 0, 0.28);
       }
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"] .player-name,
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"] .player-name,
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"] .player-name {
-      color: var(--show-white);
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      text-shadow: 0 2px 0 #000;
+      color: #fff6e8;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-shadow: 0 2px 0 #000, 0 0 12px rgba(255, 220, 160, 0.25);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"] .player-status,
     .stage[data-phase="results"] .player-card[data-card-skin="liquid"] .player-status,
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"] .player-status {
-      color: rgba(210, 195, 235, 0.82);
-    }
-
-    .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="waiting"] .player-status {
-      color: rgba(255, 220, 120, 0.92);
-      text-shadow: 0 1px 0 #000, 0 0 10px rgba(255, 204, 0, 0.35);
+      color: rgba(230, 220, 245, 0.88);
     }
 
     .player-crown {
@@ -2130,6 +2167,29 @@
       display: block;
       width: 100%;
       height: 100%;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-monarch="true"][data-card-skin="liquid"],
+    .stage[data-phase="results"] .player-card[data-monarch="true"][data-card-skin="liquid"],
+    .stage[data-phase="ended"] .player-card[data-monarch="true"][data-card-skin="liquid"] {
+      border-color: #3dff8a !important;
+      border-width: 5px !important;
+      box-shadow: var(--live-card-frame-green) !important;
+    }
+
+    .stage[data-phase="guessing"] .player-card[data-monarch="true"][data-card-skin="liquid"]::before,
+    .stage[data-phase="results"] .player-card[data-monarch="true"][data-card-skin="liquid"]::before,
+    .stage[data-phase="ended"] .player-card[data-monarch="true"][data-card-skin="liquid"]::before {
+      background:
+        linear-gradient(
+          145deg,
+          rgba(0, 60, 36, 0.9) 0%,
+          rgba(0, 36, 22, 0.86) 35%,
+          rgba(0, 18, 12, 0.92) 60%,
+          rgba(0, 48, 28, 0.88) 100%
+        ),
+        var(--live-card-face) center / cover no-repeat;
+      background-blend-mode: soft-light, normal;
     }
 
     .player-card[data-monarch="true"] {
@@ -2483,34 +2543,33 @@
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"] {
-      border-color: var(--show-green);
-      box-shadow:
-        var(--live-bevel-raised),
-        0 0 22px rgba(0, 255, 85, 0.4),
-        var(--live-bevel-chrome);
+      border-color: #3dff8a;
+      box-shadow: var(--live-card-frame-green);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before,
     .stage[data-phase="results"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before,
     .stage[data-phase="ended"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::before {
-      background: linear-gradient(
-        125deg,
-        #002818 0%,
-        #006030 25%,
-        #001810 50%,
-        #008040 75%,
-        #002010 100%
-      );
-      background-size: 240% 240%;
-      animation: card-liquid-flow 18s ease-in-out infinite;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(0, 70, 40, 0.92) 0%,
+          rgba(0, 40, 24, 0.88) 35%,
+          rgba(0, 18, 12, 0.94) 60%,
+          rgba(0, 56, 32, 0.9) 100%
+        ),
+        var(--live-card-face) center / cover no-repeat;
+      background-blend-mode: soft-light, normal;
+      animation: none;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after,
     .stage[data-phase="results"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after,
     .stage[data-phase="ended"] .player-card[data-card-tone="solved"][data-card-skin="liquid"]::after {
       background:
-        radial-gradient(ellipse 85% 65% at 20% 25%, rgba(0, 255, 85, 0.35), transparent 58%),
-        radial-gradient(ellipse 75% 60% at 80% 75%, rgba(255, 204, 0, 0.15), transparent 52%);
+        linear-gradient(125deg, rgba(255, 255, 255, 0.3) 0%, transparent 36%),
+        radial-gradient(ellipse 85% 65% at 20% 25%, rgba(0, 255, 85, 0.32), transparent 58%),
+        radial-gradient(ellipse 75% 60% at 80% 75%, rgba(255, 204, 0, 0.12), transparent 52%);
       animation: card-liquid-bloom 22s ease-in-out infinite;
     }
 
@@ -2539,16 +2598,16 @@
     .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::before,
     .stage[data-phase="results"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::before,
     .stage[data-phase="ended"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::before {
-      background: linear-gradient(
-        125deg,
-        #400010 0%,
-        #880020 25%,
-        #280008 50%,
-        #aa0028 75%,
-        #300008 100%
-      );
-      background-size: 240% 240%;
-      animation: card-liquid-flow 18s ease-in-out infinite;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(80, 0, 20, 0.92) 0%,
+          rgba(48, 0, 12, 0.9) 40%,
+          rgba(28, 0, 8, 0.95) 100%
+        ),
+        var(--live-card-face) center / cover no-repeat;
+      background-blend-mode: soft-light, normal;
+      animation: none;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-tone="invalid"][data-card-skin="liquid"]::after,
@@ -2646,21 +2705,15 @@
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="winner"],
     .stage[data-phase="guessing"] .player-card[data-card-skin="liquid"][data-status="resolved"],
     .stage[data-phase="ended"] .player-card[data-card-skin="liquid"][data-status="resolved"] {
-      border-color: var(--show-green);
-      box-shadow:
-        var(--live-bevel-raised),
-        0 0 24px rgba(0, 255, 85, 0.42),
-        var(--live-bevel-chrome);
+      border-color: #3dff8a;
+      box-shadow: var(--live-card-frame-green);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="waiting"] {
-      border-color: var(--show-cyan);
-      border-style: dashed;
-      border-width: 3px;
-      box-shadow:
-        var(--live-bevel-raised),
-        0 0 22px rgba(0, 212, 255, 0.42),
-        var(--live-bevel-chrome);
+      border-color: #3ad8ff;
+      border-style: solid;
+      border-width: 5px;
+      box-shadow: var(--live-card-frame-cyan);
     }
 
     .stage[data-phase="results"] .player-card[data-card-skin][data-status="waiting"],
@@ -2668,7 +2721,7 @@
       opacity: 0.55;
       filter: saturate(0.4) brightness(0.75);
       border-color: rgba(255, 255, 255, 0.35);
-      border-style: dashed;
+      border-style: solid;
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="locked"],
@@ -2677,12 +2730,9 @@
       opacity: 1;
       filter: none;
       border-style: solid;
-      border-width: 4px;
-      border-color: var(--show-gold);
-      box-shadow:
-        var(--live-bevel-raised),
-        0 0 24px rgba(255, 204, 0, 0.5),
-        var(--live-bevel-chrome);
+      border-width: 5px;
+      border-color: #f0c84a;
+      box-shadow: var(--live-card-frame-gold);
     }
 
     .stage[data-phase="guessing"] .player-card[data-card-skin][data-status="solved"],
@@ -3969,6 +4019,8 @@
     }
 
     .player-name {
+      position: relative;
+      z-index: 1;
       font-size: 0.92em;
       font-weight: 700;
       color: #f0f6ff;
@@ -3978,6 +4030,8 @@
     }
 
     .player-status {
+      position: relative;
+      z-index: 1;
       margin-top: 0.25em;
       font-size: 0.68em;
       font-weight: 600;
