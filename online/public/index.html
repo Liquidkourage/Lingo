@@ -950,6 +950,57 @@
       white-space: nowrap;
     }
 
+    /* Persistent session chrome — Leave must stay reachable after join hides .play-setup */
+    .play-session-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin: 0 0 0.75rem;
+      padding: 0.55rem 0.7rem;
+      border: var(--contrast-stroke) solid rgba(255, 204, 0, 0.4);
+      border-radius: 0.2em;
+      background: rgba(0, 0, 0, 0.35);
+    }
+
+    .play-stage[data-viewer-joined="true"] .play-session-bar {
+      display: flex;
+    }
+
+    .play-session-meta {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.12rem;
+    }
+
+    .play-session-label {
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(200, 220, 245, 0.72);
+    }
+
+    .play-session-name {
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      color: var(--show-gold-hot);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .play-leave-btn {
+      flex: 0 0 auto;
+      min-width: 7.5rem;
+      min-height: 44px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+    }
+
     button.good {
       color: var(--show-black);
       background: linear-gradient(180deg, #ffe566 0%, #ffc800 48%, #e8a800 100%);
@@ -1752,6 +1803,14 @@
         <p class="auth-hint join-code-hint">Use the code on the big screen — old links will not lock you into a past game.</p>
       </div>
 
+      <section class="play-session-bar" id="playSessionBar" aria-label="Your session">
+        <div class="play-session-meta">
+          <span class="play-session-label">Playing as</span>
+          <span class="play-session-name" id="sessionDisplayName">—</span>
+        </div>
+        <button id="leaveGameBtn" class="secondary play-leave-btn" type="button">Leave game</button>
+      </section>
+
       <div class="play-setup" id="playSetup">
         <section class="play-setup-panel" id="playIdentity" data-auth-mode="signed-out" aria-label="Join the game">
           <div class="auth-signed-out" id="authSignedOut">
@@ -2090,6 +2149,9 @@
       authIdentityLabel: document.getElementById('authIdentityLabel'),
       logoutBtn: document.getElementById('logoutBtn'),
       lobbyToggle: document.getElementById('lobbyToggle'),
+      playSessionBar: document.getElementById('playSessionBar'),
+      sessionDisplayName: document.getElementById('sessionDisplayName'),
+      leaveGameBtn: document.getElementById('leaveGameBtn'),
       message: document.getElementById('message'),
       hostMessageCompose: document.getElementById('hostMessageCompose'),
       hostMessageInput: document.getElementById('hostMessageInput'),
@@ -3864,6 +3926,15 @@
     function updateLobbyButtons() {
       const joined = isViewerJoined();
       const signedInPanel = els.playIdentity.getAttribute('data-auth-mode') === 'signed-in';
+      const displayName = activeUserName() || '—';
+
+      if (els.sessionDisplayName) {
+        els.sessionDisplayName.textContent = displayName;
+      }
+      if (els.leaveGameBtn) {
+        els.leaveGameBtn.disabled = !joined;
+      }
+
       if (!signedInPanel) {
         els.hostMessageCompose.hidden = true;
         return;
@@ -3878,6 +3949,16 @@
         els.lobbyToggle.className = 'good lobby-toggle';
         els.hostMessageCompose.hidden = true;
       }
+    }
+
+    async function confirmAndLeaveGame() {
+      if (!isViewerJoined()) {
+        setMessage('You are not in the game.', 'error');
+        return;
+      }
+      const ok = window.confirm('Leave the game? You will disappear from the venue display.');
+      if (!ok) return;
+      await leaveLobby();
     }
 
     async function sendHostMessage() {
@@ -4293,6 +4374,7 @@
       }
 
       els.lobbyToggle.disabled = true;
+      if (els.leaveGameBtn) els.leaveGameBtn.disabled = true;
       try {
         const response = await fetch('/api/public/leave', {
           method: 'POST',
@@ -4305,7 +4387,7 @@
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || 'Could not leave the lobby.');
+          throw new Error(payload.error || 'Could not leave the game.');
         }
         clearPlayerToken();
         if (!authToken) {
@@ -4319,10 +4401,11 @@
         if (!silent) setMessage('You left the game.', 'success');
         renderPublicState(payload.publicState);
       } catch (error) {
-        if (!silent) setMessage(error.message || 'Could not leave the lobby.', 'error');
+        if (!silent) setMessage(error.message || 'Could not leave the game.', 'error');
         updateLobbyButtons();
       } finally {
         els.lobbyToggle.disabled = false;
+        if (els.leaveGameBtn) els.leaveGameBtn.disabled = false;
       }
     }
 
@@ -4520,6 +4603,9 @@
     }
 
     els.lobbyToggle.addEventListener('click', toggleLobby);
+    els.leaveGameBtn?.addEventListener('click', () => {
+      confirmAndLeaveGame().catch(() => {});
+    });
     els.hostMessageSend.addEventListener('click', () => {
       sendHostMessage().catch(() => {});
     });
