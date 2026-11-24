@@ -5192,7 +5192,10 @@
     }
 
     function phaseDeadlineMs(state) {
+      const serverEndsMs = TypeoShow.phaseEndsAtMs(state);
+      if (serverEndsMs != null) return serverEndsMs;
       const phase = state.phase || "idle";
+      const graceSeconds = TypeoShow.graceSecondsFromState(state, ALL_SUBMITTED_GRACE_SECONDS);
       if (phase === "guessing") {
         const openedMs = Date.parse(state.guessWindowOpenedAtIso || "");
         const totalSec = Number(state.guessWindowSeconds || 0);
@@ -5200,7 +5203,7 @@
         let deadlineMs = openedMs + totalSec * 1000;
         const graceStartMs = Date.parse(state.allPlayersSubmittedAtIso || "");
         if (!Number.isNaN(graceStartMs)) {
-          deadlineMs = Math.min(deadlineMs, graceStartMs + ALL_SUBMITTED_GRACE_SECONDS * 1000);
+          deadlineMs = Math.min(deadlineMs, graceStartMs + graceSeconds * 1000);
         }
         return deadlineMs;
       }
@@ -5214,13 +5217,7 @@
     }
 
     function secondsRemainingUntil(deadlineMs, maxSeconds) {
-      if (deadlineMs == null || Number.isNaN(deadlineMs)) return null;
-      const remaining = Math.floor((deadlineMs - Date.now()) / 1000);
-      const capped = Math.max(0, remaining);
-      if (maxSeconds > 0) {
-        return Math.min(maxSeconds, capped);
-      }
-      return capped;
+      return TypeoShow.secondsRemainingUntilDeadline(deadlineMs, maxSeconds);
     }
 
     function localWindowSecondsRemaining(openedAtIso, windowSeconds) {
@@ -5228,7 +5225,7 @@
       if (!openedAtIso || !total) return null;
       const end = new Date(openedAtIso).getTime() + total * 1000;
       if (Number.isNaN(end)) return null;
-      return Math.min(total, Math.max(0, Math.floor((end - Date.now()) / 1000)));
+      return Math.min(total, Math.max(0, Math.floor((end - TypeoShow.syncedNowMs()) / 1000)));
     }
 
     function serverPhaseSecondsRemaining(state) {
@@ -5301,14 +5298,14 @@
       }
 
       if (serverRemaining != null && serverRemaining >= 0) {
-        timerDisplay.deadlineMs = Date.now() + serverRemaining * 1000;
+        timerDisplay.deadlineMs = TypeoShow.syncedNowMs() + serverRemaining * 1000;
         timerDisplay.baseRemaining = null;
         return;
       }
 
       timerDisplay.deadlineMs = null;
       timerDisplay.baseRemaining = capPhaseSecondsRemaining(state, serverRemaining);
-      timerDisplay.syncedAtMs = Date.now();
+      timerDisplay.syncedAtMs = TypeoShow.syncedNowMs();
     }
 
     function phaseSecondsRemaining(state) {
@@ -5327,7 +5324,7 @@
       }
 
       if (timerDisplay.baseRemaining == null) return null;
-      const elapsed = Math.floor((Date.now() - timerDisplay.syncedAtMs) / 1000);
+      const elapsed = Math.floor((TypeoShow.syncedNowMs() - timerDisplay.syncedAtMs) / 1000);
       return capPhaseSecondsRemaining(state, timerDisplay.baseRemaining - elapsed);
     }
 
@@ -6693,6 +6690,7 @@
       }
 
       currentState = applyDemoState(state);
+      TypeoShow.noteServerTime(currentState && currentState.serverNowIso);
       syncDisplayJoinContext(currentState);
       syncTimerDisplay(currentState);
       const phase = currentState.phase || "idle";

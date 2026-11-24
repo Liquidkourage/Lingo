@@ -144,6 +144,45 @@
     }, 900);
   }
 
+  // Keep host / player / display timers on the server's clock. Device clocks
+  // often disagree by seconds (or more); without an offset, the same deadline
+  // ISO shows different remaining times on each screen.
+  let clockOffsetMs = 0;
+
+  function noteServerTime(serverNowIso) {
+    const serverMs = Date.parse(serverNowIso || "");
+    if (Number.isNaN(serverMs)) return clockOffsetMs;
+    clockOffsetMs = serverMs - Date.now();
+    return clockOffsetMs;
+  }
+
+  function syncedNowMs() {
+    return Date.now() + clockOffsetMs;
+  }
+
+  function phaseEndsAtMs(state) {
+    if (!state) return null;
+    const endsMs = Date.parse(state.phaseEndsAtIso || "");
+    if (!Number.isNaN(endsMs)) return endsMs;
+    return null;
+  }
+
+  function graceSecondsFromState(state, fallback = 10) {
+    const value = Number(state && state.allSubmittedGraceSeconds);
+    if (Number.isFinite(value) && value > 0) return value;
+    return fallback;
+  }
+
+  function secondsRemainingUntilDeadline(deadlineMs, maxSeconds) {
+    if (deadlineMs == null || Number.isNaN(deadlineMs)) return null;
+    const remaining = Math.floor((deadlineMs - syncedNowMs()) / 1000);
+    const capped = Math.max(0, remaining);
+    if (maxSeconds > 0) {
+      return Math.min(maxSeconds, capped);
+    }
+    return capped;
+  }
+
   root.TypeoShow = {
     patternSymbol,
     scrambledWord,
@@ -153,5 +192,10 @@
     renderBingoCallHistory,
     animateBingoCallBall,
     uiFlashEffectsEnabled,
+    noteServerTime,
+    syncedNowMs,
+    phaseEndsAtMs,
+    graceSecondsFromState,
+    secondsRemainingUntilDeadline,
   };
 })(typeof window !== "undefined" ? window : globalThis);

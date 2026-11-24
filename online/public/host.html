@@ -2006,6 +2006,7 @@
       deadlineMs: null,
       pausedRemaining: null,
     };
+    let hostTimerZeroFetchPending = false;
     let rosterPlayers = [];
     let rosterFilter = 'all';
     let rosterSearchQuery = '';
@@ -2714,7 +2715,10 @@
     }
 
     function hostPhaseDeadlineMs(state) {
+      const serverEndsMs = TypeoShow.phaseEndsAtMs(state);
+      if (serverEndsMs != null) return serverEndsMs;
       const phase = state.phase || 'idle';
+      const graceSeconds = TypeoShow.graceSecondsFromState(state, ALL_SUBMITTED_GRACE_SECONDS);
       if (phase === 'guessing') {
         const openedMs = Date.parse(state.guessWindowOpenedAtIso || '');
         const totalSec = Number(state.guessWindowSeconds || 0);
@@ -2722,7 +2726,7 @@
         let deadlineMs = openedMs + totalSec * 1000;
         const graceStartMs = Date.parse(state.allPlayersSubmittedAtIso || '');
         if (!Number.isNaN(graceStartMs)) {
-          deadlineMs = Math.min(deadlineMs, graceStartMs + ALL_SUBMITTED_GRACE_SECONDS * 1000);
+          deadlineMs = Math.min(deadlineMs, graceStartMs + graceSeconds * 1000);
         }
         return deadlineMs;
       }
@@ -2761,13 +2765,14 @@
       if (key !== hostTimer.windowKey) {
         hostTimer.windowKey = key;
         hostTimer.pausedRemaining = null;
+        hostTimerZeroFetchPending = false;
         hostTimer.deadlineMs = hostPhaseDeadlineMs(state);
         if (hostTimer.deadlineMs == null) {
           const serverRem = state.phase === 'guessing'
             ? state.guessWindowRemainingSeconds
             : state.resultsWindowRemainingSeconds;
           if (serverRem != null) {
-            hostTimer.deadlineMs = Date.now() + Number(serverRem) * 1000;
+            hostTimer.deadlineMs = TypeoShow.syncedNowMs() + Number(serverRem) * 1000;
           }
         }
       }
@@ -2781,7 +2786,18 @@
         return hostTimer.pausedRemaining;
       }
       if (hostTimer.deadlineMs == null) return null;
-      return Math.max(0, Math.floor((hostTimer.deadlineMs - Date.now()) / 1000));
+      return TypeoShow.secondsRemainingUntilDeadline(hostTimer.deadlineMs, 0);
+    }
+
+    function maybeFetchHostOnTimerZero(state, remaining) {
+      if (hostTimerZeroFetchPending) return;
+      if (remaining !== 0) return;
+      const phase = state?.phase || 'idle';
+      if (phase !== 'guessing' && phase !== 'results') return;
+      hostTimerZeroFetchPending = true;
+      loadState().finally(() => {
+        hostTimerZeroFetchPending = false;
+      });
     }
 
     function syncHostTimerDisplay(state) {
@@ -2937,15 +2953,18 @@
         if (phase !== 'guessing' && phase !== 'results') return;
         syncHostTimerDisplay(currentState);
         syncHostTimerAlerts(currentState);
+        maybeFetchHostOnTimerZero(currentState, hostActiveTimerRemaining(currentState));
       }, 250);
     }
 
     function scheduleHostPolling() {
       if (pollHandle) window.clearInterval(pollHandle);
       const phase = currentState?.phase || 'idle';
-      const ms = isBingoMode()
-        ? 2000
-        : (phase === 'guessing' || phase === 'results') ? 1000 : 5000;
+      // Keep live rounds on a 1s cadence across host/player/display so phase
+      // flips (guess→results→next) land together instead of drifting by poll rate.
+      const ms = (phase === 'guessing' || phase === 'results' || isBingoMode())
+        ? 1000
+        : 5000;
       pollHandle = window.setInterval(() => {
         loadState().catch(() => {});
         loadPlayers().catch(() => {});
@@ -3040,6 +3059,7 @@
 
     function renderState() {
       const state = currentState || {};
+      TypeoShow.noteServerTime(state.serverNowIso);
       const phase = state.phase || 'idle';
 
       const previousHostPhase = lastHostPhase;

@@ -260,7 +260,36 @@ function nowIso() {
 }
 
 function windowOpenedAtIso() {
-  return new Date(Math.floor(Date.now() / 1000) * 1000).toISOString();
+  // Keep millisecond precision so host/player/display deadlines match the
+  // server advance clock instead of drifting up to ~1s from second flooring.
+  return nowIso();
+}
+
+function phaseEndsAtIsoForState(row) {
+  if (!row || Boolean(row.timer_paused)) return null;
+  const phase = String(row.phase || "idle");
+  if (phase === "guessing") {
+    if (!row.guess_window_opened_at) return null;
+    const openedMs = new Date(row.guess_window_opened_at).getTime();
+    const totalSec = Number(row.guess_window_seconds || 0);
+    if (Number.isNaN(openedMs) || !totalSec) return null;
+    let endMs = openedMs + totalSec * 1000;
+    if (row.all_players_submitted_at) {
+      const graceStartMs = new Date(row.all_players_submitted_at).getTime();
+      if (!Number.isNaN(graceStartMs)) {
+        endMs = Math.min(endMs, graceStartMs + ALL_SUBMITTED_GRACE_SECONDS * 1000);
+      }
+    }
+    return new Date(endMs).toISOString();
+  }
+  if (phase === "results") {
+    if (!row.results_window_opened_at) return null;
+    const openedMs = new Date(row.results_window_opened_at).getTime();
+    const totalSec = Number(row.results_window_seconds || 0);
+    if (Number.isNaN(openedMs) || !totalSec) return null;
+    return new Date(openedMs + totalSec * 1000).toISOString();
+  }
+  return null;
 }
 
 function normalizeDisplayName(displayName) {
@@ -2417,6 +2446,9 @@ function serializeState(row) {
     allPlayersSubmittedAtIso: row.all_players_submitted_at
       ? new Date(row.all_players_submitted_at).toISOString()
       : null,
+    allSubmittedGraceSeconds: ALL_SUBMITTED_GRACE_SECONDS,
+    phaseEndsAtIso: phaseEndsAtIsoForState(row),
+    serverNowIso: nowIso(),
     ...timerRemainingForState(row),
     updatedAtIso: row.updated_at ? new Date(row.updated_at).toISOString() : null,
   };
