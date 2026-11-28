@@ -54,7 +54,8 @@
       --live-player-card-text-scale: 0.5;
       --live-board-pad: 0.28em;
       --live-chrome-stack-gap: var(--live-v-gap);
-      --live-chrome-board-gap: max(0.4em, 0.65cqh);
+      /* Keep Round/Balls glow clear of the player tray (bevel casts ~12–22px). */
+      --live-chrome-board-gap: max(1.6em, 3.2cqh);
       --live-board-bottom-inset: 2px;
       --live-card-width: min(100%, 9.2em);
       --live-card-min-height: 2.85em;
@@ -123,8 +124,9 @@
          vanishing-point fold survives flattened ancestors. Wings open toward
          camera (outer edges nearer); cards fold the same way by column. */
       --live-rake-depth: 1000px;
-      --live-rake-left: perspective(var(--live-rake-depth)) rotateY(20deg) rotateX(-2deg);
-      --live-rake-right: perspective(var(--live-rake-depth)) rotateY(-20deg) rotateX(-2deg);
+      /* Milder wing fold so side chrome doesn't visually crowd the board corners. */
+      --live-rake-left: perspective(var(--live-rake-depth)) rotateY(14deg) rotateX(-2deg);
+      --live-rake-right: perspective(var(--live-rake-depth)) rotateY(-14deg) rotateX(-2deg);
       --live-rake-center: perspective(var(--live-rake-depth)) rotateX(-2deg);
     }
 
@@ -1088,19 +1090,21 @@
       display: none;
     }
 
-    /* Live round: chrome tucked under logo, board fills the rest */
+    /* Live round: side rails + tiles on row 1; player tray on row 2 with enough
+       row-gap that Round/Balls glow can't kiss the board (full-width tray). */
     .stage[data-phase="guessing"] .stage-ui,
     .stage[data-phase="results"] .stage-ui,
     .stage[data-phase="ended"] .stage-ui {
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: var(--live-rail-width) minmax(0, 1fr) var(--live-rail-width);
       grid-template-rows: auto minmax(0, 1fr);
       grid-template-areas:
-        "chrome"
-        "board";
-      justify-items: center;
+        "score center stats"
+        "board board board";
+      justify-items: stretch;
       align-content: stretch;
-      gap: var(--live-chrome-board-gap);
+      column-gap: 0.7em;
+      row-gap: var(--live-chrome-board-gap);
       padding: var(--live-logo-reserve) 2.5% var(--live-board-bottom-inset) 2.5%;
       overflow: hidden;
       font-size: clamp(14px, 2.4cqh, 32px);
@@ -1111,20 +1115,7 @@
     }
 
     .stage:not([data-phase="idle"]) .live-chrome {
-      grid-area: chrome;
-      display: grid;
-      grid-template-columns: var(--live-rail-width) minmax(0, 1fr) var(--live-rail-width);
-      grid-template-areas: "score center stats";
-      align-items: start;
-      gap: 0.55em;
-      width: 100%;
-      perspective: 1400px;
-      perspective-origin: 50% 45%;
-      transform-style: preserve-3d;
-      max-width: 100%;
-      justify-self: center;
-      padding: 0 1.5%;
-      box-sizing: border-box;
+      display: contents;
     }
 
     .live-score-rail {
@@ -1132,7 +1123,7 @@
       display: none;
       flex-direction: column;
       align-items: stretch;
-      gap: var(--live-v-gap);
+      gap: max(0.75em, var(--live-v-gap));
       min-width: 0;
       border: none;
       background: transparent;
@@ -1825,7 +1816,6 @@
     .stage[data-phase="results"] .player-board,
     .stage[data-phase="ended"] .player-board {
       grid-area: board;
-      grid-column: 1 / -1;
       display: flex;
       flex-direction: column;
       align-self: stretch;
@@ -1950,12 +1940,12 @@
     }
 
     .stage[data-live-layout="1x1"] .player-grid {
-      width: min(34vw, 420px);
+      width: min(100%, 420px);
       height: clamp(160px, 26vh, 240px);
     }
 
     .stage[data-live-layout="2x1"] .player-grid {
-      width: min(70vw, 720px);
+      width: min(100%, 720px);
       height: clamp(140px, 24vh, 220px);
     }
 
@@ -4238,7 +4228,7 @@
     }
 
     .live-join-qr-shell {
-      width: 100%;
+      width: min(100%, 7.1em);
       height: auto;
       aspect-ratio: 1;
       padding: 0.2em;
@@ -4443,14 +4433,6 @@
 
         <div class="live-chrome" id="liveChrome">
           <aside class="live-score-rail" id="liveScoreRail" aria-label="Round and balls">
-            <div class="live-join-dock" id="liveJoinDock" aria-label="How to join">
-              <p class="live-join-label">Join code</p>
-              <p class="live-join-code" id="liveJoinCode">—————</p>
-              <div class="live-join-qr-shell">
-                <img class="live-join-qr" id="liveJoinQr" width="160" height="160" alt="" />
-              </div>
-              <p class="live-join-url" id="liveJoinUrl"></p>
-            </div>
             <div class="live-score-stack">
               <div class="score-slot score-slot--round">
                 <span class="score-label">Round</span>
@@ -4460,6 +4442,14 @@
                 <span class="score-label">Balls</span>
                 <span class="score-value balls" id="statBalls">0</span>
               </div>
+            </div>
+            <div class="live-join-dock" id="liveJoinDock" aria-label="How to join">
+              <p class="live-join-label">Join code</p>
+              <p class="live-join-code" id="liveJoinCode">—————</p>
+              <div class="live-join-qr-shell">
+                <img class="live-join-qr" id="liveJoinQr" width="160" height="160" alt="" />
+              </div>
+              <p class="live-join-url" id="liveJoinUrl"></p>
             </div>
           </aside>
 
