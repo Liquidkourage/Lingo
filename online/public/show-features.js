@@ -183,6 +183,73 @@
     return capped;
   }
 
+  function startLiveSync(options = {}) {
+    const onUpdate = typeof options.onUpdate === "function" ? options.onUpdate : null;
+    if (!onUpdate) {
+      return function stopLiveSync() {};
+    }
+    const fallbackMs = Math.max(1500, Number(options.fallbackMs) || 4000);
+    let closed = false;
+    let source = null;
+    let pollTimer = null;
+    let refreshTimer = null;
+    let lastUrl = "";
+
+    function liveUrl() {
+      if (typeof options.url === "function") return options.url() || "/api/live";
+      if (options.url) return options.url;
+      if (root.TypeoEvent && typeof root.TypeoEvent.withEventQuery === "function") {
+        return root.TypeoEvent.withEventQuery("/api/live");
+      }
+      return "/api/live";
+    }
+
+    function requestRefresh() {
+      if (closed || refreshTimer) return;
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null;
+        Promise.resolve(onUpdate()).catch(() => {});
+      }, 40);
+    }
+
+    function startFallbackPoll() {
+      if (pollTimer) window.clearInterval(pollTimer);
+      pollTimer = window.setInterval(requestRefresh, fallbackMs);
+    }
+
+    function connectStream() {
+      if (closed || typeof root.EventSource === "undefined") return;
+      const url = liveUrl();
+      if (source && lastUrl === url && source.readyState !== 2) return;
+      lastUrl = url;
+      if (source) {
+        source.close();
+        source = null;
+      }
+      try {
+        source = new root.EventSource(url);
+      } catch (_error) {
+        return;
+      }
+      source.onmessage = () => {
+        requestRefresh();
+      };
+    }
+
+    startFallbackPoll();
+    connectStream();
+    if (options.immediate !== false) {
+      requestRefresh();
+    }
+
+    return function stopLiveSync() {
+      closed = true;
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+      if (pollTimer) window.clearInterval(pollTimer);
+      if (source) source.close();
+    };
+  }
+
   root.TypeoShow = {
     patternSymbol,
     scrambledWord,
@@ -197,5 +264,6 @@
     phaseEndsAtMs,
     graceSecondsFromState,
     secondsRemainingUntilDeadline,
+    startLiveSync,
   };
 })(typeof window !== "undefined" ? window : globalThis);

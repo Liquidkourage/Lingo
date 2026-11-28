@@ -2203,6 +2203,7 @@
 
     let currentState = null;
     let pollTimer = null;
+    let playerLiveStop = null;
     let tickTimer = null;
     let guessDraftDirty = false;
     let lastPlayPhase = 'idle';
@@ -4035,13 +4036,12 @@
     function schedulePolling() {
       if (pollTimer) window.clearInterval(pollTimer);
       if (IS_DEMO) return;
-      const phase = currentState && currentState.phase;
-      const ms = isBingoMode(currentState)
-        ? 1000
-        : (phase === 'guessing' || phase === 'results' ? 1000 : 5000);
-      pollTimer = window.setInterval(() => {
-        fetchPublicState().catch(() => {});
-      }, ms);
+      if (playerLiveStop) return;
+      playerLiveStop = TypeoShow.startLiveSync({
+        fallbackMs: 4000,
+        immediate: false,
+        onUpdate: () => fetchPublicState().catch(() => {}),
+      });
     }
 
     function updateSubmitEnabled() {

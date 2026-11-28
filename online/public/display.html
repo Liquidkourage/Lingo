@@ -6942,15 +6942,19 @@
       } catch (error) {
         setStandby(true, error.message || "Connecting to the game server…");
       }
-      window.setInterval(async () => {
-        try {
-          await fetchPublicState();
-        } catch (_error) {
-          if (!apiConnected) {
-            setStandby(true, "Connecting to the game server…");
+      TypeoShow.startLiveSync({
+        fallbackMs: 4000,
+        immediate: false,
+        onUpdate: async () => {
+          try {
+            await fetchPublicState();
+          } catch (_error) {
+            if (!apiConnected) {
+              setStandby(true, "Connecting to the game server…");
+            }
           }
-        }
-      }, 1000);
+        },
+      });
 
       initKioskMode();
     }

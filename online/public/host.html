@@ -1993,6 +1993,7 @@
 
     let currentState = null;
     let pollHandle = null;
+    let hostLiveStop = null;
     let hostAlertTimer = null;
     let hostTickTimer = null;
     let lastTimerAlertBucket = null;
@@ -2184,6 +2185,9 @@
         window.history.replaceState({}, '', url);
       }
       renderHostLinks(normalized);
+      if (hostLiveStop) {
+        ensureHostLiveSync();
+      }
     }
 
     function renderHostLinks(eventCode) {
@@ -2957,18 +2961,31 @@
       }, 250);
     }
 
+    function hostLiveUrl() {
+      const code = hostEventCode();
+      if (!code || code === 'default') return '/api/live';
+      return `/api/live?join=${encodeURIComponent(code)}`;
+    }
+
+    function ensureHostLiveSync() {
+      if (hostLiveStop) hostLiveStop();
+      hostLiveStop = TypeoShow.startLiveSync({
+        url: hostLiveUrl,
+        fallbackMs: 4000,
+        immediate: false,
+        onUpdate: () => Promise.all([
+          loadState().catch(() => {}),
+          loadPlayers().catch(() => {}),
+        ]),
+      });
+    }
+
     function scheduleHostPolling() {
       if (pollHandle) window.clearInterval(pollHandle);
-      const phase = currentState?.phase || 'idle';
-      // Keep live rounds on a 1s cadence across host/player/display so phase
-      // flips (guess→results→next) land together instead of drifting by poll rate.
-      const ms = (phase === 'guessing' || phase === 'results' || isBingoMode())
-        ? 1000
-        : 5000;
-      pollHandle = window.setInterval(() => {
-        loadState().catch(() => {});
-        loadPlayers().catch(() => {});
-      }, ms);
+      pollHandle = null;
+      if (!hostLiveStop) {
+        ensureHostLiveSync();
+      }
     }
 
     function updateToolsBar() {

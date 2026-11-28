@@ -205,6 +205,62 @@ let httpServer = null;
 let timerTickHandle = null;
 let rehearsalTickHandle = null;
 const SHUTDOWN_FORCE_MS = 20000;
+const liveClients = new Map();
+const liveNotifyTimers = new Map();
+
+function notifyLive(eventCode = currentEventCode()) {
+  const clients = liveClients.get(eventCode);
+  if (!clients || !clients.size) return;
+  const payload = `data: ${JSON.stringify({ t: "u", at: Date.now() })}\n\n`;
+  for (const res of clients) {
+    try {
+      res.write(payload);
+    } catch (_error) {
+      clients.delete(res);
+    }
+  }
+}
+
+function queueLiveNotify(client = pool, eventCode = currentEventCode()) {
+  if (client && client !== pool) {
+    client.__liveDirty = true;
+    if (liveNotifyTimers.has(eventCode)) return;
+    liveNotifyTimers.set(
+      eventCode,
+      setTimeout(() => {
+        liveNotifyTimers.delete(eventCode);
+        notifyLive(eventCode);
+      }, 40),
+    );
+    return;
+  }
+  notifyLive(eventCode);
+}
+
+function flushLiveNotify(client = pool, eventCode = currentEventCode()) {
+  if (client && client !== pool) {
+    client.__liveDirty = false;
+  }
+  const pending = liveNotifyTimers.get(eventCode);
+  if (pending) {
+    clearTimeout(pending);
+    liveNotifyTimers.delete(eventCode);
+  }
+  notifyLive(eventCode);
+}
+
+function closeLiveClients() {
+  for (const clients of liveClients.values()) {
+    for (const res of clients) {
+      try {
+        res.end();
+      } catch (_error) {
+        // Client already gone.
+      }
+    }
+  }
+  liveClients.clear();
+}
 
 function rehearsalDeps() {
   return {
@@ -1821,6 +1877,9 @@ async function maybeAdvanceTimedPhase(client = pool) {
     }
 
     await db.query("commit");
+    if (db.__liveDirty) {
+      flushLiveNotify(db);
+    }
     return state;
   } catch (error) {
     await db.query("rollback");
@@ -2583,6 +2642,7 @@ async function updateState(patch, client = pool) {
   );
 
   const updated = result.rows[0];
+  queueLiveNotify(client);
   if (Object.prototype.hasOwnProperty.call(patch, "current_word")) {
     const previousWord = normalizeWordInput(state.current_word);
     const nextWord = normalizeWordInput(updated.current_word);
@@ -2963,6 +3023,46 @@ app.get("/api/public-state", async (req, res) => {
   }
 });
 
+app.get("/api/live", (req, res) => {
+  const eventCode = currentEventCode();
+  res.status(200);
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  if (typeof res.flushHeaders === "function") {
+    res.flushHeaders();
+  }
+  if (res.socket) {
+    res.socket.setTimeout(0);
+    if (typeof res.socket.setNoDelay === "function") {
+      res.socket.setNoDelay(true);
+    }
+  }
+  res.write("retry: 1500\n\n");
+  res.write(": connected\n\n");
+
+  let clients = liveClients.get(eventCode);
+  if (!clients) {
+    clients = new Set();
+    liveClients.set(eventCode, clients);
+  }
+  clients.add(res);
+
+  const ping = setInterval(() => {
+    try {
+      res.write(": ping\n\n");
+    } catch (_error) {
+      clearInterval(ping);
+    }
+  }, 15000);
+
+  req.on("close", () => {
+    clearInterval(ping);
+    clients.delete(res);
+  });
+});
+
 app.get("/api/public/me", async (req, res) => {
   try {
     const authToken = normalizePlayerToken(req.query.authToken);
@@ -3255,6 +3355,7 @@ app.post("/api/public/join", async (req, res) => {
       player = await upsertLobbyPlayer(state.session_id, displayName, playerToken, client, clientId);
     }
     await client.query("commit");
+    flushLiveNotify(client);
 
     const nextState = await maybeAdvanceTimedPhase();
     const identity = serializePlayerIdentity(player);
@@ -3305,6 +3406,7 @@ app.post("/api/public/host-message", async (req, res) => {
     }
     await insertHostMessage(state.session_id, player.display_name, message, client);
     await client.query("commit");
+    flushLiveNotify(client);
     res.json({ ok: true });
   } catch (error) {
     await client.query("rollback");
@@ -3343,6 +3445,7 @@ app.post("/api/public/leave", async (req, res) => {
       [player.id, state.session_id],
     );
     await client.query("commit");
+    flushLiveNotify(client);
 
     const nextState = await maybeAdvanceTimedPhase();
     res.json({
@@ -3491,6 +3594,7 @@ app.post("/api/public/submit-guess", async (req, res) => {
     nextState = await maybeAutoRevealIfAllSubmitted(nextState, client);
 
     await client.query("commit");
+    flushLiveNotify(client);
 
     const identity = serializePlayerIdentity(await ensurePlayerToken(player, client));
     res.json({
@@ -4422,6 +4526,7 @@ app.post("/api/admin/bingo/advance", requireAdmin, async (req, res) => {
       throw new Error("gameId is required.");
     }
     const row = await advanceBingoGame(gameId, action);
+    notifyLive();
     const callSheet = Array.isArray(row.call_sheet) ? row.call_sheet : [];
     res.json({
       ok: true,
@@ -4761,6 +4866,7 @@ async function shutdown(signal) {
   console.log(`${signal} received — shutting down gracefully`);
 
   stopBackgroundTimers();
+  closeLiveClients();
 
   const forceExitTimer = setTimeout(() => {
     console.error("Forced shutdown after timeout");
